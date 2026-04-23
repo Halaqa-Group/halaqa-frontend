@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const route = useRoute()
 const { isEditMode } = useSchedule()
+const { user, logout } = useAuth()
+const { isSaving, submitSession, attendanceRows } = useAttendance()
 
 const PAGE_LABELS: Record<string, string> = {
   '/': 'لوحة التحكم',
@@ -14,6 +16,9 @@ const PAGE_LABELS: Record<string, string> = {
 const pageLabel = computed(() => PAGE_LABELS[route.path] || '')
 const isPlanner = computed(() => route.path === '/planner')
 const isAttendance = computed(() => route.path === '/attendance')
+const hasAttendanceRows = computed(() => attendanceRows.value.length > 0)
+
+const submitLabel = computed(() => isSaving.value ? 'جاري الإرسال...' : 'إرسال الجلسة')
 
 function toggleEdit() {
   isEditMode.value = !isEditMode.value
@@ -35,8 +40,21 @@ function toggleEdit() {
     <div class="flex items-center gap-3">
       <!-- Attendance page actions -->
       <template v-if="isAttendance">
-        <UButton variant="soft" color="neutral" label="حفظ كمسودة" icon="i-lucide-save" />
-        <UButton color="primary" label="إرسال الجلسة" icon="i-lucide-send" />
+        <UButton
+          variant="soft"
+          color="neutral"
+          label="حفظ كمسودة"
+          icon="i-lucide-save"
+          :disabled="!hasAttendanceRows"
+        />
+        <UButton
+          color="primary"
+          :label="submitLabel"
+          icon="i-lucide-send"
+          :loading="isSaving"
+          :disabled="!hasAttendanceRows || isSaving"
+          @click="submitSession"
+        />
       </template>
 
       <!-- Planner page actions -->
@@ -51,20 +69,22 @@ function toggleEdit() {
         />
       </template>
 
-      <!-- Default: avatar stack + notification -->
+      <!-- Default: user info + notification -->
       <template v-else>
-        <div class="flex items-center -space-x-2 space-x-reverse">
-          <img
-            v-for="seed in ['amira', 'zaid', 'omar']"
-            :key="seed"
-            :src="`https://api.dicebear.com/9.x/notionists/svg?seed=${seed}`"
-            class="w-8 h-8 rounded-full border-2 border-white"
-          >
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl" style="background-color: var(--color-surface-container);">
+          <UIcon name="i-lucide-user" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
+          <span class="label-md font-arabic" style="color: var(--color-on-surface);">{{ user?.name }}</span>
         </div>
         <div class="relative">
           <UButton variant="ghost" color="neutral" icon="i-lucide-bell" />
           <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#EFB0C1]" />
         </div>
+        <UButton
+          variant="ghost"
+          color="neutral"
+          icon="i-lucide-log-out"
+          @click="logout"
+        />
       </template>
     </div>
   </header>

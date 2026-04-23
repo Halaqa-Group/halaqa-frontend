@@ -1,26 +1,19 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'dashboard' })
 
-const { students, searchQuery, openAdd } = useStudents()
+const { students, searchQuery, isLoading, error, fetchStudents, openAdd } = useStudents()
+const { halaqat, fetchHalaqat } = useHalaqat()
 
-const filterHalaqa = ref('')
+const filterHalaqaId = ref<number | ''>('')
 const filterStatus = ref('')
 
 const filteredStudents = computed(() =>
   students.value.filter(s => {
-    const matchSearch = !searchQuery.value || s.name.includes(searchQuery.value) || s.currentSurah.includes(searchQuery.value)
-    const matchHalaqa = !filterHalaqa.value || s.halaqa === filterHalaqa.value
+    const matchSearch = !searchQuery.value || s.name.includes(searchQuery.value)
     const matchStatus = !filterStatus.value || s.status === filterStatus.value
-    return matchSearch && matchHalaqa && matchStatus
+    return matchSearch && matchStatus
   })
 )
-
-const halaqaOptions = [
-  { label: 'مجموعة الحلقة', value: '' },
-  { label: 'شمس الضحى', value: 'شمس الضحى' },
-  { label: 'نسيم الظهيرة', value: 'نسيم الظهيرة' },
-  { label: 'ندى المساء', value: 'ندى المساء' }
-]
 
 const statusOptions = [
   { label: 'الحالة', value: '' },
@@ -31,6 +24,14 @@ const statusOptions = [
 const loadProgress = computed(() =>
   Math.round((filteredStudents.value.length / Math.max(students.value.length, 1)) * 100)
 )
+
+async function onHalaqaFilter() {
+  await fetchStudents(filterHalaqaId.value ? Number(filterHalaqaId.value) : undefined)
+}
+
+onMounted(async () => {
+  await Promise.all([fetchStudents(), fetchHalaqat()])
+})
 </script>
 
 <template>
@@ -70,7 +71,7 @@ const loadProgress = computed(() =>
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="ابحث بالاسم، السورة أو المعرف..."
+          placeholder="ابحث بالاسم..."
           class="w-full pr-12 pl-4 py-2.5 rounded-xl text-sm font-arabic outline-none transition-all"
           style="background-color: #F5F5F5; border: 1px solid transparent; color: var(--color-on-surface);"
         >
@@ -78,20 +79,13 @@ const loadProgress = computed(() =>
 
       <div class="flex items-center gap-3 flex-wrap">
         <select
-          v-model="filterHalaqa"
+          v-model="filterHalaqaId"
           class="rounded-xl px-4 py-2.5 text-sm font-arabic outline-none cursor-pointer"
           style="background-color: #F5F5F5; border: 1px solid transparent; color: var(--color-on-surface);"
+          @change="onHalaqaFilter"
         >
-          <option v-for="opt in halaqaOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-        </select>
-
-        <select
-          class="rounded-xl px-4 py-2.5 text-sm font-arabic outline-none cursor-pointer"
-          style="background-color: #F5F5F5; border: 1px solid transparent; color: var(--color-on-surface);"
-        >
-          <option>المستوى</option>
-          <option>متوسط</option>
-          <option>متقدم</option>
+          <option value="">كل الحلقات</option>
+          <option v-for="h in halaqat" :key="h.id" :value="h.id">{{ h.name }}</option>
         </select>
 
         <select
@@ -104,8 +98,19 @@ const loadProgress = computed(() =>
       </div>
     </div>
 
+    <!-- Loading -->
+    <div v-if="isLoading" class="flex justify-center py-16">
+      <UIcon name="i-lucide-loader-circle" class="w-10 h-10 animate-spin" style="color: var(--color-primary);" />
+    </div>
+
+    <!-- Error -->
+    <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: #FCE4EC;">
+      <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2" style="color: #D81B60;" />
+      <p class="font-arabic" style="color: #D81B60;">{{ error }}</p>
+    </div>
+
     <!-- Student grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       <StudentCard
         v-for="student in filteredStudents"
         :key="student.id"
@@ -113,35 +118,25 @@ const loadProgress = computed(() =>
       />
     </div>
 
+    <!-- Empty state -->
+    <div v-if="!isLoading && !error && filteredStudents.length === 0" class="flex flex-col items-center gap-4 py-16">
+      <UIcon name="i-lucide-users" class="w-12 h-12" style="color: var(--color-on-surface-variant);" />
+      <p class="font-arabic" style="color: var(--color-on-surface-variant);">لا يوجد طلاب</p>
+    </div>
+
     <!-- Load more / pagination -->
-    <div class="mt-12 text-center py-16">
-      <div class="flex flex-col items-center gap-6">
-        <div class="flex flex-col items-center gap-2">
-          <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
-            عرض {{ filteredStudents.length }} من {{ students.length }} طالباً
-          </p>
-          <div class="w-48 h-1.5 rounded-full overflow-hidden" style="background-color: var(--color-primary-container);">
-            <div
-              class="h-full rounded-full transition-all"
-              style="background-color: var(--color-primary);"
-              :style="{ width: `${loadProgress}%` }"
-            />
-          </div>
-        </div>
-
-        <button
-          class="inline-flex items-center justify-center px-8 py-3 rounded-full text-sm font-arabic font-bold transition-all hover:opacity-80 active:scale-95"
-          style="background-color: white; border: 1px solid var(--color-primary); color: var(--color-primary);"
-        >
-          تحميل المزيد من الطلاب
-        </button>
-
-        <p
-          class="text-[10px] uppercase font-bold tracking-widest font-arabic animate-pulse"
-          style="color: var(--color-outline);"
-        >
-          مرر لاستكشاف المزيد
+    <div v-if="!isLoading && students.length > 0" class="mt-12 text-center py-8">
+      <div class="flex flex-col items-center gap-4">
+        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
+          عرض {{ filteredStudents.length }} من {{ students.length }} طالباً
         </p>
+        <div class="w-48 h-1.5 rounded-full overflow-hidden" style="background-color: var(--color-primary-container);">
+          <div
+            class="h-full rounded-full transition-all"
+            style="background-color: var(--color-primary);"
+            :style="{ width: `${loadProgress}%` }"
+          />
+        </div>
       </div>
     </div>
   </div>

@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { MOCK_STUDENTS, SURAHS } from '~/data/constants'
+import { SURAHS } from '~/data/constants'
 import type { AttendanceStatus } from '~/types'
 
 interface AttendanceRow {
@@ -14,20 +14,82 @@ interface AttendanceRow {
 }
 
 const sessionNotes = ref('')
-const attendanceRows = ref<AttendanceRow[]>(
-  MOCK_STUDENTS.slice(0, 3).map(s => ({
-    studentId: s.id,
-    name: s.name,
-    avatar: s.avatar,
-    currentSurah: s.currentSurah,
-    status: 'present' as AttendanceStatus,
-    mistakes: 0,
-    rating: 0,
-    surah: SURAHS[0]
-  }))
-)
+const attendanceRows = ref<AttendanceRow[]>([])
+const selectedHalaqaId = ref<number | null>(null)
+const selectedDate = ref(new Date().toISOString().split('T')[0])
+const isLoading = ref(false)
+const isSaving = ref(false)
+
+function backendToStatus(status: string): AttendanceStatus {
+  if (status === 'Present') return 'present'
+  if (status === 'Late') return 'late'
+  return 'absent'
+}
+
+function statusToBackend(status: AttendanceStatus): string {
+  if (status === 'present') return 'Present'
+  if (status === 'late') return 'Late'
+  return 'Absent'
+}
 
 export function useAttendance() {
+  const api = useApi()
+  const { user } = useAuth()
+
+  async function loadSession(halaqaId: number, date: string) {
+    selectedHalaqaId.value = halaqaId
+    selectedDate.value = date
+    isLoading.value = true
+    try {
+      const schoolId = user.value?.school_id ?? 1
+      const [studentsData, existingData] = await Promise.all([
+        api<any[]>(`/students?halaqaId=${halaqaId}&schoolId=${schoolId}`),
+        api<any[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`)
+      ])
+      const existingMap = new Map<number, any>(existingData.map((a: any) => [a.student_id, a]))
+      attendanceRows.value = studentsData.map((s: any) => {
+        const ex = existingMap.get(s.id)
+        return {
+          studentId: String(s.id),
+          name: s.name,
+          avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
+          currentSurah: '—',
+          status: ex ? backendToStatus(ex.status) : 'present' as AttendanceStatus,
+          mistakes: 0,
+          rating: 0,
+          surah: SURAHS[0]
+        }
+      })
+    }
+    finally {
+      isLoading.value = false
+    }
+  }
+
+  async function submitSession() {
+    if (!selectedHalaqaId.value) return
+    isSaving.value = true
+    try {
+      await Promise.all(
+        attendanceRows.value.map(row =>
+          api('/attendance', {
+            method: 'POST',
+            body: {
+              student_id: Number(row.studentId),
+              halaqa_id: selectedHalaqaId.value,
+              date: selectedDate.value,
+              status: statusToBackend(row.status),
+              notes: sessionNotes.value || null
+            }
+          })
+        )
+      )
+    }
+    finally {
+      isSaving.value = false
+    }
+  }
+
   function setStatus(studentId: string, status: AttendanceStatus) {
     const row = attendanceRows.value.find(r => r.studentId === studentId)
     if (row) row.status = status
@@ -70,9 +132,15 @@ export function useAttendance() {
   return {
     attendanceRows,
     sessionNotes,
+    selectedHalaqaId,
+    selectedDate,
+    isLoading,
+    isSaving,
     presentCount,
     totalMistakes,
     attendanceRate,
+    loadSession,
+    submitSession,
     setStatus,
     addMistake,
     removeMistake,

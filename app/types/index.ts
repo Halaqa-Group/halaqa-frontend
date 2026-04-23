@@ -1,3 +1,5 @@
+// ── UI types (used by existing components) ──────────────────────────────────
+
 export interface LessonItem {
   id: string
   startSurah: string
@@ -36,4 +38,111 @@ export interface AttendanceEntry {
   rating: number
   surah: string
   notes: string
+}
+
+// ── API types (backend entity shapes) ───────────────────────────────────────
+
+export interface ApiStudent {
+  id: number
+  school_id: number
+  father_id: number | null
+  mother_id: number | null
+  name: string
+  email: string | null
+  dob: string | null
+  join_date: string
+  status: 'active' | 'inactive'
+  daily_hifz_pages_capacity: number
+  daily_near_pages_capacity: number
+  daily_far_pages_capacity: number
+  notes: string | null
+  photo_url: string | null
+}
+
+export interface ApiHalaqa {
+  id: number
+  name: string
+  type: 'Memorization' | 'Tajweed' | 'Aqeedah'
+  school_id: number
+  teacher_id: number
+  schedules: { id: number; day_of_week: number }[]
+}
+
+export interface ApiAttendance {
+  id: number
+  student_id: number
+  halaqa_id: number
+  date: string
+  status: 'Present' | 'Late' | 'Excused' | 'Absent'
+  notes: string | null
+  student?: ApiStudent
+}
+
+export interface ApiAchievement {
+  id: number
+  student_id: number
+  halaqa_id: number
+  date: string
+  track_type: 'Hifz' | 'Near' | 'Far'
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+  mistakes_count: number
+  warnings_count: number
+  tajweed_errors_count: number
+  percentage_score: number
+  status: 'approved' | 'unapproved'
+  teacher_notes: string | null
+  is_unplanned: boolean
+  is_flagged_conflict: boolean
+  student?: ApiStudent
+}
+
+export interface ApiWeeklyPlan {
+  id: number
+  student_id: number
+  halaqa_id: number
+  week_start_date: string
+  status: 'draft' | 'approved'
+  items: ApiWeeklyPlanItem[]
+}
+
+export interface ApiWeeklyPlanItem {
+  id: number
+  weekly_plan_id: number
+  day_of_week: number
+  track_type: 'Hifz' | 'Near' | 'Far'
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+  total_verses: number
+  achieved_verses: number
+  status: 'due' | 'completed' | 'partial' | 'overdue'
+  is_manual_override: boolean
+}
+
+export interface ApiWarnings {
+  halaqaId: number
+  weekStartDate: string
+  unplannedAchievements: ApiAchievement[]
+  flaggedConflicts: ApiAchievement[]
+  overdueItems: ApiWeeklyPlanItem[]
+}
+
+export interface ApiProgress {
+  studentId: number
+  studentName: string
+  weekStartDate: string
+  totalPlanned: number
+  totalAchieved: number
+  coveragePercent: number
+  items: {
+    dayOfWeek: number
+    trackType: string
+    status: string
+    planned: number
+    achieved: number
+  }[]
 }

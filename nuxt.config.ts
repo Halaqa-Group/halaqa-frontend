@@ -1,7 +1,13 @@
 export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/ui'],
   devtools: { enabled: true },
+  devServer: { port: 3000 },
   css: ['~/assets/css/main.css'],
+  runtimeConfig: {
+    public: {
+      apiBase: 'http://localhost:3001/api'
+    }
+  },
   app: {
     head: {
       htmlAttrs: { dir: 'rtl', lang: 'ar' },

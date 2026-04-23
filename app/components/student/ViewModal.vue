@@ -3,126 +3,189 @@ const { isViewModalOpen, viewingStudent, closeView } = useStudents()
 </script>
 
 <template>
-  <UModal v-model:open="isViewModalOpen" :ui="{ width: 'max-w-3xl' }" @close="closeView">
+  <UModal
+    v-model:open="isViewModalOpen"
+    :ui="{ content: 'sm:max-w-4xl max-h-[90vh] overflow-hidden p-0 rounded-2xl' }"
+    @close="closeView"
+  >
     <template #content>
-      <div v-if="viewingStudent" class="flex min-h-[500px]" dir="rtl">
-        <!-- Right sidebar: profile -->
+      <div v-if="viewingStudent" class="flex flex-col lg:flex-row min-h-[560px] max-h-[90vh]">
+
+        <!-- Profile panel (visually right in RTL) -->
         <div
-          class="w-72 shrink-0 flex flex-col gap-5 p-6 rounded-r-2xl"
+          class="w-full lg:w-1/3 shrink-0 flex flex-col items-center text-center p-8 gap-6"
           style="background-color: var(--color-surface-container-low); border-left: 1px solid var(--color-outline-variant);"
         >
-          <!-- Close button -->
-          <div class="flex justify-start">
-            <button
-              class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/5 transition-colors"
-              @click="closeView"
+          <!-- Avatar with status badge -->
+          <div class="relative">
+            <img
+              :src="viewingStudent.avatar"
+              :alt="viewingStudent.name"
+              class="w-32 h-32 rounded-full object-cover"
+              style="border: 4px solid white; box-shadow: 0 2px 12px rgba(128,76,125,0.12);"
             >
-              <UIcon name="i-lucide-x" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-            </button>
+            <span
+              class="absolute bottom-2 end-0 px-3 py-1 rounded-full text-xs font-arabic font-bold"
+              :style="viewingStudent.status === 'active'
+                ? 'background-color: var(--color-secondary); color: var(--color-on-secondary);'
+                : 'background-color: var(--color-outline); color: white;'"
+            >{{ viewingStudent.status === 'active' ? 'نشط' : 'غير نشط' }}</span>
           </div>
 
-          <!-- Avatar + name -->
-          <div class="flex flex-col items-center gap-3 text-center">
-            <div class="relative">
-              <img :src="viewingStudent.avatar" class="w-20 h-20 rounded-full" :alt="viewingStudent.name">
-              <span
-                class="absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-white"
-                :class="viewingStudent.status === 'active' ? 'bg-[#4A8E85]' : 'bg-[--color-outline]'"
-              />
-            </div>
-            <div>
-              <p class="display-md font-arabic" style="color: var(--color-on-surface);">{{ viewingStudent.name }}</p>
-              <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">{{ viewingStudent.halaqa }}</p>
-            </div>
+          <!-- Name + level -->
+          <div class="space-y-1">
+            <h2 class="display-md font-arabic" style="color: var(--color-on-surface);">{{ viewingStudent.name }}</h2>
+            <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">{{ viewingStudent.halaqa }}</p>
           </div>
 
-          <!-- Attendance summary -->
-          <div>
-            <div class="flex justify-between mb-1">
-              <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">الحضور</span>
-              <span class="label-md font-semibold" style="color: var(--color-primary);">{{ viewingStudent.attendance }}%</span>
+          <!-- Attendance summary card -->
+          <div class="w-full rounded-xl p-4 space-y-3" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
+            <div class="flex justify-between items-center">
+              <span class="body-md font-arabic" style="color: var(--color-on-surface-variant);">ملخص الحضور</span>
+              <span class="body-lg font-arabic font-bold" style="color: var(--color-primary);">{{ viewingStudent.attendance }}%</span>
             </div>
-            <div class="h-2 rounded-full overflow-hidden" style="background-color: var(--color-surface-container);">
+            <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: var(--color-surface-container);">
               <div
-                class="h-full rounded-full"
-                style="background-color: var(--color-primary);"
+                class="h-full rounded-full transition-all"
+                style="background-color: var(--color-secondary);"
                 :style="`width: ${viewingStudent.attendance}%;`"
               />
             </div>
           </div>
 
-          <!-- Actions -->
-          <div class="flex flex-col gap-2 mt-auto">
-            <UButton block variant="soft" color="neutral" icon="i-lucide-file-edit" label="تعديل الملف" />
-            <UButton block variant="soft" color="primary" icon="i-lucide-message-square" label="إرسال رسالة" />
+          <!-- Action buttons -->
+          <div class="w-full flex flex-col gap-3 mt-auto">
+            <UButton
+              block
+              color="primary"
+              icon="i-lucide-file-edit"
+              label="تعديل الملف"
+              class="rounded-full font-arabic"
+            />
+            <UButton
+              block
+              variant="outline"
+              color="primary"
+              icon="i-lucide-send"
+              label="إرسال رسالة"
+              class="rounded-full font-arabic"
+            />
+            <button
+              class="w-full py-2 font-arabic body-md transition-colors hover:opacity-70"
+              style="color: var(--color-outline);"
+              @click="closeView"
+            >
+              إغلاق
+            </button>
           </div>
         </div>
 
-        <!-- Left content: details -->
-        <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-5">
-          <!-- Progress section -->
-          <div class="rounded-2xl p-4" style="background-color: var(--color-surface-container-low);">
-            <p class="body-lg font-arabic font-semibold mb-3" style="color: var(--color-on-surface);">التقدم الدراسي</p>
-            <p class="label-md font-arabic mb-1" style="color: var(--color-on-surface-variant);">السورة الحالية: {{ viewingStudent.currentSurah }}</p>
-            <div class="h-3 rounded-full overflow-hidden" style="background-color: var(--color-surface-container);">
+        <!-- Content panel (visually left in RTL) -->
+        <div class="flex-1 overflow-y-auto p-8 flex flex-col gap-6" style="background-color: white;">
+
+          <!-- Section header -->
+          <div class="flex items-center gap-3 pb-4" style="border-bottom: 1px solid var(--color-outline-variant);">
+            <UIcon name="i-lucide-trending-up" class="w-6 h-6" style="color: var(--color-primary);" />
+            <h3 class="display-md font-arabic" style="color: var(--color-primary);">تطور الحفظ والتحصيل</h3>
+          </div>
+
+          <!-- Current progress card -->
+          <div class="rounded-xl p-6" style="background-color: var(--color-surface-container-low);">
+            <div class="flex justify-between items-end mb-4">
+              <div>
+                <span class="label-md font-arabic block mb-1" style="color: var(--color-on-surface-variant);">السورة الحالية</span>
+                <span class="display-md font-arabic" style="color: var(--color-on-surface);">سورة {{ viewingStudent.currentSurah }}</span>
+              </div>
+              <span class="display-md font-arabic" style="color: var(--color-primary);">{{ viewingStudent.progress }}%</span>
+            </div>
+            <div class="w-full h-3 rounded-full overflow-hidden" style="background-color: var(--color-surface-container-high);">
               <div
-                class="h-full rounded-full"
+                class="h-full rounded-full transition-all"
                 style="background-color: var(--color-primary);"
                 :style="`width: ${viewingStudent.progress}%;`"
               />
             </div>
-            <p class="label-md mt-1" style="color: var(--color-primary);">{{ viewingStudent.progress }}%</p>
-          </div>
-
-          <!-- Stats grid -->
-          <div class="grid grid-cols-3 gap-3">
-            <div class="rounded-xl p-3 text-center" style="background-color: #E0F0EE;">
-              <p class="display-md" style="color: #4A8E85;">2</p>
-              <p class="label-md font-arabic" style="color: #4A8E85;">صفحات حفظ</p>
-            </div>
-            <div class="rounded-xl p-3 text-center" style="background-color: #E3F2FD;">
-              <p class="display-md" style="color: #2196F3;">3</p>
-              <p class="label-md font-arabic" style="color: #2196F3;">مراجعة قريبة</p>
-            </div>
-            <div class="rounded-xl p-3 text-center" style="background-color: #EBEDF0;">
-              <p class="display-md" style="color: #546E7A;">5</p>
-              <p class="label-md font-arabic" style="color: #546E7A;">مراجعة بعيدة</p>
-            </div>
-          </div>
-
-          <!-- Parent info -->
-          <div class="rounded-2xl p-4" style="background-color: var(--color-surface-container-low);">
-            <p class="body-lg font-arabic font-semibold mb-3" style="color: var(--color-on-surface);">معلومات ولي الأمر</p>
-            <div class="flex flex-col gap-2">
-              <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-user" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-                <span class="body-md font-arabic" style="color: var(--color-on-surface);">والد الطالب</span>
+            <!-- Page stats -->
+            <div class="mt-4 grid grid-cols-3 gap-3">
+              <div class="text-center p-3 rounded-lg" style="background-color: white;">
+                <span class="label-md font-arabic block" style="color: var(--color-on-surface-variant);">الحفظ الجديد</span>
+                <span class="body-lg font-arabic font-bold" style="color: var(--color-on-surface);">3 صفحات</span>
               </div>
-              <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-phone" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-                <span class="body-md" style="color: var(--color-on-surface);" dir="ltr">+966 50 000 0000</span>
+              <div class="text-center p-3 rounded-lg" style="background-color: white;">
+                <span class="label-md font-arabic block" style="color: var(--color-on-surface-variant);">مراجعة قريبة</span>
+                <span class="body-lg font-arabic font-bold" style="color: var(--color-on-surface);">5 صفحات</span>
               </div>
-              <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-mail" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-                <span class="body-md" style="color: var(--color-on-surface);">parent@example.com</span>
+              <div class="text-center p-3 rounded-lg" style="background-color: white;">
+                <span class="label-md font-arabic block" style="color: var(--color-on-surface-variant);">مراجعة بعيدة</span>
+                <span class="body-lg font-arabic font-bold" style="color: var(--color-on-surface);">15 صفحة</span>
               </div>
             </div>
           </div>
 
-          <!-- Recent comments -->
-          <div class="rounded-2xl p-4" style="background-color: var(--color-surface-container-low);">
-            <p class="body-lg font-arabic font-semibold mb-3" style="color: var(--color-on-surface);">آخر الملاحظات</p>
-            <div class="flex flex-col gap-2">
-              <div class="p-3 rounded-xl" style="background-color: var(--color-surface-container-lowest);">
-                <p class="body-md font-arabic" style="color: var(--color-on-surface);">تفاعل ممتاز اليوم، أتم الحفظ بنجاح</p>
-                <p class="label-md font-arabic mt-1" style="color: var(--color-on-surface-variant);">منذ يومين</p>
+          <!-- Metrics grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Daily capacity -->
+            <div class="rounded-xl p-5" style="border: 1px solid var(--color-outline-variant);">
+              <h4 class="body-lg font-arabic font-bold mb-4 flex items-center gap-2" style="color: var(--color-on-surface);">
+                <UIcon name="i-lucide-bar-chart-2" class="w-5 h-5" style="color: var(--color-secondary);" />
+                الاستيعاب اليومي
+              </h4>
+              <div class="space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="body-md font-arabic" style="color: var(--color-on-surface);">الحفظ (Hifz)</span>
+                  <span class="body-md font-arabic font-bold" style="color: var(--color-on-surface);">ممتاز</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="body-md font-arabic" style="color: var(--color-on-surface);">قريب (Near)</span>
+                  <span class="body-md font-arabic font-bold" style="color: var(--color-on-surface);">جيد جداً</span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="body-md font-arabic" style="color: var(--color-on-surface);">بعيد (Far)</span>
+                  <span class="body-md font-arabic font-bold" style="color: var(--color-on-surface);">منتظم</span>
+                </div>
               </div>
-              <div class="p-3 rounded-xl" style="background-color: var(--color-surface-container-lowest);">
-                <p class="body-md font-arabic" style="color: var(--color-on-surface);">يحتاج مراجعة في أحكام التجويد</p>
-                <p class="label-md font-arabic mt-1" style="color: var(--color-on-surface-variant);">منذ أسبوع</p>
+            </div>
+
+            <!-- Parent info -->
+            <div class="rounded-xl p-5" style="border: 1px solid var(--color-outline-variant);">
+              <h4 class="body-lg font-arabic font-bold mb-4 flex items-center gap-2" style="color: var(--color-on-surface);">
+                <UIcon name="i-lucide-users" class="w-5 h-5" style="color: var(--color-secondary);" />
+                معلومات ولي الأمر
+              </h4>
+              <div class="space-y-3">
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-user" class="w-4 h-4 shrink-0" style="color: var(--color-outline);" />
+                  <span class="body-md font-arabic" style="color: var(--color-on-surface);">أ. عبدالرحمن محمد</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-phone" class="w-4 h-4 shrink-0" style="color: var(--color-outline);" />
+                  <span class="body-md" style="color: var(--color-on-surface);" dir="ltr">+966 50 123 4567</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <UIcon name="i-lucide-mail" class="w-4 h-4 shrink-0" style="color: var(--color-outline);" />
+                  <span class="body-md" style="color: var(--color-on-surface);">a.rahman@email.com</span>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Recent notes -->
+          <div class="rounded-xl p-5" style="border: 1px solid var(--color-outline-variant);">
+            <h4 class="body-lg font-arabic font-bold mb-4" style="color: var(--color-on-surface);">آخر الملاحظات</h4>
+            <div
+              class="p-4 rounded-lg border-e-4"
+              style="background-color: var(--color-surface-container-low); border-color: var(--color-primary);"
+            >
+              <p class="body-md font-arabic" style="color: var(--color-on-surface);">
+                أميرة تظهر تفوقاً ملحوظاً في ضبط مخارج الحروف. تحتاج إلى التركيز أكثر على مراجعة الصفحات الخمس الأخيرة من سورة مريم لثبات الحفظ.
+              </p>
+              <span class="block mt-2 label-md font-arabic" style="color: var(--color-outline);">
+                تم التحديث بواسطة الشيخ أحمد · أمس
+              </span>
+            </div>
+          </div>
+
         </div>
       </div>
     </template>

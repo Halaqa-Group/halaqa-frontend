@@ -39,15 +39,15 @@ function onDrop(e: DragEvent) {
 
 <template>
   <div
-    class="flex-1 relative rounded-2xl px-4 py-3 flex flex-col justify-center min-h-[88px] transition-all"
-    :style="`background-color: var(--color-surface-container-lowest); box-shadow: ${isDragOver ? '0 0 0 2px #93C6E7' : 'var(--shadow-card)'};`"
+    class="flex-1 relative rounded-2xl px-4 py-3 flex flex-col justify-center items-center min-h-[76px] transition-all bg-white dark:bg-elevated shadow-sm"
+    :class="isDragOver ? 'ring-2 ring-primary/30 shadow-md' : ''"
     @dragover="onDragOver"
     @dragleave="onDragLeave"
     @drop="onDrop"
   >
-    <!-- Status icon — top-right corner (RTL leading) -->
+    <!-- Status indicator (top-start corner = top-right in RTL) -->
     <button
-      class="absolute top-2.5 right-2.5 w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+      class="absolute top-2.5 start-2.5 w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110"
       :style="`background-color: ${status.bgHex};`"
       @click="cycleStatus(dayId, category)"
     >
@@ -66,21 +66,17 @@ function onDrop(e: DragEvent) {
       />
     </div>
 
-    <!-- Empty + edit mode: add lesson -->
+    <!-- Edit mode empty: add lesson -->
     <button
       v-else-if="isEditMode"
-      class="w-full h-full flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed text-xs font-arabic transition-colors hover:bg-black/5 py-3"
-      style="border-color: var(--color-outline-variant); color: var(--color-on-surface-variant);"
+      class="w-full flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed text-xs font-arabic transition-colors hover:bg-muted py-3"
+      :class="['border-default', 'text-muted']"
       @click="addLesson(dayId, category)"
     >
       <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" />
       إضافة درس
     </button>
 
-    <!-- Empty + view mode: drag-over hint only -->
-    <div
-      v-else
-      class="flex-1"
-    />
+    <div v-else class="flex-1" />
   </div>
 </template>

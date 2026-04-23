@@ -18,122 +18,176 @@ const {
   addDay
 } = useSchedule()
 
-const studentOptions = STUDENTS_LIST.map(s => ({ label: s.name, value: s.name }))
+const studentNames = STUDENTS_LIST.map(s => s.name)
 
+const avatarSeeds: Record<string, string> = { '1': 'amira', '2': 'zaid', '3': 'fatima' }
 const selectedStudentAvatar = computed(() => {
-  const idx = STUDENTS_LIST.findIndex(s => s.name === selectedStudent.value)
-  const seeds = ['amira', 'zaid', 'fatima']
-  return `https://api.dicebear.com/9.x/notionists/svg?seed=${seeds[idx] || 'amira'}`
+  const s = STUDENTS_LIST.find(st => st.name === selectedStudent.value)
+  return s ? `https://api.dicebear.com/9.x/notionists/svg?seed=${avatarSeeds[s.id] || 'amira'}` : ''
 })
+
+const studentMenuItems = computed(() =>
+  STUDENTS_LIST.map(s => ({
+    label: s.name,
+    onSelect: () => { selectedStudent.value = s.name }
+  }))
+)
+
+function toggleEdit() {
+  isEditMode.value = !isEditMode.value
+}
 </script>
 
 <template>
-  <div class="flex flex-col gap-5">
-    <!-- Info bar -->
-    <div class="flex items-center justify-between">
-      <!-- Date + cycle info (right = RTL leading) -->
-      <div>
-        <p class="text-xs font-arabic" style="color: var(--color-on-surface-variant);">دورة التخطيط السنوية</p>
-        <p class="text-base font-bold font-arabic" style="color: var(--color-on-surface);">٢١ أكتوبر — ٢٧ أكتوبر، ٢٠٢٣</p>
-      </div>
+  <UDashboardPanel>
+    <template #header>
+      <UDashboardNavbar title="مخطط الأسبوع">
+        <template #leading>
+          <UDashboardSidebarCollapse />
+        </template>
+        <template #right>
+          <div class="flex items-center gap-2">
+            <UButton
+              v-if="!isEditMode"
+              variant="outline"
+              color="neutral"
+              label="نسخ من الأسبوع الماضي"
+              size="sm"
+              class="font-arabic"
+            />
+            <UButton
+              :icon="isEditMode ? 'i-lucide-check' : 'i-lucide-save'"
+              :label="isEditMode ? 'حفظ المخطط' : 'تعديل الخطة'"
+              color="primary"
+              :variant="isEditMode ? 'outline' : 'solid'"
+              size="sm"
+              class="font-arabic"
+              @click="toggleEdit"
+            />
+          </div>
+        </template>
+      </UDashboardNavbar>
 
-      <!-- Student selector (left = RTL trailing) -->
-      <div
-        class="flex items-center gap-3 px-4 py-2.5 rounded-2xl cursor-pointer"
-        style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
-      >
-        <img
-          :src="selectedStudentAvatar"
-          class="w-9 h-9 rounded-full shrink-0"
-          style="background-color: #EFB0C1;"
-        >
-        <div class="text-start">
-          <p class="text-[10px] font-arabic" style="color: var(--color-on-surface-variant);">الطالب المختار</p>
-          <select
-            v-model="selectedStudent"
-            class="text-sm font-bold font-arabic outline-none bg-transparent block"
-            style="color: var(--color-on-surface);"
-          >
-            <option v-for="s in studentOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
-          </select>
+      <UDashboardToolbar>
+        <template #left>
+          <div class="flex flex-col gap-0.5">
+            <p class="text-xs text-muted font-arabic">دورة التخطيط السنوية</p>
+            <p class="text-sm font-bold text-highlighted font-arabic">٢٣ أكتوبر — ٢٩ أكتوبر، ٢٠٢٣</p>
+          </div>
+        </template>
+        <template #right>
+          <UDropdownMenu :items="studentMenuItems">
+            <div class="flex items-center gap-2.5 ps-2 pe-3 py-2 bg-white dark:bg-elevated border border-default rounded-2xl cursor-pointer hover:bg-muted/30 transition-colors select-none min-w-[180px]">
+              <UAvatar :src="selectedStudentAvatar" size="sm" />
+              <div class="flex flex-col flex-1 items-start">
+                <span class="text-[10px] text-muted font-arabic leading-none mb-0.5">الطالب المختار</span>
+                <span class="text-sm font-bold text-highlighted font-arabic leading-tight">{{ selectedStudent }}</span>
+              </div>
+              <UIcon name="i-lucide-chevron-down" class="size-3.5 text-muted flex-shrink-0" />
+            </div>
+          </UDropdownMenu>
+        </template>
+      </UDashboardToolbar>
+    </template>
+
+    <template #body>
+      <div class="flex flex-col gap-4 p-4">
+        <!-- Column headers -->
+        <div class="flex items-center gap-3">
+          <div class="w-28 shrink-0" />
+          <div class="flex-1 flex justify-center">
+            <span class="text-xs font-medium text-muted font-arabic">الحفظ الجديد</span>
+          </div>
+          <div class="flex-1 flex justify-center">
+            <span class="text-xs font-medium text-muted font-arabic">المراجعة القريبة</span>
+          </div>
+          <div class="flex-1 flex justify-center">
+            <span class="text-xs font-medium text-muted font-arabic">المراجعة البعيدة</span>
+          </div>
+          <div class="w-20 shrink-0 flex items-center justify-center gap-1.5">
+            <UCheckbox
+              v-if="isEditMode"
+              :model-value="allSelected"
+              @update:model-value="toggleSelectAll"
+            />
+            <span class="text-xs text-muted font-arabic">تحديد الكل</span>
+          </div>
         </div>
-        <UIcon name="i-lucide-chevron-down" class="w-4 h-4 shrink-0" style="color: var(--color-on-surface-variant);" />
-      </div>
-    </div>
 
-    <!-- Column headers row -->
-    <div class="flex items-center gap-3">
-      <!-- Day label spacer -->
-      <div class="w-28 shrink-0" />
-      <!-- Three column headers -->
-      <div class="flex-1 text-center">
-        <span class="text-xs font-arabic font-medium" style="color: var(--color-on-surface-variant);">الحفظ الجديد</span>
-      </div>
-      <div class="flex-1 text-center">
-        <span class="text-xs font-arabic font-medium" style="color: var(--color-on-surface-variant);">المراجعة القريبة</span>
-      </div>
-      <div class="flex-1 text-center">
-        <span class="text-xs font-arabic font-medium" style="color: var(--color-on-surface-variant);">المراجعة البعيدة</span>
-      </div>
-      <!-- Select-all column header -->
-      <div class="w-20 shrink-0 flex items-center justify-center gap-1.5">
-        <UCheckbox
-          v-if="isEditMode"
-          :model-value="allSelected"
-          @update:model-value="toggleSelectAll"
-        />
-        <span class="text-xs font-arabic" style="color: var(--color-on-surface-variant);">تحديد الكل</span>
-      </div>
-    </div>
+        <!-- Batch action bar -->
+        <Transition name="slide-down">
+          <div
+            v-if="isEditMode && hasSelection"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-elevated border border-default"
+          >
+            <span class="text-sm text-muted font-arabic">{{ selectedCount }} أيام محددة</span>
+            <div class="flex gap-2 ms-auto">
+              <UButton
+                variant="soft"
+                color="neutral"
+                icon="i-lucide-copy"
+                label="نسخ"
+                size="sm"
+                class="font-arabic"
+                @click="copySelectedRows"
+              />
+              <UButton
+                variant="soft"
+                color="error"
+                icon="i-lucide-trash-2"
+                label="حذف"
+                size="sm"
+                class="font-arabic"
+                @click="deleteSelectedRows"
+              />
+              <UButton
+                v-if="clipboard.length > 0"
+                variant="soft"
+                color="primary"
+                icon="i-lucide-clipboard"
+                :label="`لصق (${clipboard.length})`"
+                size="sm"
+                class="font-arabic"
+                @click="pasteRows"
+              />
+            </div>
+          </div>
+        </Transition>
 
-    <!-- Batch action bar (edit mode + selection) -->
-    <Transition name="slide-down">
-      <div
-        v-if="isEditMode && hasSelection"
-        class="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
-        style="background-color: var(--color-surface-container-low);"
-      >
-        <span class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
-          {{ selectedCount }} أيام محددة
-        </span>
-        <UButton variant="soft" color="neutral" icon="i-lucide-copy" label="نسخ" size="sm" @click="copySelectedRows" />
-        <UButton variant="soft" color="error" icon="i-lucide-trash-2" label="حذف" size="sm" @click="deleteSelectedRows" />
-        <UButton
-          v-if="clipboard.length > 0"
-          variant="soft"
-          color="primary"
-          icon="i-lucide-clipboard"
-          :label="`لصق (${clipboard.length})`"
-          size="sm"
-          @click="pasteRows"
-        />
+        <!-- Day rows -->
+        <div class="flex flex-col gap-3">
+          <PlannerDayRow
+            v-for="day in schedule"
+            :key="day.id"
+            :data="day"
+          />
+        </div>
+
+        <!-- Add day (edit mode) -->
+        <div v-if="isEditMode">
+          <UButton
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-plus"
+            label="إضافة يوم"
+            size="sm"
+            class="font-arabic border-dashed"
+            @click="addDay"
+          />
+        </div>
       </div>
-    </Transition>
-
-    <!-- Day rows -->
-    <div class="flex flex-col gap-3">
-      <PlannerDayRow
-        v-for="day in schedule"
-        :key="day.id"
-        :data="day"
-      />
-    </div>
-
-    <!-- Add day (edit mode) -->
-    <div v-if="isEditMode" class="flex gap-3">
-      <button
-        class="flex items-center gap-2 px-5 py-3 rounded-2xl border-2 border-dashed text-sm font-arabic transition-colors hover:bg-black/5"
-        style="border-color: var(--color-outline-variant); color: var(--color-on-surface-variant);"
-        @click="addDay"
-      >
-        <UIcon name="i-lucide-plus" class="w-4 h-4" />
-        إضافة يوم
-      </button>
-    </div>
-  </div>
+    </template>
+  </UDashboardPanel>
 </template>
 
 <style scoped>
-.slide-down-enter-active, .slide-down-leave-active { transition: all 0.2s; }
-.slide-down-enter-from, .slide-down-leave-to { opacity: 0; transform: translateY(-6px); }
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.2s ease;
+}
+.slide-down-enter-from,
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
 </style>

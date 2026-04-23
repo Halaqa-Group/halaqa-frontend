@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { MOCK_STUDENTS, SURAHS } from '~/data/constants'
 import type { AttendanceStatus } from '~/types'
 

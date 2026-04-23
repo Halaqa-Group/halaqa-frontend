@@ -48,7 +48,7 @@ const loadProgress = computed(() =>
       </div>
       <button
         class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-arabic font-bold shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
-        style="background-color: #804c7d; color: white;"
+        style="background-color: var(--color-primary); color: white;"
         @click="openAdd"
       >
         <UIcon name="i-lucide-plus" class="w-5 h-5" />
@@ -106,7 +106,7 @@ const loadProgress = computed(() =>
 
     <!-- Student grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <StudentStudentCard
+      <StudentCard
         v-for="student in filteredStudents"
         :key="student.id"
         :student="student"
@@ -120,10 +120,10 @@ const loadProgress = computed(() =>
           <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
             عرض {{ filteredStudents.length }} من {{ students.length }} طالباً
           </p>
-          <div class="w-48 h-1.5 rounded-full overflow-hidden" style="background-color: #f3e8f2;">
+          <div class="w-48 h-1.5 rounded-full overflow-hidden" style="background-color: var(--color-primary-container);">
             <div
               class="h-full rounded-full transition-all"
-              style="background-color: #804c7d;"
+              style="background-color: var(--color-primary);"
               :style="{ width: `${loadProgress}%` }"
             />
           </div>
@@ -131,7 +131,7 @@ const loadProgress = computed(() =>
 
         <button
           class="inline-flex items-center justify-center px-8 py-3 rounded-full text-sm font-arabic font-bold transition-all hover:opacity-80 active:scale-95"
-          style="background-color: white; border: 1px solid #804c7d; color: #804c7d;"
+          style="background-color: white; border: 1px solid var(--color-primary); color: var(--color-primary);"
         >
           تحميل المزيد من الطلاب
         </button>
@@ -146,6 +146,6 @@ const loadProgress = computed(() =>
     </div>
   </div>
 
-  <StudentViewStudentModal />
-  <StudentAddStudentModal />
+  <StudentViewModal />
+  <StudentAddModal />
 </template>

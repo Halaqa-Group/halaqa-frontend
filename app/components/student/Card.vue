@@ -31,7 +31,7 @@ const attendanceColor = computed(() =>
           <span
             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider font-arabic mt-1"
             :style="isActive
-              ? 'background-color: #f3e8f2; color: #804c7d;'
+              ? 'background-color: var(--color-primary-container); color: var(--color-primary);'
               : 'background-color: #eae0e5; color: var(--color-on-surface-variant);'"
           >{{ isActive ? 'نشط' : 'غير نشط' }}</span>
         </div>
@@ -52,10 +52,10 @@ const attendanceColor = computed(() =>
           <span class="text-xs font-arabic" style="color: var(--color-on-surface-variant);">الحالي: سورة {{ student.currentSurah }}</span>
           <span class="text-xs font-bold font-arabic" style="color: var(--color-primary);">{{ student.progress }}%</span>
         </div>
-        <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: #f3e8f2;">
+        <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: var(--color-primary-container);">
           <div
             class="h-full rounded-full transition-all"
-            style="background-color: #804c7d;"
+            style="background-color: var(--color-primary);"
             :style="{ width: `${student.progress}%` }"
           />
         </div>

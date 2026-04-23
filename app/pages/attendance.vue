@@ -28,7 +28,7 @@ const filteredRows = computed(() =>
     </div>
 
     <!-- Stats -->
-    <AttendanceAttendanceStats />
+    <AttendanceStats />
 
     <!-- Search -->
     <div class="relative">
@@ -44,7 +44,7 @@ const filteredRows = computed(() =>
 
     <!-- Student rows -->
     <div class="flex flex-col gap-3">
-      <AttendanceAttendanceRow
+      <AttendanceRow
         v-for="row in filteredRows"
         :key="row.studentId"
         v-bind="row"

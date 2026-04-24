@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { STUDENTS_LIST } from '~/data/constants'
-
 definePageMeta({ layout: 'dashboard' })
 
 const {
@@ -18,16 +16,30 @@ const {
   addDay
 } = useSchedule()
 
-const studentNames = STUDENTS_LIST.map(s => s.name)
+const { students, fetchStudents, isLoading } = useStudents()
 
-const avatarSeeds: Record<string, string> = { '1': 'amira', '2': 'zaid', '3': 'fatima' }
-const selectedStudentAvatar = computed(() => {
-  const s = STUDENTS_LIST.find(st => st.name === selectedStudent.value)
-  return s ? `https://api.dicebear.com/9.x/notionists/svg?seed=${avatarSeeds[s.id] || 'amira'}` : ''
+// Fetch students on mount
+onMounted(async () => {
+  await fetchStudents()
+  // Set first student as selected if students exist and no student is selected
+  const firstStudent = students.value[0]
+  if (firstStudent && !selectedStudent.value) {
+    selectedStudent.value = firstStudent.name
+  }
 })
 
+// Student names for dropdown
+const studentNames = computed(() => students.value.map(s => s.name))
+
+// Selected student avatar
+const selectedStudentAvatar = computed(() => {
+  const student = students.value.find(s => s.name === selectedStudent.value)
+  return student ? student.avatar : 'https://api.dicebear.com/9.x/notionists/svg?seed=default'
+})
+
+// Student menu items for dropdown
 const studentMenuItems = computed(() =>
-  STUDENTS_LIST.map(s => ({
+  students.value.map(s => ({
     label: s.name,
     onSelect: () => { selectedStudent.value = s.name }
   }))

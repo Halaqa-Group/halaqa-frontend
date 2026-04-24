@@ -7,7 +7,7 @@ const schedule = ref<DayData[]>(JSON.parse(JSON.stringify(INITIAL_SCHEDULE)))
 const selectedRowIds = ref<Set<string>>(new Set())
 const clipboard = ref<DayData[]>([])
 const isEditMode = ref(false)
-const selectedStudent = ref<string>('زيد الفاروق')
+const selectedStudent = ref<string>('')
 
 export function useSchedule() {
   const selectedCount = computed(() => selectedRowIds.value.size)

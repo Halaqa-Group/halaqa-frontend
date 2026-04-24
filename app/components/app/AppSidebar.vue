@@ -17,8 +17,7 @@ function isActive(to: string) {
 
 <template>
   <aside
-    class="fixed inset-y-0 right-0 z-20 w-[84px] flex flex-col items-center py-4"
-    style="background-color: var(--color-surface-container-lowest); border-left: 1px solid var(--color-outline-variant);"
+    class="fixed inset-y-0 right-0 z-20 w-[84px] flex flex-col items-center py-4 border-s border-default bg-elevated"
   >
     <!-- Logo -->
     <div class="mb-6 w-10 h-10 rounded-2xl flex items-center justify-center" style="background-color: #EFB0C1;">

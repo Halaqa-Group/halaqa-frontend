@@ -1,18 +1,28 @@
 <script setup lang="ts">
+import type { FormSubmitEvent } from '#ui/types'
+
 definePageMeta({ layout: false })
 
-const { login, isLoggedIn } = useAuth()
+const { login } = useAuth()
 
-const email = ref('')
-const password = ref('')
+type LoginState = { email: string, password: string }
+const state = reactive<LoginState>({ email: '', password: '' })
 const isLoading = ref(false)
 const error = ref('')
 
-async function handleLogin() {
+function validate(s: LoginState) {
+  const errors: Array<{ name: keyof LoginState, message: string }> = []
+  if (!s.email) errors.push({ name: 'email', message: 'البريد الإلكتروني مطلوب' })
+  else if (!/^\S+@\S+\.\S+$/.test(s.email)) errors.push({ name: 'email', message: 'صيغة البريد غير صحيحة' })
+  if (!s.password) errors.push({ name: 'password', message: 'كلمة المرور مطلوبة' })
+  return errors
+}
+
+async function handleSubmit(event: FormSubmitEvent<LoginState>) {
   error.value = ''
   isLoading.value = true
   try {
-    await login(email.value, password.value)
+    await login(event.data.email, event.data.password)
     await navigateTo('/')
   }
   catch (e: any) {
@@ -26,78 +36,73 @@ async function handleLogin() {
 
 <template>
   <UApp>
-    <div
-      class="min-h-screen flex items-center justify-center p-4"
-      style="background-color: var(--color-background);"
-    >
+    <div class="min-h-screen flex items-center justify-center p-4 bg-default">
       <div class="w-full max-w-sm">
         <!-- Logo -->
         <div class="flex flex-col items-center mb-8 gap-3">
-          <div
-            class="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style="background-color: var(--color-primary-container);"
-          >
-            <UIcon name="i-lucide-book-open-text" class="w-8 h-8" style="color: var(--color-primary);" />
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-primary/10">
+            <UIcon name="i-lucide-book-open-text" class="w-8 h-8 text-primary" />
           </div>
           <div class="text-center">
-            <h1 class="display-md font-arabic" style="color: var(--color-on-surface);">حلقة</h1>
-            <p class="body-sm font-arabic" style="color: var(--color-on-surface-variant);">نظام إدارة الحلقات القرآنية</p>
+            <h1 class="display-md font-arabic text-highlighted">حلقة</h1>
+            <p class="body-sm font-arabic text-muted">نظام إدارة الحلقات القرآنية</p>
           </div>
         </div>
 
         <!-- Card -->
-        <div class="rounded-3xl p-8" style="background-color: white; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
-          <h2 class="body-lg font-arabic font-bold mb-6 text-center" style="color: var(--color-on-surface);">
+        <UCard :ui="{ root: 'rounded-3xl', body: 'p-8' }">
+          <h2 class="body-lg font-arabic font-bold mb-6 text-center text-highlighted">
             تسجيل الدخول
           </h2>
 
-          <form class="flex flex-col gap-4" @submit.prevent="handleLogin">
-            <div class="flex flex-col gap-1.5">
-              <label class="label-md font-arabic" style="color: var(--color-on-surface-variant);">البريد الإلكتروني</label>
-              <input
-                v-model="email"
+          <UForm
+            :state="state"
+            :validate="validate"
+            class="flex flex-col gap-4"
+            @submit="handleSubmit"
+          >
+            <UFormField label="البريد الإلكتروني" name="email" class="font-arabic">
+              <UInput
+                v-model="state.email"
                 type="email"
                 autocomplete="email"
                 dir="ltr"
                 placeholder="example@school.sa"
-                required
-                class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                style="background-color: #F5F5F5; border: 1px solid transparent; color: var(--color-on-surface);"
-              >
-            </div>
+                class="w-full"
+              />
+            </UFormField>
 
-            <div class="flex flex-col gap-1.5">
-              <label class="label-md font-arabic" style="color: var(--color-on-surface-variant);">كلمة المرور</label>
-              <input
-                v-model="password"
+            <UFormField label="كلمة المرور" name="password" class="font-arabic">
+              <UInput
+                v-model="state.password"
                 type="password"
                 autocomplete="current-password"
                 dir="ltr"
                 placeholder="••••••••"
-                required
-                class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all"
-                style="background-color: #F5F5F5; border: 1px solid transparent; color: var(--color-on-surface);"
-              >
-            </div>
+                class="w-full"
+              />
+            </UFormField>
 
-            <div v-if="error" class="rounded-xl px-4 py-3 text-sm font-arabic" style="background-color: #FCE4EC; color: #D81B60;">
-              {{ error }}
-            </div>
+            <UAlert
+              v-if="error"
+              color="error"
+              variant="soft"
+              :title="error"
+              :ui="{ root: 'font-arabic' }"
+            />
 
-            <button
+            <UButton
               type="submit"
+              block
+              size="lg"
+              :loading="isLoading"
               :disabled="isLoading"
-              class="w-full py-3 rounded-xl text-sm font-arabic font-bold transition-all hover:opacity-90 active:scale-95 disabled:opacity-60"
-              style="background-color: var(--color-primary); color: white;"
+              class="font-arabic font-bold"
             >
-              <span v-if="isLoading" class="flex items-center justify-center gap-2">
-                <UIcon name="i-lucide-loader-circle" class="w-4 h-4 animate-spin" />
-                جاري الدخول...
-              </span>
-              <span v-else>دخول</span>
-            </button>
-          </form>
-        </div>
+              {{ isLoading ? 'جاري الدخول...' : 'دخول' }}
+            </UButton>
+          </UForm>
+        </UCard>
       </div>
     </div>
   </UApp>

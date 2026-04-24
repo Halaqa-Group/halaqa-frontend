@@ -21,6 +21,11 @@ const statusOptions = [
   { label: 'غير نشط', value: 'inactive' }
 ]
 
+const halaqaOptions = computed(() => [
+  { label: 'كل الحلقات', value: '' as number | '' },
+  ...halaqat.value.map(h => ({ label: h.name, value: h.id as number | '' }))
+])
+
 const loadProgress = computed(() =>
   Math.round((filteredStudents.value.length / Math.max(students.value.length, 1)) * 100)
 )
@@ -47,56 +52,43 @@ onMounted(async () => {
           قم بإدارة المتعلمين النشطين ومتابعة تقدمهم في الوقت الفعلي.
         </p>
       </div>
-      <button
-        class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full text-sm font-arabic font-bold shadow-sm transition-all hover:opacity-90 active:scale-95 shrink-0"
-        style="background-color: var(--color-primary); color: white;"
+      <UButton
+        icon="i-lucide-plus"
+        size="lg"
+        class="font-arabic font-bold rounded-full shrink-0 px-6"
         @click="openAdd"
       >
-        <UIcon name="i-lucide-plus" class="w-5 h-5" />
         إضافة طالب جديد
-      </button>
+      </UButton>
     </div>
 
     <!-- Filter bar -->
-    <div
-      class="rounded-2xl p-6 mb-8 flex flex-wrap items-center gap-4"
-      style="background-color: white; border: 1px solid #F0F0F0;"
-    >
-      <div class="flex-1 min-w-72 relative">
-        <UIcon
-          name="i-lucide-search"
-          class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none"
-          style="color: var(--color-on-surface-variant);"
-        />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="ابحث بالاسم..."
-          class="w-full pr-12 pl-4 py-2.5 rounded-xl text-sm font-arabic outline-none transition-all"
-          style="background-color: #F5F5F5; border: 1px solid transparent; color: var(--color-on-surface);"
-        >
-      </div>
+    <UCard :ui="{ root: 'mb-8', body: 'p-6 flex flex-wrap items-center gap-4' }">
+      <UInput
+        v-model="searchQuery"
+        icon="i-lucide-search"
+        placeholder="ابحث بالاسم..."
+        size="lg"
+        class="flex-1 min-w-72 font-arabic"
+      />
 
       <div class="flex items-center gap-3 flex-wrap">
-        <select
+        <USelect
           v-model="filterHalaqaId"
-          class="rounded-xl px-4 py-2.5 text-sm font-arabic outline-none cursor-pointer"
-          style="background-color: #F5F5F5; border: 1px solid transparent; color: var(--color-on-surface);"
-          @change="onHalaqaFilter"
-        >
-          <option value="">كل الحلقات</option>
-          <option v-for="h in halaqat" :key="h.id" :value="h.id">{{ h.name }}</option>
-        </select>
+          :items="halaqaOptions"
+          size="lg"
+          class="font-arabic min-w-40"
+          @update:model-value="onHalaqaFilter"
+        />
 
-        <select
+        <USelect
           v-model="filterStatus"
-          class="rounded-xl px-4 py-2.5 text-sm font-arabic outline-none cursor-pointer"
-          style="background-color: #F5F5F5; border: 1px solid transparent; color: var(--color-on-surface);"
-        >
-          <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-        </select>
+          :items="statusOptions"
+          size="lg"
+          class="font-arabic min-w-32"
+        />
       </div>
-    </div>
+    </UCard>
 
     <!-- Loading -->
     <div v-if="isLoading" class="flex justify-center py-16">

@@ -1,7 +1,23 @@
 <script setup lang="ts">
+import type { FormSubmitEvent } from '#ui/types'
+
 const { isAddModalOpen, closeAdd } = useStudents()
 
-const form = reactive({
+type StudentForm = {
+  name: string
+  dob: string
+  joinDate: string
+  fatherName: string
+  motherName: string
+  fatherEmail: string
+  motherEmail: string
+  memPages: number
+  nearPages: number
+  farPages: number
+  notes: string
+}
+
+const state = reactive<StudentForm>({
   name: '',
   dob: '',
   joinDate: '',
@@ -15,7 +31,18 @@ const form = reactive({
   notes: ''
 })
 
-function handleSubmit() {
+function validate(s: StudentForm) {
+  const errors: Array<{ name: keyof StudentForm, message: string }> = []
+  if (!s.name.trim()) errors.push({ name: 'name', message: 'اسم الطالب مطلوب' })
+  if (!s.dob) errors.push({ name: 'dob', message: 'تاريخ الميلاد مطلوب' })
+  if (!s.joinDate) errors.push({ name: 'joinDate', message: 'تاريخ الانضمام مطلوب' })
+  if (s.fatherEmail && !/^\S+@\S+\.\S+$/.test(s.fatherEmail)) errors.push({ name: 'fatherEmail', message: 'صيغة البريد غير صحيحة' })
+  if (s.motherEmail && !/^\S+@\S+\.\S+$/.test(s.motherEmail)) errors.push({ name: 'motherEmail', message: 'صيغة البريد غير صحيحة' })
+  return errors
+}
+
+function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
+  // TODO: wire to useStudents().createStudent once composable exposes it.
   closeAdd()
 }
 </script>
@@ -30,250 +57,159 @@ function handleSubmit() {
       <div class="flex flex-col" style="max-height: 90vh;" dir="rtl">
 
         <!-- Header (fixed) -->
-        <div
-          class="flex justify-between items-center px-8 py-6 shrink-0 border-b"
-          style="border-color: rgba(209, 194, 204, 0.3);"
-        >
+        <div class="flex justify-between items-center px-8 py-6 shrink-0 border-b border-default">
           <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-              style="background-color: rgba(128, 76, 125, 0.1);"
-            >
-              <UIcon name="i-lucide-user-plus" class="w-5 h-5" style="color: #804c7d;" />
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
+              <UIcon name="i-lucide-user-plus" class="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h3 class="text-xl font-bold font-arabic" style="color: var(--color-primary);">إضافة طالب جديد</h3>
-              <p class="text-xs font-arabic" style="color: var(--color-on-surface-variant);">أدخل بيانات الطالب للبدء في تتبع التقدم التعليمي</p>
+              <h3 class="text-xl font-bold font-arabic text-primary">إضافة طالب جديد</h3>
+              <p class="text-xs font-arabic text-muted">أدخل بيانات الطالب للبدء في تتبع التقدم التعليمي</p>
             </div>
           </div>
-          <button
-            class="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:bg-black/5"
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            size="lg"
+            square
+            :ui="{ base: 'rounded-full' }"
             @click="closeAdd"
-          >
-            <UIcon name="i-lucide-x" class="w-5 h-5" style="color: var(--color-outline);" />
-          </button>
+          />
         </div>
 
         <!-- Scrollable form body -->
-        <form
+        <UForm
+          :state="state"
+          :validate="validate"
           class="flex-1 overflow-y-auto px-8 py-8 space-y-10"
-          @submit.prevent="handleSubmit"
+          @submit="handleSubmit"
         >
           <!-- Section: Photo upload + basic info -->
           <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
             <!-- Photo upload zone -->
             <div
-              class="md:col-span-4 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed cursor-pointer transition-all group hover:border-[#804c7d]/50"
-              style="border-color: rgba(209, 194, 204, 0.5); background-color: #fbf1f6;"
+              class="md:col-span-4 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-default bg-primary/5 cursor-pointer transition-all group hover:border-primary/50"
             >
-              <div class="w-24 h-24 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 overflow-hidden">
+              <div class="w-24 h-24 rounded-full bg-default shadow-sm flex items-center justify-center mb-4 overflow-hidden">
                 <UIcon
                   name="i-lucide-camera"
-                  class="w-10 h-10 transition-colors group-hover:text-[#804c7d]"
-                  style="color: var(--color-outline-variant);"
+                  class="w-10 h-10 text-muted transition-colors group-hover:text-primary"
                 />
               </div>
-              <p class="text-xs font-arabic font-semibold uppercase tracking-wide" style="color: var(--color-on-surface-variant);">رفع صورة الطالب</p>
-              <p class="text-[10px] mt-1" style="color: var(--color-outline);">PNG, JPG حتى 5MB</p>
+              <p class="text-xs font-arabic font-semibold uppercase tracking-wide text-muted">رفع صورة الطالب</p>
+              <p class="text-[10px] mt-1 text-dimmed">PNG, JPG حتى 5MB</p>
             </div>
 
             <!-- Basic info grid -->
             <div class="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="sm:col-span-2">
-                <label class="block text-xs font-arabic font-semibold uppercase tracking-wide mb-2" style="color: var(--color-on-surface-variant);">الاسم الكامل</label>
-                <input
-                  v-model="form.name"
-                  type="text"
-                  placeholder="اسم الطالب الرباعي"
-                  class="form-input w-full px-4 py-3 rounded-xl text-sm font-arabic outline-none"
-                  style="background-color: #f9f9f9; color: var(--color-on-surface); border: none;"
-                >
-              </div>
-              <div>
-                <label class="block text-xs font-arabic font-semibold uppercase tracking-wide mb-2" style="color: var(--color-on-surface-variant);">تاريخ الميلاد</label>
-                <input
-                  v-model="form.dob"
-                  type="date"
-                  class="form-input w-full px-4 py-3 rounded-xl text-sm outline-none"
-                  style="background-color: #f9f9f9; color: var(--color-on-surface); border: none;"
-                >
-              </div>
-              <div>
-                <label class="block text-xs font-arabic font-semibold uppercase tracking-wide mb-2" style="color: var(--color-on-surface-variant);">تاريخ الانضمام</label>
-                <input
-                  v-model="form.joinDate"
-                  type="date"
-                  class="form-input w-full px-4 py-3 rounded-xl text-sm outline-none"
-                  style="background-color: #f9f9f9; color: var(--color-on-surface); border: none;"
-                >
-              </div>
+              <UFormField label="الاسم الكامل" name="name" class="sm:col-span-2 font-arabic">
+                <UInput v-model="state.name" placeholder="اسم الطالب الرباعي" class="w-full font-arabic" />
+              </UFormField>
+              <UFormField label="تاريخ الميلاد" name="dob" class="font-arabic">
+                <UInput v-model="state.dob" type="date" class="w-full" />
+              </UFormField>
+              <UFormField label="تاريخ الانضمام" name="joinDate" class="font-arabic">
+                <UInput v-model="state.joinDate" type="date" class="w-full" />
+              </UFormField>
             </div>
           </div>
 
           <!-- Section: Parent info -->
           <div class="space-y-6">
-            <div class="flex items-center gap-2 border-r-4 pr-3" style="border-color: #804c7d;">
-              <h4 class="font-arabic font-bold text-base" style="color: var(--color-primary);">معلومات ولي الأمر</h4>
+            <div class="flex items-center gap-2 border-e-4 pe-3 border-primary">
+              <h4 class="font-arabic font-bold text-base text-primary">معلومات ولي الأمر</h4>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               <!-- Father column -->
               <div class="space-y-4">
-                <div>
-                  <label class="block text-xs font-arabic font-semibold uppercase tracking-wide mb-2" style="color: var(--color-on-surface-variant);">اسم الأب</label>
-                  <input
-                    v-model="form.fatherName"
-                    type="text"
-                    class="form-input w-full px-4 py-3 rounded-xl text-sm font-arabic outline-none"
-                    style="background-color: #f9f9f9; color: var(--color-on-surface); border: none;"
-                  >
-                </div>
-                <div>
-                  <label class="block text-xs font-arabic font-semibold uppercase tracking-wide mb-2" style="color: var(--color-on-surface-variant);">بريد الأب الإلكتروني</label>
-                  <input
-                    v-model="form.fatherEmail"
-                    type="email"
-                    dir="ltr"
-                    class="form-input w-full px-4 py-3 rounded-xl text-sm text-right outline-none"
-                    style="background-color: #f9f9f9; color: var(--color-on-surface); border: none;"
-                  >
-                </div>
+                <UFormField label="اسم الأب" name="fatherName" class="font-arabic">
+                  <UInput v-model="state.fatherName" class="w-full font-arabic" />
+                </UFormField>
+                <UFormField label="بريد الأب الإلكتروني" name="fatherEmail" class="font-arabic">
+                  <UInput v-model="state.fatherEmail" type="email" dir="ltr" class="w-full" />
+                </UFormField>
               </div>
               <!-- Mother column -->
               <div class="space-y-4">
-                <div>
-                  <label class="block text-xs font-arabic font-semibold uppercase tracking-wide mb-2" style="color: var(--color-on-surface-variant);">اسم الأم</label>
-                  <input
-                    v-model="form.motherName"
-                    type="text"
-                    class="form-input w-full px-4 py-3 rounded-xl text-sm font-arabic outline-none"
-                    style="background-color: #f9f9f9; color: var(--color-on-surface); border: none;"
-                  >
-                </div>
-                <div>
-                  <label class="block text-xs font-arabic font-semibold uppercase tracking-wide mb-2" style="color: var(--color-on-surface-variant);">بريد الأم الإلكتروني</label>
-                  <input
-                    v-model="form.motherEmail"
-                    type="email"
-                    dir="ltr"
-                    class="form-input w-full px-4 py-3 rounded-xl text-sm text-right outline-none"
-                    style="background-color: #f9f9f9; color: var(--color-on-surface); border: none;"
-                  >
-                </div>
+                <UFormField label="اسم الأم" name="motherName" class="font-arabic">
+                  <UInput v-model="state.motherName" class="w-full font-arabic" />
+                </UFormField>
+                <UFormField label="بريد الأم الإلكتروني" name="motherEmail" class="font-arabic">
+                  <UInput v-model="state.motherEmail" type="email" dir="ltr" class="w-full" />
+                </UFormField>
               </div>
             </div>
           </div>
 
           <!-- Section: Academic metrics -->
           <div class="space-y-6">
-            <div class="flex items-center gap-2 border-r-4 pr-3" style="border-color: var(--color-secondary);">
-              <h4 class="font-arabic font-bold text-base" style="color: var(--color-secondary);">مقاييس الأداء اليومي</h4>
+            <div class="flex items-center gap-2 border-e-4 pe-3 border-secondary">
+              <h4 class="font-arabic font-bold text-base text-secondary">مقاييس الأداء اليومي</h4>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <!-- New memorization -->
-              <div
-                class="p-5 rounded-2xl"
-                style="background-color: white; border: 1px solid rgba(209, 194, 204, 0.2);"
+              <UCard
+                v-for="metric in [
+                  { key: 'memPages', icon: 'i-lucide-book-open', label: 'صفحات الحفظ الجديد' },
+                  { key: 'nearPages', icon: 'i-lucide-history', label: 'صفحات المراجعة القريبة' },
+                  { key: 'farPages', icon: 'i-lucide-repeat', label: 'صفحات المراجعة البعيدة' }
+                ]"
+                :key="metric.key"
+                :ui="{ root: 'rounded-2xl', body: 'p-5' }"
               >
-                <label class="flex items-center gap-2 text-xs font-arabic font-semibold uppercase tracking-wide mb-3" style="color: var(--color-on-surface-variant);">
-                  <UIcon name="i-lucide-book-open" class="w-4 h-4 shrink-0" style="color: var(--color-secondary);" />
-                  صفحات الحفظ الجديد
+                <label class="flex items-center gap-2 text-xs font-arabic font-semibold uppercase tracking-wide mb-3 text-muted">
+                  <UIcon :name="metric.icon" class="w-4 h-4 shrink-0 text-secondary" />
+                  {{ metric.label }}
                 </label>
-                <input
-                  v-model.number="form.memPages"
+                <UInput
+                  v-model.number="state[metric.key as keyof StudentForm] as number"
                   type="number"
-                  min="0"
+                  :min="0"
                   placeholder="0"
-                  class="form-input w-full px-4 py-3 rounded-xl text-lg font-bold text-center outline-none"
-                  style="background-color: #f9f9f9; color: #804c7d; border: none;"
-                >
-              </div>
-              <!-- Near review -->
-              <div
-                class="p-5 rounded-2xl"
-                style="background-color: white; border: 1px solid rgba(209, 194, 204, 0.2);"
-              >
-                <label class="flex items-center gap-2 text-xs font-arabic font-semibold uppercase tracking-wide mb-3" style="color: var(--color-on-surface-variant);">
-                  <UIcon name="i-lucide-history" class="w-4 h-4 shrink-0" style="color: var(--color-secondary);" />
-                  صفحات المراجعة القريبة
-                </label>
-                <input
-                  v-model.number="form.nearPages"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  class="form-input w-full px-4 py-3 rounded-xl text-lg font-bold text-center outline-none"
-                  style="background-color: #f9f9f9; color: #804c7d; border: none;"
-                >
-              </div>
-              <!-- Far review -->
-              <div
-                class="p-5 rounded-2xl"
-                style="background-color: white; border: 1px solid rgba(209, 194, 204, 0.2);"
-              >
-                <label class="flex items-center gap-2 text-xs font-arabic font-semibold uppercase tracking-wide mb-3" style="color: var(--color-on-surface-variant);">
-                  <UIcon name="i-lucide-repeat" class="w-4 h-4 shrink-0" style="color: var(--color-secondary);" />
-                  صفحات المراجعة البعيدة
-                </label>
-                <input
-                  v-model.number="form.farPages"
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  class="form-input w-full px-4 py-3 rounded-xl text-lg font-bold text-center outline-none"
-                  style="background-color: #f9f9f9; color: #804c7d; border: none;"
-                >
-              </div>
+                  size="xl"
+                  class="w-full"
+                  :ui="{ base: 'text-lg font-bold text-center text-primary' }"
+                />
+              </UCard>
             </div>
           </div>
 
           <!-- Section: Notes -->
           <div class="space-y-4 pb-4">
-            <label class="block text-xs font-arabic font-semibold uppercase tracking-wide" style="color: var(--color-on-surface-variant);">ملاحظات إضافية</label>
-            <textarea
-              v-model="form.notes"
-              rows="3"
-              class="form-input w-full px-4 py-3 rounded-xl text-sm font-arabic outline-none resize-none"
-              style="background-color: #f9f9f9; color: var(--color-on-surface); border: none;"
-              placeholder="اكتب أي ملاحظات خاصة بالحالة الصحية أو الأكاديمية للطالب..."
-            />
+            <UFormField label="ملاحظات إضافية" name="notes" class="font-arabic">
+              <UTextarea
+                v-model="state.notes"
+                :rows="3"
+                placeholder="اكتب أي ملاحظات خاصة بالحالة الصحية أو الأكاديمية للطالب..."
+                class="w-full font-arabic"
+                :ui="{ base: 'resize-none' }"
+              />
+            </UFormField>
           </div>
-        </form>
 
-        <!-- Footer (fixed) -->
-        <div
-          class="px-8 py-6 shrink-0 border-t flex items-center justify-end gap-4"
-          style="background-color: rgba(251, 241, 246, 0.5); border-color: rgba(209, 194, 204, 0.3);"
-        >
-          <button
-            type="button"
-            class="px-8 py-3 rounded-full font-arabic font-bold transition-colors hover:bg-black/5"
-            style="color: var(--color-on-surface-variant);"
-            @click="closeAdd"
-          >
-            إلغاء
-          </button>
-          <button
-            type="button"
-            class="px-10 py-3 rounded-full font-arabic font-bold transition-all hover:scale-[1.02] active:scale-95"
-            style="background-color: #804c7d; color: white; box-shadow: 0 4px 12px rgba(128, 76, 125, 0.2);"
-            @click="handleSubmit"
-          >
-            حفظ البيانات
-          </button>
-        </div>
+          <!-- Footer (inside UForm so submit button works) -->
+          <div class="px-0 py-2 flex items-center justify-end gap-4 border-t border-default pt-6">
+            <UButton
+              type="button"
+              color="neutral"
+              variant="ghost"
+              size="xl"
+              class="font-arabic font-bold rounded-full px-8"
+              @click="closeAdd"
+            >
+              إلغاء
+            </UButton>
+            <UButton
+              type="submit"
+              size="xl"
+              class="font-arabic font-bold rounded-full px-10"
+            >
+              حفظ البيانات
+            </UButton>
+          </div>
+        </UForm>
 
       </div>
     </template>
   </UModal>
 </template>
-
-<style scoped>
-.form-input:focus {
-  border-color: #804c7d !important;
-  background-color: white !important;
-  box-shadow: 0 0 0 2px rgba(128, 76, 125, 0.1);
-}
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d1c2cc; border-radius: 10px; }
-</style>

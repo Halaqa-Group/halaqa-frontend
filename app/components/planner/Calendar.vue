@@ -2,16 +2,8 @@
 const today = new Date()
 today.setHours(0, 0, 0, 0)
 
-// Get the most recent Saturday on or before a given date
-function lastSaturday(d: Date): Date {
-  const r = new Date(d)
-  r.setHours(0, 0, 0, 0)
-  // getDay(): 0=Sun … 5=Fri, 6=Sat  →  days since last Sat = (getDay() + 1) % 7
-  r.setDate(r.getDate() - ((r.getDay() + 1) % 7))
-  return r
-}
+const { selectedWeekStart, changeWeek } = useSchedule()
 
-const selectedWeekStart = ref(lastSaturday(today))
 const selectedWeekEnd = computed(() => {
   const d = new Date(selectedWeekStart.value)
   d.setDate(d.getDate() + 6)
@@ -64,12 +56,12 @@ function nextMonthView() {
 function prevWeek() {
   const d = new Date(selectedWeekStart.value)
   d.setDate(d.getDate() - 7)
-  selectedWeekStart.value = d
+  changeWeek(d)
 }
 function nextWeek() {
   const d = new Date(selectedWeekStart.value)
   d.setDate(d.getDate() + 7)
-  selectedWeekStart.value = d
+  changeWeek(d)
 }
 
 type CalDay = {
@@ -129,7 +121,7 @@ const calendarDays = computed<CalDay[]>(() => {
 
 function onDayClick(cell: CalDay) {
   if (!cell.isSaturday) return
-  selectedWeekStart.value = new Date(cell.date)
+  changeWeek(new Date(cell.date))
 }
 </script>
 

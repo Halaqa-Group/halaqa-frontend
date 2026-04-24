@@ -2,12 +2,17 @@
 definePageMeta({ layout: 'dashboard' })
 
 const {
-  schedule,
+  scheduleWithDates,
   isEditMode,
+  planStatus,
   selectedCount,
   hasSelection,
   clipboard,
   selectedStudent,
+  saveAsDraft,
+  approvePlan,
+  startEditing,
+  cancelEditing,
   deleteSelectedRows,
   copySelectedRows,
   pasteRows,
@@ -22,10 +27,6 @@ onMounted(async () => {
     selectedStudent.value = students.value[0].name
   }
 })
-
-function toggleEdit() {
-  isEditMode.value = !isEditMode.value
-}
 </script>
 
 <template>
@@ -43,23 +44,81 @@ function toggleEdit() {
       </div>
 
       <div class="flex items-center gap-3 shrink-0">
-        <UButton
-          v-if="!isEditMode"
-          variant="outline"
-          color="neutral"
-          label="نسخ من الأسبوع الماضي"
-          size="lg"
-          class="font-arabic font-bold rounded-full px-6"
-        />
-        <UButton
-          :icon="isEditMode ? 'i-lucide-check' : 'i-lucide-save'"
-          :label="isEditMode ? 'حفظ المخطط' : 'تعديل الخطة'"
-          color="primary"
-          :variant="isEditMode ? 'outline' : 'solid'"
-          size="lg"
-          class="font-arabic font-bold rounded-full px-6"
-          @click="toggleEdit"
-        />
+
+        <!-- NEW: enter values, save as draft -->
+        <template v-if="planStatus === 'new'">
+          <UButton
+            variant="outline" color="neutral"
+            label="نسخ من الأسبوع الماضي" icon="i-lucide-copy"
+            size="lg" class="font-arabic font-bold rounded-full px-6"
+          />
+          <UButton
+            color="primary" label="حفظ كمسودة" icon="i-lucide-save"
+            size="lg" class="font-arabic font-bold rounded-full px-6"
+            @click="saveAsDraft"
+          />
+        </template>
+
+        <!-- DRAFT, viewing -->
+        <template v-else-if="planStatus === 'draft' && !isEditMode">
+          <UButton
+            variant="outline" color="neutral"
+            label="تعديل الخطة" icon="i-lucide-pencil"
+            size="lg" class="font-arabic font-bold rounded-full px-6"
+            @click="startEditing"
+          />
+          <UButton
+            color="primary" label="اعتماد الخطة" icon="i-lucide-check-circle"
+            size="lg" class="font-arabic font-bold rounded-full px-6"
+            @click="approvePlan"
+          />
+        </template>
+
+        <!-- DRAFT, editing -->
+        <template v-else-if="planStatus === 'draft' && isEditMode">
+          <UButton
+            variant="ghost" color="neutral"
+            label="إلغاء" icon="i-lucide-x"
+            size="lg" class="font-arabic font-bold rounded-full px-6"
+            @click="cancelEditing"
+          />
+          <UButton
+            color="primary" label="حفظ كمسودة" icon="i-lucide-save"
+            size="lg" class="font-arabic font-bold rounded-full px-6"
+            @click="saveAsDraft"
+          />
+        </template>
+
+        <!-- APPROVED, viewing -->
+        <template v-else-if="planStatus === 'approved' && !isEditMode">
+          <div class="flex items-center gap-2 px-5 py-2.5 rounded-full border font-arabic font-semibold text-sm"
+            style="background-color: #E0F0EE; border-color: #4A8E85; color: #4A8E85;">
+            <UIcon name="i-lucide-check-circle" class="w-4 h-4" />
+            معتمدة
+          </div>
+          <UButton
+            variant="outline" color="neutral"
+            label="تعديل الخطة" icon="i-lucide-pencil"
+            size="lg" class="font-arabic font-bold rounded-full px-6"
+            @click="startEditing"
+          />
+        </template>
+
+        <!-- APPROVED, editing -->
+        <template v-else-if="planStatus === 'approved' && isEditMode">
+          <UButton
+            variant="ghost" color="neutral"
+            label="إلغاء" icon="i-lucide-x"
+            size="lg" class="font-arabic font-bold rounded-full px-6"
+            @click="cancelEditing"
+          />
+          <UButton
+            color="primary" label="حفظ التعديلات" icon="i-lucide-save"
+            size="lg" class="font-arabic font-bold rounded-full px-6"
+            @click="saveAsDraft"
+          />
+        </template>
+
       </div>
     </div>
 
@@ -123,7 +182,7 @@ function toggleEdit() {
         <!-- Column headers -->
         <div class="flex items-center gap-4 px-4">
           <div v-if="isEditMode" class="w-8 shrink-0 flex items-center justify-center">
-            <span class="text-xs text-muted font-arabic">تحديد الكل</span>
+            <span class="text-xs text-muted font-arabic whitespace-nowrap">تحديد الكل</span>
           </div>
           <div class="w-[110px] shrink-0" />
           <div class="flex-1 flex gap-6">
@@ -166,24 +225,12 @@ function toggleEdit() {
         <!-- Day rows -->
         <div class="flex flex-col gap-5">
           <PlannerDayRow
-            v-for="day in schedule"
+            v-for="day in scheduleWithDates"
             :key="day.id"
             :data="day"
           />
         </div>
 
-        <!-- Add day (edit mode) -->
-        <div v-if="isEditMode">
-          <UButton
-            variant="outline"
-            color="neutral"
-            icon="i-lucide-plus"
-            label="إضافة يوم"
-            size="sm"
-            class="font-arabic border-dashed"
-            @click="addDay"
-          />
-        </div>
       </div>
     </div>
   </div>

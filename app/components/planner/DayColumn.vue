@@ -50,7 +50,7 @@ function onDrop(e: DragEvent) {
 
     <!-- Cell -->
     <div
-      class="w-full bg-white border rounded-[22px] shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[60px] transition-all group/cell border-b-2 border-outline-variant/10 py-1.5"
+      class="w-full bg-white border rounded-[22px] shadow-sm relative overflow-hidden flex flex-col justify-center h-[60px] transition-all group/cell border-b-2 border-outline-variant/10 py-1.5"
       :class="isDragOver ? 'ring-2 ring-primary/30 shadow-md' : ''"
       @dragover="onDragOver"
       @dragleave="onDragLeave"
@@ -69,14 +69,12 @@ function onDrop(e: DragEvent) {
 
       <button
         v-else-if="isEditMode"
-        class="w-full flex items-center justify-center gap-1.5 text-xs font-arabic transition-colors hover:bg-muted text-muted py-5"
+        class="w-full h-full absolute inset-0 flex items-center justify-center gap-1 text-xs font-arabic transition-colors hover:bg-muted text-muted"
         @click="addLesson(dayId, category)"
       >
-        <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" />
-        إضافة درس
+        <UIcon name="i-lucide-plus" class="w-3 h-3" />
+        إضافة
       </button>
-
-      <div v-else class="py-5" />
     </div>
   </div>
 </template>

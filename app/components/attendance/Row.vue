@@ -86,7 +86,7 @@ const statusDotClass = computed(() => {
       :value="notes"
       rows="2"
       :placeholder="`ملاحظة خاصة بـ ${name}...`"
-      class="xl:flex-1 w-full resize-none rounded-xl px-4 py-2.5 text-base font-arabic outline-none transition-all focus:ring-1 focus:ring-primary"
+      class="xl:flex-1 w-full resize-none rounded-[40px] px-4 py-2.5 text-base font-arabic outline-none transition-all focus:ring-1 focus:ring-primary"
       style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
       @input="setNote(studentId, ($event.target as HTMLTextAreaElement).value)"
     />

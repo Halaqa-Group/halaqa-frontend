@@ -7,7 +7,7 @@ const lateCount = computed(() => attendanceRows.value.filter(r => r.status === '
 <template>
   <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
     <!-- Attendance rate -->
-    <div class="rounded-2xl p-5" style="background-color: #F0E8EF; box-shadow: var(--shadow-card);">
+    <div class="rounded-[40px] p-5" style="background-color: #F0E8EF; box-shadow: var(--shadow-card);">
       <div class="flex items-center justify-between mb-2">
         <span class="label-lg font-arabic font-bold" style="color: #804c7d;">نسبة الحضور</span>
         <UIcon name="i-lucide-user-check" class="w-9 h-9" style="color: #804c7d;" />
@@ -19,7 +19,7 @@ const lateCount = computed(() => attendanceRows.value.filter(r => r.status === '
     </div>
 
     <!-- Students present -->
-    <div class="rounded-2xl p-5" style="background-color: #E0F0EE; box-shadow: var(--shadow-card);">
+    <div class="rounded-[40px] p-5" style="background-color: #E0F0EE; box-shadow: var(--shadow-card);">
       <div class="flex items-center justify-between mb-2">
         <span class="label-lg font-arabic font-bold" style="color: #2A6B64;">الطلاب الحاضرون</span>
         <UIcon name="i-lucide-users" class="w-9 h-9" style="color: #2A6B64;" />
@@ -29,7 +29,7 @@ const lateCount = computed(() => attendanceRows.value.filter(r => r.status === '
     </div>
 
     <!-- Students absent -->
-    <div class="rounded-2xl p-5" style="background-color: #FCE4EC; box-shadow: var(--shadow-card);">
+    <div class="rounded-[40px] p-5" style="background-color: #FCE4EC; box-shadow: var(--shadow-card);">
       <div class="flex items-center justify-between mb-2">
         <span class="label-lg font-arabic font-bold" style="color: #B5174E;">الغائبون</span>
         <UIcon name="i-lucide-user-x" class="w-9 h-9" style="color: #B5174E;" />
@@ -39,7 +39,7 @@ const lateCount = computed(() => attendanceRows.value.filter(r => r.status === '
     </div>
 
     <!-- Students late -->
-    <div class="rounded-2xl p-5" style="background-color: #FFF3E0; box-shadow: var(--shadow-card);">
+    <div class="rounded-[40px] p-5" style="background-color: #FFF3E0; box-shadow: var(--shadow-card);">
       <div class="flex items-center justify-between mb-2">
         <span class="label-lg font-arabic font-bold" style="color: #C76400;">المتأخرون</span>
         <UIcon name="i-lucide-clock" class="w-9 h-9" style="color: #C76400;" />

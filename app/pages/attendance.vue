@@ -123,7 +123,7 @@ onMounted(async () => {
                 v-model="searchQuery"
                 type="text"
                 placeholder="بحث عن طالب..."
-                class="w-full pe-11 ps-4 py-3 rounded-2xl text-base font-arabic outline-none transition-all focus:ring-2 focus:ring-primary/30"
+                class="w-full pe-11 ps-4 py-3 rounded-[40px] text-base font-arabic outline-none transition-all focus:ring-2 focus:ring-primary/30"
                 style="background-color: var(--color-surface-container-lowest); color: var(--color-on-surface); border: 1.5px solid var(--color-outline-variant);"
               >
             </div>
@@ -188,7 +188,7 @@ onMounted(async () => {
           />
 
           <!-- Session notes -->
-          <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
+          <div class="rounded-[40px] p-5" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
             <div class="flex items-center justify-between mb-3">
               <p class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">ملاحظات الجلسة</p>
               <UButton variant="ghost" color="neutral" icon="i-lucide-sparkles" size="sm" label="مساعد ذكي" />

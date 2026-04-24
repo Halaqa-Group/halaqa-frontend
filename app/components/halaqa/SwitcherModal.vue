@@ -73,7 +73,7 @@ function handleSelect(halaqa: ApiHalaqa) {
             <button
               v-for="halaqa in halaqat"
               :key="halaqa.id"
-              class="relative rounded-3xl p-6 flex flex-col items-center text-center transition-all duration-300"
+              class="relative rounded-3xl p-6 flex flex-col items-center text-center transition-all duration-300 cursor-pointer"
               :class="isSelected(halaqa)
                 ? 'border-2 shadow-lg'
                 : 'border border-gray-200 hover:border-primary/30 hover:shadow-lg'"
@@ -148,7 +148,7 @@ function handleSelect(halaqa: ApiHalaqa) {
           style="border-top: 1px solid var(--color-outline-variant);"
         >
           <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl transition-colors font-arabic"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl transition-colors font-arabic cursor-pointer"
             style="color: var(--color-on-surface-variant);"
             @click="closeModal"
           >
@@ -156,13 +156,13 @@ function handleSelect(halaqa: ApiHalaqa) {
             <span>إلغاء</span>
           </button>
 
-          <UButton
-            size="lg"
-            color="primary"
+          <button
+            class="font-arabic font-bold text-sm px-6 py-2.5 rounded-full text-white transition-opacity hover:opacity-90 cursor-pointer"
+            style="background-color: var(--color-primary);"
             @click="closeModal"
           >
             تأكيد الاختيار
-          </UButton>
+          </button>
         </div>
       </div>
     </template>

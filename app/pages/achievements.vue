@@ -19,7 +19,7 @@ const {
   reset
 } = useAchievements()
 
-const { selectedHalaqaId, selectedHalaqaName, hasHalaqa } = useGlobalHalaqa()
+const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const { user } = useAuth()
 const toast = useToast()
 
@@ -107,18 +107,7 @@ onMounted(async () => {
   <div class="flex flex-col gap-6">
     <!-- Session controls -->
     <div class="flex flex-wrap items-center gap-3">
-      <!-- Selected Halaqa Display -->
-      <div
-        class="flex items-center gap-2 px-4 py-2 rounded-xl"
-        style="background-color: var(--color-primary-container); box-shadow: var(--shadow-card);"
-      >
-        <UIcon name="i-lucide-layers" class="w-4 h-4" style="color: var(--color-primary);" />
-        <span class="text-sm font-arabic font-semibold" style="color: var(--color-primary);">
-          {{ selectedHalaqaName }}
-        </span>
-      </div>
-
-      <!-- Date picker -->
+<!-- Date picker -->
       <div
         class="flex items-center gap-2 px-3 py-2 rounded-xl"
         style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"

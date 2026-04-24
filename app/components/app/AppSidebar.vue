@@ -1,90 +1,102 @@
 <script setup lang="ts">
 const route = useRoute()
-const { selectedHalaqaName, openModal } = useGlobalHalaqa()
 
 const navItems = [
-  { to: '/', icon: 'i-lucide-layout-grid', label: 'لوحة التحكم' },
-  { to: '/attendance', icon: 'i-lucide-user-check', label: 'الحضور' },
-  { to: '/achievements', icon: 'i-lucide-award', label: 'الإنجازات' },
-  { to: '/students', icon: 'i-lucide-users', label: 'الطلاب' },
-  { to: '/planner', icon: 'i-lucide-book-open', label: 'المخطط' },
-  { to: '/analytics', icon: 'i-lucide-bar-chart-3', label: 'التحليلات' }
+  { to: '/', icon: 'i-lucide-layout-grid' },
+  { to: '/attendance', icon: 'i-lucide-user-check' },
+  { to: '/achievements', icon: 'i-lucide-award' },
+  { to: '/students', icon: 'i-lucide-users' },
+  { to: '/planner', icon: 'i-lucide-book-open' },
+  { to: '/analytics', icon: 'i-lucide-bar-chart-3' }
 ]
 
 function isActive(to: string) {
   if (to === '/') return route.path === '/'
   return route.path.startsWith(to)
 }
+
+const activeIndex = computed(() => navItems.findIndex(item => isActive(item.to)))
+
+// Each item is h-12 (48px) + gap-6 (24px) = 72px per step
+const indicatorY = computed(() => activeIndex.value * 72)
 </script>
 
 <template>
   <aside
-    class="fixed inset-y-0 right-0 z-20 w-[84px] flex flex-col items-center py-4 border-s border-default"
-    style="background-color: #ffffff;"
+    class="fixed inset-y-0 right-0 z-20 w-20 flex flex-col items-center py-8 border-e border-outline-variant"
+    style="background-color: #ffffff; box-shadow: -4px 0 24px rgba(128,76,125,0.03);"
   >
     <!-- Logo -->
-    <div class="mb-6 w-10 h-10 rounded-2xl flex items-center justify-center" style="background-color: #EFB0C1;">
-      <UIcon name="i-lucide-book" class="w-5 h-5" style="color: #8B3A52;" />
+    <div class="mb-10" style="color: var(--color-primary);">
+      <UIcon name="i-lucide-book" class="w-8 h-8" />
     </div>
 
     <!-- Nav items -->
-    <nav class="flex flex-col items-center gap-1 flex-1 w-full px-2">
+    <nav class="relative flex flex-col items-center gap-6 flex-1">
+      <!-- Sliding background indicator -->
+      <div
+        class="indicator absolute w-12 h-12 rounded-xl pointer-events-none"
+        :style="{
+          transform: `translateY(${indicatorY}px)`,
+          opacity: activeIndex >= 0 ? 1 : 0
+        }"
+      />
+
       <NuxtLink
         v-for="item in navItems"
         :key="item.to"
         :to="item.to"
-        class="flex flex-col items-center gap-1 w-full py-2 rounded-2xl transition-colors no-underline"
-        :style="isActive(item.to)
-          ? 'background-color: var(--color-surface-container);'
-          : ''"
-        :class="!isActive(item.to) ? 'hover:bg-[--color-surface-container-low]' : ''"
+        class="relative z-10 w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer no-underline"
+        :class="!isActive(item.to) ? 'hover:bg-slate-100' : ''"
+        :style="isActive(item.to) ? 'color: var(--color-primary);' : 'color: #64748B;'"
       >
         <UIcon
           :name="item.icon"
-          class="w-5 h-5 transition-colors"
-          :style="isActive(item.to)
-            ? 'color: var(--color-primary);'
-            : 'color: var(--color-on-surface-variant);'"
+          class="w-6 h-6 nav-icon"
+          :class="{ 'is-active': isActive(item.to) }"
         />
-        <span
-          class="text-[9px] font-arabic leading-tight text-center"
-          :style="isActive(item.to)
-            ? 'color: var(--color-primary);'
-            : 'color: var(--color-on-surface-variant);'"
-        >{{ item.label }}</span>
       </NuxtLink>
     </nav>
 
     <!-- Bottom actions -->
-    <div class="flex flex-col items-center gap-1 mt-2">
-      <!-- Halaqa Switcher (Premium Feature) -->
+    <div class="flex flex-col items-center gap-6">
       <button
-        class="relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all hover:bg-[--color-primary-container] group"
-        style="background-color: var(--color-surface-container-low);"
-        @click="openModal"
+        class="w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer hover:bg-slate-100 transition-colors"
+        style="color: #64748B;"
       >
-        <UIcon
-          name="i-lucide-layers"
-          class="w-5 h-5 transition-colors group-hover:text-[--color-primary]"
-          style="color: var(--color-on-surface-variant);"
-        />
-        <!-- Premium indicator dot -->
-        <span
-          class="absolute top-1 right-1 w-2 h-2 rounded-full"
-          style="background-color: var(--color-primary);"
-        />
-      </button>
-
-      <button
-        class="w-10 h-10 rounded-2xl flex items-center justify-center transition-colors hover:bg-[--color-surface-container-low]"
-      >
-        <UIcon name="i-lucide-settings" class="w-5 h-5" style="color: var(--color-on-surface-variant);" />
+        <UIcon name="i-lucide-help-circle" class="w-6 h-6" />
       </button>
       <button
-        class="w-10 h-10 rounded-2xl flex items-center justify-center transition-colors hover:bg-[--color-surface-container-low]"
+        class="w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer hover:bg-slate-100 transition-colors"
+        style="color: #64748B;"
       >
-        <UIcon name="i-lucide-help-circle" class="w-5 h-5" style="color: var(--color-on-surface-variant);" />
+        <UIcon name="i-lucide-settings" class="w-6 h-6" />
       </button>
     </div>
   </aside>
 </template>
+
+<style scoped>
+.indicator {
+  background-color: #f6ebf0;
+  top: 0;
+  transition: transform 0.4s cubic-bezier(0.34, 1.3, 0.64, 1), opacity 0.2s ease;
+}
+
+.nav-icon {
+  transition: color 0.25s ease;
+}
+
+.nav-icon.is-active {
+  animation: icon-vibrate 0.5s ease forwards;
+}
+
+@keyframes icon-vibrate {
+  0%   { transform: scale(0.8)  rotate(0deg);  }
+  20%  { transform: scale(1.15) rotate(-12deg); }
+  40%  { transform: scale(1.1)  rotate(10deg);  }
+  60%  { transform: scale(1.05) rotate(-6deg);  }
+  80%  { transform: scale(1.02) rotate(3deg);   }
+  100% { transform: scale(1)    rotate(0deg);   }
+}
+</style>

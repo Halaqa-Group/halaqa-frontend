@@ -1,5 +1,11 @@
 <script setup lang="ts">
-const { isViewModalOpen, viewingStudent, closeView } = useStudents()
+const { isViewModalOpen, viewingStudent, closeView, openEdit } = useStudents()
+
+function handleEditClick() {
+  if (!viewingStudent.value) return
+  closeView()
+  openEdit(viewingStudent.value)
+}
 </script>
 
 <template>
@@ -61,6 +67,7 @@ const { isViewModalOpen, viewingStudent, closeView } = useStudents()
               icon="i-lucide-file-edit"
               label="تعديل الملف"
               class="rounded-full font-arabic"
+              @click="handleEditClick"
             />
             <UButton
               block

@@ -2,7 +2,7 @@
 import type { Student } from '~/types'
 
 const props = defineProps<{ student: Student }>()
-const { openView } = useStudents()
+const { openView, openEdit } = useStudents()
 
 const isActive = computed(() => props.student.status === 'active')
 const attendanceColor = computed(() =>
@@ -92,6 +92,7 @@ const attendanceColor = computed(() =>
       <button
         class="p-2 rounded-lg transition-colors hover:opacity-80"
         style="background-color: rgba(105, 93, 69, 0.1); color: var(--color-tertiary);"
+        @click="openEdit(student)"
       >
         <UIcon name="i-lucide-pencil" class="w-5 h-5" />
       </button>

@@ -21,11 +21,39 @@ const {
 
 const { students, fetchStudents } = useStudents()
 
+const isStudentDropdownOpen = ref(false)
+const studentDropdownRef = ref<HTMLElement | null>(null)
+const studentSearch = ref('')
+const selectedStudentObj = computed(() => students.value.find(s => s.name === selectedStudent.value))
+const filteredDropdownStudents = computed(() =>
+  studentSearch.value.trim()
+    ? students.value.filter(s => s.name.includes(studentSearch.value.trim()))
+    : students.value
+)
+
+function selectStudent(name: string) {
+  selectedStudent.value = name
+  isStudentDropdownOpen.value = false
+  studentSearch.value = ''
+}
+
+function handleDocumentClick(e: MouseEvent) {
+  if (studentDropdownRef.value && !studentDropdownRef.value.contains(e.target as Node)) {
+    isStudentDropdownOpen.value = false
+    studentSearch.value = ''
+  }
+}
+
 onMounted(async () => {
+  document.addEventListener('click', handleDocumentClick)
   await fetchStudents()
   if (students.value[0] && !selectedStudent.value) {
     selectedStudent.value = students.value[0].name
   }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleDocumentClick)
 })
 </script>
 
@@ -129,44 +157,117 @@ onMounted(async () => {
       <div class="w-full lg:w-[320px] shrink-0 space-y-10 mt-8">
 
         <!-- Student selector card -->
-        <div class="flex flex-col gap-3">
-          <p class="text-sm font-arabic font-semibold text-center" style="color: var(--color-on-surface-variant);">اختر طالبًا</p>
-          <div
-            class="relative text-white p-4 rounded-[32px] flex items-center gap-5 shadow-2xl overflow-hidden border border-white/10 group hover:scale-[1.02] transition-all"
-          style="background-color: var(--color-primary); box-shadow: 0 20px 40px color-mix(in srgb, var(--color-primary) 30%, transparent);"
+        <div
+          ref="studentDropdownRef"
+          class="relative z-30 bg-primary text-on-primary p-5 rounded-[40px] flex flex-col gap-4 shadow-2xl shadow-primary/30 hover:scale-[1.01] transition-all border border-white/10"
         >
-          <!-- Gradient overlay -->
-          <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent pointer-events-none opacity-50" />
-          <!-- Glow blob -->
-          <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-
-          <!-- Icon -->
-          <div class="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-all shadow-inner border border-white/5">
-            <UIcon name="i-lucide-users" class="w-7 h-7 text-white" />
+          <!-- Gradient overlays -->
+          <div class="absolute inset-0 rounded-[40px] overflow-hidden pointer-events-none">
+            <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent opacity-50" />
+            <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
           </div>
 
-          <!-- Label + select -->
-          <div class="flex-1 text-right relative z-10 min-w-0">
-            <div class="relative">
-              <select
-                v-model="selectedStudent"
-                class="w-full bg-transparent border-none appearance-none font-arabic font-bold text-xl text-white outline-none cursor-pointer pe-6"
-              >
-                <option
-                  v-for="s in students"
-                  :key="s.name"
-                  :value="s.name"
-                  class="text-on-surface bg-white"
+          <!-- Header row -->
+          <div class="flex items-center justify-center px-2 relative z-10">
+            <p class="text-sm font-semibold text-white font-arabic">اختر طالباً</p>
+          </div>
+
+          <!-- Dropdown trigger -->
+          <div class="relative z-20">
+            <button
+              class="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-[24px] p-2 flex items-center gap-3 hover:bg-white/20 transition-all group shadow-xl cursor-pointer"
+              @click="isStudentDropdownOpen = !isStudentDropdownOpen"
+            >
+              <div class="w-11 h-11 rounded-[18px] overflow-hidden border-2 border-white/40 shadow-inner shrink-0 group-hover:rotate-1 transition-transform">
+                <img
+                  :src="selectedStudentObj?.avatar ?? `https://api.dicebear.com/9.x/notionists/svg?seed=default`"
+                  :alt="selectedStudent ?? ''"
+                  class="w-full h-full object-cover"
+                  referrerpolicy="no-referrer"
                 >
-                  {{ s.name }}
-                </option>
-              </select>
-              <div class="absolute end-0 top-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-1">
-                <UIcon name="i-lucide-chevrons-up-down" class="w-4 h-4 text-white/60" />
               </div>
-            </div>
+              <div class="flex-1 text-right">
+                <h3 class="text-on-primary font-arabic font-bold text-base tracking-tight leading-tight">
+                  {{ selectedStudent || 'اختر طالباً' }}
+                </h3>
+              </div>
+              <div class="ps-3 text-on-primary/30 group-hover:text-on-primary transition-colors">
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="w-4 h-4 transition-transform duration-300"
+                  :class="{ 'rotate-180': isStudentDropdownOpen }"
+                />
+              </div>
+            </button>
+
+            <!-- Dropdown list -->
+            <Transition
+              enter-active-class="transition-all duration-200 ease-out"
+              enter-from-class="opacity-0 scale-95 -translate-y-2"
+              enter-to-class="opacity-100 scale-100 translate-y-0"
+              leave-active-class="transition-all duration-150 ease-in"
+              leave-from-class="opacity-100 scale-100 translate-y-0"
+              leave-to-class="opacity-0 scale-95 -translate-y-2"
+            >
+              <div
+                v-if="isStudentDropdownOpen"
+                class="absolute top-full mt-3 w-full bg-white rounded-[24px] shadow-xl border border-black/5 overflow-hidden"
+              >
+                <!-- Search bar -->
+                <div class="px-3 pt-3 pb-2">
+                  <div class="flex items-center gap-2 bg-black/5 rounded-[14px] px-3 py-2">
+                    <UIcon name="i-lucide-search" class="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
+                    <input
+                      v-model="studentSearch"
+                      type="text"
+                      placeholder="بحث..."
+                      class="flex-1 bg-transparent text-sm font-arabic text-on-surface placeholder:text-on-surface-variant/60 outline-none text-right"
+                      dir="rtl"
+                    >
+                  </div>
+                </div>
+
+                <div class="px-2 pb-2 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto [&::-webkit-scrollbar]:w-[2px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary/20 [&::-webkit-scrollbar-thumb]:rounded-full">
+                  <button
+                    v-for="s in filteredDropdownStudents"
+                    :key="s.id"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[18px] transition-all"
+                    :class="selectedStudent === s.name ? 'bg-primary' : 'hover:bg-primary/5 cursor-pointer'"
+                    @click="selectStudent(s.name)"
+                  >
+                    <!-- Avatar (first child = rightmost in RTL) -->
+                    <div
+                      class="w-10 h-10 rounded-[14px] overflow-hidden border-2 shrink-0"
+                      :class="selectedStudent === s.name ? 'border-white/30' : 'border-primary/15'"
+                    >
+                      <img :src="s.avatar" :alt="s.name" class="w-full h-full object-cover" referrerpolicy="no-referrer">
+                    </div>
+
+                    <!-- Name + halaqa subtitle -->
+                    <div class="flex-1 text-right">
+                      <p
+                        class="font-arabic font-bold text-sm leading-tight"
+                        :class="selectedStudent === s.name ? 'text-on-primary' : 'text-on-surface'"
+                      >{{ s.name }}</p>
+                      <p
+                        v-if="s.halaqa && s.halaqa !== '—'"
+                        class="text-[11px] font-arabic mt-0.5"
+                        :class="selectedStudent === s.name ? 'text-on-primary/60' : 'text-on-surface-variant'"
+                      >{{ s.halaqa }}</p>
+                    </div>
+
+                    <!-- Checkmark / spacer (last child = leftmost in RTL) -->
+                    <UIcon
+                      v-if="selectedStudent === s.name"
+                      name="i-lucide-check"
+                      class="w-4 h-4 text-on-primary/70 shrink-0"
+                    />
+                    <span v-else class="w-4 shrink-0" />
+                  </button>
+                </div>
+              </div>
+            </Transition>
           </div>
-        </div>
         </div>
 
         <!-- Calendar -->

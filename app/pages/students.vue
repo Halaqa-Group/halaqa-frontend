@@ -135,4 +135,5 @@ onMounted(async () => {
 
   <StudentViewModal />
   <StudentAddModal />
+  <StudentEditModal />
 </template>

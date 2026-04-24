@@ -27,7 +27,7 @@ function update(field: keyof LessonItem, value: string | number) {
 
 <template>
   <div
-    class="relative flex items-center gap-3 px-3 py-1.5 rounded-xl group/row transition-all"
+    class="relative flex items-center gap-3 px-3 py-1 rounded-xl group/row transition-all"
     :class="isEditMode ? 'hover:bg-muted/50 cursor-grab active:cursor-grabbing' : ''"
     :draggable="isEditMode"
     @dragstart="isEditMode ? onDragStart($event) : undefined"
@@ -51,7 +51,7 @@ function update(field: keyof LessonItem, value: string | number) {
         <select
           :value="item.startSurah"
           :disabled="!isEditMode"
-          class="w-full font-arabic font-bold outline-none appearance-none text-center text-sm transition-all h-9 rounded-full bg-transparent px-1"
+          class="w-full font-arabic font-bold outline-none appearance-none text-center text-sm transition-all h-7 rounded-full bg-transparent px-1"
           :class="isEditMode ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default'"
           @change="update('startSurah', ($event.target as HTMLSelectElement).value)"
         >
@@ -63,7 +63,7 @@ function update(field: keyof LessonItem, value: string | number) {
           :value="item.startAyah"
           type="number"
           :disabled="!isEditMode"
-          class="transition-all outline-none text-center font-arabic font-bold text-sm h-9 w-full rounded-full bg-transparent"
+          class="transition-all outline-none text-center font-arabic font-bold text-sm h-7 w-full rounded-full bg-transparent"
           :class="isEditMode ? 'cursor-text hover:bg-muted/50' : 'cursor-default'"
           @change="update('startAyah', +($event.target as HTMLInputElement).value || 1)"
         />
@@ -79,7 +79,7 @@ function update(field: keyof LessonItem, value: string | number) {
         <select
           :value="item.endSurah"
           :disabled="!isEditMode"
-          class="w-full font-arabic font-bold outline-none appearance-none text-center text-sm transition-all h-9 rounded-full bg-transparent px-1"
+          class="w-full font-arabic font-bold outline-none appearance-none text-center text-sm transition-all h-7 rounded-full bg-transparent px-1"
           :class="isEditMode ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default'"
           @change="update('endSurah', ($event.target as HTMLSelectElement).value)"
         >
@@ -91,7 +91,7 @@ function update(field: keyof LessonItem, value: string | number) {
           :value="item.endAyah"
           type="number"
           :disabled="!isEditMode"
-          class="transition-all outline-none text-center font-arabic font-bold text-sm h-9 w-full rounded-full bg-transparent"
+          class="transition-all outline-none text-center font-arabic font-bold text-sm h-7 w-full rounded-full bg-transparent"
           :class="isEditMode ? 'cursor-text hover:bg-muted/50' : 'cursor-default'"
           @change="update('endAyah', +($event.target as HTMLInputElement).value || 1)"
         />

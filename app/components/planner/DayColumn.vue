@@ -41,16 +41,16 @@ function onDrop(e: DragEvent) {
   <div class="flex-[4] relative group/column">
     <!-- Status indicator -->
     <button
-      class="absolute -start-3 -top-3 w-9 h-9 rounded-full flex items-center justify-center z-20 shadow-lg border-[3px] border-white transition-all duration-300 hover:scale-110 active:scale-95 group/status"
+      class="absolute -start-2.5 -top-2.5 w-7 h-7 rounded-full flex items-center justify-center z-20 shadow-lg border-2 border-white transition-all duration-300 hover:scale-110 active:scale-95 group/status"
       :style="`background-color: ${status.bgHex};`"
       @click="cycleStatus(dayId, category)"
     >
-      <UIcon :name="status.icon" class="w-4 h-4 group-hover/status:scale-110" :style="`color: ${status.iconHex};`" />
+      <UIcon :name="status.icon" class="w-3.5 h-3.5 group-hover/status:scale-110" :style="`color: ${status.iconHex};`" />
     </button>
 
     <!-- Cell -->
     <div
-      class="w-full bg-white border rounded-[28px] shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[72px] transition-all group/cell border-b-2 border-outline-variant/10"
+      class="w-full bg-white border rounded-[22px] shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[60px] transition-all group/cell border-b-2 border-outline-variant/10 py-1.5"
       :class="isDragOver ? 'ring-2 ring-primary/30 shadow-md' : ''"
       @dragover="onDragOver"
       @dragleave="onDragLeave"

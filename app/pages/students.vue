@@ -4,26 +4,26 @@ definePageMeta({ layout: 'dashboard' })
 const { students, searchQuery, isLoading, error, fetchStudents, openAdd } = useStudents()
 const { halaqat, fetchHalaqat } = useHalaqat()
 
-const filterHalaqaId = ref<number | ''>('')
-const filterStatus = ref('')
+const filterHalaqaId = ref<number | null>(null)
+const filterStatus = ref<string | null>(null)
 
 const filteredStudents = computed(() =>
   students.value.filter(s => {
     const matchSearch = !searchQuery.value || s.name.includes(searchQuery.value)
-    const matchStatus = !filterStatus.value || s.status === filterStatus.value
+    const matchStatus = filterStatus.value === null || s.status === filterStatus.value
     return matchSearch && matchStatus
   })
 )
 
 const statusOptions = [
-  { label: 'الحالة', value: '' },
+  { label: 'الحالة', value: null },
   { label: 'نشط', value: 'active' },
   { label: 'غير نشط', value: 'inactive' }
 ]
 
 const halaqaOptions = computed(() => [
-  { label: 'كل الحلقات', value: '' as number | '' },
-  ...halaqat.value.map(h => ({ label: h.name, value: h.id as number | '' }))
+  { label: 'كل الحلقات', value: null },
+  ...halaqat.value.map(h => ({ label: h.name, value: h.id }))
 ])
 
 const loadProgress = computed(() =>
@@ -31,7 +31,7 @@ const loadProgress = computed(() =>
 )
 
 async function onHalaqaFilter() {
-  await fetchStudents(filterHalaqaId.value ? Number(filterHalaqaId.value) : undefined)
+  await fetchStudents(filterHalaqaId.value ?? undefined)
 }
 
 onMounted(async () => {

@@ -13,27 +13,13 @@ export function useAuth() {
   const isLoggedIn = computed(() => !!token.value)
 
   async function login(email: string, password: string) {
-    const data = await api<{ access_token: string; user: Pick<AuthUser, 'id' | 'name' | 'email' | 'role'> }>('/auth/login', {
+    // The login response already includes school_id — no secondary calls needed.
+    const data = await api<{ access_token: string; user: AuthUser }>('/auth/login', {
       method: 'POST',
       body: { email, password }
     })
     token.value = data.access_token
-    user.value = data.user as AuthUser
-
-    if (data.user.role === 'teacher') {
-      try {
-        const teacher = await api<{ school_id: number }>(`/teachers/${data.user.id}`)
-        user.value = { ...data.user, school_id: teacher.school_id }
-      }
-      catch { /* school_id not critical for UI to start */ }
-    }
-    else if (data.user.role === 'admin') {
-      try {
-        const admin = await api<{ school_id: number }>(`/admins/${data.user.id}`)
-        user.value = { ...data.user, school_id: admin.school_id }
-      }
-      catch { /* ignore */ }
-    }
+    user.value = data.user
   }
 
   function logout() {

@@ -2,6 +2,8 @@
 import type { FormSubmitEvent } from '#ui/types'
 
 const { isAddModalOpen, closeAdd, createStudent } = useStudents()
+const { selectedHalaqaId, selectedHalaqaName } = useGlobalHalaqa()
+const api = useApi()
 const toast = useToast()
 
 type StudentForm = {
@@ -55,7 +57,8 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
   if (submitting.value) return
   submitting.value = true
   try {
-    await createStudent({
+    // Create the student
+    const newStudent = await createStudent({
       name: state.name.trim(),
       dob: state.dob,
       join_date: state.joinDate,
@@ -64,7 +67,36 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       daily_far_pages_capacity: state.farPages,
       ...(state.notes.trim() ? { notes: state.notes.trim() } : {})
     })
-    toast.add({ title: 'تم إضافة الطالب بنجاح', color: 'success' })
+
+    // Automatically enroll in the currently selected halaqa
+    if (selectedHalaqaId.value && newStudent.id) {
+      try {
+        await api('/enrollments', {
+          method: 'POST',
+          body: {
+            student_id: newStudent.id,
+            halaqa_id: selectedHalaqaId.value,
+            enrollment_date: state.joinDate
+          }
+        })
+        toast.add({
+          title: `تم إضافة ${state.name.trim()} إلى ${selectedHalaqaName.value}`,
+          description: 'تم تسجيل الطالب وإضافته للحلقة بنجاح',
+          color: 'success'
+        })
+      } catch (enrollError: any) {
+        // Student created but enrollment failed - still show success but with warning
+        toast.add({
+          title: 'تم إضافة الطالب بنجاح',
+          description: 'لكن فشل تسجيله في الحلقة. يمكنك إضافته يدوياً لاحقاً',
+          color: 'warning'
+        })
+      }
+    } else {
+      // No halaqa selected - just show basic success
+      toast.add({ title: 'تم إضافة الطالب بنجاح', color: 'success' })
+    }
+
     resetState()
     closeAdd()
   }
@@ -117,6 +149,28 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
           class="flex-1 overflow-y-auto px-8 py-8 space-y-10"
           @submit="handleSubmit"
         >
+          <!-- Section: Halaqa enrollment info -->
+          <div
+            v-if="selectedHalaqaId"
+            class="p-4 rounded-2xl flex items-center gap-3"
+            style="background-color: var(--color-primary-container);"
+          >
+            <div
+              class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style="background-color: var(--color-primary);"
+            >
+              <UIcon name="i-lucide-layers" class="w-5 h-5 text-white" />
+            </div>
+            <div class="flex-1">
+              <p class="text-xs font-arabic font-semibold" style="color: var(--color-on-surface-variant);">
+                سيتم تسجيل الطالب تلقائياً في:
+              </p>
+              <p class="text-sm font-arabic font-bold" style="color: var(--color-primary);">
+                {{ selectedHalaqaName }}
+              </p>
+            </div>
+          </div>
+
           <!-- Section: Photo upload + basic info -->
           <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
             <!-- Photo upload zone -->

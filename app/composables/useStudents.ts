@@ -31,9 +31,8 @@ export function useStudents() {
     error.value = null
     try {
       const params = new URLSearchParams()
-      if (user.value?.school_id) params.set('schoolId', String(user.value.school_id))
       if (halaqaId) params.set('halaqaId', String(halaqaId))
-      const data = await api<any[]>(`/students?${params}`)
+      const data = await api<any[]>(`/students${params.toString() ? `?${params}` : ''}`)
       students.value = data.map(apiToStudent)
     }
     catch (e: any) {
@@ -45,7 +44,27 @@ export function useStudents() {
   }
 
   async function createStudent(dto: Record<string, any>) {
-    const data = await api<any>('/students', { method: 'POST', body: { ...dto, school_id: user.value?.school_id } })
+    console.log('useStudents - Current user:', user.value)
+
+    if (!user.value?.school_id) {
+      const errorMsg = 'User school_id is required to create a student. Current user: ' + JSON.stringify(user.value)
+      console.error(errorMsg)
+      throw new Error(errorMsg)
+    }
+
+    const requestBody = {
+      ...dto,
+      school_id: Number(user.value.school_id)
+    }
+
+    console.log('useStudents - Creating student with body:', requestBody)
+
+    const data = await api<any>('/students', {
+      method: 'POST',
+      body: requestBody
+    })
+
+    console.log('useStudents - Student created:', data)
     students.value.unshift(apiToStudent(data))
     return data
   }

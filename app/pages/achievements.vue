@@ -41,8 +41,9 @@ async function onDateChange() {
 }
 
 // Watch for halaqa changes from global selector
-watch(selectedHalaqaId, async (newHalaqaId) => {
-  if (newHalaqaId && selectedDate.value) {
+watch(selectedHalaqaId, async (newHalaqaId, oldHalaqaId) => {
+  // Only load if halaqaId changed and is valid (not initial null)
+  if (newHalaqaId && newHalaqaId !== oldHalaqaId && selectedDate.value) {
     reset()
     await loadStudents(newHalaqaId, selectedDate.value)
   }

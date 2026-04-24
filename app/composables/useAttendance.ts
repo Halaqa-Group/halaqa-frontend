@@ -37,9 +37,8 @@ export function useAttendance() {
     selectedDate.value = date
     isLoading.value = true
     try {
-      const schoolId = user.value?.school_id ?? 1
       const [studentsData, existingData] = await Promise.all([
-        api<any[]>(`/students?halaqaId=${halaqaId}&schoolId=${schoolId}`),
+        api<any[]>(`/students?halaqaId=${halaqaId}`),
         api<any[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`)
       ])
       const existingMap = new Map<number, any>(existingData.map((a: any) => [a.student_id, a]))

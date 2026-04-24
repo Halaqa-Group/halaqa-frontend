@@ -28,10 +28,16 @@ const formattedToday = computed(() =>
 onMounted(async () => {
   try {
     await Promise.all([fetchHalaqat(), fetchStudents()])
-    if (halaqat.value.length > 0) {
-      todayAttendance.value = await api<any[]>(
-        `/attendance?halaqaId=${halaqat.value[0].id}&date=${today}`
-      )
+    const firstHalaqa = halaqat.value[0]
+    if (firstHalaqa?.id) {
+      try {
+        todayAttendance.value = await api<any[]>(
+          `/attendance?halaqaId=${firstHalaqa.id}&date=${today}`
+        )
+      } catch (error) {
+        // Attendance might not exist for today yet, that's OK
+        console.log('No attendance data for today yet')
+      }
     }
   }
   finally {

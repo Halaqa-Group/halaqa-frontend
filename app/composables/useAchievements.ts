@@ -21,11 +21,9 @@ export function useAchievements() {
     isLoading.value = true
 
     try {
-      const schoolId = user.value?.school_id ?? 1
-
       // Fetch students and attendance in parallel
       const [studentsData, attendanceData] = await Promise.all([
-        api<ApiStudent[]>(`/students?halaqaId=${halaqaId}&schoolId=${schoolId}`),
+        api<ApiStudent[]>(`/students?halaqaId=${halaqaId}`),
         api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`)
       ])
 

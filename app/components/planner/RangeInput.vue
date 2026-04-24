@@ -26,28 +26,18 @@ function update(field: keyof LessonItem, value: string | number) {
 </script>
 
 <template>
-  <!-- VIEW MODE -->
-  <div v-if="!isEditMode" class="flex items-center justify-center gap-2">
-    <span class="text-sm font-bold text-highlighted font-arabic">{{ item.startSurah }}</span>
-    <span class="text-sm font-semibold text-highlighted">{{ item.startAyah }}</span>
-    <span class="text-xs text-muted leading-none">|</span>
-    <span class="text-sm font-semibold text-highlighted">{{ item.endAyah }}</span>
-    <span class="text-sm font-bold text-highlighted font-arabic">{{ item.endSurah }}</span>
-  </div>
-
-  <!-- EDIT MODE -->
   <div
-    v-else
-    class="relative rounded-xl p-2 transition-all cursor-grab active:cursor-grabbing bg-muted border border-default"
-    :draggable="true"
-    @dragstart="onDragStart"
+    class="relative flex items-center gap-3 px-3 py-1.5 rounded-xl group/row transition-all"
+    :class="isEditMode ? 'hover:bg-muted/50 cursor-grab active:cursor-grabbing' : ''"
+    :draggable="isEditMode"
+    @dragstart="isEditMode ? onDragStart($event) : undefined"
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
     <!-- Delete button -->
     <Transition name="fade">
       <button
-        v-if="isHovered"
+        v-if="isEditMode && isHovered"
         class="absolute -top-2 -end-2 z-10 w-5 h-5 rounded-full flex items-center justify-center bg-error text-white"
         @click.stop="removeLesson(dayId, category, item.id)"
       >
@@ -55,49 +45,57 @@ function update(field: keyof LessonItem, value: string | number) {
       </button>
     </Transition>
 
-    <!-- Drag handle -->
-    <div class="flex justify-center mb-1.5">
-      <UIcon name="i-lucide-grip-horizontal" class="w-4 h-4 text-muted" />
+    <!-- Start: surah + ayah -->
+    <div class="flex-1 min-w-0 flex items-center gap-2">
+      <div class="flex-[2.5] min-w-0">
+        <select
+          :value="item.startSurah"
+          :disabled="!isEditMode"
+          class="w-full font-arabic font-bold outline-none appearance-none text-center text-sm transition-all h-9 rounded-full bg-transparent px-1"
+          :class="isEditMode ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default'"
+          @change="update('startSurah', ($event.target as HTMLSelectElement).value)"
+        >
+          <option v-for="s in SURAHS" :key="s" :value="s">{{ s }}</option>
+        </select>
+      </div>
+      <div class="w-12 shrink-0">
+        <input
+          :value="item.startAyah"
+          type="number"
+          :disabled="!isEditMode"
+          class="transition-all outline-none text-center font-arabic font-bold text-sm h-9 w-full rounded-full bg-transparent"
+          :class="isEditMode ? 'cursor-text hover:bg-muted/50' : 'cursor-default'"
+          @change="update('startAyah', +($event.target as HTMLInputElement).value || 1)"
+        />
+      </div>
     </div>
 
-    <!-- Start row -->
-    <div class="flex items-center gap-1 mb-1">
-      <USelect
-        :model-value="item.startSurah"
-        :items="SURAHS"
-        size="xs"
-        class="flex-1 font-arabic"
-        @update:model-value="update('startSurah', $event as string)"
-      />
-      <UInputNumber
-        :model-value="item.startAyah"
-        size="xs"
-        class="w-14"
-        :min="1"
-        :controls="false"
-        @update:model-value="update('startAyah', $event ?? 1)"
-      />
-    </div>
+    <!-- Divider -->
+    <div class="text-on-surface-variant/20 font-bold px-1 transition-colors group-hover/row:text-primary/30">|</div>
 
-    <USeparator class="my-1" />
-
-    <!-- End row -->
-    <div class="flex items-center gap-1">
-      <USelect
-        :model-value="item.endSurah"
-        :items="SURAHS"
-        size="xs"
-        class="flex-1 font-arabic"
-        @update:model-value="update('endSurah', $event as string)"
-      />
-      <UInputNumber
-        :model-value="item.endAyah"
-        size="xs"
-        class="w-14"
-        :min="1"
-        :controls="false"
-        @update:model-value="update('endAyah', $event ?? 1)"
-      />
+    <!-- End: surah + ayah -->
+    <div class="flex-1 min-w-0 flex items-center gap-2">
+      <div class="flex-[2.5] min-w-0">
+        <select
+          :value="item.endSurah"
+          :disabled="!isEditMode"
+          class="w-full font-arabic font-bold outline-none appearance-none text-center text-sm transition-all h-9 rounded-full bg-transparent px-1"
+          :class="isEditMode ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default'"
+          @change="update('endSurah', ($event.target as HTMLSelectElement).value)"
+        >
+          <option v-for="s in SURAHS" :key="s" :value="s">{{ s }}</option>
+        </select>
+      </div>
+      <div class="w-12 shrink-0">
+        <input
+          :value="item.endAyah"
+          type="number"
+          :disabled="!isEditMode"
+          class="transition-all outline-none text-center font-arabic font-bold text-sm h-9 w-full rounded-full bg-transparent"
+          :class="isEditMode ? 'cursor-text hover:bg-muted/50' : 'cursor-default'"
+          @change="update('endAyah', +($event.target as HTMLInputElement).value || 1)"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -110,5 +108,10 @@ function update(field: keyof LessonItem, value: string | number) {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
 }
 </style>

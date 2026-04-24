@@ -97,26 +97,23 @@ function toggleEdit() {
       </div>
     </div>
 
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4 max-w-7xl mx-auto w-full">
         <!-- Column headers -->
-        <div class="flex items-center gap-3">
-          <div class="w-28 shrink-0" />
-          <div class="flex-1 flex justify-center">
-            <span class="text-xs font-medium text-muted font-arabic">الحفظ الجديد</span>
-          </div>
-          <div class="flex-1 flex justify-center">
-            <span class="text-xs font-medium text-muted font-arabic">المراجعة القريبة</span>
-          </div>
-          <div class="flex-1 flex justify-center">
-            <span class="text-xs font-medium text-muted font-arabic">المراجعة البعيدة</span>
-          </div>
-          <div class="w-20 shrink-0 flex items-center justify-center gap-1.5">
-            <UCheckbox
-              v-if="isEditMode"
-              :model-value="allSelected"
-              @update:model-value="toggleSelectAll"
-            />
+        <div class="flex items-center gap-4 px-4">
+          <div v-if="isEditMode" class="w-8 shrink-0 flex items-center justify-center gap-1.5">
             <span class="text-xs text-muted font-arabic">تحديد الكل</span>
+          </div>
+          <div class="w-[110px] shrink-0" />
+          <div class="flex-1 flex gap-6">
+            <div class="flex-[4] flex justify-center">
+              <span class="text-xs font-medium text-muted font-arabic">الحفظ الجديد</span>
+            </div>
+            <div class="flex-[4] flex justify-center">
+              <span class="text-xs font-medium text-muted font-arabic">المراجعة القريبة</span>
+            </div>
+            <div class="flex-[4] flex justify-center">
+              <span class="text-xs font-medium text-muted font-arabic">المراجعة البعيدة</span>
+            </div>
           </div>
         </div>
 
@@ -161,7 +158,7 @@ function toggleEdit() {
         </Transition>
 
         <!-- Day rows -->
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-5">
           <PlannerDayRow
             v-for="day in schedule"
             :key="day.id"

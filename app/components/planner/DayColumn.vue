@@ -38,45 +38,45 @@ function onDrop(e: DragEvent) {
 </script>
 
 <template>
-  <div
-    class="flex-1 relative rounded-2xl px-4 py-3 flex flex-col justify-center items-center min-h-[76px] transition-all bg-white dark:bg-elevated shadow-sm"
-    :class="isDragOver ? 'ring-2 ring-primary/30 shadow-md' : ''"
-    @dragover="onDragOver"
-    @dragleave="onDragLeave"
-    @drop="onDrop"
-  >
-    <!-- Status indicator (top-start corner = top-right in RTL) -->
+  <div class="flex-[4] relative group/column">
+    <!-- Status indicator -->
     <button
-      class="absolute top-2.5 start-2.5 w-6 h-6 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+      class="absolute -start-3 -top-3 w-9 h-9 rounded-full flex items-center justify-center z-20 shadow-lg border-[3px] border-white transition-all duration-300 hover:scale-110 active:scale-95 group/status"
       :style="`background-color: ${status.bgHex};`"
       @click="cycleStatus(dayId, category)"
     >
-      <UIcon :name="status.icon" class="w-3 h-3" :style="`color: ${status.iconHex};`" />
+      <UIcon :name="status.icon" class="w-4 h-4 group-hover/status:scale-110" :style="`color: ${status.iconHex};`" />
     </button>
 
-    <!-- Lesson items -->
-    <div v-if="items.length > 0" class="flex flex-col gap-2 pt-1">
-      <PlannerRangeInput
-        v-for="item in items"
-        :key="item.id"
-        :item="item"
-        :day-id="dayId"
-        :category="category"
-        :is-edit-mode="isEditMode"
-      />
-    </div>
-
-    <!-- Edit mode empty: add lesson -->
-    <button
-      v-else-if="isEditMode"
-      class="w-full flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed text-xs font-arabic transition-colors hover:bg-muted py-3"
-      :class="['border-default', 'text-muted']"
-      @click="addLesson(dayId, category)"
+    <!-- Cell -->
+    <div
+      class="w-full bg-white border rounded-[28px] shadow-sm relative overflow-hidden flex flex-col justify-center min-h-[72px] transition-all group/cell border-b-2 border-outline-variant/10"
+      :class="isDragOver ? 'ring-2 ring-primary/30 shadow-md' : ''"
+      @dragover="onDragOver"
+      @dragleave="onDragLeave"
+      @drop="onDrop"
     >
-      <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" />
-      إضافة درس
-    </button>
+      <div v-if="items.length > 0" class="flex flex-col">
+        <PlannerRangeInput
+          v-for="item in items"
+          :key="item.id"
+          :item="item"
+          :day-id="dayId"
+          :category="category"
+          :is-edit-mode="isEditMode"
+        />
+      </div>
 
-    <div v-else class="flex-1" />
+      <button
+        v-else-if="isEditMode"
+        class="w-full flex items-center justify-center gap-1.5 text-xs font-arabic transition-colors hover:bg-muted text-muted py-5"
+        @click="addLesson(dayId, category)"
+      >
+        <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" />
+        إضافة درس
+      </button>
+
+      <div v-else class="py-5" />
+    </div>
   </div>
 </template>

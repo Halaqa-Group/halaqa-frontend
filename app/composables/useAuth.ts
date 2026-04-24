@@ -4,6 +4,7 @@ export interface AuthUser {
   email: string
   role: 'teacher' | 'parent' | 'admin'
   school_id?: number
+  school_name?: string | null
 }
 
 // Decode JWT token to extract user data
@@ -28,7 +29,8 @@ function decodeJWT(token: string): AuthUser | null {
       name: payload.name || payload.email,
       email: payload.email,
       role: payload.role,
-      school_id: payload.school_id
+      school_id: payload.school_id,
+      school_name: payload.school_name ?? null
     }
   } catch (error) {
     console.error('Failed to decode JWT:', error)

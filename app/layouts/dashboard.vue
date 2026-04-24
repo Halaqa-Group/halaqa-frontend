@@ -8,11 +8,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen" style="background-color: var(--color-background);">
+  <div class="h-screen overflow-hidden flex" style="background-color: var(--color-background);">
     <AppSidebar />
-    <div class="flex flex-col min-h-screen ms-[84px]">
+    <div class="flex flex-col flex-1 min-w-0 ms-[84px] h-screen">
       <AppHeader />
-      <main class="flex-1 overflow-auto p-8">
+      <main class="flex-1 overflow-y-auto p-8" style="direction: rtl;">
         <slot />
       </main>
     </div>

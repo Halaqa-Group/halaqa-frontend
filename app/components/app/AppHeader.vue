@@ -3,16 +3,6 @@ const route = useRoute()
 const { user, logout } = useAuth()
 const { isSaving, submitSession, attendanceRows } = useAttendance()
 
-const PAGE_LABELS: Record<string, string> = {
-  '/': 'لوحة التحكم',
-  '/attendance': 'الحضور والتسجيل',
-  '/students': 'إدارة الطلاب',
-  '/planner': 'المخطط الأسبوعي',
-  '/analytics': 'التحليلات',
-  '/tasks': 'المهام'
-}
-
-const pageLabel = computed(() => PAGE_LABELS[route.path] || '')
 const isAttendance = computed(() => route.path === '/attendance')
 const hasAttendanceRows = computed(() => attendanceRows.value.length > 0)
 
@@ -25,11 +15,7 @@ const submitLabel = computed(() => isSaving.value ? 'جاري الإرسال...'
     class="flex items-center justify-between px-8 py-4 shrink-0"
     style="background-color: var(--color-surface-container-lowest); border-bottom: 1px solid var(--color-outline-variant);"
   >
-    <!-- Page title -->
-    <div>
-      <p class="label-md" style="color: var(--color-on-surface-variant);">أكاديمية القرآن</p>
-      <h1 class="display-md font-arabic" style="color: var(--color-on-surface);">{{ pageLabel }}</h1>
-    </div>
+    <span class="text-xl font-arabic font-bold" style="color: var(--color-on-surface);">{{ user?.school_name ?? '...' }}</span>
 
     <!-- Context actions -->
     <div class="flex items-center gap-3">

@@ -8,6 +8,7 @@ const { students, fetchStudents } = useStudents()
 
 const todayAttendance = ref<any[]>([])
 const isLoading = ref(true)
+const attendanceError = ref(false)
 
 const today = new Date().toISOString().split('T')[0]
 
@@ -34,9 +35,8 @@ onMounted(async () => {
         todayAttendance.value = await api<any[]>(
           `/attendance?halaqaId=${firstHalaqa.id}&date=${today}`
         )
-      } catch (error) {
-        // Attendance might not exist for today yet, that's OK
-        console.log('No attendance data for today yet')
+      } catch {
+        attendanceError.value = true
       }
     }
   }
@@ -65,7 +65,7 @@ onMounted(async () => {
       <!-- Stats row -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <!-- Total students -->
-        <div class="rounded-2xl p-5" style="background-color: white; border: 1px solid #F0F0F0;">
+        <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);">
           <div class="flex items-center justify-between mb-3">
             <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">الطلاب</span>
             <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: var(--color-primary-container);">
@@ -77,10 +77,10 @@ onMounted(async () => {
         </div>
 
         <!-- Halaqat -->
-        <div class="rounded-2xl p-5" style="background-color: white; border: 1px solid #F0F0F0;">
+        <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);">
           <div class="flex items-center justify-between mb-3">
             <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">الحلقات</span>
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: #E0F0EE;">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: var(--color-track-hifz-bg);">
               <UIcon name="i-lucide-layout-grid" class="w-4 h-4" style="color: var(--color-secondary);" />
             </div>
           </div>
@@ -89,18 +89,18 @@ onMounted(async () => {
         </div>
 
         <!-- Today attendance rate -->
-        <div class="rounded-2xl p-5" style="background-color: white; border: 1px solid #F0F0F0;">
+        <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);">
           <div class="flex items-center justify-between mb-3">
             <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">الحضور اليوم</span>
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: #FCE4EC;">
-              <UIcon name="i-lucide-user-check" class="w-4 h-4" style="color: #D81B60;" />
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-conflict-bg);">
+              <UIcon name="i-lucide-user-check" class="w-4 h-4" style="color: var(--color-status-conflict);" />
             </div>
           </div>
           <p class="display-md font-bold" style="color: var(--color-on-surface);">
-            {{ todayAttendance.length > 0 ? `${attendanceRate}%` : '—' }}
+            {{ attendanceError ? '—' : todayAttendance.length > 0 ? `${attendanceRate}%` : '—' }}
           </p>
           <p class="label-sm font-arabic mt-1" style="color: var(--color-on-surface-variant);">
-            {{ todayAttendance.length > 0 ? `${presentToday} من ${todayAttendance.length}` : 'لم يُسجَّل بعد' }}
+            {{ attendanceError ? 'تعذّر التحميل' : todayAttendance.length > 0 ? `${presentToday} من ${todayAttendance.length}` : 'لم يُسجَّل بعد' }}
           </p>
         </div>
 
@@ -127,7 +127,7 @@ onMounted(async () => {
             v-for="h in halaqat"
             :key="h.id"
             class="rounded-2xl p-5 flex items-center gap-4"
-            style="background-color: white; border: 1px solid #F0F0F0;"
+            style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);"
           >
             <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style="background-color: var(--color-primary-container);">
               <UIcon name="i-lucide-book-open" class="w-5 h-5" style="color: var(--color-primary);" />

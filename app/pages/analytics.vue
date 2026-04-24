@@ -111,33 +111,33 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       <!-- Summary cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Unplanned -->
-        <div class="rounded-2xl p-5" style="background-color: #FFF3E0; box-shadow: var(--shadow-card);">
+        <div class="rounded-2xl p-5" style="background-color: var(--color-status-warning-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
-            <span class="label-md font-arabic" style="color: #F57C00;">إنجازات غير مخططة</span>
-            <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: #F57C00;" />
+            <span class="label-md font-arabic" style="color: var(--color-status-warning);">إنجازات غير مخططة</span>
+            <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
           </div>
-          <p class="display-md" style="color: #F57C00;">{{ warnings.unplannedAchievements.length }}</p>
-          <p class="body-sm font-arabic mt-1" style="color: #F57C00;">هذا الأسبوع</p>
+          <p class="display-md" style="color: var(--color-status-warning);">{{ warnings.unplannedAchievements.length }}</p>
+          <p class="body-sm font-arabic mt-1" style="color: var(--color-status-warning);">هذا الأسبوع</p>
         </div>
 
         <!-- Conflicts -->
-        <div class="rounded-2xl p-5" style="background-color: #FCE4EC; box-shadow: var(--shadow-card);">
+        <div class="rounded-2xl p-5" style="background-color: var(--color-status-conflict-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
-            <span class="label-md font-arabic" style="color: #D81B60;">تعارضات مكتشفة</span>
-            <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: #D81B60;" />
+            <span class="label-md font-arabic" style="color: var(--color-status-conflict);">تعارضات مكتشفة</span>
+            <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
           </div>
-          <p class="display-md" style="color: #D81B60;">{{ warnings.flaggedConflicts.length }}</p>
-          <p class="body-sm font-arabic mt-1" style="color: #D81B60;">يحتاج مراجعة</p>
+          <p class="display-md" style="color: var(--color-status-conflict);">{{ warnings.flaggedConflicts.length }}</p>
+          <p class="body-sm font-arabic mt-1" style="color: var(--color-status-conflict);">يحتاج مراجعة</p>
         </div>
 
         <!-- Overdue -->
-        <div class="rounded-2xl p-5" style="background-color: #E8EAF6; box-shadow: var(--shadow-card);">
+        <div class="rounded-2xl p-5" style="background-color: var(--color-status-overdue-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
-            <span class="label-md font-arabic" style="color: #3949AB;">بنود متأخرة</span>
-            <UIcon name="i-lucide-clock-alert" class="w-5 h-5" style="color: #3949AB;" />
+            <span class="label-md font-arabic" style="color: var(--color-status-overdue);">بنود متأخرة</span>
+            <UIcon name="i-lucide-clock-alert" class="w-5 h-5" style="color: var(--color-status-overdue);" />
           </div>
-          <p class="display-md" style="color: #3949AB;">{{ warnings.overdueItems.length }}</p>
-          <p class="body-sm font-arabic mt-1" style="color: #3949AB;">من الخطة الأسبوعية</p>
+          <p class="display-md" style="color: var(--color-status-overdue);">{{ warnings.overdueItems.length }}</p>
+          <p class="body-sm font-arabic mt-1" style="color: var(--color-status-overdue);">من الخطة الأسبوعية</p>
         </div>
       </div>
 
@@ -145,10 +145,10 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       <div
         v-if="warnings.unplannedAchievements.length > 0"
         class="rounded-2xl p-6"
-        style="background-color: white; border: 1px solid #F0F0F0;"
+        style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);"
       >
         <div class="flex items-center gap-2 mb-4">
-          <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: #F57C00;" />
+          <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
           <h3 class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">الإنجازات غير المخططة</h3>
         </div>
         <div class="flex flex-col gap-3">
@@ -156,7 +156,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
             v-for="a in warnings.unplannedAchievements"
             :key="a.id"
             class="flex items-center justify-between p-3 rounded-xl"
-            style="background-color: #FFF8F0;"
+            style="background-color: var(--color-status-warning-bg);"
           >
             <div class="flex items-center gap-3">
               <img
@@ -175,7 +175,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
             </div>
             <span
               class="px-3 py-1 rounded-full text-xs font-arabic"
-              style="background-color: #FFE0B2; color: #F57C00;"
+              style="background-color: var(--color-status-warning-light); color: var(--color-status-warning);"
             >غير مخطط</span>
           </div>
         </div>
@@ -185,10 +185,10 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       <div
         v-if="warnings.flaggedConflicts.length > 0"
         class="rounded-2xl p-6"
-        style="background-color: white; border: 1px solid #F0F0F0;"
+        style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);"
       >
         <div class="flex items-center gap-2 mb-4">
-          <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: #D81B60;" />
+          <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
           <h3 class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">التعارضات المكتشفة</h3>
         </div>
         <div class="flex flex-col gap-3">
@@ -196,7 +196,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
             v-for="a in warnings.flaggedConflicts"
             :key="a.id"
             class="flex items-center justify-between p-3 rounded-xl"
-            style="background-color: #FFF0F3;"
+            style="background-color: var(--color-status-conflict-light);"
           >
             <div class="flex items-center gap-3">
               <img
@@ -213,7 +213,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
             </div>
             <span
               class="px-3 py-1 rounded-full text-xs font-arabic"
-              style="background-color: #FCE4EC; color: #D81B60;"
+              style="background-color: var(--color-status-conflict-bg); color: var(--color-status-conflict);"
             >تعارض</span>
           </div>
         </div>
@@ -223,17 +223,17 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       <div
         v-if="warnings.unplannedAchievements.length === 0 && warnings.flaggedConflicts.length === 0 && warnings.overdueItems.length === 0"
         class="flex flex-col items-center gap-3 py-16 rounded-2xl"
-        style="background-color: #E0F0EE;"
+        style="background-color: var(--color-status-ok-bg);"
       >
-        <UIcon name="i-lucide-check-circle" class="w-12 h-12" style="color: #4A8E85;" />
-        <p class="body-lg font-arabic font-semibold" style="color: #4A8E85;">لا توجد تنبيهات هذا الأسبوع</p>
-        <p class="body-sm font-arabic" style="color: #4A8E85;">الحلقة تسير بشكل ممتاز</p>
+        <UIcon name="i-lucide-check-circle" class="w-12 h-12" style="color: var(--color-status-ok);" />
+        <p class="body-lg font-arabic font-semibold" style="color: var(--color-status-ok);">لا توجد تنبيهات هذا الأسبوع</p>
+        <p class="body-sm font-arabic" style="color: var(--color-status-ok);">الحلقة تسير بشكل ممتاز</p>
       </div>
     </template>
 
     <!-- Error -->
-    <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: #FCE4EC;">
-      <p class="font-arabic" style="color: #D81B60;">{{ error }}</p>
+    <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: var(--color-status-conflict-bg);">
+      <p class="font-arabic" style="color: var(--color-status-conflict);">{{ error }}</p>
     </div>
   </div>
 </template>

@@ -118,10 +118,10 @@ onUnmounted(() => {
       <div
         v-if="hasHalaqa && hasStudents"
         class="flex items-center gap-3 px-5 py-3 rounded-[40px] shrink-0"
-        style="background-color: #E0F0EE;"
+        style="background-color: var(--color-track-hifz-bg);"
       >
-        <UIcon name="i-lucide-award" class="w-6 h-6" style="color: #2A6B64;" />
-        <span class="body-lg font-arabic font-bold" style="color: #2A6B64;">{{ filteredAchievements.length }} إنجاز اليوم</span>
+        <UIcon name="i-lucide-award" class="w-6 h-6" style="color: var(--color-track-hifz);" />
+        <span class="body-lg font-arabic font-bold" style="color: var(--color-track-hifz);">{{ filteredAchievements.length }} إنجاز اليوم</span>
       </div>
     </div>
 
@@ -262,9 +262,9 @@ onUnmounted(() => {
                         class="text-[11px] font-arabic"
                         :style="selectedStudent?.id === student.id
                           ? 'color: rgba(255,255,255,0.6);'
-                          : student.attendanceStatus === 'Present' ? 'color: #2A6B64;'
-                          : student.attendanceStatus === 'Late' ? 'color: #C76400;'
-                          : student.attendanceStatus === 'Absent' ? 'color: #B5174E;'
+                          : student.attendanceStatus === 'Present' ? 'color: var(--color-track-hifz);'
+                          : student.attendanceStatus === 'Late' ? 'color: var(--color-track-far);'
+                          : student.attendanceStatus === 'Absent' ? 'color: var(--color-track-near);'
                           : 'color: var(--color-on-surface-variant);'"
                       >{{ student.attendanceStatus === 'Present' ? 'حاضر' : student.attendanceStatus === 'Late' ? 'متأخر' : student.attendanceStatus === 'Absent' ? 'غائب' : 'معذور' }}</span>
                     </div>

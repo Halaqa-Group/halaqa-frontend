@@ -2,9 +2,9 @@ import type { Student, DayData } from '~/types'
 
 // Track types for achievements (mirrors backend TrackType enum)
 export const TRACK_TYPES = [
-  { value: 'Hifz', label: 'حفظ جديد', color: '#2A6B64', bgColor: '#E0F0EE' },
-  { value: 'Near', label: 'مراجعة قريبة', color: '#B5174E', bgColor: '#FCE4EC' },
-  { value: 'Far', label: 'مراجعة بعيدة', color: '#C76400', bgColor: '#FFF3E0' }
+  { value: 'Hifz', label: 'حفظ جديد', colorVar: '--color-track-hifz', bgVar: '--color-track-hifz-bg' },
+  { value: 'Near', label: 'مراجعة قريبة', colorVar: '--color-track-near', bgVar: '--color-track-near-bg' },
+  { value: 'Far', label: 'مراجعة بعيدة', colorVar: '--color-track-far', bgVar: '--color-track-far-bg' }
 ] as const
 
 // All 114 Quranic surahs indexed by number
@@ -48,16 +48,16 @@ export const STATUS_CYCLE = [
 export const STATUS_MAP: Record<string, {
   color: string
   iconColor: string
-  bgHex: string
-  iconHex: string
+  bgVar: string
+  iconVar: string
   label: string
   icon: string
 }> = {
-  'bg-[#A7D2CB]': { color: 'bg-[#E0F0EE]', iconColor: 'text-[#4A8E85]', bgHex: '#E0F0EE', iconHex: '#4A8E85', label: 'ممتاز', icon: 'i-lucide-check' },
-  'bg-[#93C6E7]': { color: 'bg-[#E3F2FD]', iconColor: 'text-[#2196F3]', bgHex: '#E3F2FD', iconHex: '#2196F3', label: 'جيد جداً', icon: 'i-lucide-user-check' },
-  'bg-[#FFD9C0]': { color: 'bg-[#FFF3E0]', iconColor: 'text-[#F57C00]', bgHex: '#FFF3E0', iconHex: '#F57C00', label: 'جيد', icon: 'i-lucide-file-text' },
-  'bg-[#EFB0C1]': { color: 'bg-[#FCE4EC]', iconColor: 'text-[#D81B60]', bgHex: '#FCE4EC', iconHex: '#D81B60', label: 'يحتاج مراجعة', icon: 'i-lucide-alert-circle' },
-  'bg-[#86A3B8]': { color: 'bg-[#EBEDF0]', iconColor: 'text-[#546E7A]', bgHex: '#EBEDF0', iconHex: '#546E7A', label: 'قيد الحفظ', icon: 'i-lucide-clock' }
+  'bg-[#A7D2CB]': { color: 'bg-[#E0F0EE]', iconColor: 'text-[#4A8E85]', bgVar: '--color-status-ok-bg', iconVar: '--color-status-ok', label: 'ممتاز', icon: 'i-lucide-check' },
+  'bg-[#93C6E7]': { color: 'bg-[#E3F2FD]', iconColor: 'text-[#2196F3]', bgVar: '--color-status-info-bg', iconVar: '--color-status-info', label: 'جيد جداً', icon: 'i-lucide-user-check' },
+  'bg-[#FFD9C0]': { color: 'bg-[#FFF3E0]', iconColor: 'text-[#F57C00]', bgVar: '--color-status-warning-bg', iconVar: '--color-status-warning', label: 'جيد', icon: 'i-lucide-file-text' },
+  'bg-[#EFB0C1]': { color: 'bg-[#FCE4EC]', iconColor: 'text-[#D81B60]', bgVar: '--color-status-conflict-bg', iconVar: '--color-status-conflict', label: 'يحتاج مراجعة', icon: 'i-lucide-alert-circle' },
+  'bg-[#86A3B8]': { color: 'bg-[#EBEDF0]', iconColor: 'text-[#546E7A]', bgVar: '--color-status-overdue-bg', iconVar: '--color-status-overdue', label: 'قيد الحفظ', icon: 'i-lucide-clock' }
 }
 
 export const STUDENTS_LIST = [

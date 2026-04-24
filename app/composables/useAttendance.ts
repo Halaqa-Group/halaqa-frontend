@@ -23,6 +23,8 @@ const selectedHalaqaId = ref<number | null>(null)
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const isLoading = ref(false)
 const isSaving = ref(false)
+const loadError = ref<string | null>(null)
+const saveError = ref<string | null>(null)
 
 function backendToStatus(status: string): AttendanceStatus {
   if (status === 'Present') return 'present'
@@ -45,6 +47,7 @@ export function useAttendance() {
     selectedDate.value = date
     sessionNotes.value = ''
     isLoading.value = true
+    loadError.value = null
     try {
       const [studentsData, existingData] = await Promise.all([
         api<any[]>(`/students?halaqaId=${halaqaId}`),
@@ -68,6 +71,9 @@ export function useAttendance() {
         }
       })
     }
+    catch (e: any) {
+      loadError.value = e?.data?.message || 'حدث خطأ أثناء تحميل الحضور'
+    }
     finally {
       isLoading.value = false
     }
@@ -76,6 +82,7 @@ export function useAttendance() {
   async function submitSession() {
     if (!selectedHalaqaId.value) return
     isSaving.value = true
+    saveError.value = null
     try {
       await Promise.all(
         attendanceRows.value.map(row => {
@@ -112,6 +119,10 @@ export function useAttendance() {
         })
       )
     }
+    catch (e: any) {
+      saveError.value = e?.data?.message || 'حدث خطأ أثناء حفظ الحضور'
+      throw e
+    }
     finally {
       isSaving.value = false
     }
@@ -147,6 +158,8 @@ export function useAttendance() {
     selectedDate,
     isLoading,
     isSaving,
+    loadError,
+    saveError,
     presentCount,
     attendanceRate,
     loadSession,

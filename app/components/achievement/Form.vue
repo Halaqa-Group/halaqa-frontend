@@ -108,7 +108,7 @@ const labelStyle = 'color: var(--color-outline);'
           :key="type.value"
           class="flex-1 py-2 rounded-full text-sm font-arabic font-semibold transition-all cursor-pointer"
           :style="trackType === type.value
-            ? `background-color: ${type.color}; color: white; box-shadow: 0 2px 8px ${type.color}40;`
+            ? `background-color: var(${type.colorVar}); color: white; box-shadow: 0 2px 8px color-mix(in srgb, var(${type.colorVar}) 25%, transparent);`
             : 'color: var(--color-on-surface-variant);'"
           @click="trackType = type.value as 'Hifz' | 'Near' | 'Far'"
         >
@@ -153,10 +153,10 @@ const labelStyle = 'color: var(--color-outline);'
         <div
           v-if="validationError"
           class="px-3 py-2 rounded-[16px] flex items-center gap-2"
-          style="background-color: #FCE4EC;"
+          style="background-color: var(--color-track-near-bg);"
         >
-          <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" style="color: #B5174E;" />
-          <p class="label-sm font-arabic" style="color: #B5174E;">{{ validationError }}</p>
+          <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" style="color: var(--color-track-near);" />
+          <p class="label-sm font-arabic" style="color: var(--color-track-near);">{{ validationError }}</p>
         </div>
       </div>
 

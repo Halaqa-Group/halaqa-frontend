@@ -23,6 +23,29 @@
   --color-background: #f9f9f9;
   --color-error: #ba1a1a;
 
+  /* Track type semantic colors */
+  --color-track-hifz: #2A6B64;
+  --color-track-hifz-bg: #E0F0EE;
+  --color-track-near: #B5174E;
+  --color-track-near-bg: #FCE4EC;
+  --color-track-far: #C76400;
+  --color-track-far-bg: #FFF3E0;
+
+  /* Status / analytics semantic colors */
+  --color-status-warning: #F57C00;
+  --color-status-warning-bg: #FFF3E0;
+  --color-status-warning-light: #FFE0B2;
+  --color-status-conflict: #D81B60;
+  --color-status-conflict-bg: #FCE4EC;
+  --color-status-conflict-light: #FFF0F3;
+  --color-status-overdue: #3949AB;
+  --color-status-overdue-bg: #E8EAF6;
+  --color-status-ok: #4A8E85;
+  --color-status-ok-bg: #E0F0EE;
+  --color-status-info: #2196F3;
+  --color-status-info-bg: #E3F2FD;
+  --color-card-border: #F0F0F0;
+
   --shadow-ambient: 0 4px 20px rgba(128, 76, 125, 0.05);
   --shadow-card: 0 1px 4px rgba(128, 76, 125, 0.08);
 }

@@ -11,9 +11,4 @@ export default defineNuxtRouteMiddleware((to) => {
   if (token.value && to.path === '/login') {
     return navigateTo('/')
   }
-
-  // Log user state for debugging
-  if (import.meta.client && token.value) {
-    console.log('Auth middleware - User state:', user.value)
-  }
 })

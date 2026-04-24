@@ -44,12 +44,8 @@ export function useStudents() {
   }
 
   async function createStudent(dto: Record<string, any>) {
-    console.log('useStudents - Current user:', user.value)
-
     if (!user.value?.school_id) {
-      const errorMsg = 'User school_id is required to create a student. Current user: ' + JSON.stringify(user.value)
-      console.error(errorMsg)
-      throw new Error(errorMsg)
+      throw new Error('User school_id is required to create a student')
     }
 
     const requestBody = {
@@ -57,14 +53,11 @@ export function useStudents() {
       school_id: Number(user.value.school_id)
     }
 
-    console.log('useStudents - Creating student with body:', requestBody)
-
     const data = await api<any>('/students', {
       method: 'POST',
       body: requestBody
     })
 
-    console.log('useStudents - Student created:', data)
     students.value.unshift(apiToStudent(data))
     return data
   }

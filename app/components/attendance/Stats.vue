@@ -1,17 +1,19 @@
 <script setup lang="ts">
 const { attendanceRate, presentCount, attendanceRows } = useAttendance()
+const absentCount = computed(() => attendanceRows.value.filter(r => r.status === 'absent').length)
+const lateCount = computed(() => attendanceRows.value.filter(r => r.status === 'late').length)
 </script>
 
 <template>
-  <div class="grid grid-cols-2 gap-4">
+  <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
     <!-- Attendance rate -->
-    <div class="rounded-2xl p-5" style="background-color: #FCE4EC; box-shadow: var(--shadow-card);">
+    <div class="rounded-2xl p-5" style="background-color: #F0E8EF; box-shadow: var(--shadow-card);">
       <div class="flex items-center justify-between mb-2">
-        <span class="label-md font-arabic" style="color: #D81B60;">نسبة الحضور</span>
-        <UIcon name="i-lucide-user-check" class="w-5 h-5" style="color: #D81B60;" />
+        <span class="label-lg font-arabic font-bold" style="color: #804c7d;">نسبة الحضور</span>
+        <UIcon name="i-lucide-user-check" class="w-9 h-9" style="color: #804c7d;" />
       </div>
-      <p class="display-md" style="color: #D81B60;">{{ attendanceRate }}%</p>
-      <p class="body-md font-arabic mt-1" style="color: #9C4060;">
+      <p class="display-lg font-bold" style="color: #804c7d;">{{ attendanceRate }}%</p>
+      <p class="body-lg font-arabic mt-1" style="color: #804c7d;">
         {{ presentCount }} / {{ attendanceRows.length }} طالب
       </p>
     </div>
@@ -19,11 +21,31 @@ const { attendanceRate, presentCount, attendanceRows } = useAttendance()
     <!-- Students present -->
     <div class="rounded-2xl p-5" style="background-color: #E0F0EE; box-shadow: var(--shadow-card);">
       <div class="flex items-center justify-between mb-2">
-        <span class="label-md font-arabic" style="color: #4A8E85;">الطلاب الحاضرون</span>
-        <UIcon name="i-lucide-users" class="w-5 h-5" style="color: #4A8E85;" />
+        <span class="label-lg font-arabic font-bold" style="color: #2A6B64;">الطلاب الحاضرون</span>
+        <UIcon name="i-lucide-users" class="w-9 h-9" style="color: #2A6B64;" />
       </div>
-      <p class="display-md" style="color: #4A8E85;">{{ presentCount }}</p>
-      <p class="body-md font-arabic mt-1" style="color: #4A8E85;">طالب</p>
+      <p class="display-lg font-bold" style="color: #2A6B64;">{{ presentCount }}</p>
+      <p class="body-lg font-arabic mt-1" style="color: #2A6B64;">طالب</p>
+    </div>
+
+    <!-- Students absent -->
+    <div class="rounded-2xl p-5" style="background-color: #FCE4EC; box-shadow: var(--shadow-card);">
+      <div class="flex items-center justify-between mb-2">
+        <span class="label-lg font-arabic font-bold" style="color: #B5174E;">الغائبون</span>
+        <UIcon name="i-lucide-user-x" class="w-9 h-9" style="color: #B5174E;" />
+      </div>
+      <p class="display-lg font-bold" style="color: #B5174E;">{{ absentCount }}</p>
+      <p class="body-lg font-arabic mt-1" style="color: #B5174E;">طالب</p>
+    </div>
+
+    <!-- Students late -->
+    <div class="rounded-2xl p-5" style="background-color: #FFF3E0; box-shadow: var(--shadow-card);">
+      <div class="flex items-center justify-between mb-2">
+        <span class="label-lg font-arabic font-bold" style="color: #C76400;">المتأخرون</span>
+        <UIcon name="i-lucide-clock" class="w-9 h-9" style="color: #C76400;" />
+      </div>
+      <p class="display-lg font-bold" style="color: #C76400;">{{ lateCount }}</p>
+      <p class="body-lg font-arabic mt-1" style="color: #C76400;">طالب</p>
     </div>
   </div>
 </template>

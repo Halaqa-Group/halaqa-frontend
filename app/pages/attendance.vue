@@ -6,7 +6,8 @@ const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const { user } = useAuth()
 const toast = useToast()
 
-const selectedDate = ref(new Date().toISOString().split('T')[0])
+const _today = new Date()
+const selectedDate = ref(`${_today.getFullYear()}-${String(_today.getMonth() + 1).padStart(2, '0')}-${String(_today.getDate()).padStart(2, '0')}`)
 const quickTags = ['تفاعل ممتاز', 'مراجعة جماعية', 'تم الانتهاء من جزء']
 const searchQuery = ref('')
 const showSuccessMessage = ref(false)
@@ -70,27 +71,21 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <!-- Session controls -->
-    <div class="flex flex-wrap items-center gap-3">
-<!-- Date picker -->
-      <div
-        class="flex items-center gap-2 px-3 py-2 rounded-xl"
-        style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
-      >
-        <UIcon name="i-lucide-calendar" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-        <input
-          v-model="selectedDate"
-          type="date"
-          dir="ltr"
-          class="bg-transparent text-sm font-arabic outline-none"
-          style="color: var(--color-on-surface);"
-          @change="onDateChange"
-        >
+    <!-- Screen header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
+      <div class="space-y-1">
+        <span class="text-xs font-arabic font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+          السجل
+        </span>
+        <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">الحضور والغياب</h2>
+        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
+          قم بإدخال ومتابعة سجلات الحضور اليومي
+        </p>
       </div>
     </div>
 
     <!-- Stats -->
-    <AttendanceStats />
+    <AttendanceStats class="mb-8" />
 
     <!-- Loading state -->
     <div v-if="isLoading" class="flex justify-center py-8">
@@ -110,97 +105,114 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <!-- Search -->
-      <div class="relative">
-        <UIcon name="i-lucide-search" class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4" style="color: var(--color-on-surface-variant);" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="بحث عن طالب..."
-          class="w-full pr-9 pl-4 py-2.5 rounded-xl text-sm font-arabic outline-none"
-          style="background-color: var(--color-surface-container-lowest); color: var(--color-on-surface); border: 1px solid var(--color-outline-variant);"
-        >
-      </div>
+      <!-- Two-column layout: records (right) + calendar sidebar (left) -->
+      <div class="flex gap-10 items-start">
 
-      <!-- Student rows -->
-      <div v-if="filteredRows.length > 0" class="flex flex-col gap-3">
-        <AttendanceRow
-          v-for="row in filteredRows"
-          :key="row.studentId"
-          v-bind="row"
-        />
-      </div>
-      <div
-        v-else
-        class="flex flex-col items-center gap-3 py-12 rounded-2xl"
-        style="background-color: var(--color-surface-container-lowest);"
-      >
-        <UIcon name="i-lucide-user-x" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-        <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">لا يوجد طلاب في هذه الحلقة</p>
-      </div>
+        <!-- Records column -->
+        <div class="flex-1 min-w-0 flex flex-col gap-4">
 
-      <!-- Session notes -->
-      <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
-        <div class="flex items-center justify-between mb-3">
-          <p class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">ملاحظات الجلسة</p>
-          <UButton variant="ghost" color="neutral" icon="i-lucide-sparkles" size="sm" label="مساعد ذكي" />
-        </div>
+          <!-- Search + Save -->
+          <div class="flex items-center gap-3">
+            <div class="relative flex-1">
+              <UIcon
+                name="i-lucide-search"
+                class="absolute end-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors"
+                style="color: var(--color-on-surface-variant);"
+              />
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="بحث عن طالب..."
+                class="w-full pe-11 ps-4 py-3 rounded-2xl text-base font-arabic outline-none transition-all focus:ring-2 focus:ring-primary/30"
+                style="background-color: var(--color-surface-container-lowest); color: var(--color-on-surface); border: 1.5px solid var(--color-outline-variant);"
+              >
+            </div>
+            <UButton
+              :loading="isSaving"
+              :disabled="isSaving"
+              icon="i-lucide-save"
+              size="lg"
+              color="primary"
+              class="font-arabic font-bold rounded-full shrink-0 px-8 py-3 text-base cursor-pointer"
+              @click="handleSaveAttendance"
+            >
+              حفظ الحضور
+            </UButton>
+          </div>
 
-        <textarea
-          v-model="sessionNotes"
-          rows="3"
-          placeholder="اكتب ملاحظاتك هنا..."
-          class="w-full resize-none rounded-xl p-3 text-sm font-arabic outline-none"
-          style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
-        />
-
-        <div class="flex items-center gap-2 mt-3 flex-wrap">
-          <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">إضافة سريعة:</span>
-          <button
-            v-for="tag in quickTags"
-            :key="tag"
-            class="px-3 py-1 rounded-full text-xs font-arabic transition-colors"
-            style="background-color: var(--color-surface-container); color: var(--color-on-surface-variant);"
-            @click="appendNote(tag)"
+          <!-- Student rows -->
+          <div v-if="filteredRows.length > 0" class="grid grid-cols-1 xl:grid-cols-2 gap-5 mt-5">
+            <AttendanceRow
+              v-for="row in filteredRows"
+              :key="row.studentId"
+              v-bind="row"
+            />
+          </div>
+          <div
+            v-else
+            class="flex flex-col items-center gap-3 py-12 rounded-2xl"
+            style="background-color: var(--color-surface-container-lowest);"
           >
-            {{ tag }}
-          </button>
-        </div>
-      </div>
+            <UIcon name="i-lucide-user-x" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
+            <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">لا يوجد طلاب في هذه الحلقة</p>
+          </div>
 
-      <!-- Save button -->
-      <div class="flex justify-end">
-        <UButton
-          :loading="isSaving"
-          :disabled="isSaving"
-          icon="i-lucide-save"
-          size="lg"
-          color="primary"
-          @click="handleSaveAttendance"
-        >
-          حفظ الحضور
-        </UButton>
-      </div>
+          <!-- Success message -->
+          <div
+            v-if="showSuccessMessage"
+            class="rounded-2xl p-4 flex items-center justify-between mt-8"
+            style="background-color: #E0F0EE; border: 1px solid #4A8E85;"
+          >
+            <div class="flex items-center gap-3">
+              <UIcon name="i-lucide-check-circle" class="w-5 h-5" style="color: #4A8E85;" />
+              <p class="body-lg font-arabic" style="color: #4A8E85;">
+                تم حفظ الحضور بنجاح. يمكنك الآن الانتقال إلى صفحة الإنجازات لتسجيل إنجازات الطلاب.
+              </p>
+            </div>
+            <NuxtLink
+              to="/achievements"
+              class="px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-colors no-underline"
+              style="background-color: #4A8E85; color: white;"
+            >
+              الانتقال إلى الإنجازات
+            </NuxtLink>
+          </div>
 
-      <!-- Success message with link to achievements -->
-      <div
-        v-if="showSuccessMessage"
-        class="rounded-2xl p-4 flex items-center justify-between"
-        style="background-color: #E0F0EE; border: 1px solid #4A8E85;"
-      >
-        <div class="flex items-center gap-3">
-          <UIcon name="i-lucide-check-circle" class="w-5 h-5" style="color: #4A8E85;" />
-          <p class="body-md font-arabic" style="color: #4A8E85;">
-            تم حفظ الحضور بنجاح. يمكنك الآن الانتقال إلى صفحة الإنجازات لتسجيل إنجازات الطلاب.
-          </p>
         </div>
-        <NuxtLink
-          to="/achievements"
-          class="px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-colors no-underline"
-          style="background-color: #4A8E85; color: white;"
-        >
-          الانتقال إلى الإنجازات
-        </NuxtLink>
+
+        <!-- Calendar sidebar (left in RTL) -->
+        <div class="shrink-0 w-[340px] hidden lg:flex lg:flex-col lg:gap-6">
+          <AttendanceCalendar
+            v-model="selectedDate"
+            @update:model-value="onDateChange"
+          />
+
+          <!-- Session notes -->
+          <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
+            <div class="flex items-center justify-between mb-3">
+              <p class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">ملاحظات الجلسة</p>
+              <UButton variant="ghost" color="neutral" icon="i-lucide-sparkles" size="sm" label="مساعد ذكي" />
+            </div>
+            <textarea
+              v-model="sessionNotes"
+              rows="3"
+              placeholder="اكتب ملاحظاتك هنا..."
+              class="w-full resize-none rounded-xl p-3 text-sm font-arabic outline-none"
+              style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
+            />
+            <div class="flex items-center gap-2 mt-3 flex-wrap">
+              <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">إضافة سريعة:</span>
+              <button
+                v-for="tag in quickTags"
+                :key="tag"
+                class="px-3 py-1 rounded-full text-xs font-arabic transition-colors"
+                style="background-color: var(--color-surface-container); color: var(--color-on-surface-variant);"
+                @click="appendNote(tag)"
+              >{{ tag }}</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </template>
   </div>

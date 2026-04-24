@@ -7,10 +7,18 @@ interface AttendanceRow {
   avatar: string
   currentSurah: string
   status: AttendanceStatus
+  notes: string
+}
+
+interface ExistingRecord {
+  id: number
+  status: string
+  notes: string
 }
 
 const sessionNotes = ref('')
 const attendanceRows = ref<AttendanceRow[]>([])
+const existingRecords = ref<Map<string, ExistingRecord>>(new Map())
 const selectedHalaqaId = ref<number | null>(null)
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const isLoading = ref(false)
@@ -35,21 +43,28 @@ export function useAttendance() {
   async function loadSession(halaqaId: number, date: string) {
     selectedHalaqaId.value = halaqaId
     selectedDate.value = date
+    sessionNotes.value = ''
     isLoading.value = true
     try {
       const [studentsData, existingData] = await Promise.all([
         api<any[]>(`/students?halaqaId=${halaqaId}`),
         api<any[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`)
       ])
-      const existingMap = new Map<number, any>(existingData.map((a: any) => [a.student_id, a]))
+      const recMap = new Map<string, ExistingRecord>()
+      existingData.forEach((a: any) => {
+        recMap.set(String(a.student_id), { id: a.id, status: a.status, notes: a.notes || '' })
+      })
+      existingRecords.value = recMap
+
       attendanceRows.value = studentsData.map((s: any) => {
-        const ex = existingMap.get(s.id)
+        const ex = recMap.get(String(s.id))
         return {
           studentId: String(s.id),
           name: s.name,
           avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
           currentSurah: '—',
-          status: ex ? backendToStatus(ex.status) : 'present' as AttendanceStatus
+          status: ex ? backendToStatus(ex.status) : 'present' as AttendanceStatus,
+          notes: ex?.notes || ''
         }
       })
     }
@@ -63,18 +78,38 @@ export function useAttendance() {
     isSaving.value = true
     try {
       await Promise.all(
-        attendanceRows.value.map(row =>
-          api('/attendance', {
-            method: 'POST',
-            body: {
-              student_id: Number(row.studentId),
-              halaqa_id: selectedHalaqaId.value,
-              date: selectedDate.value,
-              status: statusToBackend(row.status),
-              notes: sessionNotes.value || null
-            }
+        attendanceRows.value.map(row => {
+          const existing = existingRecords.value.get(row.studentId)
+          const newStatus = statusToBackend(row.status)
+          const newNotes = row.notes || null
+
+          if (!existing) {
+            return api('/attendance', {
+              method: 'POST',
+              body: {
+                student_id: Number(row.studentId),
+                halaqa_id: selectedHalaqaId.value,
+                date: selectedDate.value,
+                status: newStatus,
+                notes: newNotes
+              }
+            }).then((created: any) => {
+              existingRecords.value.set(row.studentId, { id: created.id, status: newStatus, notes: row.notes || '' })
+            })
+          }
+
+          const statusChanged = existing.status !== newStatus
+          const notesChanged = existing.notes !== (row.notes || '')
+          if (!statusChanged && !notesChanged) return Promise.resolve()
+
+          return api(`/attendance/${existing.id}`, {
+            method: 'PATCH',
+            body: { status: newStatus, notes: newNotes }
+          }).then(() => {
+            existing.status = newStatus
+            existing.notes = row.notes || ''
           })
-        )
+        })
       )
     }
     finally {
@@ -85,6 +120,11 @@ export function useAttendance() {
   function setStatus(studentId: string, status: AttendanceStatus) {
     const row = attendanceRows.value.find(r => r.studentId === studentId)
     if (row) row.status = status
+  }
+
+  function setNote(studentId: string, notes: string) {
+    const row = attendanceRows.value.find(r => r.studentId === studentId)
+    if (row) row.notes = notes
   }
 
   function appendNote(tag: string) {
@@ -112,6 +152,7 @@ export function useAttendance() {
     loadSession,
     submitSession,
     setStatus,
+    setNote,
     appendNote
   }
 }

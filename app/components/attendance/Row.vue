@@ -7,48 +7,88 @@ const props = defineProps<{
   avatar: string
   currentSurah: string
   status: AttendanceStatus
+  notes: string
 }>()
 
-const { setStatus } = useAttendance()
+const { setStatus, setNote } = useAttendance()
 
-const statusButtons: { key: AttendanceStatus; label: string; color: string; activeColor: string }[] = [
-  { key: 'present', label: 'حاضر', color: 'bg-[#E0F0EE] text-[#4A8E85]', activeColor: 'bg-[#4A8E85] text-white' },
-  { key: 'late', label: 'متأخر', color: 'bg-[#FFF3E0] text-[#F57C00]', activeColor: 'bg-[#F57C00] text-white' },
-  { key: 'absent', label: 'غائب', color: 'bg-[#FCE4EC] text-[#D81B60]', activeColor: 'bg-[#D81B60] text-white' }
+const statusButtons: {
+  key: AttendanceStatus
+  label: string
+  activeClass: string
+  hoverClass: string
+}[] = [
+  {
+    key: 'present',
+    label: 'حاضر',
+    activeClass: 'bg-[#E0F0EE] text-[#2A6B64] font-semibold',
+    hoverClass: 'text-muted hover:bg-[#E0F0EE] hover:text-[#2A6B64]'
+  },
+  {
+    key: 'late',
+    label: 'متأخر',
+    activeClass: 'bg-[#FFF3E0] text-[#C76400] font-semibold',
+    hoverClass: 'text-muted hover:bg-[#FFF3E0] hover:text-[#C76400]'
+  },
+  {
+    key: 'absent',
+    label: 'غائب',
+    activeClass: 'bg-[#FCE4EC] text-[#B5174E] font-semibold',
+    hoverClass: 'text-muted hover:bg-[#FCE4EC] hover:text-[#B5174E]'
+  }
 ]
+
+const statusDotClass = computed(() => {
+  if (props.status === 'present') return 'bg-[#2A6B64]'
+  if (props.status === 'late') return 'bg-[#C76400]'
+  return 'bg-[#B5174E]'
+})
 </script>
 
 <template>
   <div
-    class="rounded-2xl p-4 flex items-center gap-4"
-    style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
+    class="bg-white border border-outline-variant rounded-[40px] p-5 flex flex-col xl:flex-row xl:items-center gap-4 group hover:border-primary/20 hover:shadow-sm transition-all duration-300"
+    dir="rtl"
   >
-    <!-- Avatar + status dot -->
-    <div class="relative shrink-0">
-      <img :src="avatar" class="w-10 h-10 rounded-full" :alt="name">
-      <span
-        class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white"
-        :class="status === 'present' ? 'bg-[#4A8E85]' : status === 'late' ? 'bg-[#F57C00]' : 'bg-[#D81B60]'"
-      />
+    <!-- Col 1 (rightmost in RTL): Student profile -->
+    <div class="flex items-center gap-4 xl:flex-1">
+      <div class="relative shrink-0">
+        <div class="w-14 h-14 rounded-full overflow-hidden border-2 border-default">
+          <img :src="avatar" :alt="name" class="w-full h-full object-cover">
+        </div>
+        <span
+          class="absolute bottom-0 end-0 w-3.5 h-3.5 rounded-full border-2 border-white"
+          :class="statusDotClass"
+        />
+      </div>
+      <div class="min-w-0">
+        <h4 class="font-bold font-arabic text-on-surface leading-tight truncate text-xl">{{ name }}</h4>
+      </div>
     </div>
 
-    <!-- Name + surah -->
-    <div class="flex-1">
-      <p class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">{{ name }}</p>
-      <p class="label-md font-arabic" style="color: var(--color-on-surface-variant);">{{ currentSurah }}</p>
+    <!-- Col 2 (center): Status pill -->
+    <div class="flex justify-center xl:flex-1 xl:pe-12">
+      <div class="flex items-center bg-elevated p-1 rounded-full border border-default">
+        <button
+          v-for="btn in statusButtons"
+          :key="btn.key"
+          class="px-5 py-1.5 text-base font-arabic rounded-full transition-all cursor-pointer"
+          :class="status === btn.key ? btn.activeClass : `text-muted ${btn.hoverClass}`"
+          @click="setStatus(studentId, btn.key)"
+        >
+          {{ btn.label }}
+        </button>
+      </div>
     </div>
 
-    <!-- Status buttons -->
-    <div class="flex items-center gap-2">
-      <button
-        v-for="btn in statusButtons"
-        :key="btn.key"
-        class="px-3 py-1 rounded-full text-xs font-arabic transition-colors"
-        :class="status === btn.key ? btn.activeColor : btn.color"
-        @click="setStatus(studentId, btn.key)"
-      >
-        {{ btn.label }}
-      </button>
-    </div>
+    <!-- Col 3 (leftmost in RTL): Note textarea -->
+    <textarea
+      :value="notes"
+      rows="2"
+      :placeholder="`ملاحظة خاصة بـ ${name}...`"
+      class="xl:flex-1 w-full resize-none rounded-xl px-4 py-2.5 text-base font-arabic outline-none transition-all focus:ring-1 focus:ring-primary"
+      style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
+      @input="setNote(studentId, ($event.target as HTMLTextAreaElement).value)"
+    />
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const route = useRoute()
+const { selectedHalaqaName, openModal } = useGlobalHalaqa()
 
 const navItems = [
   { to: '/', icon: 'i-lucide-layout-grid', label: 'لوحة التحكم' },
@@ -56,6 +57,24 @@ function isActive(to: string) {
 
     <!-- Bottom actions -->
     <div class="flex flex-col items-center gap-1 mt-2">
+      <!-- Halaqa Switcher (Premium Feature) -->
+      <button
+        class="relative w-10 h-10 rounded-2xl flex items-center justify-center transition-all hover:bg-[--color-primary-container] group"
+        style="background-color: var(--color-surface-container-low);"
+        @click="openModal"
+      >
+        <UIcon
+          name="i-lucide-layers"
+          class="w-5 h-5 transition-colors group-hover:text-[--color-primary]"
+          style="color: var(--color-on-surface-variant);"
+        />
+        <!-- Premium indicator dot -->
+        <span
+          class="absolute top-1 right-1 w-2 h-2 rounded-full"
+          style="background-color: var(--color-primary);"
+        />
+      </button>
+
       <button
         class="w-10 h-10 rounded-2xl flex items-center justify-center transition-colors hover:bg-[--color-surface-container-low]"
       >

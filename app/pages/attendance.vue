@@ -2,11 +2,10 @@
 definePageMeta({ layout: 'dashboard' })
 
 const { attendanceRows, sessionNotes, isLoading, isSaving, appendNote, loadSession, submitSession } = useAttendance()
-const { halaqat, fetchHalaqat } = useHalaqat()
+const { selectedHalaqaId, selectedHalaqaName, hasHalaqa } = useGlobalHalaqa()
 const { user } = useAuth()
 const toast = useToast()
 
-const selectedHalaqaId = ref<number | null>(null)
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const quickTags = ['تفاعل ممتاز', 'مراجعة جماعية', 'تم الانتهاء من جزء']
 const searchQuery = ref('')
@@ -18,14 +17,6 @@ const filteredRows = computed(() =>
   )
 )
 
-const halaqaOptions = computed(() =>
-  halaqat.value.map(h => ({ label: h.name, value: h.id }))
-)
-
-const selectedHalaqaName = computed(() =>
-  halaqat.value.find(h => h.id === selectedHalaqaId.value)?.name || 'اختر الحلقة'
-)
-
 const formattedDate = computed(() => {
   if (!selectedDate.value) return '—'
   return new Date(selectedDate.value).toLocaleDateString('ar-SA', {
@@ -33,19 +24,21 @@ const formattedDate = computed(() => {
   })
 })
 
-async function onHalaqaChange() {
-  if (selectedHalaqaId.value && selectedDate.value) {
-    await loadSession(selectedHalaqaId.value, selectedDate.value)
-  }
-  showSuccessMessage.value = false
-}
-
+// Load session when date changes
 async function onDateChange() {
   if (selectedHalaqaId.value && selectedDate.value) {
     await loadSession(selectedHalaqaId.value, selectedDate.value)
   }
   showSuccessMessage.value = false
 }
+
+// Watch for halaqa changes from global selector
+watch(selectedHalaqaId, async (newHalaqaId) => {
+  if (newHalaqaId && selectedDate.value) {
+    await loadSession(newHalaqaId, selectedDate.value)
+    showSuccessMessage.value = false
+  }
+})
 
 async function handleSaveAttendance() {
   try {
@@ -67,11 +60,9 @@ async function handleSaveAttendance() {
 }
 
 onMounted(async () => {
-  await fetchHalaqat()
-  const firstHalaqa = halaqat.value[0]
-  if (firstHalaqa && selectedDate.value) {
-    selectedHalaqaId.value = firstHalaqa.id
-    await loadSession(firstHalaqa.id, selectedDate.value)
+  // Load session for currently selected global halaqa
+  if (selectedHalaqaId.value && selectedDate.value) {
+    await loadSession(selectedHalaqaId.value, selectedDate.value)
   }
 })
 </script>
@@ -80,21 +71,15 @@ onMounted(async () => {
   <div class="flex flex-col gap-6">
     <!-- Session controls -->
     <div class="flex flex-wrap items-center gap-3">
-      <!-- Halaqa selector -->
+      <!-- Selected Halaqa Display -->
       <div
-        class="flex items-center gap-2 px-3 py-2 rounded-xl"
-        style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
+        class="flex items-center gap-2 px-4 py-2 rounded-xl"
+        style="background-color: var(--color-primary-container); box-shadow: var(--shadow-card);"
       >
-        <UIcon name="i-lucide-users" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-        <select
-          v-model="selectedHalaqaId"
-          class="bg-transparent text-sm font-arabic outline-none cursor-pointer"
-          style="color: var(--color-on-surface);"
-          @change="onHalaqaChange"
-        >
-          <option v-if="halaqat.length === 0" :value="null">لا توجد حلقات</option>
-          <option v-for="h in halaqat" :key="h.id" :value="h.id">{{ h.name }}</option>
-        </select>
+        <UIcon name="i-lucide-layers" class="w-4 h-4" style="color: var(--color-primary);" />
+        <span class="text-sm font-arabic font-semibold" style="color: var(--color-primary);">
+          {{ selectedHalaqaName }}
+        </span>
       </div>
 
       <!-- Date picker -->
@@ -124,12 +109,14 @@ onMounted(async () => {
 
     <!-- Empty state -->
     <div
-      v-else-if="!selectedHalaqaId"
+      v-else-if="!hasHalaqa"
       class="flex flex-col items-center gap-3 py-12 rounded-2xl"
       style="background-color: var(--color-surface-container-lowest);"
     >
-      <UIcon name="i-lucide-users" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-      <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">اختر حلقة لبدء تسجيل الحضور</p>
+      <UIcon name="i-lucide-layers" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
+      <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">
+        استخدم أيقونة الحلقات في الشريط الجانبي لاختيار حلقة
+      </p>
     </div>
 
     <template v-else>

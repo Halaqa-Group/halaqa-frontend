@@ -4,7 +4,6 @@ import type { ApiAchievement, ApiAttendance, ApiStudent, StudentWithAttendance, 
 const students = ref<StudentWithAttendance[]>([])
 const selectedStudent = ref<StudentWithAttendance | null>(null)
 const achievements = ref<ApiAchievement[]>([])
-const selectedHalaqaId = ref<number | null>(null)
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const isLoading = ref(false)
 const isSaving = ref(false)
@@ -18,7 +17,6 @@ export function useAchievements() {
    * Filters to show only Present/Late students
    */
   async function loadStudents(halaqaId: number, date: string) {
-    selectedHalaqaId.value = halaqaId
     selectedDate.value = date
     isLoading.value = true
 
@@ -65,21 +63,19 @@ export function useAchievements() {
   /**
    * Selects a student and loads their achievements for the selected date
    */
-  async function selectStudent(student: StudentWithAttendance) {
+  async function selectStudent(student: StudentWithAttendance, halaqaId: number) {
     selectedStudent.value = student
-    await loadAchievements(student.id)
+    await loadAchievements(student.id, halaqaId)
   }
 
   /**
    * Loads achievements for a specific student on the selected date
    */
-  async function loadAchievements(studentId: number) {
-    if (!selectedHalaqaId.value) return
-
+  async function loadAchievements(studentId: number, halaqaId: number) {
     isLoading.value = true
     try {
       achievements.value = await api<ApiAchievement[]>(
-        `/achievements?studentId=${studentId}&halaqaId=${selectedHalaqaId.value}&date=${selectedDate.value}`
+        `/achievements?studentId=${studentId}&halaqaId=${halaqaId}&date=${selectedDate.value}`
       )
     } finally {
       isLoading.value = false
@@ -141,7 +137,6 @@ export function useAchievements() {
     students,
     selectedStudent,
     achievements,
-    selectedHalaqaId,
     selectedDate,
     isLoading,
     isSaving,

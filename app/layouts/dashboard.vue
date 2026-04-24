@@ -1,3 +1,12 @@
+<script setup lang="ts">
+const { initializeHalaqa } = useGlobalHalaqa()
+
+// Initialize global halaqa selection on mount
+onMounted(async () => {
+  await initializeHalaqa()
+})
+</script>
+
 <template>
   <div class="min-h-screen" style="background-color: var(--color-background);">
     <AppSidebar />
@@ -7,5 +16,8 @@
         <slot />
       </main>
     </div>
+
+    <!-- Global Halaqa Switcher Modal -->
+    <HalaqaSwitcherModal />
   </div>
 </template>

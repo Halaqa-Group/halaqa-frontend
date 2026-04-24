@@ -14,7 +14,6 @@ const emit = defineEmits<{
   submit: [data: CreateAchievementDto]
 }>()
 
-// Form state
 const trackType = ref<'Hifz' | 'Near' | 'Far'>('Hifz')
 const startSurah = ref(1)
 const startVerse = ref(1)
@@ -26,41 +25,23 @@ const tajweedErrorsCount = ref(0)
 const teacherNotes = ref('')
 const validationError = ref<string | null>(null)
 
-// Surah options for dropdowns
-const surahOptions = computed(() => {
-  return Object.entries(SURAH_NAMES).map(([num, name]) => ({
-    value: Number(num),
-    label: name
-  }))
-})
+const surahOptions = computed(() =>
+  Object.entries(SURAH_NAMES).map(([num, name]) => ({ value: Number(num), label: name }))
+)
 
-// Max verses for selected surahs
 const maxStartVerse = computed(() => VERSE_COUNTS[startSurah.value] || 1)
 const maxEndVerse = computed(() => VERSE_COUNTS[endSurah.value] || 1)
 
-// Validate form before submit
 function validate(): boolean {
-  const result = isValidVerseRange(
-    startSurah.value,
-    startVerse.value,
-    endSurah.value,
-    endVerse.value
-  )
-
-  if (!result.valid) {
-    validationError.value = result.error || 'خطأ في النطاق'
-    return false
-  }
-
+  const result = isValidVerseRange(startSurah.value, startVerse.value, endSurah.value, endVerse.value)
+  if (!result.valid) { validationError.value = result.error || 'خطأ في النطاق'; return false }
   validationError.value = null
   return true
 }
 
-// Handle form submission
 function handleSubmit() {
   if (!validate()) return
-
-  const data: CreateAchievementDto = {
+  emit('submit', {
     student_id: props.student.id,
     halaqa_id: props.halaqaId,
     date: props.date,
@@ -73,27 +54,18 @@ function handleSubmit() {
     warnings_count: warningsCount.value,
     tajweed_errors_count: tajweedErrorsCount.value,
     teacher_notes: teacherNotes.value || undefined
-  }
-
-  emit('submit', data)
+  })
   resetForm()
 }
 
-// Reset form after submission
 function resetForm() {
   trackType.value = 'Hifz'
-  startSurah.value = 1
-  startVerse.value = 1
-  endSurah.value = 1
-  endVerse.value = 7
-  mistakesCount.value = 0
-  warningsCount.value = 0
-  tajweedErrorsCount.value = 0
-  teacherNotes.value = ''
-  validationError.value = null
+  startSurah.value = 1; startVerse.value = 1
+  endSurah.value = 1; endVerse.value = 7
+  mistakesCount.value = 0; warningsCount.value = 0; tajweedErrorsCount.value = 0
+  teacherNotes.value = ''; validationError.value = null
 }
 
-// Counter helpers
 function increment(field: 'mistakes' | 'warnings' | 'tajweed') {
   if (field === 'mistakes') mistakesCount.value++
   else if (field === 'warnings') warningsCount.value++
@@ -105,212 +77,173 @@ function decrement(field: 'mistakes' | 'warnings' | 'tajweed') {
   else if (field === 'warnings' && warningsCount.value > 0) warningsCount.value--
   else if (field === 'tajweed' && tajweedErrorsCount.value > 0) tajweedErrorsCount.value--
 }
+
+const selectClass = 'w-full border-none rounded-xl px-3 py-2.5 text-sm font-arabic outline-none focus:ring-2 focus:ring-primary/30 transition-all'
+const inputClass = 'w-full border-none rounded-xl px-2 py-2.5 text-sm font-arabic outline-none focus:ring-2 focus:ring-primary/30 transition-all text-center'
+const fieldBg = 'background-color: var(--color-surface-container-lowest); color: var(--color-on-surface);'
+const labelClass = 'block text-[10px] font-arabic font-bold uppercase mb-1.5 text-center'
+const labelStyle = 'color: var(--color-outline);'
 </script>
 
 <template>
   <div
-    class="rounded-2xl p-5"
+    class="rounded-[40px] overflow-hidden"
     style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
   >
     <!-- Header -->
-    <div class="mb-5">
-      <p class="title-lg font-arabic font-semibold" style="color: var(--color-on-surface);">
-        تسجيل إنجاز جديد
-      </p>
-      <p class="body-sm font-arabic mt-1" style="color: var(--color-on-surface-variant);">
-        {{ student.name }}
-      </p>
+    <div class="px-6 pt-5 pb-4 flex items-center gap-3" style="border-bottom: 1px solid var(--color-outline-variant);">
+      <img :src="student.avatar" class="w-10 h-10 rounded-full object-cover shrink-0" :alt="student.name">
+      <div class="flex-1 min-w-0">
+        <p class="text-xs font-arabic font-bold uppercase tracking-widest mb-0.5" style="color: var(--color-primary);">تسجيل إنجاز</p>
+        <p class="text-xl font-arabic font-bold truncate leading-tight" style="color: var(--color-on-surface);">{{ student.name }}</p>
+      </div>
     </div>
 
-    <!-- Track type selector -->
-    <div class="mb-5">
-      <label class="label-md font-arabic block mb-2" style="color: var(--color-on-surface);">
-        نوع المتابعة
-      </label>
-      <div class="flex gap-2">
+    <div class="px-6 pt-5 pb-6 flex flex-col gap-5">
+
+      <!-- Track type -->
+      <div class="flex items-center p-1 rounded-full" style="background-color: var(--color-surface-container-low);">
         <button
           v-for="type in TRACK_TYPES"
           :key="type.value"
-          class="flex-1 px-3 py-2 rounded-xl text-sm font-arabic font-semibold transition-colors"
+          class="flex-1 py-2 rounded-full text-sm font-arabic font-semibold transition-all cursor-pointer"
           :style="trackType === type.value
-            ? `background-color: ${type.color}; color: white;`
-            : `background-color: ${type.bgColor}; color: ${type.color};`"
+            ? `background-color: ${type.color}; color: white; box-shadow: 0 2px 8px ${type.color}40;`
+            : 'color: var(--color-on-surface-variant);'"
           @click="trackType = type.value as 'Hifz' | 'Near' | 'Far'"
         >
           {{ type.label }}
         </button>
       </div>
-    </div>
 
-    <!-- Quran range -->
-    <div class="mb-5">
-      <label class="label-md font-arabic block mb-2" style="color: var(--color-on-surface);">
-        نطاق الآيات
-      </label>
+      <!-- Range: 4 fields in one row -->
+      <div class="rounded-[24px] p-4 flex flex-col gap-3" style="background-color: var(--color-surface-container-low);">
+        <div class="flex gap-2 items-end">
+          <!-- Start surah -->
+          <div class="flex-[3]">
+            <label :class="labelClass" :style="labelStyle">من — السورة</label>
+            <select v-model="startSurah" :class="selectClass" :style="fieldBg">
+              <option v-for="opt in surahOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+          <!-- Start verse -->
+          <div class="flex-1">
+            <label :class="labelClass" :style="labelStyle">الآية</label>
+            <input v-model.number="startVerse" type="number" min="1" :max="maxStartVerse" :class="inputClass" :style="fieldBg">
+          </div>
+          <!-- Divider -->
+          <div class="pb-2.5 px-0.5">
+            <UIcon name="i-lucide-arrow-left-right" class="w-3.5 h-3.5" style="color: var(--color-outline);" />
+          </div>
+          <!-- End surah -->
+          <div class="flex-[3]">
+            <label :class="labelClass" :style="labelStyle">إلى — السورة</label>
+            <select v-model="endSurah" :class="selectClass" :style="fieldBg">
+              <option v-for="opt in surahOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
+          <!-- End verse -->
+          <div class="flex-1">
+            <label :class="labelClass" :style="labelStyle">الآية</label>
+            <input v-model.number="endVerse" type="number" min="1" :max="maxEndVerse" :class="inputClass" :style="fieldBg">
+          </div>
+        </div>
 
-      <!-- Start -->
-      <div class="mb-3">
-        <p class="label-sm font-arabic mb-2" style="color: var(--color-on-surface-variant);">من:</p>
-        <div class="grid grid-cols-2 gap-2">
-          <select
-            v-model="startSurah"
-            class="px-3 py-2 rounded-xl text-sm font-arabic outline-none"
-            style="background-color: var(--color-surface-container-low); color: var(--color-on-surface); border: 1px solid var(--color-outline-variant);"
-          >
-            <option v-for="opt in surahOptions" :key="opt.value" :value="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
-          <input
-            v-model.number="startVerse"
-            type="number"
-            min="1"
-            :max="maxStartVerse"
-            placeholder="رقم الآية"
-            class="px-3 py-2 rounded-xl text-sm font-arabic outline-none"
-            style="background-color: var(--color-surface-container-low); color: var(--color-on-surface); border: 1px solid var(--color-outline-variant);"
-          >
+        <!-- Validation error -->
+        <div
+          v-if="validationError"
+          class="px-3 py-2 rounded-[16px] flex items-center gap-2"
+          style="background-color: #FCE4EC;"
+        >
+          <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" style="color: #B5174E;" />
+          <p class="label-sm font-arabic" style="color: #B5174E;">{{ validationError }}</p>
         </div>
       </div>
 
-      <!-- End -->
-      <div>
-        <p class="label-sm font-arabic mb-2" style="color: var(--color-on-surface-variant);">إلى:</p>
-        <div class="grid grid-cols-2 gap-2">
-          <select
-            v-model="endSurah"
-            class="px-3 py-2 rounded-xl text-sm font-arabic outline-none"
-            style="background-color: var(--color-surface-container-low); color: var(--color-on-surface); border: 1px solid var(--color-outline-variant);"
-          >
-            <option v-for="opt in surahOptions" :key="opt.value" :value="opt.value">
-              {{ opt.label }}
-            </option>
-          </select>
-          <input
-            v-model.number="endVerse"
-            type="number"
-            min="1"
-            :max="maxEndVerse"
-            placeholder="رقم الآية"
-            class="px-3 py-2 rounded-xl text-sm font-arabic outline-none"
-            style="background-color: var(--color-surface-container-low); color: var(--color-on-surface); border: 1px solid var(--color-outline-variant);"
-          >
+      <!-- Counters: 3 in one row, big and clear -->
+      <div class="grid grid-cols-3 gap-3">
+        <!-- Mistakes -->
+        <div
+          class="rounded-[24px] p-4 flex flex-col items-center gap-3"
+          style="background-color: var(--color-surface-container-low);"
+        >
+          <span class="text-[10px] font-arabic font-bold uppercase" style="color: var(--color-outline);">أخطاء</span>
+          <span class="text-3xl font-bold" style="color: var(--color-primary);">{{ mistakesCount }}</span>
+          <div class="flex gap-2">
+            <button
+              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+              style="background-color: rgba(128,76,125,0.12); color: var(--color-primary);"
+              @click="decrement('mistakes')"
+            ><UIcon name="i-lucide-minus" class="w-4 h-4" /></button>
+            <button
+              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+              style="background-color: rgba(128,76,125,0.12); color: var(--color-primary);"
+              @click="increment('mistakes')"
+            ><UIcon name="i-lucide-plus" class="w-4 h-4" /></button>
+          </div>
+        </div>
+
+        <!-- Warnings -->
+        <div
+          class="rounded-[24px] p-4 flex flex-col items-center gap-3"
+          style="background-color: var(--color-surface-container-low);"
+        >
+          <span class="text-[10px] font-arabic font-bold uppercase" style="color: var(--color-outline);">تنبيهات</span>
+          <span class="text-3xl font-bold" style="color: var(--color-secondary);">{{ warningsCount }}</span>
+          <div class="flex gap-2">
+            <button
+              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+              style="background-color: rgba(53,102,104,0.12); color: var(--color-secondary);"
+              @click="decrement('warnings')"
+            ><UIcon name="i-lucide-minus" class="w-4 h-4" /></button>
+            <button
+              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+              style="background-color: rgba(53,102,104,0.12); color: var(--color-secondary);"
+              @click="increment('warnings')"
+            ><UIcon name="i-lucide-plus" class="w-4 h-4" /></button>
+          </div>
+        </div>
+
+        <!-- Tajweed -->
+        <div
+          class="rounded-[24px] p-4 flex flex-col items-center gap-3"
+          style="background-color: var(--color-surface-container-low);"
+        >
+          <span class="text-[10px] font-arabic font-bold uppercase" style="color: var(--color-outline);">تجويد</span>
+          <span class="text-3xl font-bold" style="color: var(--color-tertiary);">{{ tajweedErrorsCount }}</span>
+          <div class="flex gap-2">
+            <button
+              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+              style="background-color: rgba(128,76,125,0.08); color: var(--color-tertiary);"
+              @click="decrement('tajweed')"
+            ><UIcon name="i-lucide-minus" class="w-4 h-4" /></button>
+            <button
+              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+              style="background-color: rgba(128,76,125,0.08); color: var(--color-tertiary);"
+              @click="increment('tajweed')"
+            ><UIcon name="i-lucide-plus" class="w-4 h-4" /></button>
+          </div>
         </div>
       </div>
 
-      <!-- Validation error -->
-      <div
-        v-if="validationError"
-        class="mt-3 px-3 py-2 rounded-xl flex items-center gap-2"
-        style="background-color: #FCE4EC;"
-      >
-        <UIcon name="i-lucide-alert-circle" class="w-4 h-4" style="color: #D81B60;" />
-        <p class="label-sm font-arabic" style="color: #D81B60;">{{ validationError }}</p>
-      </div>
-    </div>
-
-    <!-- Error counters -->
-    <div class="mb-5">
-      <label class="label-md font-arabic block mb-3" style="color: var(--color-on-surface);">
-        عدد الأخطاء
-      </label>
-
-      <!-- Mistakes -->
-      <div class="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style="background-color: var(--color-surface-container-low);">
-        <span class="label-md font-arabic" style="color: var(--color-on-surface);">أخطاء الحفظ</span>
-        <div class="flex items-center gap-2">
-          <button
-            class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-            style="background-color: var(--color-surface-container);"
-            @click="decrement('mistakes')"
-          >
-            <UIcon name="i-lucide-minus" class="w-4 h-4" />
-          </button>
-          <span class="body-lg font-semibold w-8 text-center" style="color: var(--color-on-surface);">
-            {{ mistakesCount }}
-          </span>
-          <button
-            class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-            style="background-color: var(--color-surface-container);"
-            @click="increment('mistakes')"
-          >
-            <UIcon name="i-lucide-plus" class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Warnings -->
-      <div class="flex items-center justify-between mb-3 px-3 py-2 rounded-xl" style="background-color: var(--color-surface-container-low);">
-        <span class="label-md font-arabic" style="color: var(--color-on-surface);">التنبيهات</span>
-        <div class="flex items-center gap-2">
-          <button
-            class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-            style="background-color: var(--color-surface-container);"
-            @click="decrement('warnings')"
-          >
-            <UIcon name="i-lucide-minus" class="w-4 h-4" />
-          </button>
-          <span class="body-lg font-semibold w-8 text-center" style="color: var(--color-on-surface);">
-            {{ warningsCount }}
-          </span>
-          <button
-            class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-            style="background-color: var(--color-surface-container);"
-            @click="increment('warnings')"
-          >
-            <UIcon name="i-lucide-plus" class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Tajweed errors -->
-      <div class="flex items-center justify-between px-3 py-2 rounded-xl" style="background-color: var(--color-surface-container-low);">
-        <span class="label-md font-arabic" style="color: var(--color-on-surface);">أخطاء التجويد</span>
-        <div class="flex items-center gap-2">
-          <button
-            class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-            style="background-color: var(--color-surface-container);"
-            @click="decrement('tajweed')"
-          >
-            <UIcon name="i-lucide-minus" class="w-4 h-4" />
-          </button>
-          <span class="body-lg font-semibold w-8 text-center" style="color: var(--color-on-surface);">
-            {{ tajweedErrorsCount }}
-          </span>
-          <button
-            class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-            style="background-color: var(--color-surface-container);"
-            @click="increment('tajweed')"
-          >
-            <UIcon name="i-lucide-plus" class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Teacher notes -->
-    <div class="mb-5">
-      <label class="label-md font-arabic block mb-2" style="color: var(--color-on-surface);">
-        ملاحظات المعلم (اختياري)
-      </label>
+      <!-- Notes -->
       <textarea
         v-model="teacherNotes"
-        rows="3"
-        placeholder="أضف ملاحظاتك هنا..."
-        class="w-full resize-none rounded-xl p-3 text-sm font-arabic outline-none"
-        style="background-color: var(--color-surface-container-low); color: var(--color-on-surface); border: 1px solid var(--color-outline-variant);"
+        rows="2"
+        placeholder="ملاحظات المعلم..."
+        class="w-full resize-none rounded-[20px] px-4 py-3 text-sm font-arabic outline-none transition-all focus:ring-2 focus:ring-primary/30"
+        style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
       />
-    </div>
 
-    <!-- Submit button -->
-    <UButton
-      block
-      size="lg"
-      icon="i-lucide-save"
-      color="primary"
-      @click="handleSubmit"
-    >
-      حفظ الإنجاز
-    </UButton>
+      <!-- Submit -->
+      <button
+        class="w-full py-3 rounded-full font-arabic font-bold text-base flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95 cursor-pointer"
+        style="background-color: var(--color-primary); color: white; box-shadow: 0 4px 14px rgba(128,76,125,0.3);"
+        @click="handleSubmit"
+      >
+        <UIcon name="i-lucide-save" class="w-5 h-5" />
+        حفظ الإنجاز
+      </button>
+    </div>
   </div>
 </template>

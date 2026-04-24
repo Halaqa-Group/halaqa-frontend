@@ -2,9 +2,9 @@ import type { Student, DayData } from '~/types'
 
 // Track types for achievements (mirrors backend TrackType enum)
 export const TRACK_TYPES = [
-  { value: 'Hifz', label: 'حفظ جديد', color: '#4A8E85', bgColor: '#E0F0EE' },
-  { value: 'Near', label: 'مراجعة قريبة', color: '#2196F3', bgColor: '#E3F2FD' },
-  { value: 'Far', label: 'مراجعة بعيدة', color: '#F57C00', bgColor: '#FFF3E0' }
+  { value: 'Hifz', label: 'حفظ جديد', color: '#2A6B64', bgColor: '#E0F0EE' },
+  { value: 'Near', label: 'مراجعة قريبة', color: '#B5174E', bgColor: '#FCE4EC' },
+  { value: 'Far', label: 'مراجعة بعيدة', color: '#C76400', bgColor: '#FFF3E0' }
 ] as const
 
 // All 114 Quranic surahs indexed by number

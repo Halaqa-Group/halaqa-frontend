@@ -11,56 +11,42 @@ const emit = defineEmits<{
 }>()
 
 const statusConfig = {
-  Present: { color: '#4A8E85', bg: '#E0F0EE', label: 'حاضر' },
-  Late: { color: '#F57C00', bg: '#FFF3E0', label: 'متأخر' }
+  Present: { color: '#2A6B64', bg: '#E0F0EE', label: 'حاضر' },
+  Late: { color: '#C76400', bg: '#FFF3E0', label: 'متأخر' }
 }
 
-const config = props.student.attendanceStatus
-  ? statusConfig[props.student.attendanceStatus as 'Present' | 'Late']
-  : null
+const config = computed(() =>
+  props.student.attendanceStatus
+    ? statusConfig[props.student.attendanceStatus as 'Present' | 'Late']
+    : null
+)
 </script>
 
 <template>
   <button
-    class="w-full rounded-2xl p-3 flex items-center gap-3 transition-all text-right"
+    class="w-full rounded-[40px] p-3 flex items-center gap-3 transition-all text-right cursor-pointer"
     :style="selected
-      ? 'background-color: var(--color-primary); box-shadow: var(--shadow-card);'
-      : 'background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-outline-variant);'"
+      ? 'background-color: var(--color-primary); box-shadow: 0 4px 14px rgba(128,76,125,0.25);'
+      : 'background-color: var(--color-surface-container-lowest); border: 1.5px solid var(--color-outline-variant);'"
     @click="emit('select', student)"
   >
-    <!-- Avatar -->
-    <div class="relative shrink-0">
-      <img :src="student.avatar" class="w-10 h-10 rounded-full" :alt="student.name">
-      <span
-        v-if="config"
-        class="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white"
-        :style="`background-color: ${config.color};`"
-      />
-    </div>
+    <img :src="student.avatar" class="w-11 h-11 rounded-full object-cover shrink-0" :alt="student.name">
 
-    <!-- Name + status -->
-    <div class="flex-1 min-w-0">
-      <p
-        class="body-md font-arabic font-semibold truncate"
-        :style="selected ? 'color: white;' : 'color: var(--color-on-surface);'"
-      >
-        {{ student.name }}
-      </p>
-      <p
-        v-if="config"
-        class="label-sm font-arabic"
-        :style="selected ? 'color: rgba(255,255,255,0.8);' : `color: ${config.color};`"
-      >
-        {{ config.label }}
-      </p>
-    </div>
+    <p
+      class="flex-1 min-w-0 text-base font-arabic font-bold truncate"
+      :style="selected ? 'color: white;' : 'color: var(--color-on-surface);'"
+    >
+      {{ student.name }}
+    </p>
 
-    <!-- Selection indicator -->
-    <UIcon
-      v-if="selected"
-      name="i-lucide-check"
-      class="w-5 h-5"
-      style="color: white;"
-    />
+    <span
+      v-if="config"
+      class="shrink-0 px-2.5 py-1 rounded-full text-xs font-arabic font-semibold"
+      :style="selected
+        ? 'background-color: rgba(255,255,255,0.2); color: white;'
+        : `background-color: ${config.bg}; color: ${config.color};`"
+    >
+      {{ config.label }}
+    </span>
   </button>
 </template>

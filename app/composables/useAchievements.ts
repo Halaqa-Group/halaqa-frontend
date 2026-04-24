@@ -4,7 +4,8 @@ import type { ApiAchievement, ApiAttendance, ApiStudent, StudentWithAttendance, 
 const students = ref<StudentWithAttendance[]>([])
 const selectedStudent = ref<StudentWithAttendance | null>(null)
 const achievements = ref<ApiAchievement[]>([])
-const selectedDate = ref(new Date().toISOString().split('T')[0])
+const _today = new Date()
+const selectedDate = ref(`${_today.getFullYear()}-${String(_today.getMonth() + 1).padStart(2, '0')}-${String(_today.getDate()).padStart(2, '0')}`)
 const isLoading = ref(false)
 const isSaving = ref(false)
 
@@ -43,12 +44,10 @@ export function useAchievements() {
         }
       })
 
-      // Filter to only Present/Late students for achievements entry
-      students.value = allStudents.filter(s =>
-        s.attendanceStatus === 'Present' || s.attendanceStatus === 'Late'
-      )
+      // Show all enrolled students; attendance status is displayed for context
+      students.value = allStudents
 
-      // Reset selected student if not in filtered list
+      // Reset selected student if no longer enrolled
       if (selectedStudent.value && !students.value.find(s => s.id === selectedStudent.value!.id)) {
         selectedStudent.value = null
         achievements.value = []
@@ -89,7 +88,7 @@ export function useAchievements() {
     try {
       const newAchievement = await api<ApiAchievement>('/achievements', {
         method: 'POST',
-        body: data
+        body: { ...data, date: selectedDate.value }
       })
 
       // Add to local list

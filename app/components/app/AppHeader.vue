@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const route = useRoute()
-const { isEditMode } = useSchedule()
 const { user, logout } = useAuth()
 const { isSaving, submitSession, attendanceRows } = useAttendance()
 
@@ -14,15 +13,11 @@ const PAGE_LABELS: Record<string, string> = {
 }
 
 const pageLabel = computed(() => PAGE_LABELS[route.path] || '')
-const isPlanner = computed(() => route.path === '/planner')
 const isAttendance = computed(() => route.path === '/attendance')
 const hasAttendanceRows = computed(() => attendanceRows.value.length > 0)
 
 const submitLabel = computed(() => isSaving.value ? 'جاري الإرسال...' : 'إرسال الجلسة')
 
-function toggleEdit() {
-  isEditMode.value = !isEditMode.value
-}
 </script>
 
 <template>
@@ -54,18 +49,6 @@ function toggleEdit() {
           :loading="isSaving"
           :disabled="!hasAttendanceRows || isSaving"
           @click="submitSession"
-        />
-      </template>
-
-      <!-- Planner page actions -->
-      <template v-else-if="isPlanner">
-        <UButton variant="soft" color="neutral" label="نسخ من الأسبوع الماضي" icon="i-lucide-copy" />
-        <UButton
-          :color="isEditMode ? 'primary' : 'neutral'"
-          :variant="isEditMode ? 'solid' : 'soft'"
-          :label="isEditMode ? 'حفظ التغييرات' : 'تعديل الخطة'"
-          :icon="isEditMode ? 'i-lucide-save' : 'i-lucide-file-edit'"
-          @click="toggleEdit"
         />
       </template>
 

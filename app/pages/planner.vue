@@ -51,59 +51,53 @@ function toggleEdit() {
 </script>
 
 <template>
-  <UDashboardPanel>
-    <template #header>
-      <UDashboardNavbar title="مخطط الأسبوع">
-        <template #leading>
-          <UDashboardSidebarCollapse />
-        </template>
-        <template #right>
-          <div class="flex items-center gap-2">
-            <UButton
-              v-if="!isEditMode"
-              variant="outline"
-              color="neutral"
-              label="نسخ من الأسبوع الماضي"
-              size="sm"
-              class="font-arabic"
-            />
-            <UButton
-              :icon="isEditMode ? 'i-lucide-check' : 'i-lucide-save'"
-              :label="isEditMode ? 'حفظ المخطط' : 'تعديل الخطة'"
-              color="primary"
-              :variant="isEditMode ? 'outline' : 'solid'"
-              size="sm"
-              class="font-arabic"
-              @click="toggleEdit"
-            />
-          </div>
-        </template>
-      </UDashboardNavbar>
+  <div>
+    <!-- Page header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+      <div class="space-y-1">
+        <span class="text-xs font-arabic font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+          التخطيط الأسبوعي
+        </span>
+        <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">مخطط الأسبوع</h2>
+        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
+          خطط دروس الأسبوع لكل طالب وتتبع التقدم في الحفظ والمراجعة.
+        </p>
+      </div>
 
-      <UDashboardToolbar>
-        <template #left>
-          <div class="flex flex-col gap-0.5">
-            <p class="text-xs text-muted font-arabic">دورة التخطيط السنوية</p>
-            <p class="text-sm font-bold text-highlighted font-arabic">٢٣ أكتوبر — ٢٩ أكتوبر، ٢٠٢٣</p>
-          </div>
-        </template>
-        <template #right>
-          <UDropdownMenu :items="studentMenuItems">
-            <div class="flex items-center gap-2.5 ps-2 pe-3 py-2 bg-white dark:bg-elevated border border-default rounded-2xl cursor-pointer hover:bg-muted/30 transition-colors select-none min-w-[180px]">
-              <UAvatar :src="selectedStudentAvatar" size="sm" />
-              <div class="flex flex-col flex-1 items-start">
-                <span class="text-[10px] text-muted font-arabic leading-none mb-0.5">الطالب المختار</span>
-                <span class="text-sm font-bold text-highlighted font-arabic leading-tight">{{ selectedStudent }}</span>
-              </div>
-              <UIcon name="i-lucide-chevron-down" class="size-3.5 text-muted flex-shrink-0" />
+      <div class="flex items-center gap-3 shrink-0">
+        <UDropdownMenu :items="studentMenuItems">
+          <div class="flex items-center gap-4 px-4 py-2 bg-slate-100 dark:bg-elevated border border-slate-300 dark:border-default rounded-xl cursor-pointer hover:border-primary/30 transition-colors select-none min-w-[240px]">
+            <div class="w-8 h-8 rounded-lg overflow-hidden border border-slate-200 dark:border-default shrink-0">
+              <img :src="selectedStudentAvatar" class="w-full h-full object-cover" alt="" />
             </div>
-          </UDropdownMenu>
-        </template>
-      </UDashboardToolbar>
-    </template>
+            <span class="text-sm font-bold text-highlighted font-arabic flex-1 text-start">{{ selectedStudent }}</span>
+            <UIcon name="i-lucide-chevron-down" class="size-4 text-muted shrink-0" />
+          </div>
+        </UDropdownMenu>
 
-    <template #body>
-      <div class="flex flex-col gap-4 p-4">
+        <div class="w-px h-6 bg-default shrink-0" />
+
+        <UButton
+          v-if="!isEditMode"
+          variant="outline"
+          color="neutral"
+          label="نسخ من الأسبوع الماضي"
+          size="lg"
+          class="font-arabic font-bold rounded-full px-6"
+        />
+        <UButton
+          :icon="isEditMode ? 'i-lucide-check' : 'i-lucide-save'"
+          :label="isEditMode ? 'حفظ المخطط' : 'تعديل الخطة'"
+          color="primary"
+          :variant="isEditMode ? 'outline' : 'solid'"
+          size="lg"
+          class="font-arabic font-bold rounded-full px-6"
+          @click="toggleEdit"
+        />
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-4">
         <!-- Column headers -->
         <div class="flex items-center gap-3">
           <div class="w-28 shrink-0" />
@@ -187,10 +181,10 @@ function toggleEdit() {
             @click="addDay"
           />
         </div>
-      </div>
-    </template>
-  </UDashboardPanel>
+    </div>
+  </div>
 </template>
+
 
 <style scoped>
 .slide-down-enter-active,

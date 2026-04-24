@@ -2,9 +2,7 @@
 definePageMeta({ layout: 'dashboard' })
 
 const { students, searchQuery, isLoading, error, fetchStudents, openAdd } = useStudents()
-const { halaqat, fetchHalaqat } = useHalaqat()
 
-const filterHalaqaId = ref<number | null>(null)
 const filterStatus = ref<string | null>(null)
 
 const filteredStudents = computed(() =>
@@ -15,28 +13,17 @@ const filteredStudents = computed(() =>
   })
 )
 
-const statusOptions = [
-  { label: 'الحالة', value: null },
+const statusFilters: { label: string; value: string | null }[] = [
+  { label: 'الكل', value: null },
   { label: 'نشط', value: 'active' },
   { label: 'غير نشط', value: 'inactive' }
 ]
-
-const halaqaOptions = computed(() => [
-  { label: 'كل الحلقات', value: null },
-  ...halaqat.value.map(h => ({ label: h.name, value: h.id }))
-])
 
 const loadProgress = computed(() =>
   Math.round((filteredStudents.value.length / Math.max(students.value.length, 1)) * 100)
 )
 
-async function onHalaqaFilter() {
-  await fetchStudents(filterHalaqaId.value ?? undefined)
-}
-
-onMounted(async () => {
-  await Promise.all([fetchStudents(), fetchHalaqat()])
-})
+onMounted(() => fetchStudents())
 </script>
 
 <template>
@@ -63,32 +50,39 @@ onMounted(async () => {
     </div>
 
     <!-- Filter bar -->
-    <UCard :ui="{ root: 'mb-8', body: 'p-6 flex flex-wrap items-center gap-4' }">
-      <UInput
-        v-model="searchQuery"
-        icon="i-lucide-search"
-        placeholder="ابحث بالاسم..."
-        size="lg"
-        class="flex-1 min-w-72 font-arabic"
-      />
-
-      <div class="flex items-center gap-3 flex-wrap">
-        <USelect
-          v-model="filterHalaqaId"
-          :items="halaqaOptions"
-          size="lg"
-          class="font-arabic min-w-40"
-          @update:model-value="onHalaqaFilter"
+    <div class="flex flex-wrap items-center gap-4 mb-8">
+      <!-- Search -->
+      <div class="relative flex-1 min-w-72">
+        <UIcon
+          name="i-lucide-search"
+          class="absolute end-4 top-1/2 -translate-y-1/2 w-4 h-4"
+          style="color: var(--color-on-surface-variant);"
         />
-
-        <USelect
-          v-model="filterStatus"
-          :items="statusOptions"
-          size="lg"
-          class="font-arabic min-w-32"
-        />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="ابحث بالاسم..."
+          class="w-full pe-11 ps-4 py-3 rounded-[40px] text-base font-arabic outline-none transition-all focus:ring-2 focus:ring-primary/30"
+          style="background-color: var(--color-surface-container-lowest); color: var(--color-on-surface); border: 1.5px solid var(--color-outline-variant);"
+        >
       </div>
-    </UCard>
+
+      <!-- Status pill toggle -->
+      <div class="flex items-center bg-elevated p-1 rounded-full border border-default">
+        <button
+          v-for="f in statusFilters"
+          :key="String(f.value)"
+          class="px-5 py-1.5 text-base font-arabic rounded-full transition-all cursor-pointer"
+          :style="filterStatus === f.value ? 'background-color: #f5edf5; color: var(--color-primary);' : ''"
+          :class="filterStatus === f.value
+            ? 'font-semibold'
+            : 'text-muted hover:bg-primary/8 hover:text-primary'"
+          @click="filterStatus = f.value"
+        >
+          {{ f.label }}
+        </button>
+      </div>
+    </div>
 
     <!-- Loading -->
     <div v-if="isLoading" class="flex justify-center py-16">
@@ -96,7 +90,7 @@ onMounted(async () => {
     </div>
 
     <!-- Error -->
-    <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: #FCE4EC;">
+    <div v-else-if="error" class="rounded-[40px] p-6 text-center" style="background-color: #FCE4EC;">
       <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2" style="color: #D81B60;" />
       <p class="font-arabic" style="color: #D81B60;">{{ error }}</p>
     </div>
@@ -116,7 +110,7 @@ onMounted(async () => {
       <p class="font-arabic" style="color: var(--color-on-surface-variant);">لا يوجد طلاب</p>
     </div>
 
-    <!-- Load more / pagination -->
+    <!-- Progress indicator -->
     <div v-if="!isLoading && students.length > 0" class="mt-12 text-center py-8">
       <div class="flex flex-col items-center gap-4">
         <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '#ui/types'
 
-const { isAddModalOpen, closeAdd } = useStudents()
+const { isAddModalOpen, closeAdd, createStudent } = useStudents()
+const toast = useToast()
 
 type StudentForm = {
   name: string
@@ -17,19 +18,24 @@ type StudentForm = {
   notes: string
 }
 
-const state = reactive<StudentForm>({
-  name: '',
-  dob: '',
-  joinDate: '',
-  fatherName: '',
-  motherName: '',
-  fatherEmail: '',
-  motherEmail: '',
-  memPages: 0,
-  nearPages: 0,
-  farPages: 0,
-  notes: ''
-})
+function emptyState(): StudentForm {
+  return {
+    name: '',
+    dob: '',
+    joinDate: '',
+    fatherName: '',
+    motherName: '',
+    fatherEmail: '',
+    motherEmail: '',
+    memPages: 0,
+    nearPages: 0,
+    farPages: 0,
+    notes: ''
+  }
+}
+
+const state = reactive<StudentForm>(emptyState())
+const submitting = ref(false)
 
 function validate(s: StudentForm) {
   const errors: Array<{ name: keyof StudentForm, message: string }> = []
@@ -41,9 +47,35 @@ function validate(s: StudentForm) {
   return errors
 }
 
-function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
-  // TODO: wire to useStudents().createStudent once composable exposes it.
-  closeAdd()
+function resetState() {
+  Object.assign(state, emptyState())
+}
+
+async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
+  if (submitting.value) return
+  submitting.value = true
+  try {
+    await createStudent({
+      name: state.name.trim(),
+      dob: state.dob,
+      join_date: state.joinDate,
+      daily_hifz_pages_capacity: state.memPages,
+      daily_near_pages_capacity: state.nearPages,
+      daily_far_pages_capacity: state.farPages,
+      ...(state.notes.trim() ? { notes: state.notes.trim() } : {})
+    })
+    toast.add({ title: 'تم إضافة الطالب بنجاح', color: 'success' })
+    resetState()
+    closeAdd()
+  }
+  catch (e: any) {
+    const raw = e?.data?.message
+    const message = Array.isArray(raw) ? raw.join('، ') : (raw || 'حدث خطأ أثناء حفظ بيانات الطالب')
+    toast.add({ title: message, color: 'error' })
+  }
+  finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -202,6 +234,8 @@ function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
             <UButton
               type="submit"
               size="xl"
+              :loading="submitting"
+              :disabled="submitting"
               class="font-arabic font-bold rounded-full px-10"
             >
               حفظ البيانات

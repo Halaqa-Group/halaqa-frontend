@@ -9,6 +9,8 @@ const {
   hasSelection,
   clipboard,
   selectedStudent,
+  isSaving,
+  isLoading,
   saveAsDraft,
   approvePlan,
   startEditing,
@@ -16,10 +18,31 @@ const {
   deleteSelectedRows,
   copySelectedRows,
   pasteRows,
-  addDay
+  addDay,
+  loadPlan,
+  resetState
 } = useSchedule()
 
 const { students, fetchStudents } = useStudents()
+const toast = useToast()
+
+async function handleSaveAsDraft() {
+  try {
+    await saveAsDraft()
+    toast.add({ title: 'تم حفظ الخطة كمسودة', icon: 'i-lucide-check-circle', color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: 'خطأ في حفظ الخطة', description: e?.data?.message || e?.message, icon: 'i-lucide-alert-circle', color: 'error' })
+  }
+}
+
+async function handleApprovePlan() {
+  try {
+    await approvePlan()
+    toast.add({ title: 'تم اعتماد الخطة', icon: 'i-lucide-check-circle', color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: 'خطأ في اعتماد الخطة', description: e?.data?.message || e?.message, icon: 'i-lucide-alert-circle', color: 'error' })
+  }
+}
 
 const isStudentDropdownOpen = ref(false)
 const studentDropdownRef = ref<HTMLElement | null>(null)
@@ -44,11 +67,22 @@ function handleDocumentClick(e: MouseEvent) {
   }
 }
 
+watch(selectedStudent, async (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    resetState()
+    await loadPlan()
+  }
+})
+
 onMounted(async () => {
   document.addEventListener('click', handleDocumentClick)
   await fetchStudents()
   if (students.value[0] && !selectedStudent.value) {
     selectedStudent.value = students.value[0].name
+    // watch fires on the assignment above and calls loadPlan
+  } else if (selectedStudent.value) {
+    // Already have a student (returning to page) — load their plan
+    await loadPlan()
   }
 })
 
@@ -83,7 +117,8 @@ onUnmounted(() => {
           <UButton
             color="primary" label="حفظ كمسودة" icon="i-lucide-save"
             size="lg" class="font-arabic font-bold rounded-full px-6"
-            @click="saveAsDraft"
+            :loading="isSaving" :disabled="isSaving"
+            @click="handleSaveAsDraft"
           />
         </template>
 
@@ -98,7 +133,8 @@ onUnmounted(() => {
           <UButton
             color="primary" label="اعتماد الخطة" icon="i-lucide-check-circle"
             size="lg" class="font-arabic font-bold rounded-full px-6"
-            @click="approvePlan"
+            :loading="isSaving" :disabled="isSaving"
+            @click="handleApprovePlan"
           />
         </template>
 
@@ -108,12 +144,14 @@ onUnmounted(() => {
             variant="ghost" color="neutral"
             label="إلغاء" icon="i-lucide-x"
             size="lg" class="font-arabic font-bold rounded-full px-6"
+            :disabled="isSaving"
             @click="cancelEditing"
           />
           <UButton
             color="primary" label="حفظ كمسودة" icon="i-lucide-save"
             size="lg" class="font-arabic font-bold rounded-full px-6"
-            @click="saveAsDraft"
+            :loading="isSaving" :disabled="isSaving"
+            @click="handleSaveAsDraft"
           />
         </template>
 
@@ -138,12 +176,14 @@ onUnmounted(() => {
             variant="ghost" color="neutral"
             label="إلغاء" icon="i-lucide-x"
             size="lg" class="font-arabic font-bold rounded-full px-6"
+            :disabled="isSaving"
             @click="cancelEditing"
           />
           <UButton
             color="primary" label="حفظ التعديلات" icon="i-lucide-save"
             size="lg" class="font-arabic font-bold rounded-full px-6"
-            @click="saveAsDraft"
+            :loading="isSaving" :disabled="isSaving"
+            @click="handleSaveAsDraft"
           />
         </template>
 

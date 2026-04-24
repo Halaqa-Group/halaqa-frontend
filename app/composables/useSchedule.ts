@@ -1,11 +1,28 @@
 import { ref, computed } from 'vue'
-import { STATUS_CYCLE } from '~/data/constants'
-import type { DayData, LessonItem, LessonCategory } from '~/types'
+import { STATUS_CYCLE, SURAH_NAMES } from '~/data/constants'
+import type { DayData, LessonItem, LessonCategory, ApiWeeklyPlan } from '~/types'
 
 const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 const ARABIC_DAYS = ['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة']
 
 export type PlanStatus = 'new' | 'draft' | 'approved'
+
+// Reverse lookup: Arabic surah name → surah number
+const SURAH_NUMBER_MAP: Record<string, number> = Object.fromEntries(
+  Object.entries(SURAH_NAMES).map(([num, name]) => [name, Number(num)])
+)
+
+function getSurahNumber(name: string): number {
+  return SURAH_NUMBER_MAP[name] ?? 1
+}
+
+const TRACK_TYPE_MAP: Record<LessonCategory, 'Hifz' | 'Near' | 'Far'> = {
+  mem: 'Hifz', near: 'Near', far: 'Far'
+}
+
+const TRACK_CAT_MAP: Record<string, LessonCategory> = {
+  Hifz: 'mem', Near: 'near', Far: 'far'
+}
 
 function toAr(n: number): string {
   return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)])
@@ -28,16 +45,29 @@ function emptySchedule(): DayData[] {
   }))
 }
 
+function formatDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 // Module-level shared state
 const schedule = ref<DayData[]>(emptySchedule())
 const selectedRowIds = ref<Set<string>>(new Set())
 const clipboard = ref<DayData[]>([])
-const isEditMode = ref(true)          // new plan starts editable
+const isEditMode = ref(true)
 const planStatus = ref<PlanStatus>('new')
 const selectedStudent = ref<string>('')
 const selectedWeekStart = ref<Date>(lastSaturday(new Date()))
+const currentPlanId = ref<number | null>(null)
+const isSaving = ref(false)
+const isLoading = ref(false)
+// Tracks saved items: lessonKey → backend item id (for diffing on re-save)
+const savedItemKeys = ref<Map<string, number>>(new Map())
 
 export function useSchedule() {
+  const api = useApi()
+  const { students } = useStudents()
+  const { selectedHalaqaId } = useGlobalHalaqa()
+
   const selectedCount = computed(() => selectedRowIds.value.size)
   const hasSelection = computed(() => selectedRowIds.value.size > 0)
   const allSelected = computed(() =>
@@ -56,33 +86,165 @@ export function useSchedule() {
     })
   )
 
-  // Week change resets the plan to a fresh empty state
-  function changeWeek(newStart: Date) {
-    selectedWeekStart.value = new Date(newStart)
+  // Stable key for a lesson used to detect adds/removes without touching unchanged items
+  function lessonKey(dayIndex: number, cat: LessonCategory, lesson: LessonItem): string {
+    return `${dayIndex}|${cat}|${getSurahNumber(lesson.startSurah)}|${lesson.startAyah}|${getSurahNumber(lesson.endSurah)}|${lesson.endAyah}`
+  }
+
+  function resetState() {
     schedule.value = emptySchedule()
     planStatus.value = 'new'
     isEditMode.value = true
     selectedRowIds.value = new Set()
     clipboard.value = []
+    currentPlanId.value = null
+    savedItemKeys.value = new Map()
   }
 
-  function saveAsDraft() {
-    if (planStatus.value !== 'approved') planStatus.value = 'draft'
-    isEditMode.value = false
+  /**
+   * Fetches the plan for the current student + halaqa + week from the DB.
+   * If found, rebuilds schedule and savedItemKeys from it.
+   * If not found, keeps the empty/fresh state.
+   */
+  async function loadPlan() {
+    const studentObj = students.value.find(s => s.name === selectedStudent.value)
+    if (!studentObj || !selectedHalaqaId.value) return
+
+    isLoading.value = true
+    try {
+      const weekStart = formatDate(selectedWeekStart.value)
+      const plans = await api<ApiWeeklyPlan[]>(
+        `/plans?studentId=${Number(studentObj.id)}&halaqaId=${selectedHalaqaId.value}&weekStartDate=${weekStart}`
+      )
+
+      if (!plans?.length) return // No plan exists — keep fresh state
+
+      const plan = plans[0]
+      currentPlanId.value = plan.id
+      planStatus.value = plan.status as PlanStatus
+      isEditMode.value = false // View mode when loading an existing plan
+
+      const newSchedule = emptySchedule()
+      const newSavedKeys = new Map<string, number>()
+
+      for (const item of (plan.items ?? [])) {
+        const dayIndex = item.day_of_week
+        if (dayIndex < 0 || dayIndex >= 7) continue
+        const cat = TRACK_CAT_MAP[item.track_type]
+        if (!cat) continue
+
+        const lesson: LessonItem = {
+          id: `plan-item-${item.id}`,
+          startSurah: SURAH_NAMES[item.start_surah] ?? '',
+          startAyah: item.start_verse,
+          endSurah: SURAH_NAMES[item.end_surah] ?? '',
+          endAyah: item.end_verse
+        }
+
+        newSchedule[dayIndex].lessons[cat].push(lesson)
+        newSavedKeys.set(lessonKey(dayIndex, cat, lesson), item.id)
+      }
+
+      schedule.value = newSchedule
+      savedItemKeys.value = newSavedKeys
+    } catch {
+      // On error keep fresh state
+    } finally {
+      isLoading.value = false
+    }
   }
 
-  function approvePlan() {
-    planStatus.value = 'approved'
-    isEditMode.value = false
+  async function changeWeek(newStart: Date) {
+    selectedWeekStart.value = new Date(newStart)
+    resetState()
+    await loadPlan()
   }
 
-  function startEditing() {
-    isEditMode.value = true
+  async function saveAsDraft() {
+    const studentObj = students.value.find(s => s.name === selectedStudent.value)
+    if (!studentObj || !selectedHalaqaId.value) return
+
+    isSaving.value = true
+    try {
+      const weekStart = formatDate(selectedWeekStart.value)
+
+      if (!currentPlanId.value) {
+        const plan = await api<{ id: number }>('/plans', {
+          method: 'POST',
+          body: {
+            student_id: Number(studentObj.id),
+            halaqa_id: selectedHalaqaId.value,
+            week_start_date: weekStart
+          }
+        })
+        currentPlanId.value = plan.id
+      }
+
+      // Build current lessons map
+      const currentLessons = new Map<string, { dayIndex: number; cat: LessonCategory; lesson: LessonItem }>()
+      for (let dayIndex = 0; dayIndex < schedule.value.length; dayIndex++) {
+        for (const cat of (['mem', 'near', 'far'] as LessonCategory[])) {
+          for (const lesson of schedule.value[dayIndex].lessons[cat]) {
+            if (!lesson.startSurah || !lesson.endSurah) continue
+            currentLessons.set(lessonKey(dayIndex, cat, lesson), { dayIndex, cat, lesson })
+          }
+        }
+      }
+
+      // DELETE removed items
+      const deletes: Promise<unknown>[] = []
+      for (const [key, itemId] of savedItemKeys.value) {
+        if (!currentLessons.has(key)) {
+          deletes.push(
+            api(`/plans/${currentPlanId.value}/items/${itemId}`, { method: 'DELETE' })
+              .then(() => { savedItemKeys.value.delete(key) })
+          )
+        }
+      }
+      await Promise.all(deletes)
+
+      // POST new items only
+      const adds: Promise<unknown>[] = []
+      for (const [key, { dayIndex, cat, lesson }] of currentLessons) {
+        if (!savedItemKeys.value.has(key)) {
+          adds.push(
+            api<{ id: number }>(`/plans/${currentPlanId.value}/items`, {
+              method: 'POST',
+              body: {
+                day_of_week: dayIndex,
+                track_type: TRACK_TYPE_MAP[cat],
+                start_surah: getSurahNumber(lesson.startSurah),
+                start_verse: lesson.startAyah,
+                end_surah: getSurahNumber(lesson.endSurah),
+                end_verse: lesson.endAyah
+              }
+            }).then(created => { savedItemKeys.value.set(key, created.id) })
+          )
+        }
+      }
+      await Promise.all(adds)
+
+      if (planStatus.value !== 'approved') planStatus.value = 'draft'
+      isEditMode.value = false
+    } finally {
+      isSaving.value = false
+    }
   }
 
-  function cancelEditing() {
-    isEditMode.value = false
+  async function approvePlan() {
+    if (!currentPlanId.value) return
+    isSaving.value = true
+    try {
+      await api(`/plans/${currentPlanId.value}/submit`, { method: 'POST' })
+      planStatus.value = 'approved'
+      isEditMode.value = false
+    } finally {
+      isSaving.value = false
+    }
   }
+
+  function startEditing() { isEditMode.value = true }
+  function cancelEditing() { isEditMode.value = false }
 
   function toggleSelectRow(id: string) {
     const next = new Set(selectedRowIds.value)
@@ -144,8 +306,7 @@ export function useSchedule() {
       const targetLesson = targetDay.lessons[targetCategory][0]
       sourceDay.lessons[sourceCategory].splice(lessonIdx, 1, targetLesson)
       targetDay.lessons[targetCategory] = [lesson]
-    }
-    else {
+    } else {
       sourceDay.lessons[sourceCategory].splice(lessonIdx, 1)
       targetDay.lessons[targetCategory].push(lesson)
     }
@@ -188,10 +349,15 @@ export function useSchedule() {
     selectedRowIds,
     clipboard,
     isEditMode,
+    isSaving,
+    isLoading,
     selectedStudent,
+    currentPlanId,
     selectedCount,
     hasSelection,
     allSelected,
+    loadPlan,
+    resetState,
     changeWeek,
     saveAsDraft,
     approvePlan,

@@ -1,5 +1,4 @@
 import { computed, ref } from 'vue'
-import { SURAHS } from '~/data/constants'
 import type { AttendanceStatus } from '~/types'
 
 interface AttendanceRow {
@@ -8,9 +7,6 @@ interface AttendanceRow {
   avatar: string
   currentSurah: string
   status: AttendanceStatus
-  mistakes: number
-  rating: number
-  surah: string
 }
 
 const sessionNotes = ref('')
@@ -54,10 +50,7 @@ export function useAttendance() {
           name: s.name,
           avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
           currentSurah: '—',
-          status: ex ? backendToStatus(ex.status) : 'present' as AttendanceStatus,
-          mistakes: 0,
-          rating: 0,
-          surah: SURAHS[0]
+          status: ex ? backendToStatus(ex.status) : 'present' as AttendanceStatus
         }
       })
     }
@@ -95,26 +88,6 @@ export function useAttendance() {
     if (row) row.status = status
   }
 
-  function addMistake(studentId: string) {
-    const row = attendanceRows.value.find(r => r.studentId === studentId)
-    if (row) row.mistakes++
-  }
-
-  function removeMistake(studentId: string) {
-    const row = attendanceRows.value.find(r => r.studentId === studentId)
-    if (row && row.mistakes > 0) row.mistakes--
-  }
-
-  function setRating(studentId: string, rating: number) {
-    const row = attendanceRows.value.find(r => r.studentId === studentId)
-    if (row) row.rating = rating
-  }
-
-  function setSurah(studentId: string, surah: string) {
-    const row = attendanceRows.value.find(r => r.studentId === studentId)
-    if (row) row.surah = surah
-  }
-
   function appendNote(tag: string) {
     sessionNotes.value = sessionNotes.value
       ? `${sessionNotes.value}، ${tag}`
@@ -122,7 +95,6 @@ export function useAttendance() {
   }
 
   const presentCount = computed(() => attendanceRows.value.filter(r => r.status === 'present').length)
-  const totalMistakes = computed(() => attendanceRows.value.reduce((sum, r) => sum + r.mistakes, 0))
   const attendanceRate = computed(() =>
     attendanceRows.value.length > 0
       ? Math.round((presentCount.value / attendanceRows.value.length) * 100)
@@ -137,15 +109,10 @@ export function useAttendance() {
     isLoading,
     isSaving,
     presentCount,
-    totalMistakes,
     attendanceRate,
     loadSession,
     submitSession,
     setStatus,
-    addMistake,
-    removeMistake,
-    setRating,
-    setSurah,
     appendNote
   }
 }

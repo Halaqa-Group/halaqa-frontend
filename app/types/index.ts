@@ -146,3 +146,27 @@ export interface ApiProgress {
     achieved: number
   }[]
 }
+
+// ── Achievement creation DTO ───────────────────────────────────────────────
+export interface CreateAchievementDto {
+  student_id: number
+  halaqa_id: number
+  date: string
+  track_type: 'Hifz' | 'Near' | 'Far'
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+  mistakes_count?: number
+  warnings_count?: number
+  tajweed_errors_count?: number
+  teacher_notes?: string
+}
+
+// ── Student with attendance status (for achievements page) ──────────────────
+export interface StudentWithAttendance {
+  id: number
+  name: string
+  avatar: string
+  attendanceStatus: 'Present' | 'Late' | 'Excused' | 'Absent' | null
+}

@@ -4,6 +4,7 @@ const route = useRoute()
 const navItems = [
   { to: '/', icon: 'i-lucide-layout-grid', label: 'لوحة التحكم' },
   { to: '/attendance', icon: 'i-lucide-user-check', label: 'الحضور' },
+  { to: '/achievements', icon: 'i-lucide-award', label: 'الإنجازات' },
   { to: '/students', icon: 'i-lucide-users', label: 'الطلاب' },
   { to: '/planner', icon: 'i-lucide-book-open', label: 'المخطط' },
   { to: '/analytics', icon: 'i-lucide-bar-chart-3', label: 'التحليلات' }

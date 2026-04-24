@@ -1,14 +1,16 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'dashboard' })
 
-const { attendanceRows, sessionNotes, isLoading, appendNote, loadSession } = useAttendance()
+const { attendanceRows, sessionNotes, isLoading, isSaving, appendNote, loadSession, submitSession } = useAttendance()
 const { halaqat, fetchHalaqat } = useHalaqat()
 const { user } = useAuth()
+const toast = useToast()
 
 const selectedHalaqaId = ref<number | null>(null)
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const quickTags = ['تفاعل ممتاز', 'مراجعة جماعية', 'تم الانتهاء من جزء']
 const searchQuery = ref('')
+const showSuccessMessage = ref(false)
 
 const filteredRows = computed(() =>
   attendanceRows.value.filter(r =>
@@ -32,22 +34,44 @@ const formattedDate = computed(() => {
 })
 
 async function onHalaqaChange() {
-  if (selectedHalaqaId.value) {
+  if (selectedHalaqaId.value && selectedDate.value) {
     await loadSession(selectedHalaqaId.value, selectedDate.value)
   }
+  showSuccessMessage.value = false
 }
 
 async function onDateChange() {
-  if (selectedHalaqaId.value) {
+  if (selectedHalaqaId.value && selectedDate.value) {
     await loadSession(selectedHalaqaId.value, selectedDate.value)
+  }
+  showSuccessMessage.value = false
+}
+
+async function handleSaveAttendance() {
+  try {
+    await submitSession()
+    showSuccessMessage.value = true
+    toast.add({
+      title: 'تم حفظ الحضور بنجاح',
+      icon: 'i-lucide-check-circle',
+      color: 'success'
+    })
+  } catch (error: any) {
+    toast.add({
+      title: 'خطأ في حفظ الحضور',
+      description: error.message || 'حدث خطأ غير متوقع',
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    })
   }
 }
 
 onMounted(async () => {
   await fetchHalaqat()
-  if (halaqat.value.length > 0) {
-    selectedHalaqaId.value = halaqat.value[0].id
-    await loadSession(halaqat.value[0].id, selectedDate.value)
+  const firstHalaqa = halaqat.value[0]
+  if (firstHalaqa && selectedDate.value) {
+    selectedHalaqaId.value = firstHalaqa.id
+    await loadSession(firstHalaqa.id, selectedDate.value)
   }
 })
 </script>
@@ -165,6 +189,41 @@ onMounted(async () => {
             {{ tag }}
           </button>
         </div>
+      </div>
+
+      <!-- Save button -->
+      <div class="flex justify-end">
+        <UButton
+          :loading="isSaving"
+          :disabled="isSaving"
+          icon="i-lucide-save"
+          size="lg"
+          color="primary"
+          @click="handleSaveAttendance"
+        >
+          حفظ الحضور
+        </UButton>
+      </div>
+
+      <!-- Success message with link to achievements -->
+      <div
+        v-if="showSuccessMessage"
+        class="rounded-2xl p-4 flex items-center justify-between"
+        style="background-color: #E0F0EE; border: 1px solid #4A8E85;"
+      >
+        <div class="flex items-center gap-3">
+          <UIcon name="i-lucide-check-circle" class="w-5 h-5" style="color: #4A8E85;" />
+          <p class="body-md font-arabic" style="color: #4A8E85;">
+            تم حفظ الحضور بنجاح. يمكنك الآن الانتقال إلى صفحة الإنجازات لتسجيل إنجازات الطلاب.
+          </p>
+        </div>
+        <NuxtLink
+          to="/achievements"
+          class="px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-colors no-underline"
+          style="background-color: #4A8E85; color: white;"
+        >
+          الانتقال إلى الإنجازات
+        </NuxtLink>
       </div>
     </template>
   </div>

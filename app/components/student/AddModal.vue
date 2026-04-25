@@ -127,8 +127,8 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
               <UIcon name="i-lucide-user-plus" class="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h3 class="text-xl font-bold font-arabic text-primary">إضافة طالب جديد</h3>
-              <p class="text-xs font-arabic text-muted">أدخل بيانات الطالب للبدء في تتبع التقدم التعليمي</p>
+              <h3 class="text-xl font-bold text-primary">إضافة طالب جديد</h3>
+              <p class="text-xs text-muted">أدخل بيانات الطالب للبدء في تتبع التقدم التعليمي</p>
             </div>
           </div>
           <UButton
@@ -162,10 +162,10 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
               <UIcon name="i-lucide-layers" class="w-5 h-5 text-white" />
             </div>
             <div class="flex-1">
-              <p class="text-xs font-arabic font-semibold" style="color: var(--color-on-surface-variant);">
+              <p class="text-xs font-semibold" style="color: var(--color-on-surface-variant);">
                 سيتم تسجيل الطالب تلقائياً في:
               </p>
-              <p class="text-sm font-arabic font-bold" style="color: var(--color-primary);">
+              <p class="text-sm font-bold" style="color: var(--color-primary);">
                 {{ selectedHalaqaName }}
               </p>
             </div>
@@ -183,19 +183,19 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
                   class="w-10 h-10 text-muted transition-colors group-hover:text-primary"
                 />
               </div>
-              <p class="text-xs font-arabic font-semibold uppercase tracking-wide text-muted">رفع صورة الطالب</p>
+              <p class="text-xs font-semibold uppercase tracking-wide text-muted">رفع صورة الطالب</p>
               <p class="text-[10px] mt-1 text-dimmed">PNG, JPG حتى 5MB</p>
             </div>
 
             <!-- Basic info grid -->
             <div class="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <UFormField label="الاسم الكامل" name="name" class="sm:col-span-2 font-arabic">
-                <UInput v-model="state.name" placeholder="اسم الطالب الرباعي" class="w-full font-arabic" />
+              <UFormField label="الاسم الكامل" name="name" class="sm:col-span-2">
+                <UInput v-model="state.name" placeholder="اسم الطالب الرباعي" class="w-full" />
               </UFormField>
-              <UFormField label="تاريخ الميلاد" name="dob" class="font-arabic">
+              <UFormField label="تاريخ الميلاد" name="dob">
                 <UInput v-model="state.dob" type="date" class="w-full" />
               </UFormField>
-              <UFormField label="تاريخ الانضمام" name="joinDate" class="font-arabic">
+              <UFormField label="تاريخ الانضمام" name="joinDate">
                 <UInput v-model="state.joinDate" type="date" class="w-full" />
               </UFormField>
             </div>
@@ -204,24 +204,24 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
           <!-- Section: Parent info -->
           <div class="space-y-6">
             <div class="flex items-center gap-2 border-e-4 pe-3 border-primary">
-              <h4 class="font-arabic font-bold text-base text-primary">معلومات ولي الأمر</h4>
+              <h4 class="font-bold text-base text-primary">معلومات ولي الأمر</h4>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               <!-- Father column -->
               <div class="space-y-4">
-                <UFormField label="اسم الأب" name="fatherName" class="font-arabic">
-                  <UInput v-model="state.fatherName" class="w-full font-arabic" />
+                <UFormField label="اسم الأب" name="fatherName">
+                  <UInput v-model="state.fatherName" class="w-full" />
                 </UFormField>
-                <UFormField label="بريد الأب الإلكتروني" name="fatherEmail" class="font-arabic">
+                <UFormField label="بريد الأب الإلكتروني" name="fatherEmail">
                   <UInput v-model="state.fatherEmail" type="email" dir="ltr" class="w-full" />
                 </UFormField>
               </div>
               <!-- Mother column -->
               <div class="space-y-4">
-                <UFormField label="اسم الأم" name="motherName" class="font-arabic">
-                  <UInput v-model="state.motherName" class="w-full font-arabic" />
+                <UFormField label="اسم الأم" name="motherName">
+                  <UInput v-model="state.motherName" class="w-full" />
                 </UFormField>
-                <UFormField label="بريد الأم الإلكتروني" name="motherEmail" class="font-arabic">
+                <UFormField label="بريد الأم الإلكتروني" name="motherEmail">
                   <UInput v-model="state.motherEmail" type="email" dir="ltr" class="w-full" />
                 </UFormField>
               </div>
@@ -231,7 +231,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
           <!-- Section: Academic metrics -->
           <div class="space-y-6">
             <div class="flex items-center gap-2 border-e-4 pe-3 border-secondary">
-              <h4 class="font-arabic font-bold text-base text-secondary">مقاييس الأداء اليومي</h4>
+              <h4 class="font-bold text-base text-secondary">مقاييس الأداء اليومي</h4>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <UCard
@@ -243,7 +243,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
                 :key="metric.key"
                 :ui="{ root: 'rounded-2xl', body: 'p-5' }"
               >
-                <label class="flex items-center gap-2 text-xs font-arabic font-semibold uppercase tracking-wide mb-3 text-muted">
+                <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide mb-3 text-muted">
                   <UIcon :name="metric.icon" class="w-4 h-4 shrink-0 text-secondary" />
                   {{ metric.label }}
                 </label>
@@ -262,12 +262,12 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
 
           <!-- Section: Notes -->
           <div class="space-y-4 pb-4">
-            <UFormField label="ملاحظات إضافية" name="notes" class="font-arabic">
+            <UFormField label="ملاحظات إضافية" name="notes">
               <UTextarea
                 v-model="state.notes"
                 :rows="3"
                 placeholder="اكتب أي ملاحظات خاصة بالحالة الصحية أو الأكاديمية للطالب..."
-                class="w-full font-arabic"
+                class="w-full"
                 :ui="{ base: 'resize-none' }"
               />
             </UFormField>
@@ -280,7 +280,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
               color="neutral"
               variant="ghost"
               size="xl"
-              class="font-arabic font-bold rounded-full px-8"
+              class="font-bold rounded-full px-8"
               @click="closeAdd"
             >
               إلغاء
@@ -290,7 +290,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
               size="xl"
               :loading="submitting"
               :disabled="submitting"
-              class="font-arabic font-bold rounded-full px-10"
+              class="font-bold rounded-full px-10"
             >
               حفظ البيانات
             </UButton>

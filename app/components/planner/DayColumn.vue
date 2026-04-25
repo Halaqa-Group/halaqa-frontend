@@ -69,7 +69,7 @@ function onDrop(e: DragEvent) {
 
       <button
         v-else-if="isEditMode"
-        class="w-full h-full absolute inset-0 flex items-center justify-center gap-1 text-xs font-arabic transition-colors hover:bg-muted text-muted"
+        class="w-full h-full absolute inset-0 flex items-center justify-center gap-1 text-xs transition-colors hover:bg-muted text-muted"
         @click="addLesson(dayId, category)"
       >
         <UIcon name="i-lucide-plus" class="w-3 h-3" />

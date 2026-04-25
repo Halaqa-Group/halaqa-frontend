@@ -3,6 +3,7 @@ import type { FormSubmitEvent } from '#ui/types'
 
 definePageMeta({ layout: false })
 
+const { t } = useI18n()
 const { login } = useAuth()
 
 type LoginState = { email: string, password: string }
@@ -12,9 +13,9 @@ const error = ref('')
 
 function validate(s: LoginState) {
   const errors: Array<{ name: keyof LoginState, message: string }> = []
-  if (!s.email) errors.push({ name: 'email', message: 'البريد الإلكتروني مطلوب' })
-  else if (!/^\S+@\S+\.\S+$/.test(s.email)) errors.push({ name: 'email', message: 'صيغة البريد غير صحيحة' })
-  if (!s.password) errors.push({ name: 'password', message: 'كلمة المرور مطلوبة' })
+  if (!s.email) errors.push({ name: 'email', message: t('validation.emailRequired') })
+  else if (!/^\S+@\S+\.\S+$/.test(s.email)) errors.push({ name: 'email', message: t('validation.emailInvalid') })
+  if (!s.password) errors.push({ name: 'password', message: t('validation.passwordRequired') })
   return errors
 }
 
@@ -26,7 +27,7 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
     await navigateTo('/')
   }
   catch (e: any) {
-    error.value = e?.data?.message || 'بيانات الدخول غير صحيحة'
+    error.value = e?.data?.message || t('auth.invalidCredentials')
   }
   finally {
     isLoading.value = false
@@ -44,15 +45,15 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
             <UIcon name="i-lucide-book-open-text" class="w-8 h-8 text-primary" />
           </div>
           <div class="text-center">
-            <h1 class="display-md font-arabic text-highlighted">حلقة</h1>
-            <p class="body-sm font-arabic text-muted">نظام إدارة الحلقات القرآنية</p>
+            <h1 class="display-md text-highlighted">{{ $t('app.name') }}</h1>
+            <p class="body-sm text-muted">{{ $t('app.tagline') }}</p>
           </div>
         </div>
 
         <!-- Card -->
         <UCard :ui="{ root: 'rounded-3xl', body: 'p-8' }">
-          <h2 class="body-lg font-arabic font-bold mb-6 text-center text-highlighted">
-            تسجيل الدخول
+          <h2 class="body-lg font-bold mb-6 text-center text-highlighted">
+            {{ $t('auth.login') }}
           </h2>
 
           <UForm
@@ -61,7 +62,7 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
             class="flex flex-col gap-4"
             @submit="handleSubmit"
           >
-            <UFormField label="البريد الإلكتروني" name="email" class="font-arabic">
+            <UFormField :label="$t('auth.email')" name="email">
               <UInput
                 v-model="state.email"
                 type="email"
@@ -72,7 +73,7 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
               />
             </UFormField>
 
-            <UFormField label="كلمة المرور" name="password" class="font-arabic">
+            <UFormField :label="$t('auth.password')" name="password">
               <UInput
                 v-model="state.password"
                 type="password"
@@ -88,7 +89,6 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
               color="error"
               variant="soft"
               :title="error"
-              :ui="{ root: 'font-arabic' }"
             />
 
             <UButton
@@ -97,9 +97,9 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
               size="lg"
               :loading="isLoading"
               :disabled="isLoading"
-              class="font-arabic font-bold"
+              class="font-bold"
             >
-              {{ isLoading ? 'جاري الدخول...' : 'دخول' }}
+              {{ isLoading ? $t('auth.loggingIn') : $t('auth.loginButton') }}
             </UButton>
           </UForm>
         </UCard>

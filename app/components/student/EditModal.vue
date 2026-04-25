@@ -97,8 +97,8 @@ const statusOptions = [
               <UIcon name="i-lucide-file-edit" class="w-5 h-5 text-secondary" />
             </div>
             <div>
-              <h3 class="text-xl font-bold font-arabic text-primary">تعديل بيانات الطالب</h3>
-              <p class="text-xs font-arabic text-muted">{{ editingApiStudent?.name ?? '...' }}</p>
+              <h3 class="text-xl font-bold text-primary">تعديل بيانات الطالب</h3>
+              <p class="text-xs text-muted">{{ editingApiStudent?.name ?? '...' }}</p>
             </div>
           </div>
           <UButton
@@ -138,22 +138,22 @@ const statusOptions = [
                 class="w-24 h-24 rounded-full object-cover mb-4"
                 style="border: 3px solid rgba(128, 76, 125, 0.2);"
               >
-              <p class="text-xs font-arabic font-semibold text-muted">صورة الطالب</p>
+              <p class="text-xs font-semibold text-muted">صورة الطالب</p>
             </div>
 
             <!-- Fields -->
             <div class="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <UFormField label="الاسم الكامل" name="name" class="sm:col-span-2 font-arabic">
-                <UInput v-model="state.name" placeholder="اسم الطالب الرباعي" class="w-full font-arabic" />
+              <UFormField label="الاسم الكامل" name="name" class="sm:col-span-2">
+                <UInput v-model="state.name" placeholder="اسم الطالب الرباعي" class="w-full" />
               </UFormField>
-              <UFormField label="تاريخ الميلاد" name="dob" class="font-arabic">
+              <UFormField label="تاريخ الميلاد" name="dob">
                 <UInput v-model="state.dob" type="date" class="w-full" />
               </UFormField>
-              <UFormField label="تاريخ الانضمام" name="joinDate" class="font-arabic">
+              <UFormField label="تاريخ الانضمام" name="joinDate">
                 <UInput v-model="state.joinDate" type="date" class="w-full" />
               </UFormField>
-              <UFormField label="الحالة" name="status" class="font-arabic">
-                <USelect v-model="state.status" :items="statusOptions" class="w-full font-arabic" />
+              <UFormField label="الحالة" name="status">
+                <USelect v-model="state.status" :items="statusOptions" class="w-full" />
               </UFormField>
             </div>
           </div>
@@ -161,7 +161,7 @@ const statusOptions = [
           <!-- Section: Academic metrics -->
           <div class="space-y-6">
             <div class="flex items-center gap-2 border-e-4 pe-3 border-secondary">
-              <h4 class="font-arabic font-bold text-base text-secondary">مقاييس الأداء اليومي</h4>
+              <h4 class="font-bold text-base text-secondary">مقاييس الأداء اليومي</h4>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <UCard
@@ -173,7 +173,7 @@ const statusOptions = [
                 :key="metric.key"
                 :ui="{ root: 'rounded-2xl', body: 'p-5' }"
               >
-                <label class="flex items-center gap-2 text-xs font-arabic font-semibold uppercase tracking-wide mb-3 text-muted">
+                <label class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide mb-3 text-muted">
                   <UIcon :name="metric.icon" class="w-4 h-4 shrink-0 text-secondary" />
                   {{ metric.label }}
                 </label>
@@ -192,12 +192,12 @@ const statusOptions = [
 
           <!-- Section: Notes -->
           <div class="space-y-4 pb-4">
-            <UFormField label="ملاحظات إضافية" name="notes" class="font-arabic">
+            <UFormField label="ملاحظات إضافية" name="notes">
               <UTextarea
                 v-model="state.notes"
                 :rows="3"
                 placeholder="اكتب أي ملاحظات خاصة بالحالة الصحية أو الأكاديمية للطالب..."
-                class="w-full font-arabic"
+                class="w-full"
                 :ui="{ base: 'resize-none' }"
               />
             </UFormField>
@@ -210,7 +210,7 @@ const statusOptions = [
               color="neutral"
               variant="ghost"
               size="xl"
-              class="font-arabic font-bold rounded-full px-8"
+              class="font-bold rounded-full px-8"
               @click="closeEdit"
             >
               إلغاء
@@ -220,7 +220,7 @@ const statusOptions = [
               size="xl"
               :loading="submitting"
               :disabled="submitting"
-              class="font-arabic font-bold rounded-full px-10"
+              class="font-bold rounded-full px-10"
             >
               حفظ التعديلات
             </UButton>

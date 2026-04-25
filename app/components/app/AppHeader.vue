@@ -9,7 +9,7 @@ const { selectedHalaqaName, openModal } = useGlobalHalaqa()
     style="background-color: var(--color-surface-container-lowest); border-bottom: 1px solid var(--color-outline-variant);"
   >
     <!-- School name -->
-    <span class="text-xl font-arabic font-bold" style="color: var(--color-on-surface);">{{ user?.school_name ?? '...' }}</span>
+    <span class="text-xl font-bold" style="color: var(--color-on-surface);">{{ user?.school_name ?? '...' }}</span>
 
     <!-- Halaqa selector — absolutely centered -->
     <button
@@ -18,7 +18,7 @@ const { selectedHalaqaName, openModal } = useGlobalHalaqa()
       @click="openModal"
     >
       <UIcon name="i-lucide-layers" class="w-4 h-4 shrink-0" style="color: var(--color-primary);" />
-      <span class="text-sm font-arabic font-semibold" style="color: var(--color-primary);">{{ selectedHalaqaName }}</span>
+      <span class="text-sm font-semibold" style="color: var(--color-primary);">{{ selectedHalaqaName }}</span>
     </button>
 
     <!-- Context actions -->
@@ -29,7 +29,6 @@ const { selectedHalaqaName, openModal } = useGlobalHalaqa()
       </div>
       <UDropdownMenu
         :items="[[{ label: user?.name ?? '', icon: 'i-lucide-user', disabled: true }, { label: 'تسجيل الخروج', icon: 'i-lucide-log-out', onSelect: logout }]]"
-        :ui="{ content: 'font-arabic' }"
       >
         <UButton variant="ghost" color="neutral" icon="i-lucide-user-circle" />
       </UDropdownMenu>

@@ -62,7 +62,7 @@ const statusDotClass = computed(() => {
         />
       </div>
       <div class="min-w-0">
-        <h4 class="font-bold font-arabic text-on-surface leading-tight truncate text-xl">{{ name }}</h4>
+        <h4 class="font-bold text-on-surface leading-tight truncate text-xl">{{ name }}</h4>
       </div>
     </div>
 
@@ -72,7 +72,7 @@ const statusDotClass = computed(() => {
         <button
           v-for="btn in statusButtons"
           :key="btn.key"
-          class="px-5 py-1.5 text-base font-arabic rounded-full transition-all cursor-pointer"
+          class="px-5 py-1.5 text-base rounded-full transition-all cursor-pointer"
           :class="status === btn.key ? btn.activeClass : `text-muted ${btn.hoverClass}`"
           @click="setStatus(studentId, btn.key)"
         >
@@ -86,7 +86,7 @@ const statusDotClass = computed(() => {
       :value="notes"
       rows="2"
       :placeholder="`ملاحظة خاصة بـ ${name}...`"
-      class="xl:flex-1 w-full resize-none rounded-[40px] px-4 py-2.5 text-base font-arabic outline-none transition-all focus:ring-1 focus:ring-primary"
+      class="xl:flex-1 w-full resize-none rounded-[40px] px-4 py-2.5 text-base outline-none transition-all focus:ring-1 focus:ring-primary"
       style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
       @input="setNote(studentId, ($event.target as HTMLTextAreaElement).value)"
     />

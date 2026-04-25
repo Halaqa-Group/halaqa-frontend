@@ -26,14 +26,14 @@ const isActive = computed(() => props.student.status === 'active')
             :class="isActive ? 'bg-[#2A6B64]' : 'bg-[#B5174E]'"
           />
         </div>
-        <h3 class="text-xl font-bold font-arabic leading-tight" style="color: var(--color-on-surface);">
+        <h3 class="text-xl font-bold leading-tight" style="color: var(--color-on-surface);">
           {{ student.name }}
         </h3>
       </div>
 
       <!-- Status badge (top right) -->
       <span
-        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold font-arabic shrink-0"
+        class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold shrink-0"
         :style="isActive
           ? 'background-color: #E0F0EE; color: #2A6B64;'
           : 'background-color: #FCE4EC; color: #B5174E;'"
@@ -43,8 +43,8 @@ const isActive = computed(() => props.student.status === 'active')
     <!-- Progress bar -->
     <div :class="{ 'opacity-60': !isActive }">
       <div class="flex justify-between items-center mb-2">
-        <span class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">سورة {{ student.currentSurah }}</span>
-        <span class="text-sm font-bold font-arabic" style="color: var(--color-primary);">{{ student.progress }}%</span>
+        <span class="text-sm" style="color: var(--color-on-surface-variant);">سورة {{ student.currentSurah }}</span>
+        <span class="text-sm font-bold" style="color: var(--color-primary);">{{ student.progress }}%</span>
       </div>
       <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: var(--color-primary-container);">
         <div
@@ -58,7 +58,7 @@ const isActive = computed(() => props.student.status === 'active')
     <!-- Actions -->
     <div class="flex items-center gap-2">
       <button
-        class="flex-1 py-2.5 px-4 rounded-full text-sm font-arabic font-bold transition-all hover:opacity-80 active:scale-95 cursor-pointer"
+        class="flex-1 py-2.5 px-4 rounded-full text-sm font-bold transition-all hover:opacity-80 active:scale-95 cursor-pointer"
         style="background-color: var(--color-primary-container); color: var(--color-primary);"
         @click="openView(student)"
       >

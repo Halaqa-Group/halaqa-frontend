@@ -29,7 +29,7 @@ function formatRange(a: ApiAchievement): string {
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-award" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-      <p class="body-md font-arabic text-center" style="color: var(--color-on-surface-variant);">
+      <p class="body-md text-center" style="color: var(--color-on-surface-variant);">
         لا توجد إنجازات لهذا الطالب اليوم
       </p>
     </div>
@@ -49,7 +49,7 @@ function formatRange(a: ApiAchievement): string {
         >
           <UIcon name="i-lucide-award" class="w-3.5 h-3.5" :style="`color: ${getTrackConfig(achievement.track_type).color};`" />
           <span
-            class="label-sm font-arabic font-bold"
+            class="label-sm font-bold"
             :style="`color: ${getTrackConfig(achievement.track_type).color};`"
           >{{ getTrackConfig(achievement.track_type).label }}</span>
         </div>
@@ -64,21 +64,21 @@ function formatRange(a: ApiAchievement): string {
       <!-- Quran range -->
       <div class="flex items-center gap-2 mb-4 px-1">
         <UIcon name="i-lucide-book-open" class="w-4 h-4 shrink-0" style="color: var(--color-on-surface-variant);" />
-        <p class="body-md font-arabic" style="color: var(--color-on-surface);">{{ formatRange(achievement) }}</p>
+        <p class="body-md" style="color: var(--color-on-surface);">{{ formatRange(achievement) }}</p>
       </div>
 
       <!-- Error counters -->
       <div class="grid grid-cols-3 gap-2 mb-3">
         <div class="rounded-[20px] py-1.5 px-2 text-center" style="background-color: var(--color-surface-container-low);">
-          <p class="text-[10px] font-arabic mb-0.5" style="color: var(--color-on-surface-variant);">أخطاء</p>
+          <p class="text-[10px] mb-0.5" style="color: var(--color-on-surface-variant);">أخطاء</p>
           <p class="text-sm font-bold" style="color: var(--color-on-surface);">{{ achievement.mistakes_count }}</p>
         </div>
         <div class="rounded-[20px] py-1.5 px-2 text-center" style="background-color: var(--color-surface-container-low);">
-          <p class="text-[10px] font-arabic mb-0.5" style="color: var(--color-on-surface-variant);">تنبيهات</p>
+          <p class="text-[10px] mb-0.5" style="color: var(--color-on-surface-variant);">تنبيهات</p>
           <p class="text-sm font-bold" style="color: var(--color-on-surface);">{{ achievement.warnings_count }}</p>
         </div>
         <div class="rounded-[20px] py-1.5 px-2 text-center" style="background-color: var(--color-surface-container-low);">
-          <p class="text-[10px] font-arabic mb-0.5" style="color: var(--color-on-surface-variant);">تجويد</p>
+          <p class="text-[10px] mb-0.5" style="color: var(--color-on-surface-variant);">تجويد</p>
           <p class="text-sm font-bold" style="color: var(--color-on-surface);">{{ achievement.tajweed_errors_count }}</p>
         </div>
       </div>
@@ -89,8 +89,8 @@ function formatRange(a: ApiAchievement): string {
         class="rounded-[40px] px-4 py-3"
         style="background-color: var(--color-surface-container-low);"
       >
-        <p class="label-sm font-arabic mb-1" style="color: var(--color-on-surface-variant);">ملاحظات</p>
-        <p class="body-sm font-arabic" style="color: var(--color-on-surface);">{{ achievement.teacher_notes }}</p>
+        <p class="label-sm mb-1" style="color: var(--color-on-surface-variant);">ملاحظات</p>
+        <p class="body-sm" style="color: var(--color-on-surface);">{{ achievement.teacher_notes }}</p>
       </div>
 
       <!-- Flags -->
@@ -101,7 +101,7 @@ function formatRange(a: ApiAchievement): string {
           style="background-color: #FFF3E0;"
         >
           <UIcon name="i-lucide-alert-triangle" class="w-3.5 h-3.5" style="color: #C76400;" />
-          <p class="label-sm font-arabic" style="color: #C76400;">إنجاز غير مخطط</p>
+          <p class="label-sm" style="color: #C76400;">إنجاز غير مخطط</p>
         </div>
         <div
           v-if="achievement.is_flagged_conflict"
@@ -109,7 +109,7 @@ function formatRange(a: ApiAchievement): string {
           style="background-color: #FCE4EC;"
         >
           <UIcon name="i-lucide-alert-circle" class="w-3.5 h-3.5" style="color: #B5174E;" />
-          <p class="label-sm font-arabic" style="color: #B5174E;">تعارض مع الحضور</p>
+          <p class="label-sm" style="color: #B5174E;">تعارض مع الحضور</p>
         </div>
       </div>
     </div>

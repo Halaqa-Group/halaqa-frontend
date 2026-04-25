@@ -103,7 +103,7 @@ watch(selectedHalaqa, async (next, prev) => {
 
           <!-- Halaqa name -->
           <h2
-            class="font-arabic font-bold text-center"
+            class="font-bold text-center"
             style="color: white; font-size: 52px; line-height: 1.2;"
           >
             {{ displayHalaqa.name }}
@@ -113,7 +113,7 @@ watch(selectedHalaqa, async (next, prev) => {
           <div class="flex items-center gap-4" style="width: 260px;">
             <div class="flex-1 h-px" style="background: rgba(255,255,255,0.2);" />
             <span
-              class="font-arabic font-medium shrink-0"
+              class="font-medium shrink-0"
               style="color: rgba(255,255,255,0.5); font-size: 13px; letter-spacing: 0.1em;"
             >{{ TYPE_LABELS[displayHalaqa.type] }}</span>
             <div class="flex-1 h-px" style="background: rgba(255,255,255,0.2);" />

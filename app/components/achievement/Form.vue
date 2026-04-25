@@ -78,10 +78,10 @@ function decrement(field: 'mistakes' | 'warnings' | 'tajweed') {
   else if (field === 'tajweed' && tajweedErrorsCount.value > 0) tajweedErrorsCount.value--
 }
 
-const selectClass = 'w-full border-none rounded-xl px-3 py-2.5 text-sm font-arabic outline-none focus:ring-2 focus:ring-primary/30 transition-all'
-const inputClass = 'w-full border-none rounded-xl px-2 py-2.5 text-sm font-arabic outline-none focus:ring-2 focus:ring-primary/30 transition-all text-center'
+const selectClass = 'w-full border-none rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 transition-all'
+const inputClass = 'w-full border-none rounded-xl px-2 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 transition-all text-center'
 const fieldBg = 'background-color: var(--color-surface-container-lowest); color: var(--color-on-surface);'
-const labelClass = 'block text-[10px] font-arabic font-bold uppercase mb-1.5 text-center'
+const labelClass = 'block text-[10px] font-bold uppercase mb-1.5 text-center'
 const labelStyle = 'color: var(--color-outline);'
 </script>
 
@@ -94,8 +94,8 @@ const labelStyle = 'color: var(--color-outline);'
     <div class="px-6 pt-5 pb-4 flex items-center gap-3" style="border-bottom: 1px solid var(--color-outline-variant);">
       <img :src="student.avatar" class="w-10 h-10 rounded-full object-cover shrink-0" :alt="student.name">
       <div class="flex-1 min-w-0">
-        <p class="text-xs font-arabic font-bold uppercase tracking-widest mb-0.5" style="color: var(--color-primary);">تسجيل إنجاز</p>
-        <p class="text-xl font-arabic font-bold truncate leading-tight" style="color: var(--color-on-surface);">{{ student.name }}</p>
+        <p class="text-xs font-bold uppercase tracking-widest mb-0.5" style="color: var(--color-primary);">تسجيل إنجاز</p>
+        <p class="text-xl font-bold truncate leading-tight" style="color: var(--color-on-surface);">{{ student.name }}</p>
       </div>
     </div>
 
@@ -106,7 +106,7 @@ const labelStyle = 'color: var(--color-outline);'
         <button
           v-for="type in TRACK_TYPES"
           :key="type.value"
-          class="flex-1 py-2 rounded-full text-sm font-arabic font-semibold transition-all cursor-pointer"
+          class="flex-1 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer"
           :style="trackType === type.value
             ? `background-color: var(${type.colorVar}); color: white; box-shadow: 0 2px 8px color-mix(in srgb, var(${type.colorVar}) 25%, transparent);`
             : 'color: var(--color-on-surface-variant);'"
@@ -156,7 +156,7 @@ const labelStyle = 'color: var(--color-outline);'
           style="background-color: var(--color-track-near-bg);"
         >
           <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" style="color: var(--color-track-near);" />
-          <p class="label-sm font-arabic" style="color: var(--color-track-near);">{{ validationError }}</p>
+          <p class="label-sm" style="color: var(--color-track-near);">{{ validationError }}</p>
         </div>
       </div>
 
@@ -167,7 +167,7 @@ const labelStyle = 'color: var(--color-outline);'
           class="rounded-[24px] p-4 flex flex-col items-center gap-3"
           style="background-color: var(--color-surface-container-low);"
         >
-          <span class="text-[10px] font-arabic font-bold uppercase" style="color: var(--color-outline);">أخطاء</span>
+          <span class="text-[10px] font-bold uppercase" style="color: var(--color-outline);">أخطاء</span>
           <span class="text-3xl font-bold" style="color: var(--color-primary);">{{ mistakesCount }}</span>
           <div class="flex gap-2">
             <button
@@ -188,7 +188,7 @@ const labelStyle = 'color: var(--color-outline);'
           class="rounded-[24px] p-4 flex flex-col items-center gap-3"
           style="background-color: var(--color-surface-container-low);"
         >
-          <span class="text-[10px] font-arabic font-bold uppercase" style="color: var(--color-outline);">تنبيهات</span>
+          <span class="text-[10px] font-bold uppercase" style="color: var(--color-outline);">تنبيهات</span>
           <span class="text-3xl font-bold" style="color: var(--color-secondary);">{{ warningsCount }}</span>
           <div class="flex gap-2">
             <button
@@ -209,7 +209,7 @@ const labelStyle = 'color: var(--color-outline);'
           class="rounded-[24px] p-4 flex flex-col items-center gap-3"
           style="background-color: var(--color-surface-container-low);"
         >
-          <span class="text-[10px] font-arabic font-bold uppercase" style="color: var(--color-outline);">تجويد</span>
+          <span class="text-[10px] font-bold uppercase" style="color: var(--color-outline);">تجويد</span>
           <span class="text-3xl font-bold" style="color: var(--color-tertiary);">{{ tajweedErrorsCount }}</span>
           <div class="flex gap-2">
             <button
@@ -231,13 +231,13 @@ const labelStyle = 'color: var(--color-outline);'
         v-model="teacherNotes"
         rows="2"
         placeholder="ملاحظات المعلم..."
-        class="w-full resize-none rounded-[20px] px-4 py-3 text-sm font-arabic outline-none transition-all focus:ring-2 focus:ring-primary/30"
+        class="w-full resize-none rounded-[20px] px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/30"
         style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
       />
 
       <!-- Submit -->
       <button
-        class="w-full py-3 rounded-full font-arabic font-bold text-base flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95 cursor-pointer"
+        class="w-full py-3 rounded-full font-bold text-base flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95 cursor-pointer"
         style="background-color: var(--color-primary); color: white; box-shadow: 0 4px 14px rgba(128,76,125,0.3);"
         @click="handleSubmit"
       >

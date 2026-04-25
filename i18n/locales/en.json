@@ -1,0 +1,116 @@
+{
+  "app": {
+    "name": "Halaqa",
+    "tagline": "Quran Halaqa Management System"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "search": "Search",
+    "loading": "Loading...",
+    "noResults": "No results",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "auth": {
+    "login": "Sign in",
+    "loginButton": "Sign in",
+    "loggingIn": "Signing in...",
+    "logout": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "invalidCredentials": "Invalid credentials"
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email format",
+    "passwordRequired": "Password is required"
+  },
+  "roles": {
+    "teacher": "Teacher",
+    "admin": "Admin",
+    "parent": "Parent"
+  },
+  "nav": {
+    "home": "Home",
+    "attendance": "Attendance",
+    "students": "Students",
+    "achievements": "Achievements",
+    "analytics": "Analytics",
+    "planner": "Planner",
+    "tasks": "Tasks"
+  },
+  "pages": {
+    "tasks": {
+      "title": "Tasks",
+      "comingSoon": "Tasks and follow-up list coming soon"
+    },
+    "home": {
+      "greeting": "Hi, {name}",
+      "greetingFallback": "Welcome",
+      "subtitle": "Here's an overview of your halaqa's activity today.",
+      "quickAccess": "Quick access",
+      "stats": {
+        "totalStudents": "Total students",
+        "activeHalaqat": "Active halaqat",
+        "loadFailed": "Failed to load",
+        "attendanceToday": "Today's attendance",
+        "attendanceCount": "{present} of {total}",
+        "currentDay": "Today"
+      },
+      "quickActions": {
+        "attendance": "Record daily attendance",
+        "students": "Manage learners",
+        "achievements": "Track recitation and memorization",
+        "analytics": "Performance reports and alerts"
+      },
+      "welcome": {
+        "title": "Welcome to Halaqa",
+        "message": "Halaqa not set up yet. Contact your admin to add students."
+      }
+    },
+    "attendance": {
+      "recordLabel": "Record",
+      "title": "Attendance",
+      "subtitle": "Enter and track daily attendance records",
+      "selectHalaqaPrompt": "Use the halaqa icon in the sidebar to select a halaqa",
+      "searchPlaceholder": "Search for a student...",
+      "saveAttendance": "Save attendance",
+      "savedToastTitle": "Attendance saved successfully",
+      "saveErrorTitle": "Failed to save attendance",
+      "saveErrorFallback": "An unexpected error occurred",
+      "successMessage": "Attendance saved successfully. You can now go to the Achievements page to log student achievements.",
+      "goToAchievements": "Go to Achievements",
+      "noStudentsInHalaqa": "No students in this halaqa",
+      "sessionNotes": "Session notes",
+      "smartAssistant": "Smart assistant",
+      "notesPlaceholder": "Write your notes here...",
+      "quickAdd": "Quick add:",
+      "quickTags": {
+        "excellentEngagement": "Excellent engagement",
+        "groupReview": "Group review",
+        "partCompleted": "Part completed"
+      }
+    },
+    "students": {
+      "communityRecord": "Community record",
+      "title": "Students",
+      "subtitle": "Manage active learners and track their progress in real time.",
+      "addNew": "Add new student",
+      "searchByName": "Search by name...",
+      "statusAll": "All",
+      "statusActive": "Active",
+      "statusInactive": "Inactive",
+      "noStudents": "No students",
+      "showingCount": "Showing {filtered} of {total} students"
+    }
+  }
+}

@@ -51,11 +51,11 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
     <!-- Header + controls -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div class="space-y-1">
-        <span class="text-xs font-arabic font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           رصد الأداء
         </span>
-        <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">التحليلات</h2>
-        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
+        <h2 class="display-lg" style="color: var(--color-on-surface);">التحليلات</h2>
+        <p class="text-sm" style="color: var(--color-on-surface-variant);">
           تنبيهات الأسبوع وتقارير الأداء والإنجاز.
         </p>
       </div>
@@ -68,7 +68,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
           <UIcon name="i-lucide-users" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
           <select
             v-model="selectedHalaqaId"
-            class="bg-transparent text-sm font-arabic outline-none cursor-pointer"
+            class="bg-transparent text-sm outline-none cursor-pointer"
             style="color: var(--color-on-surface);"
           >
             <option v-if="halaqat.length === 0" :value="null">لا توجد حلقات</option>
@@ -85,7 +85,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
             v-model="selectedWeekStart"
             type="date"
             dir="ltr"
-            class="bg-transparent text-sm font-arabic outline-none"
+            class="bg-transparent text-sm outline-none"
             style="color: var(--color-on-surface);"
           >
         </div>
@@ -104,7 +104,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-bar-chart-3" class="w-12 h-12" style="color: var(--color-on-surface-variant);" />
-      <p class="font-arabic" style="color: var(--color-on-surface-variant);">اختر حلقة لعرض التحليلات</p>
+      <p style="color: var(--color-on-surface-variant);">اختر حلقة لعرض التحليلات</p>
     </div>
 
     <template v-else-if="warnings">
@@ -113,31 +113,31 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         <!-- Unplanned -->
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-warning-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
-            <span class="label-md font-arabic" style="color: var(--color-status-warning);">إنجازات غير مخططة</span>
+            <span class="label-md" style="color: var(--color-status-warning);">إنجازات غير مخططة</span>
             <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
           </div>
           <p class="display-md" style="color: var(--color-status-warning);">{{ warnings.unplannedAchievements.length }}</p>
-          <p class="body-sm font-arabic mt-1" style="color: var(--color-status-warning);">هذا الأسبوع</p>
+          <p class="body-sm mt-1" style="color: var(--color-status-warning);">هذا الأسبوع</p>
         </div>
 
         <!-- Conflicts -->
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-conflict-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
-            <span class="label-md font-arabic" style="color: var(--color-status-conflict);">تعارضات مكتشفة</span>
+            <span class="label-md" style="color: var(--color-status-conflict);">تعارضات مكتشفة</span>
             <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
           </div>
           <p class="display-md" style="color: var(--color-status-conflict);">{{ warnings.flaggedConflicts.length }}</p>
-          <p class="body-sm font-arabic mt-1" style="color: var(--color-status-conflict);">يحتاج مراجعة</p>
+          <p class="body-sm mt-1" style="color: var(--color-status-conflict);">يحتاج مراجعة</p>
         </div>
 
         <!-- Overdue -->
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-overdue-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
-            <span class="label-md font-arabic" style="color: var(--color-status-overdue);">بنود متأخرة</span>
+            <span class="label-md" style="color: var(--color-status-overdue);">بنود متأخرة</span>
             <UIcon name="i-lucide-clock-alert" class="w-5 h-5" style="color: var(--color-status-overdue);" />
           </div>
           <p class="display-md" style="color: var(--color-status-overdue);">{{ warnings.overdueItems.length }}</p>
-          <p class="body-sm font-arabic mt-1" style="color: var(--color-status-overdue);">من الخطة الأسبوعية</p>
+          <p class="body-sm mt-1" style="color: var(--color-status-overdue);">من الخطة الأسبوعية</p>
         </div>
       </div>
 
@@ -149,7 +149,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       >
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
-          <h3 class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">الإنجازات غير المخططة</h3>
+          <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">الإنجازات غير المخططة</h3>
         </div>
         <div class="flex flex-col gap-3">
           <div
@@ -165,16 +165,16 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
                 :alt="a.student?.name"
               >
               <div>
-                <p class="body-md font-arabic font-semibold" style="color: var(--color-on-surface);">
+                <p class="body-md font-semibold" style="color: var(--color-on-surface);">
                   {{ a.student?.name || `طالب #${a.student_id}` }}
                 </p>
-                <p class="label-sm font-arabic" style="color: var(--color-on-surface-variant);">
+                <p class="label-sm" style="color: var(--color-on-surface-variant);">
                   {{ a.date }} — {{ a.track_type === 'Hifz' ? 'حفظ' : a.track_type === 'Near' ? 'مراجعة قريبة' : 'مراجعة بعيدة' }}
                 </p>
               </div>
             </div>
             <span
-              class="px-3 py-1 rounded-full text-xs font-arabic"
+              class="px-3 py-1 rounded-full text-xs"
               style="background-color: var(--color-status-warning-light); color: var(--color-status-warning);"
             >غير مخطط</span>
           </div>
@@ -189,7 +189,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       >
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
-          <h3 class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">التعارضات المكتشفة</h3>
+          <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">التعارضات المكتشفة</h3>
         </div>
         <div class="flex flex-col gap-3">
           <div
@@ -205,14 +205,14 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
                 :alt="a.student?.name"
               >
               <div>
-                <p class="body-md font-arabic font-semibold" style="color: var(--color-on-surface);">
+                <p class="body-md font-semibold" style="color: var(--color-on-surface);">
                   {{ a.student?.name || `طالب #${a.student_id}` }}
                 </p>
-                <p class="label-sm font-arabic" style="color: var(--color-on-surface-variant);">{{ a.date }}</p>
+                <p class="label-sm" style="color: var(--color-on-surface-variant);">{{ a.date }}</p>
               </div>
             </div>
             <span
-              class="px-3 py-1 rounded-full text-xs font-arabic"
+              class="px-3 py-1 rounded-full text-xs"
               style="background-color: var(--color-status-conflict-bg); color: var(--color-status-conflict);"
             >تعارض</span>
           </div>
@@ -226,14 +226,14 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         style="background-color: var(--color-status-ok-bg);"
       >
         <UIcon name="i-lucide-check-circle" class="w-12 h-12" style="color: var(--color-status-ok);" />
-        <p class="body-lg font-arabic font-semibold" style="color: var(--color-status-ok);">لا توجد تنبيهات هذا الأسبوع</p>
-        <p class="body-sm font-arabic" style="color: var(--color-status-ok);">الحلقة تسير بشكل ممتاز</p>
+        <p class="body-lg font-semibold" style="color: var(--color-status-ok);">لا توجد تنبيهات هذا الأسبوع</p>
+        <p class="body-sm" style="color: var(--color-status-ok);">الحلقة تسير بشكل ممتاز</p>
       </div>
     </template>
 
     <!-- Error -->
     <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: var(--color-status-conflict-bg);">
-      <p class="font-arabic" style="color: var(--color-status-conflict);">{{ error }}</p>
+      <p style="color: var(--color-status-conflict);">{{ error }}</p>
     </div>
   </div>
 </template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'dashboard' })
 
+const { t, locale } = useI18n()
 const { attendanceRows, sessionNotes, isLoading, isSaving, appendNote, loadSession, submitSession } = useAttendance()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const { user } = useAuth()
@@ -8,7 +9,11 @@ const toast = useToast()
 
 const _today = new Date()
 const selectedDate = ref(`${_today.getFullYear()}-${String(_today.getMonth() + 1).padStart(2, '0')}-${String(_today.getDate()).padStart(2, '0')}`)
-const quickTags = ['تفاعل ممتاز', 'مراجعة جماعية', 'تم الانتهاء من جزء']
+const quickTags = computed(() => [
+  t('pages.attendance.quickTags.excellentEngagement'),
+  t('pages.attendance.quickTags.groupReview'),
+  t('pages.attendance.quickTags.partCompleted')
+])
 const searchQuery = ref('')
 const showSuccessMessage = ref(false)
 
@@ -20,7 +25,7 @@ const filteredRows = computed(() =>
 
 const formattedDate = computed(() => {
   if (!selectedDate.value) return '—'
-  return new Date(selectedDate.value).toLocaleDateString('ar-SA', {
+  return new Date(selectedDate.value).toLocaleDateString(locale.value === 'ar' ? 'ar-SA' : 'en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   })
 })
@@ -47,14 +52,14 @@ async function handleSaveAttendance() {
     await submitSession()
     showSuccessMessage.value = true
     toast.add({
-      title: 'تم حفظ الحضور بنجاح',
+      title: t('pages.attendance.savedToastTitle'),
       icon: 'i-lucide-check-circle',
       color: 'success'
     })
   } catch (error: any) {
     toast.add({
-      title: 'خطأ في حفظ الحضور',
-      description: error.message || 'حدث خطأ غير متوقع',
+      title: t('pages.attendance.saveErrorTitle'),
+      description: error.message || t('pages.attendance.saveErrorFallback'),
       icon: 'i-lucide-alert-circle',
       color: 'error'
     })
@@ -74,12 +79,12 @@ onMounted(async () => {
     <!-- Screen header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-4">
       <div class="space-y-1">
-        <span class="text-xs font-arabic font-bold uppercase tracking-widest" style="color: var(--color-primary);">
-          السجل
+        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+          {{ $t('pages.attendance.recordLabel') }}
         </span>
-        <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">الحضور والغياب</h2>
-        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
-          قم بإدخال ومتابعة سجلات الحضور اليومي
+        <h2 class="display-lg" style="color: var(--color-on-surface);">{{ $t('pages.attendance.title') }}</h2>
+        <p class="text-sm" style="color: var(--color-on-surface-variant);">
+          {{ $t('pages.attendance.subtitle') }}
         </p>
       </div>
     </div>
@@ -99,8 +104,8 @@ onMounted(async () => {
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-      <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">
-        استخدم أيقونة الحلقات في الشريط الجانبي لاختيار حلقة
+      <p class="body-md" style="color: var(--color-on-surface-variant);">
+        {{ $t('pages.attendance.selectHalaqaPrompt') }}
       </p>
     </div>
 
@@ -122,8 +127,8 @@ onMounted(async () => {
               <input
                 v-model="searchQuery"
                 type="text"
-                placeholder="بحث عن طالب..."
-                class="w-full pe-11 ps-4 py-3 rounded-[40px] text-base font-arabic outline-none transition-all focus:ring-2 focus:ring-primary/30"
+                :placeholder="$t('pages.attendance.searchPlaceholder')"
+                class="w-full pe-11 ps-4 py-3 rounded-[40px] text-base outline-none transition-all focus:ring-2 focus:ring-primary/30"
                 style="background-color: var(--color-surface-container-lowest); color: var(--color-on-surface); border: 1.5px solid var(--color-outline-variant);"
               >
             </div>
@@ -133,10 +138,10 @@ onMounted(async () => {
               icon="i-lucide-save"
               size="lg"
               color="primary"
-              class="font-arabic font-bold rounded-full shrink-0 px-8 py-3 text-base cursor-pointer"
+              class="font-bold rounded-full shrink-0 px-8 py-3 text-base cursor-pointer"
               @click="handleSaveAttendance"
             >
-              حفظ الحضور
+              {{ $t('pages.attendance.saveAttendance') }}
             </UButton>
           </div>
 
@@ -154,7 +159,7 @@ onMounted(async () => {
             style="background-color: var(--color-surface-container-lowest);"
           >
             <UIcon name="i-lucide-user-x" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-            <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">لا يوجد طلاب في هذه الحلقة</p>
+            <p class="body-md" style="color: var(--color-on-surface-variant);">{{ $t('pages.attendance.noStudentsInHalaqa') }}</p>
           </div>
 
           <!-- Success message -->
@@ -165,16 +170,16 @@ onMounted(async () => {
           >
             <div class="flex items-center gap-3">
               <UIcon name="i-lucide-check-circle" class="w-5 h-5" style="color: #4A8E85;" />
-              <p class="body-lg font-arabic" style="color: #4A8E85;">
-                تم حفظ الحضور بنجاح. يمكنك الآن الانتقال إلى صفحة الإنجازات لتسجيل إنجازات الطلاب.
+              <p class="body-lg" style="color: #4A8E85;">
+                {{ $t('pages.attendance.successMessage') }}
               </p>
             </div>
             <NuxtLink
               to="/achievements"
-              class="px-4 py-2 rounded-xl text-sm font-arabic font-semibold transition-colors no-underline"
+              class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors no-underline"
               style="background-color: #4A8E85; color: white;"
             >
-              الانتقال إلى الإنجازات
+              {{ $t('pages.attendance.goToAchievements') }}
             </NuxtLink>
           </div>
 
@@ -190,22 +195,22 @@ onMounted(async () => {
           <!-- Session notes -->
           <div class="rounded-[40px] p-5" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
             <div class="flex items-center justify-between mb-3">
-              <p class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">ملاحظات الجلسة</p>
-              <UButton variant="ghost" color="neutral" icon="i-lucide-sparkles" size="sm" label="مساعد ذكي" />
+              <p class="body-lg font-semibold" style="color: var(--color-on-surface);">{{ $t('pages.attendance.sessionNotes') }}</p>
+              <UButton variant="ghost" color="neutral" icon="i-lucide-sparkles" size="sm" :label="$t('pages.attendance.smartAssistant')" />
             </div>
             <textarea
               v-model="sessionNotes"
               rows="3"
-              placeholder="اكتب ملاحظاتك هنا..."
-              class="w-full resize-none rounded-xl p-3 text-sm font-arabic outline-none"
+              :placeholder="$t('pages.attendance.notesPlaceholder')"
+              class="w-full resize-none rounded-xl p-3 text-sm outline-none"
               style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
             />
             <div class="flex items-center gap-2 mt-3 flex-wrap">
-              <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">إضافة سريعة:</span>
+              <span class="label-md" style="color: var(--color-on-surface-variant);">{{ $t('pages.attendance.quickAdd') }}</span>
               <button
                 v-for="tag in quickTags"
                 :key="tag"
-                class="px-3 py-1 rounded-full text-xs font-arabic transition-colors"
+                class="px-3 py-1 rounded-full text-xs transition-colors"
                 style="background-color: var(--color-surface-container); color: var(--color-on-surface-variant);"
                 @click="appendNote(tag)"
               >{{ tag }}</button>

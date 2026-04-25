@@ -23,8 +23,8 @@ const isSelected = computed(() => selectedRowIds.value.has(props.data.id))
 
     <!-- Day info -->
     <div class="w-[110px] shrink-0 flex flex-col items-start pe-4 pt-2 self-start border-e border-dotted border-outline-variant/50 ps-1">
-      <h3 class="font-arabic font-bold text-on-surface text-base leading-tight">{{ data.day }}</h3>
-      <p class="text-xs font-arabic mt-1" style="color: var(--color-on-surface-variant); opacity: 0.5;">{{ data.date }}</p>
+      <h3 class="font-bold text-on-surface text-base leading-tight">{{ data.day }}</h3>
+      <p class="text-xs mt-1" style="color: var(--color-on-surface-variant); opacity: 0.5;">{{ data.date }}</p>
     </div>
 
     <!-- Three lesson columns -->

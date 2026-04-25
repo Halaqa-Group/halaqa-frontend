@@ -1,6 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'dashboard' })
 
+const { t } = useI18n()
 const { students, searchQuery, isLoading, error, fetchStudents, openAdd } = useStudents()
 const { selectedHalaqaId } = useGlobalHalaqa()
 
@@ -14,11 +15,11 @@ const filteredStudents = computed(() =>
   })
 )
 
-const statusFilters: { label: string; value: string | null }[] = [
-  { label: 'الكل', value: null },
-  { label: 'نشط', value: 'active' },
-  { label: 'غير نشط', value: 'inactive' }
-]
+const statusFilters = computed<{ label: string; value: string | null }[]>(() => [
+  { label: t('pages.students.statusAll'), value: null },
+  { label: t('pages.students.statusActive'), value: 'active' },
+  { label: t('pages.students.statusInactive'), value: 'inactive' }
+])
 
 const loadProgress = computed(() =>
   Math.round((filteredStudents.value.length / Math.max(students.value.length, 1)) * 100)
@@ -40,21 +41,21 @@ onMounted(() => {
     <!-- Screen header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
       <div class="space-y-1">
-        <span class="text-xs font-arabic font-bold uppercase tracking-widest" style="color: var(--color-primary);">
-          سجل المجتمع
+        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+          {{ $t('pages.students.communityRecord') }}
         </span>
-        <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">الطلاب</h2>
-        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
-          قم بإدارة المتعلمين النشطين ومتابعة تقدمهم في الوقت الفعلي.
+        <h2 class="display-lg" style="color: var(--color-on-surface);">{{ $t('pages.students.title') }}</h2>
+        <p class="text-sm" style="color: var(--color-on-surface-variant);">
+          {{ $t('pages.students.subtitle') }}
         </p>
       </div>
       <UButton
         icon="i-lucide-plus"
         size="lg"
-        class="font-arabic font-bold rounded-full shrink-0 px-6"
+        class="font-bold rounded-full shrink-0 px-6"
         @click="openAdd"
       >
-        إضافة طالب جديد
+        {{ $t('pages.students.addNew') }}
       </UButton>
     </div>
 
@@ -70,8 +71,8 @@ onMounted(() => {
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="ابحث بالاسم..."
-          class="w-full pe-11 ps-4 py-3 rounded-[40px] text-base font-arabic outline-none transition-all focus:ring-2 focus:ring-primary/30"
+          :placeholder="$t('pages.students.searchByName')"
+          class="w-full pe-11 ps-4 py-3 rounded-[40px] text-base outline-none transition-all focus:ring-2 focus:ring-primary/30"
           style="background-color: var(--color-surface-container-lowest); color: var(--color-on-surface); border: 1.5px solid var(--color-outline-variant);"
         >
       </div>
@@ -81,7 +82,7 @@ onMounted(() => {
         <button
           v-for="f in statusFilters"
           :key="String(f.value)"
-          class="px-5 py-1.5 text-base font-arabic rounded-full transition-all cursor-pointer"
+          class="px-5 py-1.5 text-base rounded-full transition-all cursor-pointer"
           :style="filterStatus === f.value ? 'background-color: #f5edf5; color: var(--color-primary);' : ''"
           :class="filterStatus === f.value
             ? 'font-semibold'
@@ -101,7 +102,7 @@ onMounted(() => {
     <!-- Error -->
     <div v-else-if="error" class="rounded-[40px] p-6 text-center" style="background-color: #FCE4EC;">
       <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2" style="color: #D81B60;" />
-      <p class="font-arabic" style="color: #D81B60;">{{ error }}</p>
+      <p style="color: #D81B60;">{{ error }}</p>
     </div>
 
     <!-- Student grid -->
@@ -116,14 +117,14 @@ onMounted(() => {
     <!-- Empty state -->
     <div v-if="!isLoading && !error && filteredStudents.length === 0" class="flex flex-col items-center gap-4 py-16">
       <UIcon name="i-lucide-users" class="w-12 h-12" style="color: var(--color-on-surface-variant);" />
-      <p class="font-arabic" style="color: var(--color-on-surface-variant);">لا يوجد طلاب</p>
+      <p style="color: var(--color-on-surface-variant);">{{ $t('pages.students.noStudents') }}</p>
     </div>
 
     <!-- Progress indicator -->
     <div v-if="!isLoading && students.length > 0" class="mt-12 text-center py-8">
       <div class="flex flex-col items-center gap-4">
-        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
-          عرض {{ filteredStudents.length }} من {{ students.length }} طالباً
+        <p class="text-sm" style="color: var(--color-on-surface-variant);">
+          {{ $t('pages.students.showingCount', { filtered: filteredStudents.length, total: students.length }) }}
         </p>
         <div class="w-48 h-1.5 rounded-full overflow-hidden" style="background-color: var(--color-primary-container);">
           <div

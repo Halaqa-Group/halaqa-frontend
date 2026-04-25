@@ -107,11 +107,11 @@ onUnmounted(() => {
     <!-- Page header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
       <div class="space-y-1">
-        <span class="text-xs font-arabic font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           السجل
         </span>
-        <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">الإنجازات</h2>
-        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
+        <h2 class="display-lg" style="color: var(--color-on-surface);">الإنجازات</h2>
+        <p class="text-sm" style="color: var(--color-on-surface-variant);">
           سجّل إنجازات الطلاب اليومية في الحفظ والمراجعة
         </p>
       </div>
@@ -121,7 +121,7 @@ onUnmounted(() => {
         style="background-color: var(--color-track-hifz-bg);"
       >
         <UIcon name="i-lucide-award" class="w-6 h-6" style="color: var(--color-track-hifz);" />
-        <span class="body-lg font-arabic font-bold" style="color: var(--color-track-hifz);">{{ filteredAchievements.length }} إنجاز اليوم</span>
+        <span class="body-lg font-bold" style="color: var(--color-track-hifz);">{{ filteredAchievements.length }} إنجاز اليوم</span>
       </div>
     </div>
 
@@ -137,7 +137,7 @@ onUnmounted(() => {
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-      <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">
+      <p class="body-md" style="color: var(--color-on-surface-variant);">
         استخدم أيقونة الحلقات في الشريط الجانبي لاختيار حلقة
       </p>
     </div>
@@ -163,7 +163,7 @@ onUnmounted(() => {
 
             <!-- Header -->
             <div class="relative z-10 flex items-center justify-center">
-              <p class="text-sm font-arabic font-semibold" style="color: white;">اختر طالباً</p>
+              <p class="text-sm font-semibold" style="color: white;">اختر طالباً</p>
             </div>
 
             <!-- Dropdown trigger -->
@@ -182,7 +182,7 @@ onUnmounted(() => {
                   >
                 </div>
                 <div class="flex-1 text-right">
-                  <h3 class="font-arabic font-bold text-base tracking-tight leading-tight" style="color: white;">
+                  <h3 class="font-bold text-base tracking-tight leading-tight" style="color: white;">
                     {{ selectedStudent?.name || 'اختر طالباً' }}
                   </h3>
                 </div>
@@ -229,7 +229,7 @@ onUnmounted(() => {
                       v-model="studentSearch"
                       type="text"
                       placeholder="بحث..."
-                      class="flex-1 bg-transparent text-sm font-arabic outline-none text-right"
+                      class="flex-1 bg-transparent text-sm outline-none text-right"
                       style="color: var(--color-on-surface);"
                       dir="rtl"
                     >
@@ -254,12 +254,12 @@ onUnmounted(() => {
                     </div>
                     <div class="flex-1 text-right">
                       <p
-                        class="font-arabic font-bold text-sm leading-tight"
+                        class="font-bold text-sm leading-tight"
                         :style="selectedStudent?.id === student.id ? 'color: white;' : 'color: var(--color-on-surface);'"
                       >{{ student.name }}</p>
                       <span
                         v-if="student.attendanceStatus"
-                        class="text-[11px] font-arabic"
+                        class="text-[11px]"
                         :style="selectedStudent?.id === student.id
                           ? 'color: rgba(255,255,255,0.6);'
                           : student.attendanceStatus === 'Present' ? 'color: var(--color-track-hifz);'
@@ -278,7 +278,7 @@ onUnmounted(() => {
                   </button>
 
                   <div v-if="filteredDropdownStudents.length === 0" class="px-3 py-4 text-center">
-                    <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">لا توجد نتائج</p>
+                    <p class="text-sm" style="color: var(--color-on-surface-variant);">لا توجد نتائج</p>
                   </div>
                 </div>
               </div>
@@ -300,7 +300,7 @@ onUnmounted(() => {
             style="background-color: var(--color-surface-container-lowest);"
           >
             <UIcon name="i-lucide-user-check" class="w-14 h-14" style="color: var(--color-on-surface-variant);" />
-            <p class="body-lg font-arabic text-center" style="color: var(--color-on-surface-variant);">
+            <p class="body-lg text-center" style="color: var(--color-on-surface-variant);">
               اختر طالباً لتسجيل إنجاز
             </p>
           </div>
@@ -316,8 +316,8 @@ onUnmounted(() => {
         <!-- Col 3: Achievements list (filtered by selected student + selected date) -->
         <div class="shrink-0 w-[400px] mt-8 flex flex-col gap-3">
           <div class="flex items-center justify-between px-1">
-            <p class="body-lg font-arabic font-bold" style="color: var(--color-on-surface);">إنجازات اليوم</p>
-            <span v-if="selectedStudent" class="label-md font-arabic" style="color: var(--color-on-surface-variant);">{{ selectedStudent.name }}</span>
+            <p class="body-lg font-bold" style="color: var(--color-on-surface);">إنجازات اليوم</p>
+            <span v-if="selectedStudent" class="label-md" style="color: var(--color-on-surface-variant);">{{ selectedStudent.name }}</span>
           </div>
 
           <!-- Dotted scrollable container — shows ~3 cards, scroll for more -->

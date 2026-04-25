@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui'],
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/i18n'],
   devtools: { enabled: true },
   devServer: { port: 3000 },
   css: ['~/assets/css/main.css'],
@@ -10,16 +10,25 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      htmlAttrs: { dir: 'rtl', lang: 'ar' },
       link: [
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
-          rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap'
+          rel: 'preload',
+          as: 'font',
+          type: 'font/woff2',
+          href: '/fonts/thmanyah/thmanyahsans-Regular.woff2',
+          crossorigin: 'anonymous'
         }
       ]
     }
+  },
+  i18n: {
+    defaultLocale: 'ar',
+    strategy: 'no_prefix',
+    locales: [
+      { code: 'ar', name: 'العربية', file: 'ar.json', dir: 'rtl' },
+      { code: 'en', name: 'English', file: 'en.json', dir: 'ltr' }
+    ],
+    detectBrowserLanguage: false
   },
   compatibilityDate: '2025-01-15',
   eslint: {

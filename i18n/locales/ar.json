@@ -1,0 +1,116 @@
+{
+  "app": {
+    "name": "حلقة",
+    "tagline": "نظام إدارة الحلقات القرآنية"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "add": "إضافة",
+    "close": "إغلاق",
+    "search": "بحث",
+    "loading": "جاري التحميل...",
+    "noResults": "لا توجد نتائج",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "confirm": "تأكيد",
+    "yes": "نعم",
+    "no": "لا"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "loginButton": "دخول",
+    "loggingIn": "جاري الدخول...",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "invalidCredentials": "بيانات الدخول غير صحيحة"
+  },
+  "validation": {
+    "emailRequired": "البريد الإلكتروني مطلوب",
+    "emailInvalid": "صيغة البريد غير صحيحة",
+    "passwordRequired": "كلمة المرور مطلوبة"
+  },
+  "roles": {
+    "teacher": "معلم",
+    "admin": "مدير",
+    "parent": "ولي أمر"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "attendance": "الحضور",
+    "students": "الطلاب",
+    "achievements": "الإنجازات",
+    "analytics": "التحليلات",
+    "planner": "المخطط",
+    "tasks": "المهام"
+  },
+  "pages": {
+    "tasks": {
+      "title": "المهام",
+      "comingSoon": "قائمة المهام والمتابعة ستكون متاحة هنا قريباً"
+    },
+    "home": {
+      "greeting": "أهلاً، {name}",
+      "greetingFallback": "مرحباً بك",
+      "subtitle": "هذه نظرة عامة على نشاط حلقتك اليوم.",
+      "quickAccess": "الوصول السريع",
+      "stats": {
+        "totalStudents": "إجمالي الطلاب",
+        "activeHalaqat": "حلقات نشطة",
+        "loadFailed": "تعذّر التحميل",
+        "attendanceToday": "الحضور اليوم",
+        "attendanceCount": "{present} من {total}",
+        "currentDay": "اليوم الحالي"
+      },
+      "quickActions": {
+        "attendance": "تسجيل الحضور اليومي",
+        "students": "إدارة المتعلمين",
+        "achievements": "متابعة التلاوة والحفظ",
+        "analytics": "تقارير الأداء والتنبيهات"
+      },
+      "welcome": {
+        "title": "مرحباً بك في حلقة",
+        "message": "لم يتم إعداد الحلقة بعد. تواصل مع المشرف لإضافة الطلاب."
+      }
+    },
+    "attendance": {
+      "recordLabel": "السجل",
+      "title": "الحضور والغياب",
+      "subtitle": "قم بإدخال ومتابعة سجلات الحضور اليومي",
+      "selectHalaqaPrompt": "استخدم أيقونة الحلقات في الشريط الجانبي لاختيار حلقة",
+      "searchPlaceholder": "بحث عن طالب...",
+      "saveAttendance": "حفظ الحضور",
+      "savedToastTitle": "تم حفظ الحضور بنجاح",
+      "saveErrorTitle": "خطأ في حفظ الحضور",
+      "saveErrorFallback": "حدث خطأ غير متوقع",
+      "successMessage": "تم حفظ الحضور بنجاح. يمكنك الآن الانتقال إلى صفحة الإنجازات لتسجيل إنجازات الطلاب.",
+      "goToAchievements": "الانتقال إلى الإنجازات",
+      "noStudentsInHalaqa": "لا يوجد طلاب في هذه الحلقة",
+      "sessionNotes": "ملاحظات الجلسة",
+      "smartAssistant": "مساعد ذكي",
+      "notesPlaceholder": "اكتب ملاحظاتك هنا...",
+      "quickAdd": "إضافة سريعة:",
+      "quickTags": {
+        "excellentEngagement": "تفاعل ممتاز",
+        "groupReview": "مراجعة جماعية",
+        "partCompleted": "تم الانتهاء من جزء"
+      }
+    },
+    "students": {
+      "communityRecord": "سجل المجتمع",
+      "title": "الطلاب",
+      "subtitle": "قم بإدارة المتعلمين النشطين ومتابعة تقدمهم في الوقت الفعلي.",
+      "addNew": "إضافة طالب جديد",
+      "searchByName": "ابحث بالاسم...",
+      "statusAll": "الكل",
+      "statusActive": "نشط",
+      "statusInactive": "غير نشط",
+      "noStudents": "لا يوجد طلاب",
+      "showingCount": "عرض {filtered} من {total} طالباً"
+    }
+  }
+}

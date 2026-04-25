@@ -96,11 +96,11 @@ onUnmounted(() => {
     <!-- Page header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
       <div class="space-y-1">
-        <span class="text-xs font-arabic font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           التخطيط الأسبوعي
         </span>
-        <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">مخطط الأسبوع</h2>
-        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
+        <h2 class="display-lg" style="color: var(--color-on-surface);">مخطط الأسبوع</h2>
+        <p class="text-sm" style="color: var(--color-on-surface-variant);">
           خطط دروس الأسبوع لكل طالب وتتبع التقدم في الحفظ والمراجعة.
         </p>
       </div>
@@ -112,11 +112,11 @@ onUnmounted(() => {
           <UButton
             variant="outline" color="neutral"
             label="نسخ من الأسبوع الماضي" icon="i-lucide-copy"
-            size="lg" class="font-arabic font-bold rounded-full px-6"
+            size="lg" class="font-bold rounded-full px-6"
           />
           <UButton
             color="primary" label="حفظ كمسودة" icon="i-lucide-save"
-            size="lg" class="font-arabic font-bold rounded-full px-6"
+            size="lg" class="font-bold rounded-full px-6"
             :loading="isSaving" :disabled="isSaving"
             @click="handleSaveAsDraft"
           />
@@ -127,12 +127,12 @@ onUnmounted(() => {
           <UButton
             variant="outline" color="neutral"
             label="تعديل الخطة" icon="i-lucide-pencil"
-            size="lg" class="font-arabic font-bold rounded-full px-6"
+            size="lg" class="font-bold rounded-full px-6"
             @click="startEditing"
           />
           <UButton
             color="primary" label="اعتماد الخطة" icon="i-lucide-check-circle"
-            size="lg" class="font-arabic font-bold rounded-full px-6"
+            size="lg" class="font-bold rounded-full px-6"
             :loading="isSaving" :disabled="isSaving"
             @click="handleApprovePlan"
           />
@@ -143,13 +143,13 @@ onUnmounted(() => {
           <UButton
             variant="ghost" color="neutral"
             label="إلغاء" icon="i-lucide-x"
-            size="lg" class="font-arabic font-bold rounded-full px-6"
+            size="lg" class="font-bold rounded-full px-6"
             :disabled="isSaving"
             @click="cancelEditing"
           />
           <UButton
             color="primary" label="حفظ كمسودة" icon="i-lucide-save"
-            size="lg" class="font-arabic font-bold rounded-full px-6"
+            size="lg" class="font-bold rounded-full px-6"
             :loading="isSaving" :disabled="isSaving"
             @click="handleSaveAsDraft"
           />
@@ -157,7 +157,7 @@ onUnmounted(() => {
 
         <!-- APPROVED, viewing -->
         <template v-else-if="planStatus === 'approved' && !isEditMode">
-          <div class="flex items-center gap-2 px-5 py-2.5 rounded-full border font-arabic font-semibold text-sm"
+          <div class="flex items-center gap-2 px-5 py-2.5 rounded-full border font-semibold text-sm"
             style="background-color: #E0F0EE; border-color: #4A8E85; color: #4A8E85;">
             <UIcon name="i-lucide-check-circle" class="w-4 h-4" />
             معتمدة
@@ -165,7 +165,7 @@ onUnmounted(() => {
           <UButton
             variant="outline" color="neutral"
             label="تعديل الخطة" icon="i-lucide-pencil"
-            size="lg" class="font-arabic font-bold rounded-full px-6"
+            size="lg" class="font-bold rounded-full px-6"
             @click="startEditing"
           />
         </template>
@@ -175,13 +175,13 @@ onUnmounted(() => {
           <UButton
             variant="ghost" color="neutral"
             label="إلغاء" icon="i-lucide-x"
-            size="lg" class="font-arabic font-bold rounded-full px-6"
+            size="lg" class="font-bold rounded-full px-6"
             :disabled="isSaving"
             @click="cancelEditing"
           />
           <UButton
             color="primary" label="حفظ التعديلات" icon="i-lucide-save"
-            size="lg" class="font-arabic font-bold rounded-full px-6"
+            size="lg" class="font-bold rounded-full px-6"
             :loading="isSaving" :disabled="isSaving"
             @click="handleSaveAsDraft"
           />
@@ -209,7 +209,7 @@ onUnmounted(() => {
 
           <!-- Header row -->
           <div class="flex items-center justify-center px-2 relative z-10">
-            <p class="text-sm font-semibold text-white font-arabic">اختر طالباً</p>
+            <p class="text-sm font-semibold text-white">اختر طالباً</p>
           </div>
 
           <!-- Dropdown trigger -->
@@ -227,7 +227,7 @@ onUnmounted(() => {
                 >
               </div>
               <div class="flex-1 text-right">
-                <h3 class="text-on-primary font-arabic font-bold text-base tracking-tight leading-tight">
+                <h3 class="text-on-primary font-bold text-base tracking-tight leading-tight">
                   {{ selectedStudent || 'اختر طالباً' }}
                 </h3>
               </div>
@@ -261,7 +261,7 @@ onUnmounted(() => {
                       v-model="studentSearch"
                       type="text"
                       placeholder="بحث..."
-                      class="flex-1 bg-transparent text-sm font-arabic text-on-surface placeholder:text-on-surface-variant/60 outline-none text-right"
+                      class="flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface-variant/60 outline-none text-right"
                       dir="rtl"
                     >
                   </div>
@@ -286,12 +286,12 @@ onUnmounted(() => {
                     <!-- Name + halaqa subtitle -->
                     <div class="flex-1 text-right">
                       <p
-                        class="font-arabic font-bold text-sm leading-tight"
+                        class="font-bold text-sm leading-tight"
                         :class="selectedStudent === s.name ? 'text-on-primary' : 'text-on-surface'"
                       >{{ s.name }}</p>
                       <p
                         v-if="s.halaqa && s.halaqa !== '—'"
-                        class="text-[11px] font-arabic mt-0.5"
+                        class="text-[11px] mt-0.5"
                         :class="selectedStudent === s.name ? 'text-on-primary/60' : 'text-on-surface-variant'"
                       >{{ s.halaqa }}</p>
                     </div>
@@ -312,7 +312,7 @@ onUnmounted(() => {
 
         <!-- Calendar -->
         <div class="flex flex-col gap-3 mt-6">
-          <p class="text-sm font-arabic font-semibold text-center" style="color: var(--color-on-surface-variant);">اختر أسبوعًا</p>
+          <p class="text-sm font-semibold text-center" style="color: var(--color-on-surface-variant);">اختر أسبوعًا</p>
           <PlannerCalendar />
         </div>
       </div>
@@ -323,18 +323,18 @@ onUnmounted(() => {
         <!-- Column headers -->
         <div class="flex items-center gap-4 px-4">
           <div v-if="isEditMode" class="w-8 shrink-0 flex items-center justify-center">
-            <span class="text-xs text-muted font-arabic whitespace-nowrap">تحديد الكل</span>
+            <span class="text-xs text-muted whitespace-nowrap">تحديد الكل</span>
           </div>
           <div class="w-[110px] shrink-0" />
           <div class="flex-1 flex gap-6">
             <div class="flex-[4] flex justify-center">
-              <span class="text-xs font-medium text-muted font-arabic">الحفظ الجديد</span>
+              <span class="text-xs font-medium text-muted">الحفظ الجديد</span>
             </div>
             <div class="flex-[4] flex justify-center">
-              <span class="text-xs font-medium text-muted font-arabic">المراجعة القريبة</span>
+              <span class="text-xs font-medium text-muted">المراجعة القريبة</span>
             </div>
             <div class="flex-[4] flex justify-center">
-              <span class="text-xs font-medium text-muted font-arabic">المراجعة البعيدة</span>
+              <span class="text-xs font-medium text-muted">المراجعة البعيدة</span>
             </div>
           </div>
         </div>
@@ -345,10 +345,10 @@ onUnmounted(() => {
             v-if="isEditMode && hasSelection"
             class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-elevated border border-default"
           >
-            <span class="text-sm text-muted font-arabic">{{ selectedCount }} أيام محددة</span>
+            <span class="text-sm text-muted">{{ selectedCount }} أيام محددة</span>
             <div class="flex gap-2 ms-auto">
-              <UButton variant="soft" color="neutral" icon="i-lucide-copy" label="نسخ" size="sm" class="font-arabic" @click="copySelectedRows" />
-              <UButton variant="soft" color="error" icon="i-lucide-trash-2" label="حذف" size="sm" class="font-arabic" @click="deleteSelectedRows" />
+              <UButton variant="soft" color="neutral" icon="i-lucide-copy" label="نسخ" size="sm" @click="copySelectedRows" />
+              <UButton variant="soft" color="error" icon="i-lucide-trash-2" label="حذف" size="sm" @click="deleteSelectedRows" />
               <UButton
                 v-if="clipboard.length > 0"
                 variant="soft"
@@ -356,7 +356,6 @@ onUnmounted(() => {
                 icon="i-lucide-clipboard"
                 :label="`لصق (${clipboard.length})`"
                 size="sm"
-                class="font-arabic"
                 @click="pasteRows"
               />
             </div>

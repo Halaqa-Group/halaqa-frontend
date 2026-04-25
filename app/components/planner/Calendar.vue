@@ -135,7 +135,7 @@ function onDayClick(cell: CalDay) {
         <button class="p-2.5 hover:bg-primary/5 text-primary/40 hover:text-primary rounded-2xl transition-all cursor-pointer" @click="prevMonthView">
           <UIcon name="i-lucide-chevron-right" class="w-5 h-5" />
         </button>
-        <h4 class="font-arabic font-bold text-lg" style="color: var(--color-on-surface);">{{ monthLabel }}</h4>
+        <h4 class="font-bold text-lg" style="color: var(--color-on-surface);">{{ monthLabel }}</h4>
         <button class="p-2.5 hover:bg-primary/5 text-primary/40 hover:text-primary rounded-2xl transition-all cursor-pointer" @click="nextMonthView">
           <UIcon name="i-lucide-chevron-left" class="w-5 h-5" />
         </button>
@@ -145,7 +145,7 @@ function onDayClick(cell: CalDay) {
       <div class="grid grid-cols-7 gap-1 mb-3">
         <div
           v-for="wd in WEEKDAYS" :key="wd"
-          class="h-9 flex items-center justify-center text-[11px] font-bold font-arabic tracking-tighter"
+          class="h-9 flex items-center justify-center text-[11px] font-bold tracking-tighter"
           style="color: color-mix(in srgb, var(--color-on-surface-variant) 35%, transparent);"
         >
           {{ wd }}
@@ -179,7 +179,7 @@ function onDayClick(cell: CalDay) {
 
           <!-- Day number -->
           <span
-            class="relative z-10 text-sm font-arabic transition-colors select-none"
+            class="relative z-10 text-sm transition-colors select-none"
             :class="[
               !cell.isCurrentMonth && 'opacity-25',
               cell.isToday ? 'font-extrabold' : 'font-bold',
@@ -206,7 +206,7 @@ function onDayClick(cell: CalDay) {
       <div class="mt-6 pt-5 border-t border-primary/10 flex items-center gap-3">
         <!-- Previous week (right in RTL) -->
         <button
-          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-arabic font-bold transition-all hover:text-primary border border-primary/10 hover:border-primary/30 hover:bg-primary/5 cursor-pointer"
+          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-bold transition-all hover:text-primary border border-primary/10 hover:border-primary/30 hover:bg-primary/5 cursor-pointer"
           style="color: var(--color-on-surface-variant);"
           @click="prevWeek"
         >
@@ -216,7 +216,7 @@ function onDayClick(cell: CalDay) {
 
         <!-- Next week (left in RTL) -->
         <button
-          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-arabic font-bold transition-all hover:text-primary border border-primary/10 hover:border-primary/30 hover:bg-primary/5 cursor-pointer"
+          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-bold transition-all hover:text-primary border border-primary/10 hover:border-primary/30 hover:bg-primary/5 cursor-pointer"
           style="color: var(--color-on-surface-variant);"
           @click="nextWeek"
         >

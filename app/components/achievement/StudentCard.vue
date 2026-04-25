@@ -33,7 +33,7 @@ const config = computed(() =>
     <img :src="student.avatar" class="w-11 h-11 rounded-full object-cover shrink-0" :alt="student.name">
 
     <p
-      class="flex-1 min-w-0 text-base font-arabic font-bold truncate"
+      class="flex-1 min-w-0 text-base font-bold truncate"
       :style="selected ? 'color: white;' : 'color: var(--color-on-surface);'"
     >
       {{ student.name }}
@@ -41,7 +41,7 @@ const config = computed(() =>
 
     <span
       v-if="config"
-      class="shrink-0 px-2.5 py-1 rounded-full text-xs font-arabic font-semibold"
+      class="shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold"
       :style="selected
         ? 'background-color: rgba(255,255,255,0.2); color: white;'
         : `background-color: ${config.bg}; color: ${config.color};`"

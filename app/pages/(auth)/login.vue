@@ -39,7 +39,6 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
   <UApp>
     <div class="min-h-screen flex items-center justify-center p-4 bg-default">
       <div class="w-full max-w-sm">
-        <!-- Logo -->
         <div class="flex flex-col items-center mb-8 gap-3">
           <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-primary/10">
             <UIcon name="i-lucide-book-open-text" class="w-8 h-8 text-primary" />
@@ -69,7 +68,8 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
                 autocomplete="email"
                 dir="ltr"
                 placeholder="example@school.sa"
-                class="w-full"
+                block
+                size="lg"
               />
             </UFormField>
 
@@ -80,7 +80,8 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
                 autocomplete="current-password"
                 dir="ltr"
                 placeholder="••••••••"
-                class="w-full"
+                block
+                size="lg"
               />
             </UFormField>
 

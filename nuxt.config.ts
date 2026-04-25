@@ -19,6 +19,14 @@ export default defineNuxtConfig({
     }
   },
 
+  ui: {
+    theme: {
+      defaultVariants: {
+        size: 'lg'
+      }
+    }
+  },
+
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {

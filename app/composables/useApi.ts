@@ -16,7 +16,7 @@ export function useApi() {
     onResponseError({ request, response }) {
       if (response.status === 401 && import.meta.client) {
         token.value = null
-        navigateTo('/login')
+        navigateTo('/auth/login')
       }
       // Log 400 errors for debugging
       if (response.status === 400 && import.meta.client) {

@@ -1,4 +1,5 @@
 {
+  "language": "Language",
   "app": {
     "name": "Halaqa",
     "tagline": "Quran Halaqa Management System"
@@ -33,9 +34,21 @@
     "invalidCredentials": "Invalid credentials"
   },
   "validation": {
-    "emailRequired": "Email is required",
-    "emailInvalid": "Invalid email format",
-    "passwordRequired": "Password is required"
+    "required": "This field is required.",
+    "min": "This field must be at least {min} characters.",
+    "max": "This field must not be greater than {max} characters.",
+    "email": "This field must be a valid email address.",
+    "match": "The confirm {name} does not match.",
+    "fill": "Please fill in all the fields to proceed.",
+    "combination": "Your password must include a combination of letters, symbols, and numbers.",
+    "mixed": "Your password needs to contain both uppercase and lowercase letters.",
+    "contact_format": "This field must follow this format: +970 59X XXX XXX",
+    "url": "The url is invalid.",
+    "slug": "This field must be a valid slug (only lowercase letters, numbers, and hyphens).",
+    "select_image": "Please select an image file.",
+    "image_too_large": "The image is too large. Please choose an image smaller than {size}.",
+    "invalid_image_type": "Please upload a valid image file (JPEG, PNG, or WebP).",
+    "invalid_dimensions": "The image dimensions are invalid. Please upload an image between {min} and {max} pixels."
   },
   "roles": {
     "teacher": "Teacher",
@@ -68,6 +81,10 @@
     "farReview": "Far review"
   },
   "pages": {
+    "login": {
+      "title": "Sign in to your account",
+      "description": "Enter your email and password to access your account."
+    },
     "tasks": {
       "title": "Tasks",
       "comingSoon": "Tasks and follow-up list coming soon"
@@ -191,5 +208,18 @@
       "copy": "Copy",
       "paste": "Paste ({count})"
     }
+  },
+  "label": {
+    "email_address": "Email address",
+    "password": "Password",
+    "remember_me": "Remember me"
+  },
+  "placeholder": {
+    "password": "Enter your password"
+  },
+  "action": {
+    "sign_in": "Sign in",
+    "show_password": "Show password",
+    "hide_password": "Hide password"
   }
 }

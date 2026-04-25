@@ -4,7 +4,8 @@
       "Bash(pnpm nuxt *)",
       "Bash(xargs -0 sed -i -E 's/font-arabic[[:space:]]+//g; s/[[:space:]]+font-arabic//g; s/font-arabic//g')",
       "Bash(xargs -0 sed -i -e '/^[[:space:]]*:ui=\"{ root: '\\\\'''\\\\'' }\"[[:space:]]*$/d' -e '/^[[:space:]]*:ui=\"{ content: '\\\\'''\\\\'' }\"[[:space:]]*$/d' -e '/^[[:space:]]*class=\"\"[[:space:]]*$/d' -e 's/[[:space:]]\\\\+class=\"\"//g')",
-      "Bash(pnpm add *)"
+      "Bash(pnpm add *)",
+      "Bash(xargs -0 sed -i -e 's/rounded-\\\\[14px\\\\]/rounded-lg/g' -e 's/rounded-\\\\[16px\\\\]/rounded-lg/g' -e 's/rounded-\\\\[18px\\\\]/rounded-xl/g' -e 's/rounded-\\\\[20px\\\\]/rounded-xl/g' -e 's/rounded-\\\\[22px\\\\]/rounded-xl/g' -e 's/rounded-\\\\[24px\\\\]/rounded-2xl/g' -e 's/rounded-\\\\[32px\\\\]/rounded-2xl/g' -e 's/rounded-\\\\[40px\\\\]/rounded-2xl/g' -e s/rounded-3xl/rounded-2xl/g)"
     ]
   }
 }

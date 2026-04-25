@@ -12,6 +12,8 @@ const props = defineProps<{
 const { updateLesson, removeLesson } = useSchedule()
 const isHovered = ref(false)
 
+const surahItems = SURAHS.map(s => ({ label: s, value: s }))
+
 function onDragStart(e: DragEvent) {
   e.dataTransfer?.setData('application/json', JSON.stringify({
     sourceDayId: props.dayId,
@@ -50,27 +52,29 @@ function update(field: keyof LessonItem, value: string | number) {
 
     <!-- Start: surah + ayah -->
     <div class="flex-1 min-w-0 flex items-center gap-2">
-      <div class="flex-[2.5] min-w-0">
-        <select
-          :value="item.startSurah"
-          :disabled="!isEditMode"
-          class="w-full font-bold outline-none appearance-none text-center text-sm transition-all h-7 rounded-full bg-transparent px-1"
-          :class="isEditMode ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default'"
-          @change="update('startSurah', ($event.target as HTMLSelectElement).value)"
-        >
-          <option v-for="s in SURAHS" :key="s" :value="s">{{ s }}</option>
-        </select>
-      </div>
-      <div class="w-12 shrink-0">
-        <input
-          :value="item.startAyah"
-          type="number"
-          :disabled="!isEditMode"
-          class="transition-all outline-none text-center font-bold text-sm h-7 w-full rounded-full bg-transparent"
-          :class="isEditMode ? 'cursor-text hover:bg-muted/50' : 'cursor-default'"
-          @change="update('startAyah', +($event.target as HTMLInputElement).value || 1)"
-        />
-      </div>
+      <USelect
+        :model-value="item.startSurah"
+        :items="surahItems"
+        :disabled="!isEditMode"
+        variant="none"
+        class="flex-[2.5] min-w-0"
+        :ui="{
+          base: `w-full font-bold appearance-none text-center text-sm h-7 rounded-full bg-transparent px-1 ${isEditMode ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default'}`,
+          trailing: 'hidden'
+        }"
+        @update:model-value="update('startSurah', $event)"
+      />
+      <UInput
+        :model-value="item.startAyah"
+        type="number"
+        :disabled="!isEditMode"
+        variant="none"
+        class="w-12 shrink-0"
+        :ui="{
+          base: `text-center font-bold text-sm h-7 w-full rounded-full bg-transparent ${isEditMode ? 'cursor-text hover:bg-muted/50' : 'cursor-default'}`
+        }"
+        @change="update('startAyah', +($event.target as HTMLInputElement).value || 1)"
+      />
     </div>
 
     <!-- Divider -->
@@ -78,27 +82,29 @@ function update(field: keyof LessonItem, value: string | number) {
 
     <!-- End: surah + ayah -->
     <div class="flex-1 min-w-0 flex items-center gap-2">
-      <div class="flex-[2.5] min-w-0">
-        <select
-          :value="item.endSurah"
-          :disabled="!isEditMode"
-          class="w-full font-bold outline-none appearance-none text-center text-sm transition-all h-7 rounded-full bg-transparent px-1"
-          :class="isEditMode ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default'"
-          @change="update('endSurah', ($event.target as HTMLSelectElement).value)"
-        >
-          <option v-for="s in SURAHS" :key="s" :value="s">{{ s }}</option>
-        </select>
-      </div>
-      <div class="w-12 shrink-0">
-        <input
-          :value="item.endAyah"
-          type="number"
-          :disabled="!isEditMode"
-          class="transition-all outline-none text-center font-bold text-sm h-7 w-full rounded-full bg-transparent"
-          :class="isEditMode ? 'cursor-text hover:bg-muted/50' : 'cursor-default'"
-          @change="update('endAyah', +($event.target as HTMLInputElement).value || 1)"
-        />
-      </div>
+      <USelect
+        :model-value="item.endSurah"
+        :items="surahItems"
+        :disabled="!isEditMode"
+        variant="none"
+        class="flex-[2.5] min-w-0"
+        :ui="{
+          base: `w-full font-bold appearance-none text-center text-sm h-7 rounded-full bg-transparent px-1 ${isEditMode ? 'cursor-pointer hover:bg-muted/50' : 'cursor-default'}`,
+          trailing: 'hidden'
+        }"
+        @update:model-value="update('endSurah', $event)"
+      />
+      <UInput
+        :model-value="item.endAyah"
+        type="number"
+        :disabled="!isEditMode"
+        variant="none"
+        class="w-12 shrink-0"
+        :ui="{
+          base: `text-center font-bold text-sm h-7 w-full rounded-full bg-transparent ${isEditMode ? 'cursor-text hover:bg-muted/50' : 'cursor-default'}`
+        }"
+        @change="update('endAyah', +($event.target as HTMLInputElement).value || 1)"
+      />
     </div>
   </div>
 </template>

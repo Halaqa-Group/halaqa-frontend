@@ -25,7 +25,7 @@ function formatRange(a: ApiAchievement): string {
     <!-- Empty state -->
     <div
       v-if="achievements.length === 0"
-      class="rounded-[40px] p-8 flex flex-col items-center gap-3"
+      class="rounded-2xl p-8 flex flex-col items-center gap-3"
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-award" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
@@ -38,7 +38,7 @@ function formatRange(a: ApiAchievement): string {
     <div
       v-for="achievement in achievements"
       :key="achievement.id"
-      class="rounded-[40px] p-5"
+      class="rounded-2xl p-5"
       style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
     >
       <!-- Track badge + delete -->
@@ -71,15 +71,15 @@ function formatRange(a: ApiAchievement): string {
 
       <!-- Error counters -->
       <div class="grid grid-cols-3 gap-2 mb-3">
-        <div class="rounded-[20px] py-1.5 px-2 text-center" style="background-color: var(--color-surface-container-low);">
+        <div class="rounded-xl py-1.5 px-2 text-center" style="background-color: var(--color-surface-container-low);">
           <p class="text-[10px] mb-0.5" style="color: var(--color-on-surface-variant);">أخطاء</p>
           <p class="text-sm font-bold" style="color: var(--color-on-surface);">{{ achievement.mistakes_count }}</p>
         </div>
-        <div class="rounded-[20px] py-1.5 px-2 text-center" style="background-color: var(--color-surface-container-low);">
+        <div class="rounded-xl py-1.5 px-2 text-center" style="background-color: var(--color-surface-container-low);">
           <p class="text-[10px] mb-0.5" style="color: var(--color-on-surface-variant);">تنبيهات</p>
           <p class="text-sm font-bold" style="color: var(--color-on-surface);">{{ achievement.warnings_count }}</p>
         </div>
-        <div class="rounded-[20px] py-1.5 px-2 text-center" style="background-color: var(--color-surface-container-low);">
+        <div class="rounded-xl py-1.5 px-2 text-center" style="background-color: var(--color-surface-container-low);">
           <p class="text-[10px] mb-0.5" style="color: var(--color-on-surface-variant);">تجويد</p>
           <p class="text-sm font-bold" style="color: var(--color-on-surface);">{{ achievement.tajweed_errors_count }}</p>
         </div>
@@ -88,7 +88,7 @@ function formatRange(a: ApiAchievement): string {
       <!-- Teacher notes -->
       <div
         v-if="achievement.teacher_notes"
-        class="rounded-[40px] px-4 py-3"
+        class="rounded-2xl px-4 py-3"
         style="background-color: var(--color-surface-container-low);"
       >
         <p class="label-sm mb-1" style="color: var(--color-on-surface-variant);">ملاحظات</p>

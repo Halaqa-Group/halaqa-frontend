@@ -46,7 +46,7 @@ function isSelected(halaqa: ApiHalaqa) {
   <UModal
     v-model:open="isModalOpen"
     :ui="{
-      content: 'sm:max-w-3xl max-h-[90vh] overflow-hidden rounded-[32px] p-0',
+      content: 'sm:max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl p-0',
       overlay: 'backdrop-blur-md'
     }"
     @close="closeModal"
@@ -72,7 +72,7 @@ function isSelected(halaqa: ApiHalaqa) {
               :key="halaqa.id"
               variant="ghost"
               color="neutral"
-              class="relative rounded-3xl p-6 flex flex-col items-center text-center"
+              class="relative rounded-2xl p-6 flex flex-col items-center text-center"
               :class="isSelected(halaqa) ? 'border-2 shadow-lg' : 'border border-gray-200 hover:shadow-lg'"
               :style="isSelected(halaqa)
                 ? `background-color: ${getColor(i).bg}; border-color: ${getColor(i).text};`
@@ -120,7 +120,7 @@ function isSelected(halaqa: ApiHalaqa) {
             <UButton
               variant="ghost"
               color="neutral"
-              class="border-2 border-dashed border-gray-200 rounded-3xl p-6 flex flex-col items-center justify-center text-center hover:border-primary/50 hover:bg-white"
+              class="border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:border-primary/50 hover:bg-white"
               style="background-color: #f9f9f9;"
             >
               <div

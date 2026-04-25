@@ -14,6 +14,44 @@ export default defineAppConfig({
         color: 'primary',
         variant: 'solid'
       }
+    },
+    input: {
+      slots: {
+        base: 'rounded-lg transition-all',
+        root: 'w-full'
+      },
+      defaultVariants: {
+        size: 'md',
+        color: 'neutral',
+        variant: 'outline'
+      }
+    },
+    textarea: {
+      slots: {
+        base: 'rounded-lg transition-all resize-none',
+        root: 'w-full'
+      },
+      defaultVariants: {
+        size: 'md',
+        color: 'neutral',
+        variant: 'outline'
+      }
+    },
+    select: {
+      slots: {
+        base: 'rounded-lg transition-all',
+        root: 'w-full'
+      },
+      defaultVariants: {
+        size: 'md',
+        color: 'neutral',
+        variant: 'outline'
+      }
+    },
+    formField: {
+      slots: {
+        label: 'font-semibold text-sm'
+      }
     }
   }
 })

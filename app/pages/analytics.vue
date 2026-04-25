@@ -40,6 +40,10 @@ function trackKey(trackType: string) {
   return trackType === 'Hifz' ? 'tracks.hifz' : trackType === 'Near' ? 'tracks.near' : 'tracks.far'
 }
 
+const halaqaItems = computed(() =>
+  halaqat.value.map(h => ({ label: h.name, value: h.id }))
+)
+
 onMounted(async () => {
   await fetchHalaqat()
   if (halaqat.value.length > 0) {
@@ -66,34 +70,37 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <div
-          class="flex items-center gap-2 px-3 py-2 rounded-xl"
-          style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
-        >
-          <UIcon name="i-lucide-users" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-          <select
-            v-model="selectedHalaqaId"
-            class="bg-transparent text-sm outline-none cursor-pointer"
-            style="color: var(--color-on-surface);"
-          >
-            <option v-if="halaqat.length === 0" :value="null">{{ $t('pages.analytics.noHalaqat') }}</option>
-            <option v-for="h in halaqat" :key="h.id" :value="h.id">{{ h.name }}</option>
-          </select>
-        </div>
+        <USelect
+          v-model="selectedHalaqaId"
+          :items="halaqaItems"
+          :placeholder="$t('pages.analytics.noHalaqat')"
+          :disabled="halaqat.length === 0"
+          icon="i-lucide-users"
+          variant="none"
+          class="px-3 py-2 rounded-xl bg-surface-container-lowest"
+          style="box-shadow: var(--shadow-card);"
+          :ui="{
+            base: 'bg-transparent text-sm cursor-pointer text-on-surface ps-7 pe-2',
+            leading: 'absolute inset-y-0 start-3 flex items-center',
+            leadingIcon: 'w-4 h-4 text-on-surface-variant',
+            trailing: 'pe-1'
+          }"
+        />
 
-        <div
-          class="flex items-center gap-2 px-3 py-2 rounded-xl"
-          style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
-        >
-          <UIcon name="i-lucide-calendar" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-          <input
-            v-model="selectedWeekStart"
-            type="date"
-            dir="ltr"
-            class="bg-transparent text-sm outline-none"
-            style="color: var(--color-on-surface);"
-          >
-        </div>
+        <UInput
+          v-model="selectedWeekStart"
+          type="date"
+          dir="ltr"
+          leading-icon="i-lucide-calendar"
+          variant="none"
+          class="px-3 py-2 rounded-xl bg-surface-container-lowest"
+          style="box-shadow: var(--shadow-card);"
+          :ui="{
+            base: 'bg-transparent text-sm text-on-surface ps-7 pe-2',
+            leading: 'absolute inset-y-0 start-3 flex items-center',
+            leadingIcon: 'w-4 h-4 text-on-surface-variant'
+          }"
+        />
       </div>
     </div>
 

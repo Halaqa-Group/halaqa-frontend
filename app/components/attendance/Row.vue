@@ -47,7 +47,7 @@ const statusDotClass = computed(() => {
 
 <template>
   <div
-    class="bg-white border border-outline-variant rounded-[40px] p-5 flex flex-col xl:flex-row xl:items-center gap-4 group hover:border-primary/20 hover:shadow-sm transition-all duration-300"
+    class="bg-white border border-outline-variant rounded-2xl p-5 flex flex-col xl:flex-row xl:items-center gap-4 group hover:border-primary/20 hover:shadow-sm transition-all duration-300"
     dir="rtl"
   >
     <!-- Col 1 (rightmost in RTL): Student profile -->
@@ -83,13 +83,16 @@ const statusDotClass = computed(() => {
     </div>
 
     <!-- Col 3 (leftmost in RTL): Note textarea -->
-    <textarea
-      :value="notes"
-      rows="2"
+    <UTextarea
+      :model-value="notes"
+      :rows="2"
       :placeholder="`ملاحظة خاصة بـ ${name}...`"
-      class="xl:flex-1 w-full resize-none rounded-[40px] px-4 py-2.5 text-base outline-none transition-all focus:ring-1 focus:ring-primary"
-      style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
-      @input="setNote(studentId, ($event.target as HTMLTextAreaElement).value)"
+      variant="none"
+      class="xl:flex-1 w-full"
+      :ui="{
+        base: 'w-full resize-none rounded-2xl px-4 py-2.5 text-base bg-surface-container-low text-on-surface focus:ring-1 focus:ring-primary'
+      }"
+      @update:model-value="setNote(studentId, $event)"
     />
   </div>
 </template>

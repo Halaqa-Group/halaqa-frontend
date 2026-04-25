@@ -78,16 +78,20 @@ function decrement(field: 'mistakes' | 'warnings' | 'tajweed') {
   else if (field === 'tajweed' && tajweedErrorsCount.value > 0) tajweedErrorsCount.value--
 }
 
-const selectClass = 'w-full border-none rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 transition-all'
-const inputClass = 'w-full border-none rounded-xl px-2 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 transition-all text-center'
-const fieldBg = 'background-color: var(--color-surface-container-lowest); color: var(--color-on-surface);'
-const labelClass = 'block text-[10px] font-bold uppercase mb-1.5 text-center'
-const labelStyle = 'color: var(--color-outline);'
+const fieldUi = {
+  base: 'w-full border-none rounded-xl px-3 py-2.5 text-sm bg-surface-container-lowest text-on-surface focus:ring-2 focus:ring-primary/30'
+}
+const numberFieldUi = {
+  base: 'w-full border-none rounded-xl px-2 py-2.5 text-sm bg-surface-container-lowest text-on-surface text-center focus:ring-2 focus:ring-primary/30'
+}
+const labelUi = {
+  label: 'block text-[10px] font-bold uppercase mb-1.5 text-center text-outline'
+}
 </script>
 
 <template>
   <div
-    class="rounded-[40px] overflow-hidden"
+    class="rounded-2xl overflow-hidden"
     style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
   >
     <!-- Header -->
@@ -118,42 +122,62 @@ const labelStyle = 'color: var(--color-outline);'
       </div>
 
       <!-- Range: 4 fields in one row -->
-      <div class="rounded-[24px] p-4 flex flex-col gap-3" style="background-color: var(--color-surface-container-low);">
+      <div class="rounded-2xl p-4 flex flex-col gap-3" style="background-color: var(--color-surface-container-low);">
         <div class="flex gap-2 items-end">
           <!-- Start surah -->
-          <div class="flex-[3]">
-            <label :class="labelClass" :style="labelStyle">من — السورة</label>
-            <select v-model="startSurah" :class="selectClass" :style="fieldBg">
-              <option v-for="opt in surahOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
-          </div>
+          <UFormField label="من — السورة" class="flex-[3]" :ui="labelUi">
+            <USelect
+              v-model="startSurah"
+              :items="surahOptions"
+              variant="none"
+              class="w-full"
+              :ui="fieldUi"
+            />
+          </UFormField>
           <!-- Start verse -->
-          <div class="flex-1">
-            <label :class="labelClass" :style="labelStyle">الآية</label>
-            <input v-model.number="startVerse" type="number" min="1" :max="maxStartVerse" :class="inputClass" :style="fieldBg">
-          </div>
+          <UFormField label="الآية" class="flex-1" :ui="labelUi">
+            <UInput
+              v-model.number="startVerse"
+              type="number"
+              :min="1"
+              :max="maxStartVerse"
+              variant="none"
+              class="w-full"
+              :ui="numberFieldUi"
+            />
+          </UFormField>
           <!-- Divider -->
           <div class="pb-2.5 px-0.5">
             <UIcon name="i-lucide-arrow-left-right" class="w-3.5 h-3.5" style="color: var(--color-outline);" />
           </div>
           <!-- End surah -->
-          <div class="flex-[3]">
-            <label :class="labelClass" :style="labelStyle">إلى — السورة</label>
-            <select v-model="endSurah" :class="selectClass" :style="fieldBg">
-              <option v-for="opt in surahOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
-          </div>
+          <UFormField label="إلى — السورة" class="flex-[3]" :ui="labelUi">
+            <USelect
+              v-model="endSurah"
+              :items="surahOptions"
+              variant="none"
+              class="w-full"
+              :ui="fieldUi"
+            />
+          </UFormField>
           <!-- End verse -->
-          <div class="flex-1">
-            <label :class="labelClass" :style="labelStyle">الآية</label>
-            <input v-model.number="endVerse" type="number" min="1" :max="maxEndVerse" :class="inputClass" :style="fieldBg">
-          </div>
+          <UFormField label="الآية" class="flex-1" :ui="labelUi">
+            <UInput
+              v-model.number="endVerse"
+              type="number"
+              :min="1"
+              :max="maxEndVerse"
+              variant="none"
+              class="w-full"
+              :ui="numberFieldUi"
+            />
+          </UFormField>
         </div>
 
         <!-- Validation error -->
         <div
           v-if="validationError"
-          class="px-3 py-2 rounded-[16px] flex items-center gap-2"
+          class="px-3 py-2 rounded-lg flex items-center gap-2"
           style="background-color: var(--color-track-near-bg);"
         >
           <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" style="color: var(--color-track-near);" />
@@ -165,7 +189,7 @@ const labelStyle = 'color: var(--color-outline);'
       <div class="grid grid-cols-3 gap-3">
         <!-- Mistakes -->
         <div
-          class="rounded-[24px] p-4 flex flex-col items-center gap-3"
+          class="rounded-2xl p-4 flex flex-col items-center gap-3"
           style="background-color: var(--color-surface-container-low);"
         >
           <span class="text-[10px] font-bold uppercase" style="color: var(--color-outline);">أخطاء</span>
@@ -194,7 +218,7 @@ const labelStyle = 'color: var(--color-outline);'
 
         <!-- Warnings -->
         <div
-          class="rounded-[24px] p-4 flex flex-col items-center gap-3"
+          class="rounded-2xl p-4 flex flex-col items-center gap-3"
           style="background-color: var(--color-surface-container-low);"
         >
           <span class="text-[10px] font-bold uppercase" style="color: var(--color-outline);">تنبيهات</span>
@@ -223,7 +247,7 @@ const labelStyle = 'color: var(--color-outline);'
 
         <!-- Tajweed -->
         <div
-          class="rounded-[24px] p-4 flex flex-col items-center gap-3"
+          class="rounded-2xl p-4 flex flex-col items-center gap-3"
           style="background-color: var(--color-surface-container-low);"
         >
           <span class="text-[10px] font-bold uppercase" style="color: var(--color-outline);">تجويد</span>
@@ -252,12 +276,15 @@ const labelStyle = 'color: var(--color-outline);'
       </div>
 
       <!-- Notes -->
-      <textarea
+      <UTextarea
         v-model="teacherNotes"
-        rows="2"
+        :rows="2"
         placeholder="ملاحظات المعلم..."
-        class="w-full resize-none rounded-[20px] px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-primary/30"
-        style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
+        variant="none"
+        class="w-full"
+        :ui="{
+          base: 'w-full resize-none rounded-xl px-4 py-3 text-sm bg-surface-container-low text-on-surface focus:ring-2 focus:ring-primary/30'
+        }"
       />
 
       <!-- Submit -->

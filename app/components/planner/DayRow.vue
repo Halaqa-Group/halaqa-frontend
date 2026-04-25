@@ -10,7 +10,7 @@ const isSelected = computed(() => selectedRowIds.value.has(props.data.id))
 
 <template>
   <div
-    class="rounded-[20px] px-4 py-4 flex items-start gap-4 border border-dotted transition-all group relative bg-transparent"
+    class="rounded-xl px-4 py-4 flex items-start gap-4 border border-dotted transition-all group relative bg-transparent"
     :class="isSelected ? 'border-primary/40' : 'border-outline-variant/50'"
   >
     <!-- Select checkbox -->

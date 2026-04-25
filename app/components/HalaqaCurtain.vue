@@ -91,7 +91,7 @@ watch(selectedHalaqa, async (next, prev) => {
         >
           <!-- Icon -->
           <div
-            class="w-20 h-20 rounded-3xl flex items-center justify-center"
+            class="w-20 h-20 rounded-2xl flex items-center justify-center"
             style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);"
           >
             <UIcon

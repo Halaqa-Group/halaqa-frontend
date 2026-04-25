@@ -51,7 +51,7 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
         </div>
 
         <!-- Card -->
-        <UCard :ui="{ root: 'rounded-3xl', body: 'p-8' }">
+        <UCard :ui="{ root: 'rounded-2xl', body: 'p-8' }">
           <h2 class="body-lg font-bold mb-6 text-center text-highlighted">
             {{ $t('auth.login') }}
           </h2>

@@ -135,10 +135,10 @@ onMounted(async () => {
       <!-- Stats row -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div
-          class="rounded-[40px] p-6 flex flex-col gap-5"
+          class="rounded-2xl p-6 flex flex-col gap-5"
           style="background-color: var(--color-surface-container-lowest); box-shadow: 0 4px 20px rgba(128,76,125,0.08);"
         >
-          <div class="w-12 h-12 rounded-[18px] flex items-center justify-center" style="background-color: var(--color-primary-container);">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: var(--color-primary-container);">
             <UIcon name="i-lucide-users" class="w-6 h-6" style="color: var(--color-primary);" />
           </div>
           <div>
@@ -148,10 +148,10 @@ onMounted(async () => {
         </div>
 
         <div
-          class="rounded-[40px] p-6 flex flex-col gap-5"
+          class="rounded-2xl p-6 flex flex-col gap-5"
           style="background-color: var(--color-surface-container-lowest); box-shadow: 0 4px 20px rgba(128,76,125,0.08);"
         >
-          <div class="w-12 h-12 rounded-[18px] flex items-center justify-center" style="background-color: var(--color-track-hifz-bg);">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: var(--color-track-hifz-bg);">
             <UIcon name="i-lucide-layout-grid" class="w-6 h-6" style="color: var(--color-secondary);" />
           </div>
           <div>
@@ -161,10 +161,10 @@ onMounted(async () => {
         </div>
 
         <div
-          class="rounded-[40px] p-6 flex flex-col gap-5"
+          class="rounded-2xl p-6 flex flex-col gap-5"
           style="background-color: var(--color-surface-container-lowest); box-shadow: 0 4px 20px rgba(128,76,125,0.08);"
         >
-          <div class="w-12 h-12 rounded-[18px] flex items-center justify-center" style="background-color: var(--color-status-conflict-bg);">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-conflict-bg);">
             <UIcon name="i-lucide-user-check" class="w-6 h-6" style="color: var(--color-status-conflict);" />
           </div>
           <div>
@@ -182,10 +182,10 @@ onMounted(async () => {
         </div>
 
         <div
-          class="rounded-[40px] p-6 flex flex-col gap-5"
+          class="rounded-2xl p-6 flex flex-col gap-5"
           style="background-color: var(--color-surface-container-lowest); box-shadow: 0 4px 20px rgba(128,76,125,0.08);"
         >
-          <div class="w-12 h-12 rounded-[18px] flex items-center justify-center" style="background-color: var(--color-status-ok-bg);">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-ok-bg);">
             <UIcon name="i-lucide-calendar-check" class="w-6 h-6" style="color: var(--color-status-ok);" />
           </div>
           <div>

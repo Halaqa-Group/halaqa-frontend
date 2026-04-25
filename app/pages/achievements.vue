@@ -118,7 +118,7 @@ onUnmounted(() => {
       </div>
       <div
         v-if="hasHalaqa && hasStudents"
-        class="flex items-center gap-3 px-5 py-3 rounded-[40px] shrink-0"
+        class="flex items-center gap-3 px-5 py-3 rounded-2xl shrink-0"
         style="background-color: var(--color-track-hifz-bg);"
       >
         <UIcon name="i-lucide-award" class="w-6 h-6" style="color: var(--color-track-hifz);" />
@@ -134,7 +134,7 @@ onUnmounted(() => {
     <!-- Empty: no halaqa -->
     <div
       v-else-if="!hasHalaqa"
-      class="flex flex-col items-center gap-3 py-12 rounded-[40px]"
+      class="flex flex-col items-center gap-3 py-12 rounded-2xl"
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
@@ -153,11 +153,11 @@ onUnmounted(() => {
           <!-- Student selector card (planner style) -->
           <div
             ref="studentCardRef"
-            class="relative p-5 rounded-[40px] flex flex-col gap-4 shadow-2xl border border-white/10 hover:scale-[1.01] transition-all"
+            class="relative p-5 rounded-2xl flex flex-col gap-4 shadow-2xl border border-white/10 hover:scale-[1.01] transition-all"
             style="background-color: var(--color-primary); box-shadow: 0 20px 60px rgba(128,76,125,0.3);"
           >
             <!-- Gradient overlays -->
-            <div class="absolute inset-0 rounded-[40px] overflow-hidden pointer-events-none">
+            <div class="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
               <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent opacity-50" />
               <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
             </div>
@@ -173,11 +173,11 @@ onUnmounted(() => {
                 ref="triggerButtonRef"
                 variant="ghost"
                 color="neutral"
-                class="w-full backdrop-blur-md border border-white/20 rounded-[24px] p-2 gap-3 group shadow-xl"
+                class="w-full backdrop-blur-md border border-white/20 rounded-2xl p-2 gap-3 group shadow-xl"
                 style="background-color: rgba(255,255,255,0.1);"
                 @click="openDropdown"
               >
-                <div class="w-11 h-11 rounded-[18px] overflow-hidden border-2 border-white/40 shadow-inner shrink-0 group-hover:rotate-1 transition-transform">
+                <div class="w-11 h-11 rounded-xl overflow-hidden border-2 border-white/40 shadow-inner shrink-0 group-hover:rotate-1 transition-transform">
                   <img
                     :src="selectedStudent?.avatar ?? `https://api.dicebear.com/9.x/notionists/svg?seed=default`"
                     :alt="selectedStudent?.name ?? ''"
@@ -214,7 +214,7 @@ onUnmounted(() => {
               <div
                 v-if="isStudentDropdownOpen"
                 ref="teleportedDropdownRef"
-                class="bg-white rounded-[24px] shadow-2xl border border-black/5 overflow-hidden"
+                class="bg-white rounded-2xl shadow-2xl border border-black/5 overflow-hidden"
                 :style="{
                   position: 'fixed',
                   top: dropdownPos.top + 'px',
@@ -226,17 +226,21 @@ onUnmounted(() => {
               >
                 <!-- Search -->
                 <div class="px-3 pt-3 pb-2">
-                  <div class="flex items-center gap-2 rounded-[14px] px-3 py-2" style="background-color: rgba(0,0,0,0.05);">
-                    <UIcon name="i-lucide-search" class="w-3.5 h-3.5 shrink-0" style="color: var(--color-on-surface-variant);" />
-                    <input
-                      v-model="studentSearch"
-                      type="text"
-                      :placeholder="$t('common.searchPlaceholder')"
-                      class="flex-1 bg-transparent text-sm outline-none text-right"
-                      style="color: var(--color-on-surface);"
-                      dir="rtl"
-                    >
-                  </div>
+                  <UInput
+                    v-model="studentSearch"
+                    type="text"
+                    :placeholder="$t('common.searchPlaceholder')"
+                    leading-icon="i-lucide-search"
+                    variant="none"
+                    dir="rtl"
+                    class="w-full"
+                    :ui="{
+                      root: 'flex items-center gap-2 rounded-lg px-3 py-2 bg-black/5 w-full',
+                      base: 'flex-1 bg-transparent text-sm text-on-surface text-right',
+                      leading: 'static flex items-center',
+                      leadingIcon: 'w-3.5 h-3.5 shrink-0 text-on-surface-variant'
+                    }"
+                  />
                 </div>
 
                 <!-- Student list -->
@@ -246,13 +250,13 @@ onUnmounted(() => {
                     :key="student.id"
                     variant="ghost"
                     color="primary"
-                    class="w-full gap-3 px-3 py-2.5 rounded-[18px] font-normal"
+                    class="w-full gap-3 px-3 py-2.5 rounded-xl font-normal"
                     :style="selectedStudent?.id === student.id ? 'background-color: var(--color-primary);' : ''"
                     :class="selectedStudent?.id !== student.id ? 'hover:bg-primary/5' : ''"
                     @click="handleStudentSelect(student)"
                   >
                     <div
-                      class="w-10 h-10 rounded-[14px] overflow-hidden border-2 shrink-0"
+                      class="w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0"
                       :style="selectedStudent?.id === student.id ? 'border-color: rgba(255,255,255,0.3);' : 'border-color: rgba(128,76,125,0.15);'"
                     >
                       <img :src="student.avatar" :alt="student.name" class="w-full h-full object-cover">
@@ -301,7 +305,7 @@ onUnmounted(() => {
         <div class="flex-1 min-w-0 mt-8">
           <div
             v-if="!selectedStudent"
-            class="rounded-[40px] p-16 flex flex-col items-center gap-4"
+            class="rounded-2xl p-16 flex flex-col items-center gap-4"
             style="background-color: var(--color-surface-container-lowest);"
           >
             <UIcon name="i-lucide-user-check" class="w-14 h-14" style="color: var(--color-on-surface-variant);" />
@@ -327,7 +331,7 @@ onUnmounted(() => {
 
           <!-- Dotted scrollable container — shows ~3 cards, scroll for more -->
           <div
-            class="rounded-[40px] p-5 overflow-y-auto"
+            class="rounded-2xl p-5 overflow-y-auto"
             style="
               border: 2px dashed var(--color-outline-variant);
               background-color: transparent;

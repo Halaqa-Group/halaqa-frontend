@@ -118,20 +118,19 @@ onMounted(async () => {
 
           <!-- Search + Save -->
           <div class="flex items-center gap-3">
-            <div class="relative flex-1">
-              <UIcon
-                name="i-lucide-search"
-                class="absolute end-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors"
-                style="color: var(--color-on-surface-variant);"
-              />
-              <input
-                v-model="searchQuery"
-                type="text"
-                :placeholder="$t('pages.attendance.searchPlaceholder')"
-                class="w-full pe-11 ps-4 py-3 rounded-[40px] text-base outline-none transition-all focus:ring-2 focus:ring-primary/30"
-                style="background-color: var(--color-surface-container-lowest); color: var(--color-on-surface); border: 1.5px solid var(--color-outline-variant);"
-              >
-            </div>
+            <UInput
+              v-model="searchQuery"
+              type="text"
+              :placeholder="$t('pages.attendance.searchPlaceholder')"
+              trailing-icon="i-lucide-search"
+              variant="none"
+              class="flex-1"
+              :ui="{
+                base: 'w-full pe-11 ps-4 py-3 rounded-2xl text-base bg-surface-container-lowest text-on-surface border-[1.5px] border-outline-variant focus:ring-2 focus:ring-primary/30',
+                trailing: 'absolute inset-y-0 end-4',
+                trailingIcon: 'w-4 h-4 text-on-surface-variant'
+              }"
+            />
             <UButton
               :loading="isSaving"
               :disabled="isSaving"
@@ -193,17 +192,20 @@ onMounted(async () => {
           />
 
           <!-- Session notes -->
-          <div class="rounded-[40px] p-5" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
+          <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
             <div class="flex items-center justify-between mb-3">
               <p class="body-lg font-semibold" style="color: var(--color-on-surface);">{{ $t('pages.attendance.sessionNotes') }}</p>
               <UButton variant="ghost" color="neutral" icon="i-lucide-sparkles" size="sm" :label="$t('pages.attendance.smartAssistant')" />
             </div>
-            <textarea
+            <UTextarea
               v-model="sessionNotes"
-              rows="3"
+              :rows="3"
               :placeholder="$t('pages.attendance.notesPlaceholder')"
-              class="w-full resize-none rounded-xl p-3 text-sm outline-none"
-              style="background-color: var(--color-surface-container-low); color: var(--color-on-surface);"
+              variant="none"
+              class="w-full"
+              :ui="{
+                base: 'w-full resize-none rounded-xl p-3 text-sm bg-surface-container-low text-on-surface'
+              }"
             />
             <div class="flex items-center gap-2 mt-3 flex-wrap">
               <span class="label-md" style="color: var(--color-on-surface-variant);">{{ $t('pages.attendance.quickAdd') }}</span>

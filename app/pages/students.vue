@@ -62,20 +62,19 @@ onMounted(() => {
     <!-- Filter bar -->
     <div class="flex flex-wrap items-center gap-4 mb-8">
       <!-- Search -->
-      <div class="relative flex-1 min-w-72">
-        <UIcon
-          name="i-lucide-search"
-          class="absolute end-4 top-1/2 -translate-y-1/2 w-4 h-4"
-          style="color: var(--color-on-surface-variant);"
-        />
-        <input
-          v-model="searchQuery"
-          type="text"
-          :placeholder="$t('pages.students.searchByName')"
-          class="w-full pe-11 ps-4 py-3 rounded-[40px] text-base outline-none transition-all focus:ring-2 focus:ring-primary/30"
-          style="background-color: var(--color-surface-container-lowest); color: var(--color-on-surface); border: 1.5px solid var(--color-outline-variant);"
-        >
-      </div>
+      <UInput
+        v-model="searchQuery"
+        type="text"
+        :placeholder="$t('pages.students.searchByName')"
+        trailing-icon="i-lucide-search"
+        variant="none"
+        class="flex-1 min-w-72"
+        :ui="{
+          base: 'w-full pe-11 ps-4 py-3 rounded-2xl text-base bg-surface-container-lowest text-on-surface border-[1.5px] border-outline-variant focus:ring-2 focus:ring-primary/30',
+          trailing: 'absolute inset-y-0 end-4',
+          trailingIcon: 'w-4 h-4 text-on-surface-variant'
+        }"
+      />
 
       <!-- Status pill toggle -->
       <div class="flex items-center bg-elevated p-1 rounded-full border border-default">
@@ -101,7 +100,7 @@ onMounted(() => {
     </div>
 
     <!-- Error -->
-    <div v-else-if="error" class="rounded-[40px] p-6 text-center" style="background-color: #FCE4EC;">
+    <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: #FCE4EC;">
       <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2" style="color: #D81B60;" />
       <p style="color: #D81B60;">{{ error }}</p>
     </div>

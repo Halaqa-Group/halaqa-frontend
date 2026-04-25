@@ -52,7 +52,7 @@ function onDrop(e: DragEvent) {
 
     <!-- Cell -->
     <div
-      class="w-full bg-white border rounded-[22px] shadow-sm relative overflow-hidden flex flex-col justify-center h-[60px] transition-all group/cell border-b-2 border-outline-variant/10 py-1.5"
+      class="w-full bg-white border rounded-xl shadow-sm relative overflow-hidden flex flex-col justify-center h-[60px] transition-all group/cell border-b-2 border-outline-variant/10 py-1.5"
       :class="isDragOver ? 'ring-2 ring-primary/30 shadow-md' : ''"
       @dragover="onDragOver"
       @dragleave="onDragLeave"

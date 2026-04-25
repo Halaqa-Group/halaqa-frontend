@@ -200,10 +200,10 @@ onUnmounted(() => {
         <!-- Student selector card -->
         <div
           ref="studentDropdownRef"
-          class="relative z-30 bg-primary text-on-primary p-5 rounded-[40px] flex flex-col gap-4 shadow-2xl shadow-primary/30 hover:scale-[1.01] transition-all border border-white/10"
+          class="relative z-30 bg-primary text-on-primary p-5 rounded-2xl flex flex-col gap-4 shadow-2xl shadow-primary/30 hover:scale-[1.01] transition-all border border-white/10"
         >
           <!-- Gradient overlays -->
-          <div class="absolute inset-0 rounded-[40px] overflow-hidden pointer-events-none">
+          <div class="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
             <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent opacity-50" />
             <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
           </div>
@@ -218,10 +218,10 @@ onUnmounted(() => {
             <UButton
               variant="ghost"
               color="neutral"
-              class="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-[24px] p-2 gap-3 hover:bg-white/20 group shadow-xl"
+              class="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 gap-3 hover:bg-white/20 group shadow-xl"
               @click="isStudentDropdownOpen = !isStudentDropdownOpen"
             >
-              <div class="w-11 h-11 rounded-[18px] overflow-hidden border-2 border-white/40 shadow-inner shrink-0 group-hover:rotate-1 transition-transform">
+              <div class="w-11 h-11 rounded-xl overflow-hidden border-2 border-white/40 shadow-inner shrink-0 group-hover:rotate-1 transition-transform">
                 <img
                   :src="selectedStudentObj?.avatar ?? `https://api.dicebear.com/9.x/notionists/svg?seed=default`"
                   :alt="selectedStudent ?? ''"
@@ -254,20 +254,25 @@ onUnmounted(() => {
             >
               <div
                 v-if="isStudentDropdownOpen"
-                class="absolute top-full mt-3 w-full bg-white rounded-[24px] shadow-xl border border-black/5 overflow-hidden"
+                class="absolute top-full mt-3 w-full bg-white rounded-2xl shadow-xl border border-black/5 overflow-hidden"
               >
                 <!-- Search bar -->
                 <div class="px-3 pt-3 pb-2">
-                  <div class="flex items-center gap-2 bg-black/5 rounded-[14px] px-3 py-2">
-                    <UIcon name="i-lucide-search" class="w-3.5 h-3.5 text-on-surface-variant shrink-0" />
-                    <input
-                      v-model="studentSearch"
-                      type="text"
-                      :placeholder="$t('common.searchPlaceholder')"
-                      class="flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface-variant/60 outline-none text-right"
-                      dir="rtl"
-                    >
-                  </div>
+                  <UInput
+                    v-model="studentSearch"
+                    type="text"
+                    :placeholder="$t('common.searchPlaceholder')"
+                    leading-icon="i-lucide-search"
+                    variant="none"
+                    dir="rtl"
+                    class="w-full"
+                    :ui="{
+                      root: 'flex items-center gap-2 bg-black/5 rounded-lg px-3 py-2 w-full',
+                      base: 'flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface-variant/60 text-right',
+                      leading: 'static flex items-center',
+                      leadingIcon: 'w-3.5 h-3.5 text-on-surface-variant shrink-0'
+                    }"
+                  />
                 </div>
 
                 <div class="px-2 pb-2 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto [&::-webkit-scrollbar]:w-[2px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary/20 [&::-webkit-scrollbar-thumb]:rounded-full">
@@ -276,13 +281,13 @@ onUnmounted(() => {
                     :key="s.id"
                     variant="ghost"
                     color="primary"
-                    class="w-full gap-3 px-3 py-2.5 rounded-[18px] font-normal"
+                    class="w-full gap-3 px-3 py-2.5 rounded-xl font-normal"
                     :class="selectedStudent === s.name ? 'bg-primary' : 'hover:bg-primary/5'"
                     @click="selectStudent(s.name)"
                   >
                     <!-- Avatar (first child = rightmost in RTL) -->
                     <div
-                      class="w-10 h-10 rounded-[14px] overflow-hidden border-2 shrink-0"
+                      class="w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0"
                       :class="selectedStudent === s.name ? 'border-white/30' : 'border-primary/15'"
                     >
                       <img :src="s.avatar" :alt="s.name" class="w-full h-full object-cover" referrerpolicy="no-referrer">

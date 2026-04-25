@@ -9,7 +9,7 @@ const isActive = computed(() => props.student.status === 'active')
 
 <template>
   <div
-    class="bg-white border border-outline-variant rounded-[40px] p-6 flex flex-col gap-5 transition-all duration-300 hover:shadow-lg hover:border-primary/20"
+    class="bg-white border border-outline-variant rounded-2xl p-6 flex flex-col gap-5 transition-all duration-300 hover:shadow-lg hover:border-primary/20"
   >
     <!-- Header: avatar + name + status badge -->
     <div class="flex items-start justify-between">

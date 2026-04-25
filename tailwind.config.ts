@@ -14,6 +14,16 @@ export default <Partial<Config>>{
     './nuxt.config.ts'
   ],
   theme: {
+    borderRadius: {
+      none: '0',
+      xs: '2px',
+      sm: '4px',
+      md: '6px',
+      lg: '8px',
+      xl: '12px',
+      '2xl': '16px',
+      full: '9999px'
+    },
     extend: {
       fontFamily: {
 				sans: ["Thmanyah Sans", ...defaultTheme.fontFamily.sans],

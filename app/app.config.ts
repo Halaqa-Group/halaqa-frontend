@@ -65,6 +65,12 @@ export default defineAppConfig({
           link: 'py-2.5'
         }
       }, {
+        orientation: 'vertical',
+        collapsed: true,
+        class: {
+          link: 'size-10 mx-auto justify-center !p-0'
+        }
+      }, {
         variant: 'pill',
         active: true,
         highlight: false,

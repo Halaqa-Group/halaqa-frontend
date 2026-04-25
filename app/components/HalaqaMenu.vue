@@ -54,7 +54,7 @@ const items = computed<DropdownMenuItem[][]>(() => [
       block
       :square="collapsed"
       class="data-[state=open]:bg-elevated"
-      :class="[!collapsed && 'py-2']"
+      :class="collapsed ? 'size-9 p-0' : 'h-9 px-2.5'"
       :ui="{ trailingIcon: 'text-dimmed' }"
     />
   </UDropdownMenu>

@@ -52,6 +52,11 @@ onMounted(async () => {
           orientation="vertical"
           tooltip
           popover
+          :ui="{
+            link: collapsed
+              ? 'size-9 justify-center p-0 before:inset-0'
+              : 'h-9 px-2.5'
+          }"
         />
 
         <UNavigationMenu
@@ -60,6 +65,11 @@ onMounted(async () => {
           orientation="vertical"
           tooltip
           class="mt-auto"
+          :ui="{
+            link: collapsed
+              ? 'size-9 justify-center p-0 before:inset-0'
+              : 'h-9 px-2.5'
+          }"
         />
       </template>
 
@@ -76,16 +86,6 @@ onMounted(async () => {
           </template>
 
           <template #right>
-            <UButton
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              :label="locale === 'ar' ? 'EN' : 'ع'"
-              :aria-label="locale === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'"
-              class="font-bold min-w-10 justify-center"
-              @click="toggleLocale"
-            />
-
             <UTooltip text="Notifications" :shortcuts="['N']">
               <UButton
                 color="neutral"

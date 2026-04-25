@@ -65,7 +65,7 @@ export interface ApiHalaqa {
   type: 'Memorization' | 'Tajweed' | 'Aqeedah'
   school_id: number
   teacher_id: number
-  schedules: { id: number; day_of_week: number }[]
+  schedules: { id: number, day_of_week: number }[]
 }
 
 export interface ApiAttendance {

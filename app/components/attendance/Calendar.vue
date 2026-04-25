@@ -41,12 +41,10 @@ function toAr(n: number) {
 const monthLabel = computed(() => `${ARABIC_MONTHS[viewMonth.value]} ${toAr(viewYear.value)}`)
 
 function prevMonth() {
-  if (viewMonth.value === 0) { viewMonth.value = 11; viewYear.value-- }
-  else viewMonth.value--
+  if (viewMonth.value === 0) { viewMonth.value = 11; viewYear.value-- } else viewMonth.value--
 }
 function nextMonth() {
-  if (viewMonth.value === 11) { viewMonth.value = 0; viewYear.value++ }
-  else viewMonth.value++
+  if (viewMonth.value === 11) { viewMonth.value = 0; viewYear.value++ } else viewMonth.value++
 }
 
 type CalDay = {
@@ -116,7 +114,9 @@ function onDayClick(cell: CalDay) {
           class="text-primary/40 hover:text-primary rounded-2xl"
           @click="prevMonth"
         />
-        <h4 class="font-bold text-lg" style="color: var(--color-on-surface);">{{ monthLabel }}</h4>
+        <h4 class="font-bold text-lg" style="color: var(--color-on-surface);">
+          {{ monthLabel }}
+        </h4>
         <UButton
           variant="ghost"
           color="primary"
@@ -130,10 +130,13 @@ function onDayClick(cell: CalDay) {
       <!-- Weekday headers -->
       <div class="grid grid-cols-7 gap-1 mb-3">
         <div
-          v-for="wd in WEEKDAYS" :key="wd"
+          v-for="wd in WEEKDAYS"
+          :key="wd"
           class="h-9 flex items-center justify-center text-[11px] font-bold tracking-tighter"
           style="color: color-mix(in srgb, var(--color-on-surface-variant) 35%, transparent);"
-        >{{ wd }}</div>
+        >
+          {{ wd }}
+        </div>
       </div>
 
       <!-- Day cells -->

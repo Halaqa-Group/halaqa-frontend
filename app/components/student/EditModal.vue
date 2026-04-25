@@ -64,13 +64,11 @@ async function handleSubmit(_event: FormSubmitEvent<EditForm>) {
     })
     toast.add({ title: 'تم تحديث بيانات الطالب بنجاح', color: 'success' })
     closeEdit()
-  }
-  catch (e: any) {
+  } catch (e: any) {
     const raw = e?.data?.message
     const message = Array.isArray(raw) ? raw.join('، ') : (raw || 'حدث خطأ أثناء تحديث البيانات')
     toast.add({ title: message, color: 'error' })
-  }
-  finally {
+  } finally {
     submitting.value = false
   }
 }
@@ -89,7 +87,6 @@ const statusOptions = [
   >
     <template #content>
       <div class="flex flex-col" style="max-height: 90vh;">
-
         <!-- Header -->
         <div class="flex justify-between items-center px-8 py-6 shrink-0 border-b border-default">
           <div class="flex items-center gap-3">
@@ -97,8 +94,12 @@ const statusOptions = [
               <UIcon name="i-lucide-file-edit" class="w-5 h-5 text-secondary" />
             </div>
             <div>
-              <h3 class="text-xl font-bold text-primary">تعديل بيانات الطالب</h3>
-              <p class="text-xs text-muted">{{ editingApiStudent?.name ?? '...' }}</p>
+              <h3 class="text-xl font-bold text-primary">
+                تعديل بيانات الطالب
+              </h3>
+              <p class="text-xs text-muted">
+                {{ editingApiStudent?.name ?? '...' }}
+              </p>
             </div>
           </div>
           <UButton
@@ -138,7 +139,9 @@ const statusOptions = [
                 class="w-24 h-24 rounded-full object-cover mb-4"
                 style="border: 3px solid rgba(128, 76, 125, 0.2);"
               >
-              <p class="text-xs font-semibold text-muted">صورة الطالب</p>
+              <p class="text-xs font-semibold text-muted">
+                صورة الطالب
+              </p>
             </div>
 
             <!-- Fields -->
@@ -161,7 +164,9 @@ const statusOptions = [
           <!-- Section: Academic metrics -->
           <div class="space-y-6">
             <div class="flex items-center gap-2 border-e-4 pe-3 border-secondary">
-              <h4 class="font-bold text-base text-secondary">مقاييس الأداء اليومي</h4>
+              <h4 class="font-bold text-base text-secondary">
+                مقاييس الأداء اليومي
+              </h4>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <UCard
@@ -226,7 +231,6 @@ const statusOptions = [
             </UButton>
           </div>
         </UForm>
-
       </div>
     </template>
   </UModal>

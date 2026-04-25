@@ -100,25 +100,33 @@ onUnmounted(() => {
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           {{ $t('pages.planner.weeklyPlanning') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">{{ $t('pages.planner.title') }}</h2>
+        <h2 class="display-lg" style="color: var(--color-on-surface);">
+          {{ $t('pages.planner.title') }}
+        </h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
           {{ $t('pages.planner.subtitle') }}
         </p>
       </div>
 
       <div class="flex items-center gap-3 shrink-0">
-
         <!-- NEW: enter values, save as draft -->
         <template v-if="planStatus === 'new'">
           <UButton
-            variant="outline" color="neutral"
-            :label="$t('pages.planner.copyFromLastWeek')" icon="i-lucide-copy"
-            size="lg" class="font-bold rounded-full px-6"
+            variant="outline"
+            color="neutral"
+            :label="$t('pages.planner.copyFromLastWeek')"
+            icon="i-lucide-copy"
+            size="lg"
+            class="font-bold rounded-full px-6"
           />
           <UButton
-            color="primary" :label="$t('pages.planner.saveAsDraft')" icon="i-lucide-save"
-            size="lg" class="font-bold rounded-full px-6"
-            :loading="isSaving" :disabled="isSaving"
+            color="primary"
+            :label="$t('pages.planner.saveAsDraft')"
+            icon="i-lucide-save"
+            size="lg"
+            class="font-bold rounded-full px-6"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="handleSaveAsDraft"
           />
         </template>
@@ -126,15 +134,22 @@ onUnmounted(() => {
         <!-- DRAFT, viewing -->
         <template v-else-if="planStatus === 'draft' && !isEditMode">
           <UButton
-            variant="outline" color="neutral"
-            :label="$t('pages.planner.editPlan')" icon="i-lucide-pencil"
-            size="lg" class="font-bold rounded-full px-6"
+            variant="outline"
+            color="neutral"
+            :label="$t('pages.planner.editPlan')"
+            icon="i-lucide-pencil"
+            size="lg"
+            class="font-bold rounded-full px-6"
             @click="startEditing"
           />
           <UButton
-            color="primary" :label="$t('pages.planner.approvePlan')" icon="i-lucide-check-circle"
-            size="lg" class="font-bold rounded-full px-6"
-            :loading="isSaving" :disabled="isSaving"
+            color="primary"
+            :label="$t('pages.planner.approvePlan')"
+            icon="i-lucide-check-circle"
+            size="lg"
+            class="font-bold rounded-full px-6"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="handleApprovePlan"
           />
         </template>
@@ -142,31 +157,43 @@ onUnmounted(() => {
         <!-- DRAFT, editing -->
         <template v-else-if="planStatus === 'draft' && isEditMode">
           <UButton
-            variant="ghost" color="neutral"
-            :label="$t('common.cancel')" icon="i-lucide-x"
-            size="lg" class="font-bold rounded-full px-6"
+            variant="ghost"
+            color="neutral"
+            :label="$t('common.cancel')"
+            icon="i-lucide-x"
+            size="lg"
+            class="font-bold rounded-full px-6"
             :disabled="isSaving"
             @click="cancelEditing"
           />
           <UButton
-            color="primary" :label="$t('pages.planner.saveAsDraft')" icon="i-lucide-save"
-            size="lg" class="font-bold rounded-full px-6"
-            :loading="isSaving" :disabled="isSaving"
+            color="primary"
+            :label="$t('pages.planner.saveAsDraft')"
+            icon="i-lucide-save"
+            size="lg"
+            class="font-bold rounded-full px-6"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="handleSaveAsDraft"
           />
         </template>
 
         <!-- APPROVED, viewing -->
         <template v-else-if="planStatus === 'approved' && !isEditMode">
-          <div class="flex items-center gap-2 px-5 py-2.5 rounded-full border font-semibold text-sm"
-            style="background-color: #E0F0EE; border-color: #4A8E85; color: #4A8E85;">
+          <div
+            class="flex items-center gap-2 px-5 py-2.5 rounded-full border font-semibold text-sm"
+            style="background-color: #E0F0EE; border-color: #4A8E85; color: #4A8E85;"
+          >
             <UIcon name="i-lucide-check-circle" class="w-4 h-4" />
             {{ $t('pages.planner.approved') }}
           </div>
           <UButton
-            variant="outline" color="neutral"
-            :label="$t('pages.planner.editPlan')" icon="i-lucide-pencil"
-            size="lg" class="font-bold rounded-full px-6"
+            variant="outline"
+            color="neutral"
+            :label="$t('pages.planner.editPlan')"
+            icon="i-lucide-pencil"
+            size="lg"
+            class="font-bold rounded-full px-6"
             @click="startEditing"
           />
         </template>
@@ -174,29 +201,33 @@ onUnmounted(() => {
         <!-- APPROVED, editing -->
         <template v-else-if="planStatus === 'approved' && isEditMode">
           <UButton
-            variant="ghost" color="neutral"
-            :label="$t('common.cancel')" icon="i-lucide-x"
-            size="lg" class="font-bold rounded-full px-6"
+            variant="ghost"
+            color="neutral"
+            :label="$t('common.cancel')"
+            icon="i-lucide-x"
+            size="lg"
+            class="font-bold rounded-full px-6"
             :disabled="isSaving"
             @click="cancelEditing"
           />
           <UButton
-            color="primary" :label="$t('pages.planner.saveChanges')" icon="i-lucide-save"
-            size="lg" class="font-bold rounded-full px-6"
-            :loading="isSaving" :disabled="isSaving"
+            color="primary"
+            :label="$t('pages.planner.saveChanges')"
+            icon="i-lucide-save"
+            size="lg"
+            class="font-bold rounded-full px-6"
+            :loading="isSaving"
+            :disabled="isSaving"
             @click="handleSaveAsDraft"
           />
         </template>
-
       </div>
     </div>
 
     <!-- Two-column layout: sidebar (right in RTL) + table (left in RTL) -->
     <div class="flex gap-14 items-start w-full">
-
       <!-- RIGHT sidebar (first child = right in RTL) -->
       <div class="w-full lg:w-[320px] shrink-0 space-y-10 mt-8">
-
         <!-- Student selector card -->
         <div
           ref="studentDropdownRef"
@@ -210,7 +241,9 @@ onUnmounted(() => {
 
           <!-- Header row -->
           <div class="flex items-center justify-center px-2 relative z-10">
-            <p class="text-sm font-semibold text-white">{{ $t('common.selectStudent') }}</p>
+            <p class="text-sm font-semibold text-white">
+              {{ $t('common.selectStudent') }}
+            </p>
           </div>
 
           <!-- Dropdown trigger -->
@@ -297,12 +330,16 @@ onUnmounted(() => {
                       <p
                         class="font-bold text-sm leading-tight"
                         :class="selectedStudent === s.name ? 'text-on-primary' : 'text-on-surface'"
-                      >{{ s.name }}</p>
+                      >
+                        {{ s.name }}
+                      </p>
                       <p
                         v-if="s.halaqa && s.halaqa !== '—'"
                         class="text-[11px] mt-0.5"
                         :class="selectedStudent === s.name ? 'text-on-primary/60' : 'text-on-surface-variant'"
-                      >{{ s.halaqa }}</p>
+                      >
+                        {{ s.halaqa }}
+                      </p>
                     </div>
 
                     <!-- Checkmark / spacer (last child = leftmost in RTL) -->
@@ -321,14 +358,15 @@ onUnmounted(() => {
 
         <!-- Calendar -->
         <div class="flex flex-col gap-3 mt-6">
-          <p class="text-sm font-semibold text-center" style="color: var(--color-on-surface-variant);">{{ $t('pages.planner.selectWeek') }}</p>
+          <p class="text-sm font-semibold text-center" style="color: var(--color-on-surface-variant);">
+            {{ $t('pages.planner.selectWeek') }}
+          </p>
           <PlannerCalendar />
         </div>
       </div>
 
       <!-- LEFT table (second child = left in RTL) -->
       <div class="flex-1 min-w-0 flex flex-col gap-4">
-
         <!-- Column headers -->
         <div class="flex items-center gap-4 px-4">
           <div v-if="isEditMode" class="w-8 shrink-0 flex items-center justify-center">
@@ -356,8 +394,22 @@ onUnmounted(() => {
           >
             <span class="text-sm text-muted">{{ $t('pages.planner.daysSelected', { count: selectedCount }) }}</span>
             <div class="flex gap-2 ms-auto">
-              <UButton variant="soft" color="neutral" icon="i-lucide-copy" :label="$t('pages.planner.copy')" size="sm" @click="copySelectedRows" />
-              <UButton variant="soft" color="error" icon="i-lucide-trash-2" :label="$t('common.delete')" size="sm" @click="deleteSelectedRows" />
+              <UButton
+                variant="soft"
+                color="neutral"
+                icon="i-lucide-copy"
+                :label="$t('pages.planner.copy')"
+                size="sm"
+                @click="copySelectedRows"
+              />
+              <UButton
+                variant="soft"
+                color="error"
+                icon="i-lucide-trash-2"
+                :label="$t('common.delete')"
+                size="sm"
+                @click="deleteSelectedRows"
+              />
               <UButton
                 v-if="clipboard.length > 0"
                 variant="soft"
@@ -379,12 +431,10 @@ onUnmounted(() => {
             :data="day"
           />
         </div>
-
       </div>
     </div>
   </div>
 </template>
-
 
 <style scoped>
 .slide-down-enter-active,

@@ -40,7 +40,7 @@ const quickActions = computed(() => [
     icon: 'i-lucide-clipboard-check',
     href: '/attendance',
     color: 'var(--color-track-hifz)',
-    bg: 'var(--color-track-hifz-bg)',
+    bg: 'var(--color-track-hifz-bg)'
   },
   {
     label: t('nav.students'),
@@ -48,7 +48,7 @@ const quickActions = computed(() => [
     icon: 'i-lucide-users',
     href: '/students',
     color: 'var(--color-primary)',
-    bg: 'var(--color-primary-container)',
+    bg: 'var(--color-primary-container)'
   },
   {
     label: t('nav.achievements'),
@@ -56,7 +56,7 @@ const quickActions = computed(() => [
     icon: 'i-lucide-star',
     href: '/achievements',
     color: 'var(--color-status-warning)',
-    bg: 'var(--color-status-warning-bg)',
+    bg: 'var(--color-status-warning-bg)'
   },
   {
     label: t('nav.analytics'),
@@ -64,8 +64,8 @@ const quickActions = computed(() => [
     icon: 'i-lucide-bar-chart-3',
     href: '/analytics',
     color: 'var(--color-status-overdue)',
-    bg: 'var(--color-status-overdue-bg)',
-  },
+    bg: 'var(--color-status-overdue-bg)'
+  }
 ])
 
 async function loadDashboard(halaqaId: number) {
@@ -75,12 +75,10 @@ async function loadDashboard(halaqaId: number) {
     await fetchStudents(halaqaId)
     try {
       todayAttendance.value = await api<any[]>(`/attendance?halaqaId=${halaqaId}&date=${today}`)
-    }
-    catch {
+    } catch {
       attendanceError.value = true
     }
-  }
-  finally {
+  } finally {
     isLoading.value = false
   }
 }
@@ -93,8 +91,7 @@ onMounted(async () => {
   await initializeHalaqa()
   if (selectedHalaqaId.value) {
     await loadDashboard(selectedHalaqaId.value)
-  }
-  else {
+  } else {
     isLoading.value = false
   }
 })
@@ -142,8 +139,12 @@ onMounted(async () => {
             <UIcon name="i-lucide-users" class="w-6 h-6" style="color: var(--color-primary);" />
           </div>
           <div>
-            <p class="font-bold" style="font-size: 36px; line-height: 1; color: var(--color-on-surface);">{{ students.length }}</p>
-            <p class="font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">{{ $t('pages.home.stats.totalStudents') }}</p>
+            <p class="font-bold" style="font-size: 36px; line-height: 1; color: var(--color-on-surface);">
+              {{ students.length }}
+            </p>
+            <p class="font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">
+              {{ $t('pages.home.stats.totalStudents') }}
+            </p>
           </div>
         </div>
 
@@ -155,8 +156,12 @@ onMounted(async () => {
             <UIcon name="i-lucide-layout-grid" class="w-6 h-6" style="color: var(--color-secondary);" />
           </div>
           <div>
-            <p class="font-bold" style="font-size: 36px; line-height: 1; color: var(--color-on-surface);">{{ halaqat.length }}</p>
-            <p class="font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">{{ $t('pages.home.stats.activeHalaqat') }}</p>
+            <p class="font-bold" style="font-size: 36px; line-height: 1; color: var(--color-on-surface);">
+              {{ halaqat.length }}
+            </p>
+            <p class="font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">
+              {{ $t('pages.home.stats.activeHalaqat') }}
+            </p>
           </div>
         </div>
 
@@ -192,7 +197,9 @@ onMounted(async () => {
             <p class="font-bold" style="font-size: 28px; line-height: 1.2; color: var(--color-on-surface);">
               {{ currentWeekday }}
             </p>
-            <p class="font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">{{ $t('pages.home.stats.currentDay') }}</p>
+            <p class="font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">
+              {{ $t('pages.home.stats.currentDay') }}
+            </p>
           </div>
         </div>
       </div>
@@ -200,7 +207,9 @@ onMounted(async () => {
       <!-- Quick actions -->
       <div>
         <div class="flex items-center gap-2 mb-4">
-          <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">{{ $t('pages.home.quickAccess') }}</h3>
+          <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">
+            {{ $t('pages.home.quickAccess') }}
+          </h3>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <UButton
@@ -219,8 +228,12 @@ onMounted(async () => {
               <UIcon :name="action.icon" class="w-5 h-5" :style="`color: ${action.color};`" />
             </div>
             <div>
-              <p class="body-md font-semibold" style="color: var(--color-on-surface);">{{ action.label }}</p>
-              <p class="label-sm mt-0.5" style="color: var(--color-on-surface-variant);">{{ action.description }}</p>
+              <p class="body-md font-semibold" style="color: var(--color-on-surface);">
+                {{ action.label }}
+              </p>
+              <p class="label-sm mt-0.5" style="color: var(--color-on-surface-variant);">
+                {{ action.description }}
+              </p>
             </div>
           </UButton>
         </div>
@@ -235,7 +248,9 @@ onMounted(async () => {
         <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background-color: var(--color-primary-container);">
           <UIcon name="i-lucide-book-open-text" class="w-8 h-8" style="color: var(--color-primary);" />
         </div>
-        <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">{{ $t('pages.home.welcome.title') }}</h3>
+        <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">
+          {{ $t('pages.home.welcome.title') }}
+        </h3>
         <p class="body-sm text-center max-w-xs" style="color: var(--color-on-surface-variant);">
           {{ $t('pages.home.welcome.message') }}
         </p>

@@ -27,11 +27,9 @@ async function loadWarnings() {
     warnings.value = await api<ApiWarnings>(
       `/analytics/warnings?halaqaId=${selectedHalaqaId.value}&weekStartDate=${selectedWeekStart.value}`
     )
-  }
-  catch (e: any) {
+  } catch (e: any) {
     error.value = e?.data?.message || t('pages.analytics.errorFallback')
-  }
-  finally {
+  } finally {
     isLoading.value = false
   }
 }
@@ -63,7 +61,9 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           {{ $t('pages.analytics.performanceLabel') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">{{ $t('pages.analytics.title') }}</h2>
+        <h2 class="display-lg" style="color: var(--color-on-surface);">
+          {{ $t('pages.analytics.title') }}
+        </h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
           {{ $t('pages.analytics.subtitle') }}
         </p>
@@ -116,7 +116,9 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-bar-chart-3" class="w-12 h-12" style="color: var(--color-on-surface-variant);" />
-      <p style="color: var(--color-on-surface-variant);">{{ $t('pages.analytics.selectHalaqaForAnalytics') }}</p>
+      <p style="color: var(--color-on-surface-variant);">
+        {{ $t('pages.analytics.selectHalaqaForAnalytics') }}
+      </p>
     </div>
 
     <template v-else-if="warnings">
@@ -128,8 +130,12 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
             <span class="label-md" style="color: var(--color-status-warning);">{{ $t('pages.analytics.unplanned.label') }}</span>
             <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
           </div>
-          <p class="display-md" style="color: var(--color-status-warning);">{{ warnings.unplannedAchievements.length }}</p>
-          <p class="body-sm mt-1" style="color: var(--color-status-warning);">{{ $t('pages.analytics.unplanned.thisWeek') }}</p>
+          <p class="display-md" style="color: var(--color-status-warning);">
+            {{ warnings.unplannedAchievements.length }}
+          </p>
+          <p class="body-sm mt-1" style="color: var(--color-status-warning);">
+            {{ $t('pages.analytics.unplanned.thisWeek') }}
+          </p>
         </div>
 
         <!-- Conflicts -->
@@ -138,8 +144,12 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
             <span class="label-md" style="color: var(--color-status-conflict);">{{ $t('pages.analytics.conflicts.label') }}</span>
             <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
           </div>
-          <p class="display-md" style="color: var(--color-status-conflict);">{{ warnings.flaggedConflicts.length }}</p>
-          <p class="body-sm mt-1" style="color: var(--color-status-conflict);">{{ $t('pages.analytics.conflicts.needsReview') }}</p>
+          <p class="display-md" style="color: var(--color-status-conflict);">
+            {{ warnings.flaggedConflicts.length }}
+          </p>
+          <p class="body-sm mt-1" style="color: var(--color-status-conflict);">
+            {{ $t('pages.analytics.conflicts.needsReview') }}
+          </p>
         </div>
 
         <!-- Overdue -->
@@ -148,8 +158,12 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
             <span class="label-md" style="color: var(--color-status-overdue);">{{ $t('pages.analytics.overdue.label') }}</span>
             <UIcon name="i-lucide-clock-alert" class="w-5 h-5" style="color: var(--color-status-overdue);" />
           </div>
-          <p class="display-md" style="color: var(--color-status-overdue);">{{ warnings.overdueItems.length }}</p>
-          <p class="body-sm mt-1" style="color: var(--color-status-overdue);">{{ $t('pages.analytics.overdue.fromWeeklyPlan') }}</p>
+          <p class="display-md" style="color: var(--color-status-overdue);">
+            {{ warnings.overdueItems.length }}
+          </p>
+          <p class="body-sm mt-1" style="color: var(--color-status-overdue);">
+            {{ $t('pages.analytics.overdue.fromWeeklyPlan') }}
+          </p>
         </div>
       </div>
 
@@ -161,7 +175,9 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       >
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
-          <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">{{ $t('pages.analytics.unplanned.title') }}</h3>
+          <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">
+            {{ $t('pages.analytics.unplanned.title') }}
+          </h3>
         </div>
         <div class="flex flex-col gap-3">
           <div
@@ -201,7 +217,9 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       >
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
-          <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">{{ $t('pages.analytics.conflicts.title') }}</h3>
+          <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">
+            {{ $t('pages.analytics.conflicts.title') }}
+          </h3>
         </div>
         <div class="flex flex-col gap-3">
           <div
@@ -220,7 +238,9 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
                 <p class="body-md font-semibold" style="color: var(--color-on-surface);">
                   {{ a.student?.name || $t('pages.analytics.studentFallback', { id: a.student_id }) }}
                 </p>
-                <p class="label-sm" style="color: var(--color-on-surface-variant);">{{ a.date }}</p>
+                <p class="label-sm" style="color: var(--color-on-surface-variant);">
+                  {{ a.date }}
+                </p>
               </div>
             </div>
             <span
@@ -238,14 +258,20 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         style="background-color: var(--color-status-ok-bg);"
       >
         <UIcon name="i-lucide-check-circle" class="w-12 h-12" style="color: var(--color-status-ok);" />
-        <p class="body-lg font-semibold" style="color: var(--color-status-ok);">{{ $t('pages.analytics.allClear.title') }}</p>
-        <p class="body-sm" style="color: var(--color-status-ok);">{{ $t('pages.analytics.allClear.message') }}</p>
+        <p class="body-lg font-semibold" style="color: var(--color-status-ok);">
+          {{ $t('pages.analytics.allClear.title') }}
+        </p>
+        <p class="body-sm" style="color: var(--color-status-ok);">
+          {{ $t('pages.analytics.allClear.message') }}
+        </p>
       </div>
     </template>
 
     <!-- Error -->
     <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: var(--color-status-conflict-bg);">
-      <p style="color: var(--color-status-conflict);">{{ error }}</p>
+      <p style="color: var(--color-status-conflict);">
+        {{ error }}
+      </p>
     </div>
   </div>
 </template>

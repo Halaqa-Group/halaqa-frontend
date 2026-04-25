@@ -70,11 +70,9 @@ export function useAttendance() {
           notes: ex?.notes || ''
         }
       })
-    }
-    catch (e: any) {
+    } catch (e: any) {
       loadError.value = e?.data?.message || 'حدث خطأ أثناء تحميل الحضور'
-    }
-    finally {
+    } finally {
       isLoading.value = false
     }
   }
@@ -85,7 +83,7 @@ export function useAttendance() {
     saveError.value = null
     try {
       await Promise.all(
-        attendanceRows.value.map(row => {
+        attendanceRows.value.map((row) => {
           const existing = existingRecords.value.get(row.studentId)
           const newStatus = statusToBackend(row.status)
           const newNotes = row.notes || null
@@ -118,12 +116,10 @@ export function useAttendance() {
           })
         })
       )
-    }
-    catch (e: any) {
+    } catch (e: any) {
       saveError.value = e?.data?.message || 'حدث خطأ أثناء حفظ الحضور'
       throw e
-    }
-    finally {
+    } finally {
       isSaving.value = false
     }
   }

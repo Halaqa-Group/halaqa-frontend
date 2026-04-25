@@ -61,7 +61,7 @@ export function useAuth() {
 
   async function login(email: string, password: string) {
     // The login response already includes school_id — no secondary calls needed.
-    const data = await api<{ access_token: string; user: AuthUser }>('/auth/login', {
+    const data = await api<{ access_token: string, user: AuthUser }>('/auth/login', {
       method: 'POST',
       body: { email, password }
     })

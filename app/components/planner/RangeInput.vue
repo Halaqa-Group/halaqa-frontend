@@ -78,7 +78,9 @@ function update(field: keyof LessonItem, value: string | number) {
     </div>
 
     <!-- Divider -->
-    <div class="text-on-surface-variant/20 font-bold px-1 transition-colors group-hover/row:text-primary/30">|</div>
+    <div class="text-on-surface-variant/20 font-bold px-1 transition-colors group-hover/row:text-primary/30">
+      |
+    </div>
 
     <!-- End: surah + ayah -->
     <div class="flex-1 min-w-0 flex items-center gap-2">

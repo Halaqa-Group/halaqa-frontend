@@ -98,13 +98,16 @@ const labelUi = {
     <div class="px-6 pt-5 pb-4 flex items-center gap-3" style="border-bottom: 1px solid var(--color-outline-variant);">
       <img :src="student.avatar" class="w-10 h-10 rounded-full object-cover shrink-0" :alt="student.name">
       <div class="flex-1 min-w-0">
-        <p class="text-xs font-bold uppercase tracking-widest mb-0.5" style="color: var(--color-primary);">تسجيل إنجاز</p>
-        <p class="text-xl font-bold truncate leading-tight" style="color: var(--color-on-surface);">{{ student.name }}</p>
+        <p class="text-xs font-bold uppercase tracking-widest mb-0.5" style="color: var(--color-primary);">
+          تسجيل إنجاز
+        </p>
+        <p class="text-xl font-bold truncate leading-tight" style="color: var(--color-on-surface);">
+          {{ student.name }}
+        </p>
       </div>
     </div>
 
     <div class="px-6 pt-5 pb-6 flex flex-col gap-5">
-
       <!-- Track type -->
       <div class="flex items-center p-1 rounded-full" style="background-color: var(--color-surface-container-low);">
         <UButton
@@ -181,7 +184,9 @@ const labelUi = {
           style="background-color: var(--color-track-near-bg);"
         >
           <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0" style="color: var(--color-track-near);" />
-          <p class="label-sm" style="color: var(--color-track-near);">{{ validationError }}</p>
+          <p class="label-sm" style="color: var(--color-track-near);">
+            {{ validationError }}
+          </p>
         </div>
       </div>
 

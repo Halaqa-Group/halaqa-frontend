@@ -32,8 +32,7 @@ function onDrop(e: DragEvent) {
     if (data.sourceDayId && data.sourceCategory && data.lessonId) {
       moveLesson(data.sourceDayId, data.sourceCategory, data.lessonId, props.dayId, props.category)
     }
-  }
-  catch {}
+  } catch {}
 }
 </script>
 

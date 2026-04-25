@@ -1,6 +1,65 @@
+
 @import "tailwindcss";
 @import "@nuxt/ui";
-@config "../../../tailwind.config.ts";
+
+/* Tailwind theme customizations moved from tailwind.config.ts */
+:root {
+  /* Font family */
+  --font-sans: 'Thmanyah Sans', system-ui, sans-serif;
+
+  /* Border radius */
+  --radius-none: 0;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  /* Primary color scale */
+  --color-primary-50: #fbf8fb;
+  --color-primary-100: #f7eff8;
+  --color-primary-200: #eedfef;
+  --color-primary-300: #e2c5e2;
+  --color-primary-400: #d0a2cf;
+  --color-primary-500: #b87db7;
+  --color-primary-600: #9b5e99;
+  --color-primary-700: #804c7d;
+  --color-primary-800: #693f66;
+  --color-primary-900: #583755;
+  --color-primary-950: #361c34;
+
+  /* Secondary color scale */
+  --color-secondary-50: #f4f9f8;
+  --color-secondary-100: #daedeb;
+  --color-secondary-200: #b5dad8;
+  --color-secondary-300: #89bfbd;
+  --color-secondary-400: #60a1a1;
+  --color-secondary-500: #468586;
+  --color-secondary-600: #356668;
+  --color-secondary-700: #2f5456;
+  --color-secondary-800: #294446;
+  --color-secondary-900: #253b3c;
+  --color-secondary-950: #112022;
+}
+
+/* Utility classes for border radius */
+.rounded-none { border-radius: var(--radius-none) !important; }
+.rounded-xs { border-radius: var(--radius-xs) !important; }
+.rounded-sm { border-radius: var(--radius-sm) !important; }
+.rounded-md { border-radius: var(--radius-md) !important; }
+.rounded-lg { border-radius: var(--radius-lg) !important; }
+.rounded-xl { border-radius: var(--radius-xl) !important; }
+.rounded-2xl { border-radius: var(--radius-2xl) !important; }
+.rounded-full { border-radius: var(--radius-full) !important; }
+
+/* Utility class for font family */
+.font-sans { font-family: var(--font-sans) !important; }
+
+/* Utility classes for primary/secondary colors (background example) */
+.bg-primary-700 { background-color: var(--color-primary-700) !important; }
+.bg-secondary-600 { background-color: var(--color-secondary-600) !important; }
 
 @font-face {
   font-family: 'Thmanyah Sans';

@@ -8,13 +8,13 @@ const displayHalaqa = ref(selectedHalaqa.value)
 const TYPE_LABELS: Record<string, string> = {
   Memorization: 'حفظ',
   Tajweed: 'تجويد',
-  Aqeedah: 'عقيدة',
+  Aqeedah: 'عقيدة'
 }
 
 const TYPE_ICONS: Record<string, string> = {
   Memorization: 'i-lucide-book-open',
   Tajweed: 'i-lucide-mic',
-  Aqeedah: 'i-lucide-book-text',
+  Aqeedah: 'i-lucide-book-text'
 }
 
 const curtainStyle = computed(() => {
@@ -25,7 +25,7 @@ const curtainStyle = computed(() => {
     return {
       transform: 'scaleX(1)',
       transformOrigin: 'right center',
-      transition: 'transform 900ms cubic-bezier(0.22, 1, 0.36, 1)',
+      transition: 'transform 900ms cubic-bezier(0.22, 1, 0.36, 1)'
     }
   }
   if (phase.value === 'covered') {
@@ -35,7 +35,7 @@ const curtainStyle = computed(() => {
     return {
       transform: 'scaleX(0)',
       transformOrigin: 'left center',
-      transition: 'transform 900ms cubic-bezier(0.64, 0, 0.78, 0)',
+      transition: 'transform 900ms cubic-bezier(0.64, 0, 0.78, 0)'
     }
   }
   return {}

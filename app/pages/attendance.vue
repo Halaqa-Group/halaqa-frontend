@@ -82,7 +82,9 @@ onMounted(async () => {
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           {{ $t('pages.attendance.recordLabel') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">{{ $t('pages.attendance.title') }}</h2>
+        <h2 class="display-lg" style="color: var(--color-on-surface);">
+          {{ $t('pages.attendance.title') }}
+        </h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
           {{ $t('pages.attendance.subtitle') }}
         </p>
@@ -112,10 +114,8 @@ onMounted(async () => {
     <template v-else>
       <!-- Two-column layout: records (right) + calendar sidebar (left) -->
       <div class="flex gap-10 items-start">
-
         <!-- Records column -->
         <div class="flex-1 min-w-0 flex flex-col gap-4">
-
           <!-- Search + Save -->
           <div class="flex items-center gap-3">
             <UInput
@@ -158,7 +158,9 @@ onMounted(async () => {
             style="background-color: var(--color-surface-container-lowest);"
           >
             <UIcon name="i-lucide-user-x" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-            <p class="body-md" style="color: var(--color-on-surface-variant);">{{ $t('pages.attendance.noStudentsInHalaqa') }}</p>
+            <p class="body-md" style="color: var(--color-on-surface-variant);">
+              {{ $t('pages.attendance.noStudentsInHalaqa') }}
+            </p>
           </div>
 
           <!-- Success message -->
@@ -181,7 +183,6 @@ onMounted(async () => {
               {{ $t('pages.attendance.goToAchievements') }}
             </NuxtLink>
           </div>
-
         </div>
 
         <!-- Calendar sidebar (left in RTL) -->
@@ -194,7 +195,9 @@ onMounted(async () => {
           <!-- Session notes -->
           <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
             <div class="flex items-center justify-between mb-3">
-              <p class="body-lg font-semibold" style="color: var(--color-on-surface);">{{ $t('pages.attendance.sessionNotes') }}</p>
+              <p class="body-lg font-semibold" style="color: var(--color-on-surface);">
+                {{ $t('pages.attendance.sessionNotes') }}
+              </p>
               <UButton variant="ghost" color="neutral" icon="i-lucide-sparkles" size="sm" :label="$t('pages.attendance.smartAssistant')" />
             </div>
             <UTextarea
@@ -222,7 +225,6 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-
       </div>
     </template>
   </div>

@@ -2,8 +2,8 @@ import { ref, computed } from 'vue'
 import { STATUS_CYCLE, SURAH_NAMES } from '~/data/constants'
 import type { DayData, LessonItem, LessonCategory, ApiWeeklyPlan } from '~/types'
 
-const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
-const ARABIC_DAYS = ['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة']
+const ARABIC_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+const ARABIC_DAYS = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
 
 export type PlanStatus = 'new' | 'draft' | 'approved'
 
@@ -25,7 +25,7 @@ const TRACK_CAT_MAP: Record<string, LessonCategory> = {
 }
 
 function toAr(n: number): string {
-  return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)])
+  return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[Number.parseInt(d)])
 }
 
 function lastSaturday(d: Date): Date {
@@ -181,7 +181,7 @@ export function useSchedule() {
       }
 
       // Build current lessons map
-      const currentLessons = new Map<string, { dayIndex: number; cat: LessonCategory; lesson: LessonItem }>()
+      const currentLessons = new Map<string, { dayIndex: number, cat: LessonCategory, lesson: LessonItem }>()
       for (let dayIndex = 0; dayIndex < schedule.value.length; dayIndex++) {
         for (const cat of (['mem', 'near', 'far'] as LessonCategory[])) {
           for (const lesson of schedule.value[dayIndex].lessons[cat]) {
@@ -218,7 +218,7 @@ export function useSchedule() {
                 end_surah: getSurahNumber(lesson.endSurah),
                 end_verse: lesson.endAyah
               }
-            }).then(created => { savedItemKeys.value.set(key, created.id) })
+            }).then((created) => { savedItemKeys.value.set(key, created.id) })
           )
         }
       }

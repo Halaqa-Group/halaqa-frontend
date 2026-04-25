@@ -1,18 +1,10 @@
 export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/i18n', '@vueuse/nuxt'],
+
+  ssr: false,
+
   devtools: { enabled: true },
-  devServer: { port: 3000 },
-  css: ['~/assets/css/main.css'],
-  runtimeConfig: {
-    public: {
-      apiBase: '/api'
-    }
-  },
-  nitro: {
-    devProxy: {
-      '/api': { target: 'http://localhost:3001/api', changeOrigin: true }
-    }
-  },
+
   app: {
     head: {
       link: [
@@ -26,6 +18,28 @@ export default defineNuxtConfig({
       ]
     }
   },
+
+  css: ['~/assets/css/main.css'],
+
+  runtimeConfig: {
+    public: {
+      apiBase: '/api'
+    }
+  },
+
+  devServer: {
+    host: '127.0.0.1',
+    port: 3000
+  },
+
+  compatibilityDate: '2025-01-15',
+
+  nitro: {
+    devProxy: {
+      '/api': { target: 'http://127.0.0.1:3001/api', changeOrigin: true }
+    }
+  },
+
   i18n: {
     defaultLocale: 'ar',
     strategy: 'no_prefix',
@@ -34,11 +48,5 @@ export default defineNuxtConfig({
       { code: 'en', name: 'English', file: 'en.json', dir: 'ltr' }
     ],
     detectBrowserLanguage: false
-  },
-  compatibilityDate: '2025-01-15',
-  eslint: {
-    config: {
-      stylistic: { commaDangle: 'never', braceStyle: '1tbs' }
-    }
   }
 })

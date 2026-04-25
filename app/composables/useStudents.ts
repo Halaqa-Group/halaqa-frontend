@@ -37,11 +37,9 @@ export function useStudents() {
       if (halaqaId) params.set('halaqaId', String(halaqaId))
       const data = await api<any[]>(`/students${params.toString() ? `?${params}` : ''}`)
       students.value = data.map(apiToStudent)
-    }
-    catch (e: any) {
+    } catch (e: any) {
       error.value = e?.data?.message || 'حدث خطأ أثناء تحميل الطلاب'
-    }
-    finally {
+    } finally {
       isLoading.value = false
     }
   }
@@ -90,12 +88,10 @@ export function useStudents() {
     try {
       const data = await api<ApiStudent>(`/students/${student.id}`)
       editingApiStudent.value = data
-    }
-    catch {
+    } catch {
       isEditModalOpen.value = false
       toast.add({ title: 'فشل تحميل بيانات الطالب', color: 'error' })
-    }
-    finally {
+    } finally {
       isEditLoading.value = false
     }
   }

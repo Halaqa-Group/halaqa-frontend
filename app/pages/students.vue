@@ -8,14 +8,14 @@ const { selectedHalaqaId } = useGlobalHalaqa()
 const filterStatus = ref<string | null>(null)
 
 const filteredStudents = computed(() =>
-  students.value.filter(s => {
+  students.value.filter((s) => {
     const matchSearch = !searchQuery.value || s.name.includes(searchQuery.value)
     const matchStatus = filterStatus.value === null || s.status === filterStatus.value
     return matchSearch && matchStatus
   })
 )
 
-const statusFilters = computed<{ label: string; value: string | null }[]>(() => [
+const statusFilters = computed<{ label: string, value: string | null }[]>(() => [
   { label: t('pages.students.statusAll'), value: null },
   { label: t('pages.students.statusActive'), value: 'active' },
   { label: t('pages.students.statusInactive'), value: 'inactive' }
@@ -44,7 +44,9 @@ onMounted(() => {
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           {{ $t('pages.students.communityRecord') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">{{ $t('pages.students.title') }}</h2>
+        <h2 class="display-lg" style="color: var(--color-on-surface);">
+          {{ $t('pages.students.title') }}
+        </h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
           {{ $t('pages.students.subtitle') }}
         </p>
@@ -102,7 +104,9 @@ onMounted(() => {
     <!-- Error -->
     <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: #FCE4EC;">
       <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2" style="color: #D81B60;" />
-      <p style="color: #D81B60;">{{ error }}</p>
+      <p style="color: #D81B60;">
+        {{ error }}
+      </p>
     </div>
 
     <!-- Student grid -->
@@ -117,7 +121,9 @@ onMounted(() => {
     <!-- Empty state -->
     <div v-if="!isLoading && !error && filteredStudents.length === 0" class="flex flex-col items-center gap-4 py-16">
       <UIcon name="i-lucide-users" class="w-12 h-12" style="color: var(--color-on-surface-variant);" />
-      <p style="color: var(--color-on-surface-variant);">{{ $t('pages.students.noStudents') }}</p>
+      <p style="color: var(--color-on-surface-variant);">
+        {{ $t('pages.students.noStudents') }}
+      </p>
     </div>
 
     <!-- Progress indicator -->

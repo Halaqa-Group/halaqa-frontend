@@ -16,7 +16,6 @@ function handleEditClick() {
   >
     <template #content>
       <div v-if="viewingStudent" class="flex flex-col lg:flex-row min-h-[560px] max-h-[90vh]">
-
         <!-- Profile panel (visually trailing side — right in RTL, left in LTR) -->
         <div
           class="w-full lg:w-1/3 shrink-0 flex flex-col items-center text-center p-8 gap-6 border-e border-outline-variant bg-surface-container-low"
@@ -39,8 +38,12 @@ function handleEditClick() {
 
           <!-- Name + level -->
           <div class="space-y-1">
-            <h2 class="display-md" style="color: var(--color-on-surface);">{{ viewingStudent.name }}</h2>
-            <p class="body-md" style="color: var(--color-on-surface-variant);">{{ viewingStudent.halaqa }}</p>
+            <h2 class="display-md" style="color: var(--color-on-surface);">
+              {{ viewingStudent.name }}
+            </h2>
+            <p class="body-md" style="color: var(--color-on-surface-variant);">
+              {{ viewingStudent.halaqa }}
+            </p>
           </div>
 
           <!-- Attendance summary card -->
@@ -90,11 +93,12 @@ function handleEditClick() {
 
         <!-- Content panel (visually left in RTL) -->
         <div class="flex-1 overflow-y-auto p-8 flex flex-col gap-6" style="background-color: white;">
-
           <!-- Section header -->
           <div class="flex items-center gap-3 pb-4" style="border-bottom: 1px solid var(--color-outline-variant);">
             <UIcon name="i-lucide-trending-up" class="w-6 h-6" style="color: var(--color-primary);" />
-            <h3 class="display-md" style="color: var(--color-primary);">تطور الحفظ والتحصيل</h3>
+            <h3 class="display-md" style="color: var(--color-primary);">
+              تطور الحفظ والتحصيل
+            </h3>
           </div>
 
           <!-- Current progress card -->
@@ -132,7 +136,6 @@ function handleEditClick() {
 
           <!-- Metrics grid -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
             <!-- Daily capacity -->
             <div class="rounded-xl p-5" style="border: 1px solid var(--color-outline-variant);">
               <h4 class="body-lg font-bold mb-4 flex items-center gap-2" style="color: var(--color-on-surface);">
@@ -180,7 +183,9 @@ function handleEditClick() {
 
           <!-- Recent notes -->
           <div class="rounded-xl p-5" style="border: 1px solid var(--color-outline-variant);">
-            <h4 class="body-lg font-bold mb-4" style="color: var(--color-on-surface);">آخر الملاحظات</h4>
+            <h4 class="body-lg font-bold mb-4" style="color: var(--color-on-surface);">
+              آخر الملاحظات
+            </h4>
             <div
               class="p-4 rounded-lg border-e-4"
               style="background-color: var(--color-surface-container-low); border-color: var(--color-primary);"
@@ -193,7 +198,6 @@ function handleEditClick() {
               </span>
             </div>
           </div>
-
         </div>
       </div>
     </template>

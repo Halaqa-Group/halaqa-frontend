@@ -18,8 +18,7 @@ export function useHalaqat() {
       // Backend gets school_id from authenticated user automatically
       const queryString = params.toString()
       halaqat.value = await api<ApiHalaqa[]>(`/halaqat${queryString ? `?${queryString}` : ''}`)
-    }
-    finally {
+    } finally {
       isLoading.value = false
     }
   }

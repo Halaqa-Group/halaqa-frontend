@@ -4,15 +4,15 @@ import type { ApiHalaqa } from '~/types'
 const { selectedHalaqa, halaqat, isModalOpen, selectHalaqa, closeModal } = useGlobalHalaqa()
 
 const TYPE_ICONS: Record<string, string> = {
-  'Memorization': 'i-lucide-book-open',
-  'Tajweed': 'i-lucide-mic',
-  'Aqeedah': 'i-lucide-book-text',
+  Memorization: 'i-lucide-book-open',
+  Tajweed: 'i-lucide-mic',
+  Aqeedah: 'i-lucide-book-text'
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  'Memorization': 'حفظ',
-  'Tajweed': 'تجويد',
-  'Aqeedah': 'عقيدة',
+  Memorization: 'حفظ',
+  Tajweed: 'تجويد',
+  Aqeedah: 'عقيدة'
 }
 
 // Each halaqa gets a distinct color by index, regardless of type
@@ -22,7 +22,7 @@ const PALETTE = [
   { bg: '#FFF3E0', text: '#C76400' },
   { bg: '#FCE4EC', text: '#B5174E' },
   { bg: '#E3F2FD', text: '#2196F3' },
-  { bg: '#F3EDE4', text: '#695d45' },
+  { bg: '#F3EDE4', text: '#695d45' }
 ]
 
 function getColor(index: number) {

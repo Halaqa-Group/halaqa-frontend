@@ -1,8 +1,8 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: "primary",
-      secondary: "secondary"
+      primary: 'primary',
+      secondary: 'secondary'
     },
     button: {
       slots: {
@@ -50,7 +50,7 @@ export default defineAppConfig({
     formField: {
       slots: {
         label: 'font-semibold text-sm',
-        error: 'mt-1 text-error',
+        error: 'mt-1 text-error'
       }
     },
     navigationMenu: {

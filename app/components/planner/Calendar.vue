@@ -45,12 +45,10 @@ const weekRangeLabel = computed(() => {
 })
 
 function prevMonthView() {
-  if (viewMonth.value === 0) { viewMonth.value = 11; viewYear.value-- }
-  else viewMonth.value--
+  if (viewMonth.value === 0) { viewMonth.value = 11; viewYear.value-- } else viewMonth.value--
 }
 function nextMonthView() {
-  if (viewMonth.value === 11) { viewMonth.value = 0; viewYear.value++ }
-  else viewMonth.value++
+  if (viewMonth.value === 11) { viewMonth.value = 0; viewYear.value++ } else viewMonth.value++
 }
 
 function prevWeek() {
@@ -71,7 +69,7 @@ type CalDay = {
   isToday: boolean
   isInSelectedWeek: boolean
   isWeekStart: boolean // this Saturday
-  isWeekEnd: boolean   // the Friday 6 days later
+  isWeekEnd: boolean // the Friday 6 days later
   isSaturday: boolean
 }
 
@@ -140,7 +138,9 @@ function onDayClick(cell: CalDay) {
           class="text-primary/40 hover:text-primary rounded-2xl"
           @click="prevMonthView"
         />
-        <h4 class="font-bold text-lg" style="color: var(--color-on-surface);">{{ monthLabel }}</h4>
+        <h4 class="font-bold text-lg" style="color: var(--color-on-surface);">
+          {{ monthLabel }}
+        </h4>
         <UButton
           variant="ghost"
           color="primary"
@@ -154,7 +154,8 @@ function onDayClick(cell: CalDay) {
       <!-- Weekday headers -->
       <div class="grid grid-cols-7 gap-1 mb-3">
         <div
-          v-for="wd in WEEKDAYS" :key="wd"
+          v-for="wd in WEEKDAYS"
+          :key="wd"
           class="h-9 flex items-center justify-center text-[11px] font-bold tracking-tighter"
           style="color: color-mix(in srgb, var(--color-on-surface-variant) 35%, transparent);"
         >
@@ -177,7 +178,7 @@ function onDayClick(cell: CalDay) {
             class="absolute inset-0 bg-primary/10 border-y border-primary/10"
             :class="[
               cell.isWeekStart && 'rounded-e-2xl border-e',
-              cell.isWeekEnd && 'rounded-s-2xl border-s',
+              cell.isWeekEnd && 'rounded-s-2xl border-s'
             ]"
           />
 
@@ -196,8 +197,8 @@ function onDayClick(cell: CalDay) {
               cell.isToday || cell.isInSelectedWeek
                 ? 'text-primary'
                 : (cell.isSaturday
-                    ? 'text-on-surface/80 group-hover/sat:text-primary'
-                    : 'text-on-surface/60'),
+                  ? 'text-on-surface/80 group-hover/sat:text-primary'
+                  : 'text-on-surface/60')
             ]"
           >
             {{ cell.day }}

@@ -28,8 +28,8 @@ const filteredDropdownStudents = computed(() =>
 
 const filteredAchievements = computed(() =>
   achievements.value.filter(a =>
-    a.student_id === selectedStudent.value?.id &&
-    a.date === selectedDate.value
+    a.student_id === selectedStudent.value?.id
+    && a.date === selectedDate.value
   )
 )
 
@@ -111,7 +111,9 @@ onUnmounted(() => {
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           {{ $t('pages.achievements.recordLabel') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">{{ $t('pages.achievements.title') }}</h2>
+        <h2 class="display-lg" style="color: var(--color-on-surface);">
+          {{ $t('pages.achievements.title') }}
+        </h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
           {{ $t('pages.achievements.subtitle') }}
         </p>
@@ -146,10 +148,8 @@ onUnmounted(() => {
     <template v-else>
       <!-- Two-column layout: sidebar (right in RTL) + main content -->
       <div class="flex gap-14 items-start w-full">
-
         <!-- RIGHT sidebar -->
         <div class="w-[320px] shrink-0 flex flex-col gap-8 mt-8 relative z-20">
-
           <!-- Student selector card (planner style) -->
           <div
             ref="studentCardRef"
@@ -164,7 +164,9 @@ onUnmounted(() => {
 
             <!-- Header -->
             <div class="relative z-10 flex items-center justify-center">
-              <p class="text-sm font-semibold" style="color: white;">{{ $t('common.selectStudent') }}</p>
+              <p class="text-sm font-semibold" style="color: white;">
+                {{ $t('common.selectStudent') }}
+              </p>
             </div>
 
             <!-- Dropdown trigger -->
@@ -197,7 +199,6 @@ onUnmounted(() => {
                   />
                 </div>
               </UButton>
-
             </div>
           </div>
 
@@ -263,16 +264,18 @@ onUnmounted(() => {
                       <p
                         class="font-bold text-sm leading-tight"
                         :style="selectedStudent?.id === student.id ? 'color: white;' : 'color: var(--color-on-surface);'"
-                      >{{ student.name }}</p>
+                      >
+                        {{ student.name }}
+                      </p>
                       <span
                         v-if="student.attendanceStatus"
                         class="text-[11px]"
                         :style="selectedStudent?.id === student.id
                           ? 'color: rgba(255,255,255,0.6);'
                           : student.attendanceStatus === 'Present' ? 'color: var(--color-track-hifz);'
-                          : student.attendanceStatus === 'Late' ? 'color: var(--color-track-far);'
-                          : student.attendanceStatus === 'Absent' ? 'color: var(--color-track-near);'
-                          : 'color: var(--color-on-surface-variant);'"
+                            : student.attendanceStatus === 'Late' ? 'color: var(--color-track-far);'
+                              : student.attendanceStatus === 'Absent' ? 'color: var(--color-track-near);'
+                                : 'color: var(--color-on-surface-variant);'"
                       >{{ $t(`attendance.status.${(student.attendanceStatus || 'excused').toLowerCase()}`) }}</span>
                     </div>
                     <UIcon
@@ -285,7 +288,9 @@ onUnmounted(() => {
                   </UButton>
 
                   <div v-if="filteredDropdownStudents.length === 0" class="px-3 py-4 text-center">
-                    <p class="text-sm" style="color: var(--color-on-surface-variant);">{{ $t('common.noResults') }}</p>
+                    <p class="text-sm" style="color: var(--color-on-surface-variant);">
+                      {{ $t('common.noResults') }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -323,7 +328,9 @@ onUnmounted(() => {
         <!-- Col 3: Achievements list (filtered by selected student + selected date) -->
         <div class="shrink-0 w-[400px] mt-8 flex flex-col gap-3">
           <div class="flex items-center justify-between px-1">
-            <p class="body-lg font-bold" style="color: var(--color-on-surface);">{{ $t('pages.achievements.todaysAchievements') }}</p>
+            <p class="body-lg font-bold" style="color: var(--color-on-surface);">
+              {{ $t('pages.achievements.todaysAchievements') }}
+            </p>
             <span v-if="selectedStudent" class="label-md" style="color: var(--color-on-surface-variant);">{{ selectedStudent.name }}</span>
           </div>
 
@@ -344,7 +351,6 @@ onUnmounted(() => {
             />
           </div>
         </div>
-
       </div>
     </template>
   </div>

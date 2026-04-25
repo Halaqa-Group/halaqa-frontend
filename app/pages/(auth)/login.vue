@@ -14,7 +14,7 @@ const error = ref('')
 function validate(s: LoginState) {
   const errors: Array<{ name: keyof LoginState, message: string }> = []
   if (!s.email) errors.push({ name: 'email', message: t('validation.emailRequired') })
-  else if (!/^\S+@\S+\.\S+$/.test(s.email)) errors.push({ name: 'email', message: t('validation.emailInvalid') })
+  else if (!/^\S[^\s@]*@\S[^\s.]*\.\S+$/.test(s.email)) errors.push({ name: 'email', message: t('validation.emailInvalid') })
   if (!s.password) errors.push({ name: 'password', message: t('validation.passwordRequired') })
   return errors
 }
@@ -25,11 +25,9 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
   try {
     await login(event.data.email, event.data.password)
     await navigateTo('/')
-  }
-  catch (e: any) {
+  } catch (e: any) {
     error.value = e?.data?.message || t('auth.invalidCredentials')
-  }
-  finally {
+  } finally {
     isLoading.value = false
   }
 }
@@ -44,8 +42,12 @@ async function handleSubmit(event: FormSubmitEvent<LoginState>) {
             <UIcon name="i-lucide-book-open-text" class="w-8 h-8 text-primary" />
           </div>
           <div class="text-center">
-            <h1 class="display-md text-highlighted">{{ $t('app.name') }}</h1>
-            <p class="body-sm text-muted">{{ $t('app.tagline') }}</p>
+            <h1 class="display-md text-highlighted">
+              {{ $t('app.name') }}
+            </h1>
+            <p class="body-sm text-muted">
+              {{ $t('app.tagline') }}
+            </p>
           </div>
         </div>
 

@@ -44,8 +44,8 @@ function validate(s: StudentForm) {
   if (!s.name.trim()) errors.push({ name: 'name', message: 'اسم الطالب مطلوب' })
   if (!s.dob) errors.push({ name: 'dob', message: 'تاريخ الميلاد مطلوب' })
   if (!s.joinDate) errors.push({ name: 'joinDate', message: 'تاريخ الانضمام مطلوب' })
-  if (s.fatherEmail && !/^\S+@\S+\.\S+$/.test(s.fatherEmail)) errors.push({ name: 'fatherEmail', message: 'صيغة البريد غير صحيحة' })
-  if (s.motherEmail && !/^\S+@\S+\.\S+$/.test(s.motherEmail)) errors.push({ name: 'motherEmail', message: 'صيغة البريد غير صحيحة' })
+  if (s.fatherEmail && !/^\S[^\s@]*@\S[^\s.]*\.\S+$/.test(s.fatherEmail)) errors.push({ name: 'fatherEmail', message: 'صيغة البريد غير صحيحة' })
+  if (s.motherEmail && !/^\S[^\s@]*@\S[^\s.]*\.\S+$/.test(s.motherEmail)) errors.push({ name: 'motherEmail', message: 'صيغة البريد غير صحيحة' })
   return errors
 }
 
@@ -99,13 +99,11 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
 
     resetState()
     closeAdd()
-  }
-  catch (e: any) {
+  } catch (e: any) {
     const raw = e?.data?.message
     const message = Array.isArray(raw) ? raw.join('، ') : (raw || 'حدث خطأ أثناء حفظ بيانات الطالب')
     toast.add({ title: message, color: 'error' })
-  }
-  finally {
+  } finally {
     submitting.value = false
   }
 }
@@ -119,7 +117,6 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
   >
     <template #content>
       <div class="flex flex-col" style="max-height: 90vh;">
-
         <!-- Header (fixed) -->
         <div class="flex justify-between items-center px-8 py-6 shrink-0 border-b border-default">
           <div class="flex items-center gap-3">
@@ -127,8 +124,12 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
               <UIcon name="i-lucide-user-plus" class="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h3 class="text-xl font-bold text-primary">إضافة طالب جديد</h3>
-              <p class="text-xs text-muted">أدخل بيانات الطالب للبدء في تتبع التقدم التعليمي</p>
+              <h3 class="text-xl font-bold text-primary">
+                إضافة طالب جديد
+              </h3>
+              <p class="text-xs text-muted">
+                أدخل بيانات الطالب للبدء في تتبع التقدم التعليمي
+              </p>
             </div>
           </div>
           <UButton
@@ -183,8 +184,12 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
                   class="w-10 h-10 text-muted transition-colors group-hover:text-primary"
                 />
               </div>
-              <p class="text-xs font-semibold uppercase tracking-wide text-muted">رفع صورة الطالب</p>
-              <p class="text-[10px] mt-1 text-dimmed">PNG, JPG حتى 5MB</p>
+              <p class="text-xs font-semibold uppercase tracking-wide text-muted">
+                رفع صورة الطالب
+              </p>
+              <p class="text-[10px] mt-1 text-dimmed">
+                PNG, JPG حتى 5MB
+              </p>
             </div>
 
             <!-- Basic info grid -->
@@ -204,7 +209,9 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
           <!-- Section: Parent info -->
           <div class="space-y-6">
             <div class="flex items-center gap-2 border-e-4 pe-3 border-primary">
-              <h4 class="font-bold text-base text-primary">معلومات ولي الأمر</h4>
+              <h4 class="font-bold text-base text-primary">
+                معلومات ولي الأمر
+              </h4>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
               <!-- Father column -->
@@ -231,7 +238,9 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
           <!-- Section: Academic metrics -->
           <div class="space-y-6">
             <div class="flex items-center gap-2 border-e-4 pe-3 border-secondary">
-              <h4 class="font-bold text-base text-secondary">مقاييس الأداء اليومي</h4>
+              <h4 class="font-bold text-base text-secondary">
+                مقاييس الأداء اليومي
+              </h4>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <UCard
@@ -296,7 +305,6 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
             </UButton>
           </div>
         </UForm>
-
       </div>
     </template>
   </UModal>

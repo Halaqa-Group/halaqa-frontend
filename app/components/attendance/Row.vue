@@ -61,7 +61,9 @@ const statusDotClass = computed(() => {
         />
       </div>
       <div class="min-w-0">
-        <h4 class="font-bold text-on-surface leading-tight truncate text-xl">{{ name }}</h4>
+        <h4 class="font-bold text-on-surface leading-tight truncate text-xl">
+          {{ name }}
+        </h4>
       </div>
     </div>
 

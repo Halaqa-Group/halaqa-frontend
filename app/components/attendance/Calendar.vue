@@ -108,13 +108,23 @@ function onDayClick(cell: CalDay) {
     <div class="relative z-10">
       <!-- Month header -->
       <div class="flex items-center justify-between mb-6">
-        <button class="p-2.5 hover:bg-primary/5 text-primary/40 hover:text-primary rounded-2xl transition-all cursor-pointer" @click="prevMonth">
-          <UIcon name="i-lucide-chevron-right" class="w-5 h-5" />
-        </button>
+        <UButton
+          variant="ghost"
+          color="primary"
+          icon="i-lucide-chevron-right"
+          size="lg"
+          class="text-primary/40 hover:text-primary rounded-2xl"
+          @click="prevMonth"
+        />
         <h4 class="font-bold text-lg" style="color: var(--color-on-surface);">{{ monthLabel }}</h4>
-        <button class="p-2.5 hover:bg-primary/5 text-primary/40 hover:text-primary rounded-2xl transition-all cursor-pointer" @click="nextMonth">
-          <UIcon name="i-lucide-chevron-left" class="w-5 h-5" />
-        </button>
+        <UButton
+          variant="ghost"
+          color="primary"
+          icon="i-lucide-chevron-left"
+          size="lg"
+          class="text-primary/40 hover:text-primary rounded-2xl"
+          @click="nextMonth"
+        />
       </div>
 
       <!-- Weekday headers -->

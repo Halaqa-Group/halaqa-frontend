@@ -22,14 +22,15 @@ const userMenuItems = computed(() => [[
     <span class="text-xl font-bold" style="color: var(--color-on-surface);">{{ user?.school_name ?? '...' }}</span>
 
     <!-- Halaqa selector — absolutely centered -->
-    <button
-      class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 px-4 py-2 rounded-2xl transition-colors hover:opacity-80 cursor-pointer"
+    <UButton
+      variant="soft"
+      color="primary"
+      icon="i-lucide-layers"
+      :label="selectedHalaqaName"
+      class="absolute left-1/2 -translate-x-1/2 gap-2 px-4 py-2 rounded-2xl text-sm font-semibold hover:opacity-80"
       style="background-color: var(--color-primary-container);"
       @click="openModal"
-    >
-      <UIcon name="i-lucide-layers" class="w-4 h-4 shrink-0" style="color: var(--color-primary);" />
-      <span class="text-sm font-semibold" style="color: var(--color-primary);">{{ selectedHalaqaName }}</span>
-    </button>
+    />
 
     <!-- Context actions -->
     <div class="flex items-center gap-3 ms-auto">

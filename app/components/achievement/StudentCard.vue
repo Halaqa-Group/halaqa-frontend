@@ -23,8 +23,10 @@ const config = computed(() =>
 </script>
 
 <template>
-  <button
-    class="w-full rounded-[40px] p-3 flex items-center gap-3 transition-all text-right cursor-pointer"
+  <UButton
+    variant="ghost"
+    color="neutral"
+    class="w-full rounded-[40px] p-3 gap-3 text-right"
     :style="selected
       ? 'background-color: var(--color-primary); box-shadow: 0 4px 14px rgba(128,76,125,0.25);'
       : 'background-color: var(--color-surface-container-lowest); border: 1.5px solid var(--color-outline-variant);'"
@@ -48,5 +50,5 @@ const config = computed(() =>
     >
       {{ config.label }}
     </span>
-  </button>
+  </UButton>
 </template>

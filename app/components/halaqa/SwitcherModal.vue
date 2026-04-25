@@ -67,10 +67,12 @@ function isSelected(halaqa: ApiHalaqa) {
         <div class="px-8 py-6">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <!-- Halaqa Cards -->
-            <button
+            <UButton
               v-for="(halaqa, i) in halaqat"
               :key="halaqa.id"
-              class="relative rounded-3xl p-6 flex flex-col items-center text-center transition-all duration-300 cursor-pointer"
+              variant="ghost"
+              color="neutral"
+              class="relative rounded-3xl p-6 flex flex-col items-center text-center"
               :class="isSelected(halaqa) ? 'border-2 shadow-lg' : 'border border-gray-200 hover:shadow-lg'"
               :style="isSelected(halaqa)
                 ? `background-color: ${getColor(i).bg}; border-color: ${getColor(i).text};`
@@ -112,11 +114,13 @@ function isSelected(halaqa: ApiHalaqa) {
               <span class="text-xs font-bold" style="color: var(--color-on-surface-variant);">
                 {{ getLabel(halaqa.type) }}
               </span>
-            </button>
+            </UButton>
 
             <!-- Create New Placeholder (Optional - can be removed if not needed) -->
-            <button
-              class="border-2 border-dashed border-gray-200 rounded-3xl p-6 flex flex-col items-center justify-center text-center hover:border-primary/50 hover:bg-white transition-all duration-300"
+            <UButton
+              variant="ghost"
+              color="neutral"
+              class="border-2 border-dashed border-gray-200 rounded-3xl p-6 flex flex-col items-center justify-center text-center hover:border-primary/50 hover:bg-white"
               style="background-color: #f9f9f9;"
             >
               <div
@@ -128,7 +132,7 @@ function isSelected(halaqa: ApiHalaqa) {
               <h3 class="text-sm font-bold" style="color: var(--color-on-surface-variant);">
                 إضافة جديد
               </h3>
-            </button>
+            </UButton>
           </div>
         </div>
 
@@ -137,22 +141,25 @@ function isSelected(halaqa: ApiHalaqa) {
           class="mt-auto px-8 py-8 flex items-center justify-between"
           style="border-top: 1px solid var(--color-outline-variant);"
         >
-          <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl transition-colors cursor-pointer"
+          <UButton
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-x"
+            label="إلغاء"
+            class="px-4 py-2 rounded-xl gap-2 font-normal"
             style="color: var(--color-on-surface-variant);"
+            :ui="{ leadingIcon: 'w-5 h-5' }"
             @click="closeModal"
-          >
-            <UIcon name="i-lucide-x" class="w-5 h-5" />
-            <span>إلغاء</span>
-          </button>
+          />
 
-          <button
-            class="font-bold text-sm px-6 py-2.5 rounded-full text-white transition-opacity hover:opacity-90 cursor-pointer"
-            style="background-color: var(--color-primary);"
+          <UButton
+            variant="solid"
+            color="primary"
+            label="تأكيد الاختيار"
+            size="md"
+            class="text-sm px-6 py-2.5 rounded-full hover:opacity-90"
             @click="closeModal"
-          >
-            تأكيد الاختيار
-          </button>
+          />
         </div>
       </div>
     </template>

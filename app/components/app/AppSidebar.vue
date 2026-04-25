@@ -60,18 +60,22 @@ const indicatorY = computed(() => activeIndex.value * 72)
 
     <!-- Bottom actions -->
     <div class="flex flex-col items-center gap-6">
-      <button
-        class="w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer hover:bg-slate-100 transition-colors"
-        style="color: #64748B;"
-      >
-        <UIcon name="i-lucide-help-circle" class="w-6 h-6" />
-      </button>
-      <button
-        class="w-12 h-12 flex items-center justify-center rounded-xl cursor-pointer hover:bg-slate-100 transition-colors"
-        style="color: #64748B;"
-      >
-        <UIcon name="i-lucide-settings" class="w-6 h-6" />
-      </button>
+      <UButton
+        variant="ghost"
+        color="neutral"
+        icon="i-lucide-help-circle"
+        size="xl"
+        class="w-12 h-12 rounded-xl justify-center"
+        :ui="{ leadingIcon: 'w-6 h-6' }"
+      />
+      <UButton
+        variant="ghost"
+        color="neutral"
+        icon="i-lucide-settings"
+        size="xl"
+        class="w-12 h-12 rounded-xl justify-center"
+        :ui="{ leadingIcon: 'w-6 h-6' }"
+      />
     </div>
   </aside>
 </template>

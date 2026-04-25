@@ -79,18 +79,19 @@ onMounted(() => {
 
       <!-- Status pill toggle -->
       <div class="flex items-center bg-elevated p-1 rounded-full border border-default">
-        <button
+        <UButton
           v-for="f in statusFilters"
           :key="String(f.value)"
-          class="px-5 py-1.5 text-base rounded-full transition-all cursor-pointer"
+          variant="ghost"
+          color="primary"
+          :label="f.label"
+          class="px-5 py-1.5 text-base rounded-full"
           :style="filterStatus === f.value ? 'background-color: #f5edf5; color: var(--color-primary);' : ''"
           :class="filterStatus === f.value
             ? 'font-semibold'
             : 'text-muted hover:bg-primary/8 hover:text-primary'"
           @click="filterStatus = f.value"
-        >
-          {{ f.label }}
-        </button>
+        />
       </div>
     </div>
 

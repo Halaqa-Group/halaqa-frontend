@@ -207,13 +207,16 @@ onMounted(async () => {
             />
             <div class="flex items-center gap-2 mt-3 flex-wrap">
               <span class="label-md" style="color: var(--color-on-surface-variant);">{{ $t('pages.attendance.quickAdd') }}</span>
-              <button
+              <UButton
                 v-for="tag in quickTags"
                 :key="tag"
-                class="px-3 py-1 rounded-full text-xs transition-colors"
-                style="background-color: var(--color-surface-container); color: var(--color-on-surface-variant);"
+                variant="soft"
+                color="neutral"
+                size="xs"
+                :label="tag"
+                class="px-3 py-1 rounded-full text-xs font-normal"
                 @click="appendNote(tag)"
-              >{{ tag }}</button>
+              />
             </div>
           </div>
         </div>

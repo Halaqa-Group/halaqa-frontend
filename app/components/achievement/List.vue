@@ -53,12 +53,14 @@ function formatRange(a: ApiAchievement): string {
             :style="`color: ${getTrackConfig(achievement.track_type).color};`"
           >{{ getTrackConfig(achievement.track_type).label }}</span>
         </div>
-        <button
-          class="w-8 h-8 rounded-full flex items-center justify-center transition-colors hover:bg-red-50 cursor-pointer"
+        <UButton
+          variant="ghost"
+          color="error"
+          icon="i-lucide-trash-2"
+          size="sm"
+          class="w-8 h-8 rounded-full justify-center"
           @click="emit('delete', achievement.id)"
-        >
-          <UIcon name="i-lucide-trash-2" class="w-4 h-4" style="color: var(--color-error);" />
-        </button>
+        />
       </div>
 
       <!-- Quran range -->

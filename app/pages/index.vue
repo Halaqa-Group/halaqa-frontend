@@ -203,10 +203,12 @@ onMounted(async () => {
           <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">{{ $t('pages.home.quickAccess') }}</h3>
         </div>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button
+          <UButton
             v-for="action in quickActions"
             :key="action.href"
-            class="rounded-2xl p-5 text-start flex flex-col gap-3 transition-all hover:scale-[1.02] cursor-pointer"
+            variant="ghost"
+            color="neutral"
+            class="rounded-2xl p-5 text-start flex flex-col items-start gap-3 hover:scale-[1.02]"
             style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border); box-shadow: var(--shadow-card);"
             @click="navigateTo(action.href)"
           >
@@ -220,7 +222,7 @@ onMounted(async () => {
               <p class="body-md font-semibold" style="color: var(--color-on-surface);">{{ action.label }}</p>
               <p class="label-sm mt-0.5" style="color: var(--color-on-surface-variant);">{{ action.description }}</p>
             </div>
-          </button>
+          </UButton>
         </div>
       </div>
 

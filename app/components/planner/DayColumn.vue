@@ -40,13 +40,15 @@ function onDrop(e: DragEvent) {
 <template>
   <div class="flex-[4] relative group/column">
     <!-- Status indicator -->
-    <button
-      class="absolute -start-2.5 -top-2.5 w-7 h-7 rounded-full flex items-center justify-center z-20 shadow-lg border-2 border-white transition-all duration-300 hover:scale-110 active:scale-95 group/status"
+    <UButton
+      variant="solid"
+      color="neutral"
+      class="absolute -start-2.5 -top-2.5 w-7 h-7 rounded-full justify-center z-20 shadow-lg border-2 border-white hover:scale-110 active:scale-95 group/status p-0"
       :style="`background-color: ${status.bgHex};`"
       @click="cycleStatus(dayId, category)"
     >
       <UIcon :name="status.icon" class="w-3.5 h-3.5 group-hover/status:scale-110" :style="`color: ${status.iconHex};`" />
-    </button>
+    </UButton>
 
     <!-- Cell -->
     <div
@@ -67,14 +69,17 @@ function onDrop(e: DragEvent) {
         />
       </div>
 
-      <button
+      <UButton
         v-else-if="isEditMode"
-        class="w-full h-full absolute inset-0 flex items-center justify-center gap-1 text-xs transition-colors hover:bg-muted text-muted"
+        variant="ghost"
+        color="neutral"
+        icon="i-lucide-plus"
+        size="xs"
+        label="إضافة"
+        class="w-full h-full absolute inset-0 justify-center gap-1 text-xs hover:bg-muted text-muted rounded-none font-normal"
+        :ui="{ leadingIcon: 'w-3 h-3' }"
         @click="addLesson(dayId, category)"
-      >
-        <UIcon name="i-lucide-plus" class="w-3 h-3" />
-        إضافة
-      </button>
+      />
     </div>
   </div>
 </template>

@@ -103,17 +103,18 @@ const labelStyle = 'color: var(--color-outline);'
 
       <!-- Track type -->
       <div class="flex items-center p-1 rounded-full" style="background-color: var(--color-surface-container-low);">
-        <button
+        <UButton
           v-for="type in TRACK_TYPES"
           :key="type.value"
-          class="flex-1 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer"
+          variant="ghost"
+          color="neutral"
+          :label="type.label"
+          class="flex-1 py-2 rounded-full text-sm font-semibold justify-center"
           :style="trackType === type.value
             ? `background-color: var(${type.colorVar}); color: white; box-shadow: 0 2px 8px color-mix(in srgb, var(${type.colorVar}) 25%, transparent);`
             : 'color: var(--color-on-surface-variant);'"
           @click="trackType = type.value as 'Hifz' | 'Near' | 'Far'"
-        >
-          {{ type.label }}
-        </button>
+        />
       </div>
 
       <!-- Range: 4 fields in one row -->
@@ -170,16 +171,24 @@ const labelStyle = 'color: var(--color-outline);'
           <span class="text-[10px] font-bold uppercase" style="color: var(--color-outline);">أخطاء</span>
           <span class="text-3xl font-bold" style="color: var(--color-primary);">{{ mistakesCount }}</span>
           <div class="flex gap-2">
-            <button
-              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+            <UButton
+              variant="ghost"
+              color="primary"
+              icon="i-lucide-minus"
+              class="w-9 h-9 rounded-full justify-center hover:scale-105 active:scale-95"
               style="background-color: rgba(128,76,125,0.12); color: var(--color-primary);"
+              :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="decrement('mistakes')"
-            ><UIcon name="i-lucide-minus" class="w-4 h-4" /></button>
-            <button
-              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+            />
+            <UButton
+              variant="ghost"
+              color="primary"
+              icon="i-lucide-plus"
+              class="w-9 h-9 rounded-full justify-center hover:scale-105 active:scale-95"
               style="background-color: rgba(128,76,125,0.12); color: var(--color-primary);"
+              :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="increment('mistakes')"
-            ><UIcon name="i-lucide-plus" class="w-4 h-4" /></button>
+            />
           </div>
         </div>
 
@@ -191,16 +200,24 @@ const labelStyle = 'color: var(--color-outline);'
           <span class="text-[10px] font-bold uppercase" style="color: var(--color-outline);">تنبيهات</span>
           <span class="text-3xl font-bold" style="color: var(--color-secondary);">{{ warningsCount }}</span>
           <div class="flex gap-2">
-            <button
-              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+            <UButton
+              variant="ghost"
+              color="secondary"
+              icon="i-lucide-minus"
+              class="w-9 h-9 rounded-full justify-center hover:scale-105 active:scale-95"
               style="background-color: rgba(53,102,104,0.12); color: var(--color-secondary);"
+              :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="decrement('warnings')"
-            ><UIcon name="i-lucide-minus" class="w-4 h-4" /></button>
-            <button
-              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+            />
+            <UButton
+              variant="ghost"
+              color="secondary"
+              icon="i-lucide-plus"
+              class="w-9 h-9 rounded-full justify-center hover:scale-105 active:scale-95"
               style="background-color: rgba(53,102,104,0.12); color: var(--color-secondary);"
+              :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="increment('warnings')"
-            ><UIcon name="i-lucide-plus" class="w-4 h-4" /></button>
+            />
           </div>
         </div>
 
@@ -212,16 +229,24 @@ const labelStyle = 'color: var(--color-outline);'
           <span class="text-[10px] font-bold uppercase" style="color: var(--color-outline);">تجويد</span>
           <span class="text-3xl font-bold" style="color: var(--color-tertiary);">{{ tajweedErrorsCount }}</span>
           <div class="flex gap-2">
-            <button
-              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+            <UButton
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-minus"
+              class="w-9 h-9 rounded-full justify-center hover:scale-105 active:scale-95"
               style="background-color: rgba(128,76,125,0.08); color: var(--color-tertiary);"
+              :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="decrement('tajweed')"
-            ><UIcon name="i-lucide-minus" class="w-4 h-4" /></button>
-            <button
-              class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95"
+            />
+            <UButton
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-plus"
+              class="w-9 h-9 rounded-full justify-center hover:scale-105 active:scale-95"
               style="background-color: rgba(128,76,125,0.08); color: var(--color-tertiary);"
+              :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="increment('tajweed')"
-            ><UIcon name="i-lucide-plus" class="w-4 h-4" /></button>
+            />
           </div>
         </div>
       </div>
@@ -236,14 +261,18 @@ const labelStyle = 'color: var(--color-outline);'
       />
 
       <!-- Submit -->
-      <button
-        class="w-full py-3 rounded-full font-bold text-base flex items-center justify-center gap-2 transition-all hover:opacity-90 active:scale-95 cursor-pointer"
-        style="background-color: var(--color-primary); color: white; box-shadow: 0 4px 14px rgba(128,76,125,0.3);"
+      <UButton
+        variant="solid"
+        color="primary"
+        icon="i-lucide-save"
+        label="حفظ الإنجاز"
+        block
+        size="lg"
+        class="w-full py-3 rounded-full text-base hover:opacity-90 active:scale-95"
+        style="box-shadow: 0 4px 14px rgba(128,76,125,0.3);"
+        :ui="{ leadingIcon: 'w-5 h-5' }"
         @click="handleSubmit"
-      >
-        <UIcon name="i-lucide-save" class="w-5 h-5" />
-        حفظ الإنجاز
-      </button>
+      />
     </div>
   </div>
 </template>

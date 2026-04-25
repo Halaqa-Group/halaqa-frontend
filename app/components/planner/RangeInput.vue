@@ -36,13 +36,16 @@ function update(field: keyof LessonItem, value: string | number) {
   >
     <!-- Delete button -->
     <Transition name="fade">
-      <button
+      <UButton
         v-if="isEditMode && isHovered"
-        class="absolute -top-2 -end-2 z-10 w-5 h-5 rounded-full flex items-center justify-center bg-error text-white"
+        color="error"
+        variant="solid"
+        icon="i-lucide-x"
+        size="xs"
+        class="absolute -top-2 -end-2 z-10 w-5 h-5 rounded-full justify-center p-0"
+        :ui="{ leadingIcon: 'w-3 h-3' }"
         @click.stop="removeLesson(dayId, category, item.id)"
-      >
-        <UIcon name="i-lucide-x" class="w-3 h-3" />
-      </button>
+      />
     </Transition>
 
     <!-- Start: surah + ayah -->

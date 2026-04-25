@@ -169,9 +169,11 @@ onUnmounted(() => {
 
             <!-- Dropdown trigger -->
             <div class="relative">
-              <button
+              <UButton
                 ref="triggerButtonRef"
-                class="w-full backdrop-blur-md border border-white/20 rounded-[24px] p-2 flex items-center gap-3 transition-all group shadow-xl cursor-pointer"
+                variant="ghost"
+                color="neutral"
+                class="w-full backdrop-blur-md border border-white/20 rounded-[24px] p-2 gap-3 group shadow-xl"
                 style="background-color: rgba(255,255,255,0.1);"
                 @click="openDropdown"
               >
@@ -194,7 +196,7 @@ onUnmounted(() => {
                     :class="{ 'rotate-180': isStudentDropdownOpen }"
                   />
                 </div>
-              </button>
+              </UButton>
 
             </div>
           </div>
@@ -239,10 +241,12 @@ onUnmounted(() => {
 
                 <!-- Student list -->
                 <div class="px-2 pb-2 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto">
-                  <button
+                  <UButton
                     v-for="student in filteredDropdownStudents"
                     :key="student.id"
-                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[18px] transition-all cursor-pointer"
+                    variant="ghost"
+                    color="primary"
+                    class="w-full gap-3 px-3 py-2.5 rounded-[18px] font-normal"
                     :style="selectedStudent?.id === student.id ? 'background-color: var(--color-primary);' : ''"
                     :class="selectedStudent?.id !== student.id ? 'hover:bg-primary/5' : ''"
                     @click="handleStudentSelect(student)"
@@ -276,7 +280,7 @@ onUnmounted(() => {
                       style="color: rgba(255,255,255,0.7);"
                     />
                     <span v-else class="w-4 shrink-0" />
-                  </button>
+                  </UButton>
 
                   <div v-if="filteredDropdownStudents.length === 0" class="px-3 py-4 text-center">
                     <p class="text-sm" style="color: var(--color-on-surface-variant);">{{ $t('common.noResults') }}</p>

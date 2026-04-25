@@ -215,8 +215,10 @@ onUnmounted(() => {
 
           <!-- Dropdown trigger -->
           <div class="relative z-20">
-            <button
-              class="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-[24px] p-2 flex items-center gap-3 hover:bg-white/20 transition-all group shadow-xl cursor-pointer"
+            <UButton
+              variant="ghost"
+              color="neutral"
+              class="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-[24px] p-2 gap-3 hover:bg-white/20 group shadow-xl"
               @click="isStudentDropdownOpen = !isStudentDropdownOpen"
             >
               <div class="w-11 h-11 rounded-[18px] overflow-hidden border-2 border-white/40 shadow-inner shrink-0 group-hover:rotate-1 transition-transform">
@@ -239,7 +241,7 @@ onUnmounted(() => {
                   :class="{ 'rotate-180': isStudentDropdownOpen }"
                 />
               </div>
-            </button>
+            </UButton>
 
             <!-- Dropdown list -->
             <Transition
@@ -269,11 +271,13 @@ onUnmounted(() => {
                 </div>
 
                 <div class="px-2 pb-2 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto [&::-webkit-scrollbar]:w-[2px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary/20 [&::-webkit-scrollbar-thumb]:rounded-full">
-                  <button
+                  <UButton
                     v-for="s in filteredDropdownStudents"
                     :key="s.id"
-                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-[18px] transition-all"
-                    :class="selectedStudent === s.name ? 'bg-primary' : 'hover:bg-primary/5 cursor-pointer'"
+                    variant="ghost"
+                    color="primary"
+                    class="w-full gap-3 px-3 py-2.5 rounded-[18px] font-normal"
+                    :class="selectedStudent === s.name ? 'bg-primary' : 'hover:bg-primary/5'"
                     @click="selectStudent(s.name)"
                   >
                     <!-- Avatar (first child = rightmost in RTL) -->
@@ -304,7 +308,7 @@ onUnmounted(() => {
                       class="w-4 h-4 text-on-primary/70 shrink-0"
                     />
                     <span v-else class="w-4 shrink-0" />
-                  </button>
+                  </UButton>
                 </div>
               </div>
             </Transition>

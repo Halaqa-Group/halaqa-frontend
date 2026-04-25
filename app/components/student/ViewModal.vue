@@ -77,13 +77,15 @@ function handleEditClick() {
               label="إرسال رسالة"
               class="rounded-full"
             />
-            <button
-              class="w-full py-2 body-md transition-colors hover:opacity-70"
+            <UButton
+              variant="ghost"
+              color="neutral"
+              block
+              label="إغلاق"
+              class="w-full py-2 body-md hover:opacity-70 font-normal"
               style="color: var(--color-outline);"
               @click="closeView"
-            >
-              إغلاق
-            </button>
+            />
           </div>
         </div>
 

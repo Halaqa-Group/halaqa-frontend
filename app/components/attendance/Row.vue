@@ -69,15 +69,16 @@ const statusDotClass = computed(() => {
     <!-- Col 2 (center): Status pill -->
     <div class="flex justify-center xl:flex-1 xl:pe-12">
       <div class="flex items-center bg-elevated p-1 rounded-full border border-default">
-        <button
+        <UButton
           v-for="btn in statusButtons"
           :key="btn.key"
-          class="px-5 py-1.5 text-base rounded-full transition-all cursor-pointer"
+          variant="ghost"
+          color="neutral"
+          :label="btn.label"
+          class="px-5 py-1.5 text-base rounded-full font-normal"
           :class="status === btn.key ? btn.activeClass : `text-muted ${btn.hoverClass}`"
           @click="setStatus(studentId, btn.key)"
-        >
-          {{ btn.label }}
-        </button>
+        />
       </div>
     </div>
 

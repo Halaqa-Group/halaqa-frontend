@@ -57,20 +57,26 @@ const isActive = computed(() => props.student.status === 'active')
 
     <!-- Actions -->
     <div class="flex items-center gap-2">
-      <button
-        class="flex-1 py-2.5 px-4 rounded-full text-sm font-bold transition-all hover:opacity-80 active:scale-95 cursor-pointer"
+      <UButton
+        variant="soft"
+        color="primary"
+        block
+        size="md"
+        label="عرض الملف"
+        class="flex-1 py-2.5 px-4 text-sm hover:opacity-80 active:scale-95"
         style="background-color: var(--color-primary-container); color: var(--color-primary);"
         @click="openView(student)"
-      >
-        عرض الملف
-      </button>
-      <button
-        class="p-2.5 rounded-full transition-colors hover:opacity-80 cursor-pointer"
+      />
+      <UButton
+        variant="soft"
+        color="primary"
+        icon="i-lucide-pencil"
+        size="md"
+        class="p-2.5 hover:opacity-80"
         style="background-color: rgba(128, 76, 125, 0.08); color: var(--color-primary);"
+        :ui="{ leadingIcon: 'w-5 h-5' }"
         @click="openEdit(student)"
-      >
-        <UIcon name="i-lucide-pencil" class="w-5 h-5" />
-      </button>
+      />
     </div>
   </div>
 </template>

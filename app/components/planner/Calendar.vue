@@ -132,13 +132,23 @@ function onDayClick(cell: CalDay) {
     <div class="relative z-10">
       <!-- Month header -->
       <div class="flex items-center justify-between mb-6">
-        <button class="p-2.5 hover:bg-primary/5 text-primary/40 hover:text-primary rounded-2xl transition-all cursor-pointer" @click="prevMonthView">
-          <UIcon name="i-lucide-chevron-right" class="w-5 h-5" />
-        </button>
+        <UButton
+          variant="ghost"
+          color="primary"
+          icon="i-lucide-chevron-right"
+          size="lg"
+          class="text-primary/40 hover:text-primary rounded-2xl"
+          @click="prevMonthView"
+        />
         <h4 class="font-bold text-lg" style="color: var(--color-on-surface);">{{ monthLabel }}</h4>
-        <button class="p-2.5 hover:bg-primary/5 text-primary/40 hover:text-primary rounded-2xl transition-all cursor-pointer" @click="nextMonthView">
-          <UIcon name="i-lucide-chevron-left" class="w-5 h-5" />
-        </button>
+        <UButton
+          variant="ghost"
+          color="primary"
+          icon="i-lucide-chevron-left"
+          size="lg"
+          class="text-primary/40 hover:text-primary rounded-2xl"
+          @click="nextMonthView"
+        />
       </div>
 
       <!-- Weekday headers -->
@@ -205,24 +215,30 @@ function onDayClick(cell: CalDay) {
       <!-- Week navigation -->
       <div class="mt-6 pt-5 border-t border-primary/10 flex items-center gap-3">
         <!-- Previous week (right in RTL) -->
-        <button
-          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-bold transition-all hover:text-primary border border-primary/10 hover:border-primary/30 hover:bg-primary/5 cursor-pointer"
-          style="color: var(--color-on-surface-variant);"
+        <UButton
+          variant="outline"
+          color="primary"
+          icon="i-lucide-chevron-right"
+          block
+          size="sm"
+          class="flex-1 py-2.5 rounded-2xl text-xs ring-primary/10 hover:ring-primary/30 hover:bg-primary/5 text-on-surface-variant hover:text-primary"
           @click="prevWeek"
         >
-          <UIcon name="i-lucide-chevron-right" class="w-3.5 h-3.5 shrink-0" />
           الأسبوع السابق
-        </button>
+        </UButton>
 
         <!-- Next week (left in RTL) -->
-        <button
-          class="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-xs font-bold transition-all hover:text-primary border border-primary/10 hover:border-primary/30 hover:bg-primary/5 cursor-pointer"
-          style="color: var(--color-on-surface-variant);"
+        <UButton
+          variant="outline"
+          color="primary"
+          trailing-icon="i-lucide-chevron-left"
+          block
+          size="sm"
+          class="flex-1 py-2.5 rounded-2xl text-xs ring-primary/10 hover:ring-primary/30 hover:bg-primary/5 text-on-surface-variant hover:text-primary"
           @click="nextWeek"
         >
           الأسبوع التالي
-          <UIcon name="i-lucide-chevron-left" class="w-3.5 h-3.5 shrink-0" />
-        </button>
+        </UButton>
       </div>
     </div>
   </div>

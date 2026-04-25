@@ -26,7 +26,7 @@ const config = computed(() =>
   <UButton
     variant="ghost"
     color="neutral"
-    class="w-full rounded-2xl p-3 gap-3 text-right"
+    class="w-full rounded-2xl p-3 gap-3 text-start"
     :style="selected
       ? 'background-color: var(--color-primary); box-shadow: 0 4px 14px rgba(128,76,125,0.25);'
       : 'background-color: var(--color-surface-container-lowest); border: 1.5px solid var(--color-outline-variant);'"

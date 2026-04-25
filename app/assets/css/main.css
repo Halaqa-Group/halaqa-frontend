@@ -86,9 +86,12 @@
   --shadow-card: 0 1px 4px rgba(128, 76, 125, 0.08);
 }
 
-/* Scrollbar on the left for RTL */
-html, body {
-  direction: rtl;
+/* App sidebar elevation shadow — direction-aware so it points into the content area in both RTL and LTR */
+[dir="rtl"] .app-sidebar {
+  box-shadow: -4px 0 24px rgba(128, 76, 125, 0.03);
+}
+[dir="ltr"] .app-sidebar {
+  box-shadow: 4px 0 24px rgba(128, 76, 125, 0.03);
 }
 
 /* Hide scrollbar while keeping scroll functionality */

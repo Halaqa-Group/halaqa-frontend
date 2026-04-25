@@ -103,7 +103,7 @@ function onDayClick(cell: CalDay) {
 
 <template>
   <div class="bg-white border border-primary/10 rounded-2xl p-7 shadow-xl shadow-primary/[0.03] relative overflow-hidden group">
-    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
+    <div class="absolute top-0 end-0 w-32 h-32 bg-primary/5 rounded-full -me-16 -mt-16 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
     <div class="relative z-10">
       <!-- Month header -->

@@ -127,7 +127,7 @@ function onDayClick(cell: CalDay) {
 
 <template>
   <div class="bg-white border border-primary/10 rounded-2xl p-7 shadow-xl shadow-primary/[0.03] relative overflow-hidden group">
-    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
+    <div class="absolute top-0 end-0 w-32 h-32 bg-primary/5 rounded-full -me-16 -mt-16 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
     <div class="relative z-10">
       <!-- Month header -->
@@ -176,8 +176,8 @@ function onDayClick(cell: CalDay) {
             v-if="cell.isInSelectedWeek"
             class="absolute inset-0 bg-primary/10 border-y border-primary/10"
             :class="[
-              cell.isWeekStart && 'rounded-r-2xl border-r',
-              cell.isWeekEnd && 'rounded-l-2xl border-l',
+              cell.isWeekStart && 'rounded-e-2xl border-e',
+              cell.isWeekEnd && 'rounded-s-2xl border-s',
             ]"
           />
 

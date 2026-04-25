@@ -82,7 +82,7 @@ function isSelected(halaqa: ApiHalaqa) {
               <!-- Selected indicator -->
               <div
                 v-if="isSelected(halaqa)"
-                class="absolute top-3 left-3"
+                class="absolute top-3 end-3"
                 :style="`color: ${getColor(i).text};`"
               >
                 <UIcon name="i-lucide-check-circle" class="w-5 h-5" style="fill: currentColor;" />

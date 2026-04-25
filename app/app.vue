@@ -1,7 +1,19 @@
+<script setup lang="ts">
+const head = useLocaleHead({
+  addDirAttribute: true,
+  identifierAttribute: 'id',
+  addSeoAttributes: true
+})
+</script>
+
 <template>
-  <UApp>
-    <NuxtLayout>
-      <NuxtPage />
-    </NuxtLayout>
-  </UApp>
+  <Html :lang="head.htmlAttrs.lang" :dir="head.htmlAttrs.dir">
+    <Body>
+      <UApp>
+        <NuxtLayout>
+          <NuxtPage />
+        </NuxtLayout>
+      </UApp>
+    </Body>
+  </Html>
 </template>

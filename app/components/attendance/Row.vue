@@ -48,7 +48,6 @@ const statusDotClass = computed(() => {
 <template>
   <div
     class="bg-white border border-outline-variant rounded-2xl p-5 flex flex-col xl:flex-row xl:items-center gap-4 group hover:border-primary/20 hover:shadow-sm transition-all duration-300"
-    dir="rtl"
   >
     <!-- Col 1 (rightmost in RTL): Student profile -->
     <div class="flex items-center gap-4 xl:flex-1">

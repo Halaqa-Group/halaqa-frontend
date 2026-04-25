@@ -158,8 +158,8 @@ onUnmounted(() => {
           >
             <!-- Gradient overlays -->
             <div class="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-              <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent opacity-50" />
-              <div class="absolute -bottom-8 -left-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+              <div class="absolute top-0 start-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent opacity-50" />
+              <div class="absolute -bottom-8 -end-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
             </div>
 
             <!-- Header -->
@@ -184,7 +184,7 @@ onUnmounted(() => {
                     class="w-full h-full object-cover"
                   >
                 </div>
-                <div class="flex-1 text-right">
+                <div class="flex-1 text-start">
                   <h3 class="font-bold text-base tracking-tight leading-tight" style="color: white;">
                     {{ selectedStudent?.name || $t('common.selectStudent') }}
                   </h3>
@@ -220,8 +220,7 @@ onUnmounted(() => {
                   top: dropdownPos.top + 'px',
                   left: dropdownPos.left + 'px',
                   width: dropdownPos.width + 'px',
-                  zIndex: 9999,
-                  direction: 'rtl'
+                  zIndex: 9999
                 }"
               >
                 <!-- Search -->
@@ -232,11 +231,10 @@ onUnmounted(() => {
                     :placeholder="$t('common.searchPlaceholder')"
                     leading-icon="i-lucide-search"
                     variant="none"
-                    dir="rtl"
                     class="w-full"
                     :ui="{
                       root: 'flex items-center gap-2 rounded-lg px-3 py-2 bg-black/5 w-full',
-                      base: 'flex-1 bg-transparent text-sm text-on-surface text-right',
+                      base: 'flex-1 bg-transparent text-sm text-on-surface text-start',
                       leading: 'static flex items-center',
                       leadingIcon: 'w-3.5 h-3.5 shrink-0 text-on-surface-variant'
                     }"
@@ -261,7 +259,7 @@ onUnmounted(() => {
                     >
                       <img :src="student.avatar" :alt="student.name" class="w-full h-full object-cover">
                     </div>
-                    <div class="flex-1 text-right">
+                    <div class="flex-1 text-start">
                       <p
                         class="font-bold text-sm leading-tight"
                         :style="selectedStudent?.id === student.id ? 'color: white;' : 'color: var(--color-on-surface);'"

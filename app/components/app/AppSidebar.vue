@@ -23,8 +23,7 @@ const indicatorY = computed(() => activeIndex.value * 72)
 
 <template>
   <aside
-    class="fixed inset-y-0 right-0 z-20 w-20 flex flex-col items-center py-8 border-e border-outline-variant"
-    style="background-color: #ffffff; box-shadow: -4px 0 24px rgba(128,76,125,0.03);"
+    class="app-sidebar fixed inset-y-0 start-0 z-20 w-20 flex flex-col items-center py-8 border-e border-outline-variant bg-white"
   >
     <!-- Logo -->
     <div class="mb-10" style="color: var(--color-primary);">

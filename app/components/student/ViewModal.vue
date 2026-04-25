@@ -17,10 +17,9 @@ function handleEditClick() {
     <template #content>
       <div v-if="viewingStudent" class="flex flex-col lg:flex-row min-h-[560px] max-h-[90vh]">
 
-        <!-- Profile panel (visually right in RTL) -->
+        <!-- Profile panel (visually trailing side — right in RTL, left in LTR) -->
         <div
-          class="w-full lg:w-1/3 shrink-0 flex flex-col items-center text-center p-8 gap-6"
-          style="background-color: var(--color-surface-container-low); border-left: 1px solid var(--color-outline-variant);"
+          class="w-full lg:w-1/3 shrink-0 flex flex-col items-center text-center p-8 gap-6 border-e border-outline-variant bg-surface-container-low"
         >
           <!-- Avatar with status badge -->
           <div class="relative">

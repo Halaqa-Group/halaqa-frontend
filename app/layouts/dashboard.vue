@@ -12,7 +12,7 @@ onMounted(async () => {
     <AppSidebar />
     <div class="flex flex-col flex-1 min-w-0 ms-[84px] h-screen">
       <AppHeader />
-      <main class="flex-1 overflow-y-auto p-8" style="direction: rtl;">
+      <main class="flex-1 overflow-y-auto p-8">
         <slot />
       </main>
     </div>

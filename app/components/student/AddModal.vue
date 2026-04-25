@@ -118,7 +118,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
     @close="closeAdd"
   >
     <template #content>
-      <div class="flex flex-col" style="max-height: 90vh;" dir="rtl">
+      <div class="flex flex-col" style="max-height: 90vh;">
 
         <!-- Header (fixed) -->
         <div class="flex justify-between items-center px-8 py-6 shrink-0 border-b border-default">

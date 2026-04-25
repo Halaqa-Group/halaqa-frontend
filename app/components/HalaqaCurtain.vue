@@ -87,7 +87,7 @@ watch(selectedHalaqa, async (next, prev) => {
         <div
           v-if="phase === 'covered' && displayHalaqa"
           class="absolute inset-0 flex flex-col items-center justify-center gap-7"
-          style="z-index: 1; direction: rtl;"
+          style="z-index: 1;"
         >
           <!-- Icon -->
           <div

@@ -45,7 +45,7 @@ const userMenuItems = computed(() => [[
       />
       <div class="relative">
         <UButton variant="ghost" color="neutral" icon="i-lucide-bell" />
-        <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#EFB0C1]" />
+        <span class="absolute top-1 end-1 w-2 h-2 rounded-full bg-[#EFB0C1]" />
       </div>
       <UDropdownMenu :items="userMenuItems">
         <UButton variant="ghost" color="neutral" icon="i-lucide-user-circle" />

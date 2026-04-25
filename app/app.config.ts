@@ -52,6 +52,20 @@ export default defineAppConfig({
         label: 'font-semibold text-sm',
         error: 'mt-1 text-error',
       }
+    },
+    navigationMenu: {
+      slots: {
+        link: 'before:rounded-lg',
+        childLink: 'before:rounded-lg'
+      },
+      compoundVariants: [{
+        variant: 'pill',
+        active: true,
+        highlight: false,
+        class: {
+          link: 'before:bg-primary/10 font-bold'
+        }
+      }]
     }
   }
 })

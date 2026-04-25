@@ -36,7 +36,10 @@ onMounted(async () => {
       collapsible
       resizable
       class="bg-elevated/25"
-      :ui="{ footer: 'lg:border-t lg:border-default' }"
+      :ui="{
+        header: 'border-b border-default',
+        footer: 'lg:border-t lg:border-default'
+      }"
     >
       <template #header="{ collapsed }">
         <HalaqaMenu :collapsed="collapsed" />

@@ -1,20 +1,36 @@
 <script setup lang="ts">
-import { ar, en } from '@nuxt/ui/locale'
+import * as locales from '@nuxt/ui/locale'
 
 const { locale } = useI18n()
-const head = useLocaleHead()
 
-const uiLocale = computed(() => (locale.value === 'ar' ? ar : en))
+const lang = computed(() => locales[locale.value].code)
+const dir = computed(() => locales[locale.value].dir)
+
+const toaster = computed(() => {
+  return {
+    expand: false,
+    position: dir.value === 'rtl' ? 'bottom-left' : 'bottom-right'
+  } as const
+})
+
+useHead({
+  htmlAttrs: {
+    lang,
+    dir
+  },
+  titleTemplate: (titleChunk) => {
+    return titleChunk ? `${$t('app.name')} - ${titleChunk}` : $t('app.name')
+  }
+})
 </script>
 
 <template>
-  <Html :lang="head.htmlAttrs.lang" :dir="head.htmlAttrs.dir">
-    <Body>
-      <UApp :locale="uiLocale">
-        <NuxtLayout>
-          <NuxtPage />
-        </NuxtLayout>
-      </UApp>
-    </Body>
-  </Html>
+  <UApp :toaster="toaster" :locale="locales[locale]">
+    <NuxtLoadingIndicator color="var(--ui-primary)" :height="2" />
+    <UMain class="min-h-screen flex flex-col">
+      <NuxtLayout>
+        <NuxtPage />
+      </NuxtLayout>
+    </UMain>
+  </UApp>
 </template>

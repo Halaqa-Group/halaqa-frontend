@@ -103,7 +103,7 @@ onMounted(async () => {
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           {{ formattedToday }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">
+        <h2 class="text-3xl font-bold leading-tight" style="color: var(--color-on-surface);">
           {{ $t('pages.home.greeting', { name: user?.name || $t('pages.home.greetingFallback') }) }}
         </h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
@@ -205,7 +205,7 @@ onMounted(async () => {
       <!-- Quick actions -->
       <div>
         <div class="flex items-center gap-2 mb-4">
-          <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">
+          <h3 class="text-base font-medium leading-relaxed font-semibold" style="color: var(--color-on-surface);">
             {{ $t('pages.home.quickAccess') }}
           </h3>
         </div>
@@ -226,7 +226,7 @@ onMounted(async () => {
               <UIcon :name="action.icon" class="w-5 h-5" :style="`color: ${action.color};`" />
             </div>
             <div>
-              <p class="body-md font-semibold" style="color: var(--color-on-surface);">
+              <p class="text-sm font-normal leading-relaxed font-semibold" style="color: var(--color-on-surface);">
                 {{ action.label }}
               </p>
               <p class="label-sm mt-0.5" style="color: var(--color-on-surface-variant);">
@@ -246,7 +246,7 @@ onMounted(async () => {
         <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background-color: var(--color-primary-container);">
           <UIcon name="i-lucide-book-open-text" class="w-8 h-8" style="color: var(--color-primary);" />
         </div>
-        <h3 class="body-lg font-semibold" style="color: var(--color-on-surface);">
+        <h3 class="text-base font-medium leading-relaxed font-semibold" style="color: var(--color-on-surface);">
           {{ $t('pages.home.welcome.title') }}
         </h3>
         <p class="body-sm text-center max-w-xs" style="color: var(--color-on-surface-variant);">

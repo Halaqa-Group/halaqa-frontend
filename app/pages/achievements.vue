@@ -109,7 +109,7 @@ onUnmounted(() => {
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           {{ $t('pages.achievements.recordLabel') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">
+        <h2 class="text-3xl font-bold leading-tight" style="color: var(--color-on-surface);">
           {{ $t('pages.achievements.title') }}
         </h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
@@ -122,7 +122,7 @@ onUnmounted(() => {
         style="background-color: var(--color-track-hifz-bg);"
       >
         <UIcon name="i-lucide-award" class="w-6 h-6" style="color: var(--color-track-hifz);" />
-        <span class="body-lg font-bold" style="color: var(--color-track-hifz);">{{ $t('pages.achievements.todayCount', { count: filteredAchievements.length }) }}</span>
+        <span class="text-base font-medium leading-relaxed font-bold" style="color: var(--color-track-hifz);">{{ $t('pages.achievements.todayCount', { count: filteredAchievements.length }) }}</span>
       </div>
     </div>
 
@@ -138,7 +138,7 @@ onUnmounted(() => {
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-      <p class="body-md" style="color: var(--color-on-surface-variant);">
+      <p class="text-sm font-normal leading-relaxed" style="color: var(--color-on-surface-variant);">
         {{ $t('common.selectHalaqaPrompt') }}
       </p>
     </div>
@@ -310,7 +310,7 @@ onUnmounted(() => {
             style="background-color: var(--color-surface-container-lowest);"
           >
             <UIcon name="i-lucide-user-check" class="w-14 h-14" style="color: var(--color-on-surface-variant);" />
-            <p class="body-lg text-center" style="color: var(--color-on-surface-variant);">
+            <p class="text-base font-medium leading-relaxed text-center" style="color: var(--color-on-surface-variant);">
               {{ $t('pages.achievements.selectStudentToLog') }}
             </p>
           </div>
@@ -326,10 +326,10 @@ onUnmounted(() => {
         <!-- Col 3: Achievements list (filtered by selected student + selected date) -->
         <div class="shrink-0 w-[400px] mt-8 flex flex-col gap-3">
           <div class="flex items-center justify-between px-1">
-            <p class="body-lg font-bold" style="color: var(--color-on-surface);">
+            <p class="text-base font-medium leading-relaxed font-bold" style="color: var(--color-on-surface);">
               {{ $t('pages.achievements.todaysAchievements') }}
             </p>
-            <span v-if="selectedStudent" class="label-md" style="color: var(--color-on-surface-variant);">{{ selectedStudent.name }}</span>
+            <span v-if="selectedStudent" class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-on-surface-variant);">{{ selectedStudent.name }}</span>
           </div>
 
           <!-- Dotted scrollable container — shows ~3 cards, scroll for more -->

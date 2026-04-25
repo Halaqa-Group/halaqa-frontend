@@ -29,7 +29,7 @@ function formatRange(a: ApiAchievement): string {
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-award" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-      <p class="body-md text-center" style="color: var(--color-on-surface-variant);">
+      <p class="text-sm font-normal leading-relaxed text-center" style="color: var(--color-on-surface-variant);">
         لا توجد إنجازات لهذا الطالب اليوم
       </p>
     </div>
@@ -66,7 +66,7 @@ function formatRange(a: ApiAchievement): string {
       <!-- Quran range -->
       <div class="flex items-center gap-2 mb-4 px-1">
         <UIcon name="i-lucide-book-open" class="w-4 h-4 shrink-0" style="color: var(--color-on-surface-variant);" />
-        <p class="body-md" style="color: var(--color-on-surface);">
+        <p class="text-sm font-normal leading-relaxed" style="color: var(--color-on-surface);">
           {{ formatRange(achievement) }}
         </p>
       </div>

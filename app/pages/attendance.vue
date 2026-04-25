@@ -80,7 +80,7 @@ onMounted(async () => {
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
           {{ $t('pages.attendance.recordLabel') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">
+        <h2 class="text-3xl font-bold leading-tight" style="color: var(--color-on-surface);">
           {{ $t('pages.attendance.title') }}
         </h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
@@ -104,7 +104,7 @@ onMounted(async () => {
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-      <p class="body-md" style="color: var(--color-on-surface-variant);">
+      <p class="text-sm font-normal leading-relaxed" style="color: var(--color-on-surface-variant);">
         {{ $t('common.selectHalaqaPrompt') }}
       </p>
     </div>
@@ -156,7 +156,7 @@ onMounted(async () => {
             style="background-color: var(--color-surface-container-lowest);"
           >
             <UIcon name="i-lucide-user-x" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
-            <p class="body-md" style="color: var(--color-on-surface-variant);">
+            <p class="text-sm font-normal leading-relaxed" style="color: var(--color-on-surface-variant);">
               {{ $t('pages.attendance.noStudentsInHalaqa') }}
             </p>
           </div>
@@ -169,7 +169,7 @@ onMounted(async () => {
           >
             <div class="flex items-center gap-3">
               <UIcon name="i-lucide-check-circle" class="w-5 h-5" style="color: #4A8E85;" />
-              <p class="body-lg" style="color: #4A8E85;">
+              <p class="text-base font-medium leading-relaxed" style="color: #4A8E85;">
                 {{ $t('pages.attendance.successMessage') }}
               </p>
             </div>
@@ -193,7 +193,7 @@ onMounted(async () => {
           <!-- Session notes -->
           <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
             <div class="flex items-center justify-between mb-3">
-              <p class="body-lg font-semibold" style="color: var(--color-on-surface);">
+              <p class="text-base font-medium leading-relaxed font-semibold" style="color: var(--color-on-surface);">
                 {{ $t('pages.attendance.sessionNotes') }}
               </p>
               <UButton variant="ghost" color="neutral" icon="i-lucide-sparkles" size="sm" :label="$t('pages.attendance.smartAssistant')" />
@@ -209,7 +209,7 @@ onMounted(async () => {
               }"
             />
             <div class="flex items-center gap-2 mt-3 flex-wrap">
-              <span class="label-md" style="color: var(--color-on-surface-variant);">{{ $t('pages.attendance.quickAdd') }}</span>
+              <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-on-surface-variant);">{{ $t('pages.attendance.quickAdd') }}</span>
               <UButton
                 v-for="tag in quickTags"
                 :key="tag"

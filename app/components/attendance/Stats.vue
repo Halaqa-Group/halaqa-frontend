@@ -12,10 +12,10 @@ const lateCount = computed(() => attendanceRows.value.filter(r => r.status === '
         <span class="label-lg font-bold" style="color: #804c7d;">نسبة الحضور</span>
         <UIcon name="i-lucide-user-check" class="w-9 h-9" style="color: #804c7d;" />
       </div>
-      <p class="display-lg font-bold" style="color: #804c7d;">
+      <p class="text-3xl font-bold leading-tight" style="color: #804c7d;">
         {{ attendanceRate }}%
       </p>
-      <p class="body-lg mt-1" style="color: #804c7d;">
+      <p class="text-base font-medium leading-relaxed mt-1" style="color: #804c7d;">
         {{ presentCount }} / {{ attendanceRows.length }} طالب
       </p>
     </div>
@@ -26,10 +26,10 @@ const lateCount = computed(() => attendanceRows.value.filter(r => r.status === '
         <span class="label-lg font-bold" style="color: #2A6B64;">الطلاب الحاضرون</span>
         <UIcon name="i-lucide-users" class="w-9 h-9" style="color: #2A6B64;" />
       </div>
-      <p class="display-lg font-bold" style="color: #2A6B64;">
+      <p class="text-3xl font-bold leading-tight" style="color: #2A6B64;">
         {{ presentCount }}
       </p>
-      <p class="body-lg mt-1" style="color: #2A6B64;">
+      <p class="text-base font-medium leading-relaxed mt-1" style="color: #2A6B64;">
         طالب
       </p>
     </div>
@@ -40,10 +40,10 @@ const lateCount = computed(() => attendanceRows.value.filter(r => r.status === '
         <span class="label-lg font-bold" style="color: #B5174E;">الغائبون</span>
         <UIcon name="i-lucide-user-x" class="w-9 h-9" style="color: #B5174E;" />
       </div>
-      <p class="display-lg font-bold" style="color: #B5174E;">
+      <p class="text-3xl font-bold leading-tight" style="color: #B5174E;">
         {{ absentCount }}
       </p>
-      <p class="body-lg mt-1" style="color: #B5174E;">
+      <p class="text-base font-medium leading-relaxed mt-1" style="color: #B5174E;">
         طالب
       </p>
     </div>
@@ -54,10 +54,10 @@ const lateCount = computed(() => attendanceRows.value.filter(r => r.status === '
         <span class="label-lg font-bold" style="color: #C76400;">المتأخرون</span>
         <UIcon name="i-lucide-clock" class="w-9 h-9" style="color: #C76400;" />
       </div>
-      <p class="display-lg font-bold" style="color: #C76400;">
+      <p class="text-3xl font-bold leading-tight" style="color: #C76400;">
         {{ lateCount }}
       </p>
-      <p class="body-lg mt-1" style="color: #C76400;">
+      <p class="text-base font-medium leading-relaxed mt-1" style="color: #C76400;">
         طالب
       </p>
     </div>

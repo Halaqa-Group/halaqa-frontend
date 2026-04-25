@@ -52,11 +52,6 @@ onMounted(async () => {
           orientation="vertical"
           tooltip
           popover
-          :ui="{
-            link: collapsed
-              ? 'size-9 justify-center p-0 before:inset-0'
-              : 'h-9 px-2.5'
-          }"
         />
 
         <UNavigationMenu
@@ -65,11 +60,6 @@ onMounted(async () => {
           orientation="vertical"
           tooltip
           class="mt-auto"
-          :ui="{
-            link: collapsed
-              ? 'size-9 justify-center p-0 before:inset-0'
-              : 'h-9 px-2.5'
-          }"
         />
       </template>
 

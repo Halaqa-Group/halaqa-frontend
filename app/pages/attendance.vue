@@ -105,7 +105,7 @@ onMounted(async () => {
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
       <p class="body-md" style="color: var(--color-on-surface-variant);">
-        {{ $t('pages.attendance.selectHalaqaPrompt') }}
+        {{ $t('common.selectHalaqaPrompt') }}
       </p>
     </div>
 

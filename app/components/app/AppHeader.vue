@@ -1,6 +1,16 @@
 <script setup lang="ts">
+const { t, locale, setLocale } = useI18n()
 const { user, logout } = useAuth()
 const { selectedHalaqaName, openModal } = useGlobalHalaqa()
+
+async function toggleLocale() {
+  await setLocale(locale.value === 'ar' ? 'en' : 'ar')
+}
+
+const userMenuItems = computed(() => [[
+  { label: user.value?.name ?? '', icon: 'i-lucide-user', disabled: true },
+  { label: t('auth.logout'), icon: 'i-lucide-log-out', onSelect: logout }
+]])
 </script>
 
 <template>
@@ -23,13 +33,20 @@ const { selectedHalaqaName, openModal } = useGlobalHalaqa()
 
     <!-- Context actions -->
     <div class="flex items-center gap-3 ms-auto">
+      <UButton
+        variant="ghost"
+        color="neutral"
+        size="sm"
+        :label="locale === 'ar' ? 'EN' : 'ع'"
+        :aria-label="locale === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'"
+        class="font-bold min-w-10 justify-center"
+        @click="toggleLocale"
+      />
       <div class="relative">
         <UButton variant="ghost" color="neutral" icon="i-lucide-bell" />
         <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#EFB0C1]" />
       </div>
-      <UDropdownMenu
-        :items="[[{ label: user?.name ?? '', icon: 'i-lucide-user', disabled: true }, { label: 'تسجيل الخروج', icon: 'i-lucide-log-out', onSelect: logout }]]"
-      >
+      <UDropdownMenu :items="userMenuItems">
         <UButton variant="ghost" color="neutral" icon="i-lucide-user-circle" />
       </UDropdownMenu>
     </div>

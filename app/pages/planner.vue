@@ -23,24 +23,25 @@ const {
   resetState
 } = useSchedule()
 
+const { t } = useI18n()
 const { students, fetchStudents } = useStudents()
 const toast = useToast()
 
 async function handleSaveAsDraft() {
   try {
     await saveAsDraft()
-    toast.add({ title: 'تم حفظ الخطة كمسودة', icon: 'i-lucide-check-circle', color: 'success' })
+    toast.add({ title: t('pages.planner.savedDraftToast'), icon: 'i-lucide-check-circle', color: 'success' })
   } catch (e: any) {
-    toast.add({ title: 'خطأ في حفظ الخطة', description: e?.data?.message || e?.message, icon: 'i-lucide-alert-circle', color: 'error' })
+    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e?.data?.message || e?.message, icon: 'i-lucide-alert-circle', color: 'error' })
   }
 }
 
 async function handleApprovePlan() {
   try {
     await approvePlan()
-    toast.add({ title: 'تم اعتماد الخطة', icon: 'i-lucide-check-circle', color: 'success' })
+    toast.add({ title: t('pages.planner.approvedToast'), icon: 'i-lucide-check-circle', color: 'success' })
   } catch (e: any) {
-    toast.add({ title: 'خطأ في اعتماد الخطة', description: e?.data?.message || e?.message, icon: 'i-lucide-alert-circle', color: 'error' })
+    toast.add({ title: t('pages.planner.approveErrorTitle'), description: e?.data?.message || e?.message, icon: 'i-lucide-alert-circle', color: 'error' })
   }
 }
 
@@ -97,11 +98,11 @@ onUnmounted(() => {
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
       <div class="space-y-1">
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
-          التخطيط الأسبوعي
+          {{ $t('pages.planner.weeklyPlanning') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">مخطط الأسبوع</h2>
+        <h2 class="display-lg" style="color: var(--color-on-surface);">{{ $t('pages.planner.title') }}</h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
-          خطط دروس الأسبوع لكل طالب وتتبع التقدم في الحفظ والمراجعة.
+          {{ $t('pages.planner.subtitle') }}
         </p>
       </div>
 
@@ -111,11 +112,11 @@ onUnmounted(() => {
         <template v-if="planStatus === 'new'">
           <UButton
             variant="outline" color="neutral"
-            label="نسخ من الأسبوع الماضي" icon="i-lucide-copy"
+            :label="$t('pages.planner.copyFromLastWeek')" icon="i-lucide-copy"
             size="lg" class="font-bold rounded-full px-6"
           />
           <UButton
-            color="primary" label="حفظ كمسودة" icon="i-lucide-save"
+            color="primary" :label="$t('pages.planner.saveAsDraft')" icon="i-lucide-save"
             size="lg" class="font-bold rounded-full px-6"
             :loading="isSaving" :disabled="isSaving"
             @click="handleSaveAsDraft"
@@ -126,12 +127,12 @@ onUnmounted(() => {
         <template v-else-if="planStatus === 'draft' && !isEditMode">
           <UButton
             variant="outline" color="neutral"
-            label="تعديل الخطة" icon="i-lucide-pencil"
+            :label="$t('pages.planner.editPlan')" icon="i-lucide-pencil"
             size="lg" class="font-bold rounded-full px-6"
             @click="startEditing"
           />
           <UButton
-            color="primary" label="اعتماد الخطة" icon="i-lucide-check-circle"
+            color="primary" :label="$t('pages.planner.approvePlan')" icon="i-lucide-check-circle"
             size="lg" class="font-bold rounded-full px-6"
             :loading="isSaving" :disabled="isSaving"
             @click="handleApprovePlan"
@@ -142,13 +143,13 @@ onUnmounted(() => {
         <template v-else-if="planStatus === 'draft' && isEditMode">
           <UButton
             variant="ghost" color="neutral"
-            label="إلغاء" icon="i-lucide-x"
+            :label="$t('common.cancel')" icon="i-lucide-x"
             size="lg" class="font-bold rounded-full px-6"
             :disabled="isSaving"
             @click="cancelEditing"
           />
           <UButton
-            color="primary" label="حفظ كمسودة" icon="i-lucide-save"
+            color="primary" :label="$t('pages.planner.saveAsDraft')" icon="i-lucide-save"
             size="lg" class="font-bold rounded-full px-6"
             :loading="isSaving" :disabled="isSaving"
             @click="handleSaveAsDraft"
@@ -160,11 +161,11 @@ onUnmounted(() => {
           <div class="flex items-center gap-2 px-5 py-2.5 rounded-full border font-semibold text-sm"
             style="background-color: #E0F0EE; border-color: #4A8E85; color: #4A8E85;">
             <UIcon name="i-lucide-check-circle" class="w-4 h-4" />
-            معتمدة
+            {{ $t('pages.planner.approved') }}
           </div>
           <UButton
             variant="outline" color="neutral"
-            label="تعديل الخطة" icon="i-lucide-pencil"
+            :label="$t('pages.planner.editPlan')" icon="i-lucide-pencil"
             size="lg" class="font-bold rounded-full px-6"
             @click="startEditing"
           />
@@ -174,13 +175,13 @@ onUnmounted(() => {
         <template v-else-if="planStatus === 'approved' && isEditMode">
           <UButton
             variant="ghost" color="neutral"
-            label="إلغاء" icon="i-lucide-x"
+            :label="$t('common.cancel')" icon="i-lucide-x"
             size="lg" class="font-bold rounded-full px-6"
             :disabled="isSaving"
             @click="cancelEditing"
           />
           <UButton
-            color="primary" label="حفظ التعديلات" icon="i-lucide-save"
+            color="primary" :label="$t('pages.planner.saveChanges')" icon="i-lucide-save"
             size="lg" class="font-bold rounded-full px-6"
             :loading="isSaving" :disabled="isSaving"
             @click="handleSaveAsDraft"
@@ -209,7 +210,7 @@ onUnmounted(() => {
 
           <!-- Header row -->
           <div class="flex items-center justify-center px-2 relative z-10">
-            <p class="text-sm font-semibold text-white">اختر طالباً</p>
+            <p class="text-sm font-semibold text-white">{{ $t('common.selectStudent') }}</p>
           </div>
 
           <!-- Dropdown trigger -->
@@ -228,7 +229,7 @@ onUnmounted(() => {
               </div>
               <div class="flex-1 text-right">
                 <h3 class="text-on-primary font-bold text-base tracking-tight leading-tight">
-                  {{ selectedStudent || 'اختر طالباً' }}
+                  {{ selectedStudent || $t('common.selectStudent') }}
                 </h3>
               </div>
               <div class="ps-3 text-on-primary/30 group-hover:text-on-primary transition-colors">
@@ -260,7 +261,7 @@ onUnmounted(() => {
                     <input
                       v-model="studentSearch"
                       type="text"
-                      placeholder="بحث..."
+                      :placeholder="$t('common.searchPlaceholder')"
                       class="flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface-variant/60 outline-none text-right"
                       dir="rtl"
                     >
@@ -312,7 +313,7 @@ onUnmounted(() => {
 
         <!-- Calendar -->
         <div class="flex flex-col gap-3 mt-6">
-          <p class="text-sm font-semibold text-center" style="color: var(--color-on-surface-variant);">اختر أسبوعًا</p>
+          <p class="text-sm font-semibold text-center" style="color: var(--color-on-surface-variant);">{{ $t('pages.planner.selectWeek') }}</p>
           <PlannerCalendar />
         </div>
       </div>
@@ -323,18 +324,18 @@ onUnmounted(() => {
         <!-- Column headers -->
         <div class="flex items-center gap-4 px-4">
           <div v-if="isEditMode" class="w-8 shrink-0 flex items-center justify-center">
-            <span class="text-xs text-muted whitespace-nowrap">تحديد الكل</span>
+            <span class="text-xs text-muted whitespace-nowrap">{{ $t('pages.planner.selectAll') }}</span>
           </div>
           <div class="w-[110px] shrink-0" />
           <div class="flex-1 flex gap-6">
             <div class="flex-[4] flex justify-center">
-              <span class="text-xs font-medium text-muted">الحفظ الجديد</span>
+              <span class="text-xs font-medium text-muted">{{ $t('tracks.hifzNew') }}</span>
             </div>
             <div class="flex-[4] flex justify-center">
-              <span class="text-xs font-medium text-muted">المراجعة القريبة</span>
+              <span class="text-xs font-medium text-muted">{{ $t('tracks.nearReview') }}</span>
             </div>
             <div class="flex-[4] flex justify-center">
-              <span class="text-xs font-medium text-muted">المراجعة البعيدة</span>
+              <span class="text-xs font-medium text-muted">{{ $t('tracks.farReview') }}</span>
             </div>
           </div>
         </div>
@@ -345,16 +346,16 @@ onUnmounted(() => {
             v-if="isEditMode && hasSelection"
             class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-elevated border border-default"
           >
-            <span class="text-sm text-muted">{{ selectedCount }} أيام محددة</span>
+            <span class="text-sm text-muted">{{ $t('pages.planner.daysSelected', { count: selectedCount }) }}</span>
             <div class="flex gap-2 ms-auto">
-              <UButton variant="soft" color="neutral" icon="i-lucide-copy" label="نسخ" size="sm" @click="copySelectedRows" />
-              <UButton variant="soft" color="error" icon="i-lucide-trash-2" label="حذف" size="sm" @click="deleteSelectedRows" />
+              <UButton variant="soft" color="neutral" icon="i-lucide-copy" :label="$t('pages.planner.copy')" size="sm" @click="copySelectedRows" />
+              <UButton variant="soft" color="error" icon="i-lucide-trash-2" :label="$t('common.delete')" size="sm" @click="deleteSelectedRows" />
               <UButton
                 v-if="clipboard.length > 0"
                 variant="soft"
                 color="primary"
                 icon="i-lucide-clipboard"
-                :label="`لصق (${clipboard.length})`"
+                :label="$t('pages.planner.paste', { count: clipboard.length })"
                 size="sm"
                 @click="pasteRows"
               />

@@ -3,6 +3,7 @@ import type { CreateAchievementDto, StudentWithAttendance } from '~/types'
 
 definePageMeta({ layout: 'dashboard' })
 
+const { t } = useI18n()
 const {
   students, selectedStudent, achievements, selectedDate,
   isLoading, hasStudents, achievementsCount,
@@ -67,18 +68,18 @@ watch(selectedHalaqaId, async (newId, oldId) => {
 async function handleAchievementSubmit(data: CreateAchievementDto) {
   try {
     await addAchievement(data)
-    toast.add({ title: 'تم حفظ الإنجاز بنجاح', icon: 'i-lucide-check-circle', color: 'success' })
+    toast.add({ title: t('pages.achievements.savedToast'), icon: 'i-lucide-check-circle', color: 'success' })
   } catch (error: any) {
-    toast.add({ title: 'خطأ في حفظ الإنجاز', description: error.data?.message || error.message, icon: 'i-lucide-alert-circle', color: 'error' })
+    toast.add({ title: t('pages.achievements.saveErrorTitle'), description: error.data?.message || error.message, icon: 'i-lucide-alert-circle', color: 'error' })
   }
 }
 
 async function handleAchievementDelete(id: number) {
   try {
     await deleteAchievement(id)
-    toast.add({ title: 'تم حذف الإنجاز', icon: 'i-lucide-check-circle', color: 'success' })
+    toast.add({ title: t('pages.achievements.deletedToast'), icon: 'i-lucide-check-circle', color: 'success' })
   } catch (error: any) {
-    toast.add({ title: 'خطأ في حذف الإنجاز', description: error.message, icon: 'i-lucide-alert-circle', color: 'error' })
+    toast.add({ title: t('pages.achievements.deleteErrorTitle'), description: error.message, icon: 'i-lucide-alert-circle', color: 'error' })
   }
 }
 
@@ -108,11 +109,11 @@ onUnmounted(() => {
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
       <div class="space-y-1">
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
-          السجل
+          {{ $t('pages.achievements.recordLabel') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">الإنجازات</h2>
+        <h2 class="display-lg" style="color: var(--color-on-surface);">{{ $t('pages.achievements.title') }}</h2>
         <p class="text-sm" style="color: var(--color-on-surface-variant);">
-          سجّل إنجازات الطلاب اليومية في الحفظ والمراجعة
+          {{ $t('pages.achievements.subtitle') }}
         </p>
       </div>
       <div
@@ -121,7 +122,7 @@ onUnmounted(() => {
         style="background-color: var(--color-track-hifz-bg);"
       >
         <UIcon name="i-lucide-award" class="w-6 h-6" style="color: var(--color-track-hifz);" />
-        <span class="body-lg font-bold" style="color: var(--color-track-hifz);">{{ filteredAchievements.length }} إنجاز اليوم</span>
+        <span class="body-lg font-bold" style="color: var(--color-track-hifz);">{{ $t('pages.achievements.todayCount', { count: filteredAchievements.length }) }}</span>
       </div>
     </div>
 
@@ -138,7 +139,7 @@ onUnmounted(() => {
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10" style="color: var(--color-on-surface-variant);" />
       <p class="body-md" style="color: var(--color-on-surface-variant);">
-        استخدم أيقونة الحلقات في الشريط الجانبي لاختيار حلقة
+        {{ $t('common.selectHalaqaPrompt') }}
       </p>
     </div>
 
@@ -163,7 +164,7 @@ onUnmounted(() => {
 
             <!-- Header -->
             <div class="relative z-10 flex items-center justify-center">
-              <p class="text-sm font-semibold" style="color: white;">اختر طالباً</p>
+              <p class="text-sm font-semibold" style="color: white;">{{ $t('common.selectStudent') }}</p>
             </div>
 
             <!-- Dropdown trigger -->
@@ -183,7 +184,7 @@ onUnmounted(() => {
                 </div>
                 <div class="flex-1 text-right">
                   <h3 class="font-bold text-base tracking-tight leading-tight" style="color: white;">
-                    {{ selectedStudent?.name || 'اختر طالباً' }}
+                    {{ selectedStudent?.name || $t('common.selectStudent') }}
                   </h3>
                 </div>
                 <div class="ps-3 transition-colors" style="color: rgba(255,255,255,0.4);">
@@ -228,7 +229,7 @@ onUnmounted(() => {
                     <input
                       v-model="studentSearch"
                       type="text"
-                      placeholder="بحث..."
+                      :placeholder="$t('common.searchPlaceholder')"
                       class="flex-1 bg-transparent text-sm outline-none text-right"
                       style="color: var(--color-on-surface);"
                       dir="rtl"
@@ -266,7 +267,7 @@ onUnmounted(() => {
                           : student.attendanceStatus === 'Late' ? 'color: var(--color-track-far);'
                           : student.attendanceStatus === 'Absent' ? 'color: var(--color-track-near);'
                           : 'color: var(--color-on-surface-variant);'"
-                      >{{ student.attendanceStatus === 'Present' ? 'حاضر' : student.attendanceStatus === 'Late' ? 'متأخر' : student.attendanceStatus === 'Absent' ? 'غائب' : 'معذور' }}</span>
+                      >{{ $t(`attendance.status.${(student.attendanceStatus || 'excused').toLowerCase()}`) }}</span>
                     </div>
                     <UIcon
                       v-if="selectedStudent?.id === student.id"
@@ -278,7 +279,7 @@ onUnmounted(() => {
                   </button>
 
                   <div v-if="filteredDropdownStudents.length === 0" class="px-3 py-4 text-center">
-                    <p class="text-sm" style="color: var(--color-on-surface-variant);">لا توجد نتائج</p>
+                    <p class="text-sm" style="color: var(--color-on-surface-variant);">{{ $t('common.noResults') }}</p>
                   </div>
                 </div>
               </div>
@@ -301,7 +302,7 @@ onUnmounted(() => {
           >
             <UIcon name="i-lucide-user-check" class="w-14 h-14" style="color: var(--color-on-surface-variant);" />
             <p class="body-lg text-center" style="color: var(--color-on-surface-variant);">
-              اختر طالباً لتسجيل إنجاز
+              {{ $t('pages.achievements.selectStudentToLog') }}
             </p>
           </div>
           <AchievementForm
@@ -316,7 +317,7 @@ onUnmounted(() => {
         <!-- Col 3: Achievements list (filtered by selected student + selected date) -->
         <div class="shrink-0 w-[400px] mt-8 flex flex-col gap-3">
           <div class="flex items-center justify-between px-1">
-            <p class="body-lg font-bold" style="color: var(--color-on-surface);">إنجازات اليوم</p>
+            <p class="body-lg font-bold" style="color: var(--color-on-surface);">{{ $t('pages.achievements.todaysAchievements') }}</p>
             <span v-if="selectedStudent" class="label-md" style="color: var(--color-on-surface-variant);">{{ selectedStudent.name }}</span>
           </div>
 

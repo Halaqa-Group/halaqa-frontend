@@ -11,6 +11,7 @@
     "add": "إضافة",
     "close": "إغلاق",
     "search": "بحث",
+    "searchPlaceholder": "بحث...",
     "loading": "جاري التحميل...",
     "noResults": "لا توجد نتائج",
     "back": "رجوع",
@@ -18,7 +19,9 @@
     "previous": "السابق",
     "confirm": "تأكيد",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "selectHalaqaPrompt": "استخدم أيقونة الحلقات في الشريط الجانبي لاختيار حلقة",
+    "selectStudent": "اختر طالباً"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -47,6 +50,22 @@
     "analytics": "التحليلات",
     "planner": "المخطط",
     "tasks": "المهام"
+  },
+  "attendance": {
+    "status": {
+      "present": "حاضر",
+      "absent": "غائب",
+      "late": "متأخر",
+      "excused": "معذور"
+    }
+  },
+  "tracks": {
+    "hifz": "حفظ",
+    "near": "مراجعة قريبة",
+    "far": "مراجعة بعيدة",
+    "hifzNew": "الحفظ الجديد",
+    "nearReview": "المراجعة القريبة",
+    "farReview": "المراجعة البعيدة"
   },
   "pages": {
     "tasks": {
@@ -81,7 +100,6 @@
       "recordLabel": "السجل",
       "title": "الحضور والغياب",
       "subtitle": "قم بإدخال ومتابعة سجلات الحضور اليومي",
-      "selectHalaqaPrompt": "استخدم أيقونة الحلقات في الشريط الجانبي لاختيار حلقة",
       "searchPlaceholder": "بحث عن طالب...",
       "saveAttendance": "حفظ الحضور",
       "savedToastTitle": "تم حفظ الحضور بنجاح",
@@ -111,6 +129,67 @@
       "statusInactive": "غير نشط",
       "noStudents": "لا يوجد طلاب",
       "showingCount": "عرض {filtered} من {total} طالباً"
+    },
+    "achievements": {
+      "recordLabel": "السجل",
+      "title": "الإنجازات",
+      "subtitle": "سجّل إنجازات الطلاب اليومية في الحفظ والمراجعة",
+      "todayCount": "{count} إنجاز اليوم",
+      "selectStudentToLog": "اختر طالباً لتسجيل إنجاز",
+      "todaysAchievements": "إنجازات اليوم",
+      "savedToast": "تم حفظ الإنجاز بنجاح",
+      "saveErrorTitle": "خطأ في حفظ الإنجاز",
+      "deletedToast": "تم حذف الإنجاز",
+      "deleteErrorTitle": "خطأ في حذف الإنجاز"
+    },
+    "analytics": {
+      "performanceLabel": "رصد الأداء",
+      "title": "التحليلات",
+      "subtitle": "تنبيهات الأسبوع وتقارير الأداء والإنجاز.",
+      "noHalaqat": "لا توجد حلقات",
+      "selectHalaqaForAnalytics": "اختر حلقة لعرض التحليلات",
+      "errorFallback": "حدث خطأ أثناء تحميل التحليلات",
+      "studentFallback": "طالب #{id}",
+      "unplanned": {
+        "label": "إنجازات غير مخططة",
+        "thisWeek": "هذا الأسبوع",
+        "title": "الإنجازات غير المخططة",
+        "badge": "غير مخطط"
+      },
+      "conflicts": {
+        "label": "تعارضات مكتشفة",
+        "needsReview": "يحتاج مراجعة",
+        "title": "التعارضات المكتشفة",
+        "badge": "تعارض"
+      },
+      "overdue": {
+        "label": "بنود متأخرة",
+        "fromWeeklyPlan": "من الخطة الأسبوعية"
+      },
+      "allClear": {
+        "title": "لا توجد تنبيهات هذا الأسبوع",
+        "message": "الحلقة تسير بشكل ممتاز"
+      }
+    },
+    "planner": {
+      "weeklyPlanning": "التخطيط الأسبوعي",
+      "title": "مخطط الأسبوع",
+      "subtitle": "خطط دروس الأسبوع لكل طالب وتتبع التقدم في الحفظ والمراجعة.",
+      "copyFromLastWeek": "نسخ من الأسبوع الماضي",
+      "saveAsDraft": "حفظ كمسودة",
+      "editPlan": "تعديل الخطة",
+      "approvePlan": "اعتماد الخطة",
+      "saveChanges": "حفظ التعديلات",
+      "approved": "معتمدة",
+      "savedDraftToast": "تم حفظ الخطة كمسودة",
+      "saveErrorTitle": "خطأ في حفظ الخطة",
+      "approvedToast": "تم اعتماد الخطة",
+      "approveErrorTitle": "خطأ في اعتماد الخطة",
+      "selectWeek": "اختر أسبوعًا",
+      "selectAll": "تحديد الكل",
+      "daysSelected": "{count} أيام محددة",
+      "copy": "نسخ",
+      "paste": "لصق ({count})"
     }
   }
 }

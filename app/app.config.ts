@@ -61,7 +61,8 @@ export default defineAppConfig({
       compoundVariants: [{
         orientation: 'vertical',
         class: {
-          list: 'flex flex-col gap-2'
+          list: 'flex flex-col gap-2',
+          link: 'py-2.5'
         }
       }, {
         variant: 'pill',

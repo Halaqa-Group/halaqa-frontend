@@ -2,6 +2,7 @@
 definePageMeta({ layout: 'dashboard' })
 
 const { students, searchQuery, isLoading, error, fetchStudents, openAdd } = useStudents()
+const { selectedHalaqaId } = useGlobalHalaqa()
 
 const filterStatus = ref<string | null>(null)
 
@@ -23,7 +24,15 @@ const loadProgress = computed(() =>
   Math.round((filteredStudents.value.length / Math.max(students.value.length, 1)) * 100)
 )
 
-onMounted(() => fetchStudents())
+watch(selectedHalaqaId, (newId) => {
+  if (newId) fetchStudents(newId)
+  else fetchStudents()
+})
+
+onMounted(() => {
+  if (selectedHalaqaId.value) fetchStudents(selectedHalaqaId.value)
+  else fetchStudents()
+})
 </script>
 
 <template>

@@ -19,5 +19,8 @@ onMounted(async () => {
 
     <!-- Global Halaqa Switcher Modal -->
     <HalaqaSwitcherModal />
+
+    <!-- Halaqa transition curtain -->
+    <HalaqaCurtain />
   </div>
 </template>

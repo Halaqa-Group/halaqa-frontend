@@ -3,7 +3,7 @@ definePageMeta({ layout: 'dashboard' })
 
 const api = useApi()
 const { user } = useAuth()
-const { halaqat, fetchHalaqat } = useHalaqat()
+const { selectedHalaqaId, halaqat, initializeHalaqa } = useGlobalHalaqa()
 const { students, fetchStudents } = useStudents()
 
 const todayAttendance = ref<any[]>([])
@@ -26,34 +26,97 @@ const formattedToday = computed(() =>
   new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 )
 
-onMounted(async () => {
+const quickActions = [
+  {
+    label: 'الحضور',
+    description: 'تسجيل الحضور اليومي',
+    icon: 'i-lucide-clipboard-check',
+    href: '/attendance',
+    color: 'var(--color-track-hifz)',
+    bg: 'var(--color-track-hifz-bg)',
+  },
+  {
+    label: 'الطلاب',
+    description: 'إدارة المتعلمين',
+    icon: 'i-lucide-users',
+    href: '/students',
+    color: 'var(--color-primary)',
+    bg: 'var(--color-primary-container)',
+  },
+  {
+    label: 'الإنجازات',
+    description: 'متابعة التلاوة والحفظ',
+    icon: 'i-lucide-star',
+    href: '/achievements',
+    color: 'var(--color-status-warning)',
+    bg: 'var(--color-status-warning-bg)',
+  },
+  {
+    label: 'التحليلات',
+    description: 'تقارير الأداء والتنبيهات',
+    icon: 'i-lucide-bar-chart-3',
+    href: '/analytics',
+    color: 'var(--color-status-overdue)',
+    bg: 'var(--color-status-overdue-bg)',
+  },
+]
+
+async function loadDashboard(halaqaId: number) {
+  isLoading.value = true
+  attendanceError.value = false
   try {
-    await Promise.all([fetchHalaqat(), fetchStudents()])
-    const firstHalaqa = halaqat.value[0]
-    if (firstHalaqa?.id) {
-      try {
-        todayAttendance.value = await api<any[]>(
-          `/attendance?halaqaId=${firstHalaqa.id}&date=${today}`
-        )
-      } catch {
-        attendanceError.value = true
-      }
+    await fetchStudents(halaqaId)
+    try {
+      todayAttendance.value = await api<any[]>(`/attendance?halaqaId=${halaqaId}&date=${today}`)
+    }
+    catch {
+      attendanceError.value = true
     }
   }
   finally {
+    isLoading.value = false
+  }
+}
+
+watch(selectedHalaqaId, async (newId) => {
+  if (newId) await loadDashboard(newId)
+})
+
+onMounted(async () => {
+  await initializeHalaqa()
+  if (selectedHalaqaId.value) {
+    await loadDashboard(selectedHalaqaId.value)
+  }
+  else {
     isLoading.value = false
   }
 })
 </script>
 
 <template>
-  <div class="flex flex-col gap-8">
-    <!-- Welcome header -->
-    <div class="space-y-1">
-      <p class="label-md font-arabic" style="color: var(--color-on-surface-variant);">{{ formattedToday }}</p>
-      <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">
-        أهلاً، {{ user?.name || 'مرحباً بك' }}
-      </h2>
+  <div class="flex flex-col gap-6">
+    <!-- Page header -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div class="space-y-1">
+        <span class="text-xs font-arabic font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+          {{ formattedToday }}
+        </span>
+        <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">
+          أهلاً، {{ user?.name || 'مرحباً بك' }}
+        </h2>
+        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
+          هذه نظرة عامة على نشاط حلقتك اليوم.
+        </p>
+      </div>
+      <div
+        class="flex items-center gap-2 px-4 py-2 rounded-xl shrink-0"
+        style="background-color: var(--color-primary-container);"
+      >
+        <UIcon name="i-lucide-shield-check" class="w-4 h-4" style="color: var(--color-primary);" />
+        <span class="text-sm font-arabic font-semibold" style="color: var(--color-primary);">
+          {{ user?.role === 'teacher' ? 'معلم' : user?.role === 'admin' ? 'مدير' : 'ولي أمر' }}
+        </span>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -64,103 +127,104 @@ onMounted(async () => {
     <template v-else>
       <!-- Stats row -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <!-- Total students -->
-        <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);">
-          <div class="flex items-center justify-between mb-3">
-            <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">الطلاب</span>
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: var(--color-primary-container);">
-              <UIcon name="i-lucide-users" class="w-4 h-4" style="color: var(--color-primary);" />
-            </div>
+        <div
+          class="rounded-[40px] p-6 flex flex-col gap-5"
+          style="background-color: var(--color-surface-container-lowest); box-shadow: 0 4px 20px rgba(128,76,125,0.08);"
+        >
+          <div class="w-12 h-12 rounded-[18px] flex items-center justify-center" style="background-color: var(--color-primary-container);">
+            <UIcon name="i-lucide-users" class="w-6 h-6" style="color: var(--color-primary);" />
           </div>
-          <p class="display-md font-bold" style="color: var(--color-on-surface);">{{ students.length }}</p>
-          <p class="label-sm font-arabic mt-1" style="color: var(--color-on-surface-variant);">إجمالي المسجلين</p>
+          <div>
+            <p class="font-arabic font-bold" style="font-size: 36px; line-height: 1; color: var(--color-on-surface);">{{ students.length }}</p>
+            <p class="font-arabic font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">إجمالي الطلاب</p>
+          </div>
         </div>
 
-        <!-- Halaqat -->
-        <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);">
-          <div class="flex items-center justify-between mb-3">
-            <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">الحلقات</span>
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: var(--color-track-hifz-bg);">
-              <UIcon name="i-lucide-layout-grid" class="w-4 h-4" style="color: var(--color-secondary);" />
-            </div>
+        <div
+          class="rounded-[40px] p-6 flex flex-col gap-5"
+          style="background-color: var(--color-surface-container-lowest); box-shadow: 0 4px 20px rgba(128,76,125,0.08);"
+        >
+          <div class="w-12 h-12 rounded-[18px] flex items-center justify-center" style="background-color: var(--color-track-hifz-bg);">
+            <UIcon name="i-lucide-layout-grid" class="w-6 h-6" style="color: var(--color-secondary);" />
           </div>
-          <p class="display-md font-bold" style="color: var(--color-on-surface);">{{ halaqat.length }}</p>
-          <p class="label-sm font-arabic mt-1" style="color: var(--color-on-surface-variant);">حلقات نشطة</p>
+          <div>
+            <p class="font-bold" style="font-size: 36px; line-height: 1; color: var(--color-on-surface);">{{ halaqat.length }}</p>
+            <p class="font-arabic font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">حلقات نشطة</p>
+          </div>
         </div>
 
-        <!-- Today attendance rate -->
-        <div class="rounded-2xl p-5" style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);">
-          <div class="flex items-center justify-between mb-3">
-            <span class="label-md font-arabic" style="color: var(--color-on-surface-variant);">الحضور اليوم</span>
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-conflict-bg);">
-              <UIcon name="i-lucide-user-check" class="w-4 h-4" style="color: var(--color-status-conflict);" />
-            </div>
+        <div
+          class="rounded-[40px] p-6 flex flex-col gap-5"
+          style="background-color: var(--color-surface-container-lowest); box-shadow: 0 4px 20px rgba(128,76,125,0.08);"
+        >
+          <div class="w-12 h-12 rounded-[18px] flex items-center justify-center" style="background-color: var(--color-status-conflict-bg);">
+            <UIcon name="i-lucide-user-check" class="w-6 h-6" style="color: var(--color-status-conflict);" />
           </div>
-          <p class="display-md font-bold" style="color: var(--color-on-surface);">
-            {{ attendanceError ? '—' : todayAttendance.length > 0 ? `${attendanceRate}%` : '—' }}
-          </p>
-          <p class="label-sm font-arabic mt-1" style="color: var(--color-on-surface-variant);">
-            {{ attendanceError ? 'تعذّر التحميل' : todayAttendance.length > 0 ? `${presentToday} من ${todayAttendance.length}` : 'لم يُسجَّل بعد' }}
-          </p>
+          <div>
+            <p class="font-bold" style="font-size: 36px; line-height: 1; color: var(--color-on-surface);">
+              {{ attendanceError ? '—' : todayAttendance.length > 0 ? `${attendanceRate}%` : '—' }}
+            </p>
+            <p class="font-arabic font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">
+              {{ attendanceError ? 'تعذّر التحميل' : todayAttendance.length > 0 ? `${presentToday} من ${todayAttendance.length}` : 'الحضور اليوم' }}
+            </p>
+          </div>
         </div>
 
-        <!-- Role badge -->
-        <div class="rounded-2xl p-5" style="background-color: var(--color-primary-container); border: 1px solid transparent;">
-          <div class="flex items-center justify-between mb-3">
-            <span class="label-md font-arabic" style="color: var(--color-primary);">الدور</span>
-            <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background-color: var(--color-primary);">
-              <UIcon name="i-lucide-shield-check" class="w-4 h-4 text-white" />
-            </div>
+        <div
+          class="rounded-[40px] p-6 flex flex-col gap-5"
+          style="background-color: var(--color-surface-container-lowest); box-shadow: 0 4px 20px rgba(128,76,125,0.08);"
+        >
+          <div class="w-12 h-12 rounded-[18px] flex items-center justify-center" style="background-color: var(--color-status-ok-bg);">
+            <UIcon name="i-lucide-calendar-check" class="w-6 h-6" style="color: var(--color-status-ok);" />
           </div>
-          <p class="body-lg font-arabic font-bold" style="color: var(--color-primary);">
-            {{ user?.role === 'teacher' ? 'معلم' : user?.role === 'admin' ? 'مدير' : 'ولي أمر' }}
-          </p>
-          <p class="label-sm font-arabic mt-1" style="color: var(--color-primary);">{{ user?.email }}</p>
+          <div>
+            <p class="font-arabic font-bold" style="font-size: 28px; line-height: 1.2; color: var(--color-on-surface);">
+              {{ new Date().toLocaleDateString('ar-SA', { weekday: 'long' }) }}
+            </p>
+            <p class="font-arabic font-semibold mt-2" style="font-size: 15px; color: var(--color-on-surface-variant);">اليوم الحالي</p>
+          </div>
         </div>
       </div>
 
-      <!-- Halaqat list -->
-      <div v-if="halaqat.length > 0">
-        <h3 class="body-lg font-arabic font-semibold mb-4" style="color: var(--color-on-surface);">حلقاتي</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
-            v-for="h in halaqat"
-            :key="h.id"
-            class="rounded-2xl p-5 flex items-center gap-4"
-            style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);"
+      <!-- Quick actions -->
+      <div>
+        <div class="flex items-center gap-2 mb-4">
+          <h3 class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">الوصول السريع</h3>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <button
+            v-for="action in quickActions"
+            :key="action.href"
+            class="rounded-2xl p-5 text-start flex flex-col gap-3 transition-all hover:scale-[1.02] cursor-pointer"
+            style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border); box-shadow: var(--shadow-card);"
+            @click="navigateTo(action.href)"
           >
-            <div class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style="background-color: var(--color-primary-container);">
-              <UIcon name="i-lucide-book-open" class="w-5 h-5" style="color: var(--color-primary);" />
+            <div
+              class="w-10 h-10 rounded-xl flex items-center justify-center"
+              :style="`background-color: ${action.bg};`"
+            >
+              <UIcon :name="action.icon" class="w-5 h-5" :style="`color: ${action.color};`" />
             </div>
-            <div class="flex-1 min-w-0">
-              <p class="body-md font-arabic font-semibold truncate" style="color: var(--color-on-surface);">{{ h.name }}</p>
-              <p class="label-sm font-arabic" style="color: var(--color-on-surface-variant);">
-                {{ h.type === 'Memorization' ? 'حفظ' : h.type === 'Tajweed' ? 'تجويد' : 'عقيدة' }}
-              </p>
+            <div>
+              <p class="body-md font-arabic font-semibold" style="color: var(--color-on-surface);">{{ action.label }}</p>
+              <p class="label-sm font-arabic mt-0.5" style="color: var(--color-on-surface-variant);">{{ action.description }}</p>
             </div>
-            <UButton
-              variant="ghost"
-              color="neutral"
-              icon="i-lucide-arrow-left"
-              size="xs"
-              @click="navigateTo('/attendance')"
-            />
-          </div>
+          </button>
         </div>
       </div>
 
       <!-- Empty state for new users -->
       <div
-        v-if="halaqat.length === 0 && students.length === 0"
+        v-if="students.length === 0"
         class="flex flex-col items-center gap-4 py-16 rounded-2xl"
-        style="background-color: var(--color-surface-container-lowest);"
+        style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);"
       >
         <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background-color: var(--color-primary-container);">
           <UIcon name="i-lucide-book-open-text" class="w-8 h-8" style="color: var(--color-primary);" />
         </div>
         <h3 class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">مرحباً بك في حلقة</h3>
         <p class="body-sm font-arabic text-center max-w-xs" style="color: var(--color-on-surface-variant);">
-          لم يتم إعداد الحلقات بعد. تواصل مع المشرف لإضافة حلقاتك.
+          لم يتم إعداد الحلقة بعد. تواصل مع المشرف لإضافة الطلاب.
         </p>
       </div>
     </template>

@@ -3,45 +3,42 @@ import type { ApiHalaqa } from '~/types'
 
 const { selectedHalaqa, halaqat, isModalOpen, selectHalaqa, closeModal } = useGlobalHalaqa()
 
-// Halaqa type icons
-const typeIcons: Record<string, string> = {
+const TYPE_ICONS: Record<string, string> = {
   'Memorization': 'i-lucide-book-open',
   'Tajweed': 'i-lucide-mic',
-  'Aqeedah': 'i-lucide-book-text'
+  'Aqeedah': 'i-lucide-book-text',
 }
 
-// Halaqa type colors
-const typeColors: Record<string, { bg: string; text: string }> = {
-  'Memorization': { bg: '#E0F0EE', text: '#4A8E85' },
-  'Tajweed': { bg: '#E3F2FD', text: '#2196F3' },
-  'Aqeedah': { bg: '#FFF3E0', text: '#F57C00' }
-}
-
-// Halaqa type labels in Arabic
-const typeLabels: Record<string, string> = {
+const TYPE_LABELS: Record<string, string> = {
   'Memorization': 'حفظ',
   'Tajweed': 'تجويد',
-  'Aqeedah': 'عقيدة'
+  'Aqeedah': 'عقيدة',
 }
 
-function getTypeIcon(type: string) {
-  return typeIcons[type] || 'i-lucide-circle'
+// Each halaqa gets a distinct color by index, regardless of type
+const PALETTE = [
+  { bg: '#f3e8f2', text: '#804c7d' },
+  { bg: '#E0F0EE', text: '#356668' },
+  { bg: '#FFF3E0', text: '#C76400' },
+  { bg: '#FCE4EC', text: '#B5174E' },
+  { bg: '#E3F2FD', text: '#2196F3' },
+  { bg: '#F3EDE4', text: '#695d45' },
+]
+
+function getColor(index: number) {
+  return PALETTE[index % PALETTE.length]
 }
 
-function getTypeColor(type: string) {
-  return typeColors[type] || { bg: '#F0F0F0', text: '#666666' }
+function getIcon(type: string) {
+  return TYPE_ICONS[type] || 'i-lucide-circle'
 }
 
-function getTypeLabel(type: string) {
-  return typeLabels[type] || type
+function getLabel(type: string) {
+  return TYPE_LABELS[type] || type
 }
 
 function isSelected(halaqa: ApiHalaqa) {
   return selectedHalaqa.value?.id === halaqa.id
-}
-
-function handleSelect(halaqa: ApiHalaqa) {
-  selectHalaqa(halaqa)
 }
 </script>
 
@@ -71,56 +68,49 @@ function handleSelect(halaqa: ApiHalaqa) {
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <!-- Halaqa Cards -->
             <button
-              v-for="halaqa in halaqat"
+              v-for="(halaqa, i) in halaqat"
               :key="halaqa.id"
               class="relative rounded-3xl p-6 flex flex-col items-center text-center transition-all duration-300 cursor-pointer"
-              :class="isSelected(halaqa)
-                ? 'border-2 shadow-lg'
-                : 'border border-gray-200 hover:border-primary/30 hover:shadow-lg'"
+              :class="isSelected(halaqa) ? 'border-2 shadow-lg' : 'border border-gray-200 hover:shadow-lg'"
               :style="isSelected(halaqa)
-                ? `background-color: ${getTypeColor(halaqa.type).bg}; border-color: ${getTypeColor(halaqa.type).text};`
+                ? `background-color: ${getColor(i).bg}; border-color: ${getColor(i).text};`
                 : 'background-color: white;'"
-              @click="handleSelect(halaqa)"
+              @click="selectHalaqa(halaqa)"
             >
-              <!-- Selected Indicator -->
+              <!-- Selected indicator -->
               <div
                 v-if="isSelected(halaqa)"
                 class="absolute top-3 left-3"
-                :style="`color: ${getTypeColor(halaqa.type).text};`"
+                :style="`color: ${getColor(i).text};`"
               >
                 <UIcon name="i-lucide-check-circle" class="w-5 h-5" style="fill: currentColor;" />
               </div>
 
               <!-- Icon -->
               <div
-                class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 shadow-sm"
+                class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
                 :style="isSelected(halaqa)
                   ? 'background-color: white;'
-                  : `background-color: ${getTypeColor(halaqa.type).bg};`"
+                  : `background-color: ${getColor(i).bg};`"
               >
                 <UIcon
-                  :name="getTypeIcon(halaqa.type)"
+                  :name="getIcon(halaqa.type)"
                   class="w-8 h-8"
-                  :style="`color: ${getTypeColor(halaqa.type).text};`"
+                  :style="`color: ${getColor(i).text};`"
                 />
               </div>
 
-              <!-- Halaqa Name -->
+              <!-- Name -->
               <h3
                 class="text-lg font-arabic font-bold mb-1"
-                :style="isSelected(halaqa)
-                  ? `color: ${getTypeColor(halaqa.type).text};`
-                  : 'color: var(--color-on-surface);'"
+                :style="isSelected(halaqa) ? `color: ${getColor(i).text};` : 'color: var(--color-on-surface);'"
               >
                 {{ halaqa.name }}
               </h3>
 
-              <!-- Type Label -->
-              <span
-                class="text-xs font-bold font-arabic"
-                style="color: var(--color-on-surface-variant);"
-              >
-                {{ getTypeLabel(halaqa.type) }}
+              <!-- Type label -->
+              <span class="text-xs font-bold font-arabic" style="color: var(--color-on-surface-variant);">
+                {{ getLabel(halaqa.type) }}
               </span>
             </button>
 

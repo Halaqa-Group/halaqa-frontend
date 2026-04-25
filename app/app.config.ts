@@ -59,6 +59,11 @@ export default defineAppConfig({
         childLink: 'before:rounded-lg'
       },
       compoundVariants: [{
+        orientation: 'vertical',
+        class: {
+          list: 'flex flex-col gap-2'
+        }
+      }, {
         variant: 'pill',
         active: true,
         highlight: false,

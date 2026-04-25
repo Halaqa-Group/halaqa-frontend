@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { CreateAchievementDto, StudentWithAttendance } from '~/types'
 
-definePageMeta({ layout: 'dashboard' })
-
 const { t } = useI18n()
 const {
   students, selectedStudent, achievements, selectedDate,

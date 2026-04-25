@@ -1,7 +1,3 @@
-<script setup lang="ts">
-definePageMeta({ layout: 'dashboard' })
-</script>
-
 <template>
   <div class="flex flex-col items-center justify-center min-h-[60vh] gap-4">
     <div class="w-16 h-16 rounded-2xl flex items-center justify-center" style="background-color: #FFF3E0;">

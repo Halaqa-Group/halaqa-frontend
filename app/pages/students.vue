@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard' })
-
 const { t } = useI18n()
 const { students, searchQuery, isLoading, error, fetchStudents, openAdd } = useStudents()
 const { selectedHalaqaId } = useGlobalHalaqa()

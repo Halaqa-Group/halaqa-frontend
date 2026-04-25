@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { ApiWarnings } from '~/types'
 
-definePageMeta({ layout: 'dashboard' })
-
 const { t } = useI18n()
 const api = useApi()
 const { halaqat, fetchHalaqat } = useHalaqat()

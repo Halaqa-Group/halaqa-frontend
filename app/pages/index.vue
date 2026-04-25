@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard' })
-
 const { t, locale } = useI18n()
 const api = useApi()
 const { user } = useAuth()

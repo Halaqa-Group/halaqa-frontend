@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard' })
-
 const {
   scheduleWithDates,
   isEditMode,

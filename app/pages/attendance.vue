@@ -1,6 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ layout: 'dashboard' })
-
 const { t, locale } = useI18n()
 const { attendanceRows, sessionNotes, isLoading, isSaving, appendNote, loadSession, submitSession } = useAttendance()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()

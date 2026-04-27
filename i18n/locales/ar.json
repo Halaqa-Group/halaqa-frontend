@@ -1,5 +1,7 @@
 {
   "language": "اللغة",
+  "dashboard": "لوحة التحكم",
+  "home": "الرئيسية",
   "app": {
     "name": "حلقة",
     "tagline": "نظام إدارة الحلقات القرآنية"
@@ -100,7 +102,9 @@
         "loadFailed": "تعذّر التحميل",
         "attendanceToday": "الحضور اليوم",
         "attendanceCount": "{present} من {total}",
-        "currentDay": "اليوم الحالي"
+        "currentDay": "اليوم الحالي",
+        "pendingReviews": "في انتظار المراجعة",
+        "vsLastWeek": "مقارنة بالأسبوع الماضي"
       },
       "quickActions": {
         "attendance": "تسجيل الحضور اليومي",
@@ -111,6 +115,49 @@
       "welcome": {
         "title": "مرحباً بك في حلقة",
         "message": "لم يتم إعداد الحلقة بعد. تواصل مع المشرف لإضافة الطلاب."
+      },
+      "schedule": {
+        "title": "جدول اليوم",
+        "noSessions": "لا توجد جلسات مجدولة لهذا اليوم",
+        "students": "طالب"
+      },
+      "weeklyAttendance": {
+        "title": "الحضور الأسبوعي",
+        "present": "حاضر",
+        "absent": "غائب"
+      },
+      "topPerformers": {
+        "title": "المتميزون هذا الأسبوع",
+        "pages": "صفحات",
+        "noData": "لا توجد بيانات كافية"
+      },
+      "recentActivity": {
+        "title": "آخر الأنشطة",
+        "completedSurah": "أتمّ {student} سورة {surah}",
+        "attendanceRecorded": "تم تسجيل حضور حلقة {halaqa}",
+        "newStudent": "تم إضافة الطالب {student}",
+        "achievementLogged": "سجّل {student} إنجازاً في الحفظ",
+        "planApproved": "تم اعتماد خطة الأسبوع لحلقة {halaqa}",
+        "timeAgo": {
+          "minutes": "منذ {count} دقيقة",
+          "hours": "منذ {count} ساعة",
+          "days": "منذ {count} يوم"
+        }
+      },
+      "absenceAlerts": {
+        "title": "تنبيهات الغياب",
+        "missedSessions": "غاب {count} جلسات متتالية",
+        "contactParent": "تواصل مع ولي الأمر",
+        "noAlerts": "لا توجد تنبيهات غياب"
+      },
+      "days": {
+        "sat": "السبت",
+        "sun": "الأحد",
+        "mon": "الاثنين",
+        "tue": "الثلاثاء",
+        "wed": "الأربعاء",
+        "thu": "الخميس",
+        "fri": "الجمعة"
       }
     },
     "attendance": {

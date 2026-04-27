@@ -19,6 +19,8 @@ export default defineNuxtConfig({
     }
   },
 
+  css: ['~/assets/css/main.css'],
+
   ui: {
     theme: {
       defaultVariants: {
@@ -26,8 +28,6 @@ export default defineNuxtConfig({
       }
     }
   },
-
-  css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
     public: {

@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+import type { NavigationMenuItem, BreadcrumbItem } from '@nuxt/ui'
 
-const { t, locale, setLocale } = useI18n()
+const { t } = useI18n()
 const { user } = useAuth()
 const { initializeHalaqa } = useGlobalHalaqa()
 const { isNotificationsSlideoverOpen } = useDashboard()
+const route = useRoute()
+const localePath = useLocalePath()
 
 const open = ref(false)
+const isCollapsed = ref(false)
 
 const links = computed<NavigationMenuItem[][]>(() => [[
   { label: t('nav.home'), icon: 'i-lucide-layout-grid', to: '/' },
@@ -19,9 +22,16 @@ const links = computed<NavigationMenuItem[][]>(() => [[
   { label: t('nav.tasks'), icon: 'i-lucide-list-checks', to: '/tasks' }
 ]])
 
-async function toggleLocale() {
-  await setLocale(locale.value === 'ar' ? 'en' : 'ar')
-}
+const breadcrumb = computed<BreadcrumbItem[]>(() => {
+  const items = route.meta?.breadcrumb as { label: string, to?: string }[] | undefined
+
+  if (!items) return []
+
+  return items.map(item => ({
+    label: $t(item.label),
+    ...(item?.to ? { to: localePath(item.to) } : {})
+  }))
+})
 
 onMounted(async () => {
   await initializeHalaqa()
@@ -33,12 +43,14 @@ onMounted(async () => {
     <UDashboardSidebar
       id="default"
       v-model:open="open"
+      v-model:collapsed="isCollapsed"
       collapsible
       resizable
-      class="bg-elevated/25"
       :ui="{
-        header: 'border-b border-default',
-        footer: 'lg:border-t lg:border-default'
+        root: 'bg-sidebar-bg border-e-0 min-w-18',
+        header: 'border-b border-sidebar-border px-3',
+        body: 'px-3 py-4',
+        footer: 'lg:border-t lg:border-sidebar-border px-3 py-3'
       }"
     >
       <template #header="{ collapsed }">
@@ -52,6 +64,7 @@ onMounted(async () => {
           orientation="vertical"
           tooltip
           popover
+          :ui="{ link: collapsed ? 'justify-center py-3' : ' py-3' }"
         />
 
         <UNavigationMenu
@@ -70,9 +83,17 @@ onMounted(async () => {
 
     <UDashboardPanel id="main">
       <template #header>
-        <UDashboardNavbar :title="user?.school_name ?? ''" :ui="{ right: 'gap-3' }">
-          <template #leading>
-            <UDashboardSidebarCollapse />
+        <UDashboardNavbar :ui="{ right: 'gap-3' }">
+          <template #left>
+            <div class="flex items-center gap-3">
+              <UDashboardSidebarCollapse :icon="isCollapsed ? 'i-lucide-panel-left-close' : 'i-lucide-panel-left-open'" />
+              <div>
+                <h2 class="font-bold text-base mb-1">
+                  {{ user?.school_name }}
+                </h2>
+                <UBreadcrumb :items="breadcrumb" :ui="{ linkLabel: 'text-xs' }" />
+              </div>
+            </div>
           </template>
 
           <template #right>

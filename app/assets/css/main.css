@@ -33,15 +33,18 @@
   --color-secondary-950: #281f09;
 }
 
-@theme static {
+@theme {
   --font-sans: 'Thmanyah Sans', system-ui, sans-serif;
 
+  /* Core semantic colors */
   --color-primary: #1a6b4a;
   --color-on-primary: #ffffff;
   --color-primary-container: #f3e8f2;
   --color-secondary: #c9a84c;
   --color-on-secondary: #ffffff;
   --color-tertiary: #695d45;
+
+  /* Surface system */
   --color-surface: #f9f9f9;
   --color-surface-container-lowest: #ffffff;
   --color-surface-container-low: #f3f3f3;
@@ -75,10 +78,82 @@
   --color-status-ok-bg: #E0F0EE;
   --color-status-info: #2196F3;
   --color-status-info-bg: #E3F2FD;
-  --color-card-border: #F0F0F0;
+  --color-card-border: #e0dfe0;
+
+  /* Leaderboard rank colors */
+  --color-rank-gold: #F9A825;
+  --color-rank-gold-bg: #FFF8E1;
+  --color-rank-silver: #9E9E9E;
+  --color-rank-silver-bg: #F5F5F5;
+  --color-rank-bronze: #E65100;
+  --color-rank-bronze-bg: #FFF3E0;
+
+  /* Sidebar */
+  --color-sidebar-bg: #f4f0f3;
+  --color-sidebar-active-bg: #ffffff;
+  --color-sidebar-hover-bg: #ece7eb;
+  --color-sidebar-border: #e6e0e5;
+  --color-sidebar-icon-bg: #ece7eb;
 
   --shadow-ambient: 0 4px 20px rgba(128, 76, 125, 0.05);
   --shadow-card: 0 1px 4px rgba(128, 76, 125, 0.08);
+}
+
+/* Dark mode overrides */
+.dark {
+  /* Surface system */
+  --color-surface: #111113;
+  --color-surface-container-lowest: #19191b;
+  --color-surface-container-low: #212123;
+  --color-surface-container: #2a2a2c;
+  --color-surface-container-high: #333335;
+  --color-on-surface: #e4e2e4;
+  --color-on-surface-variant: #b0a8ae;
+  --color-outline: #9a8f96;
+  --color-outline-variant: #4a3f46;
+  --color-background: #111113;
+  --color-error: #f2726b;
+
+  /* Track type semantic colors */
+  --color-track-hifz: #5ab8ad;
+  --color-track-hifz-bg: #162c2a;
+  --color-track-near: #e85a8a;
+  --color-track-near-bg: #301520;
+  --color-track-far: #e8923a;
+  --color-track-far-bg: #302215;
+
+  /* Status / analytics semantic colors */
+  --color-status-warning: #ffa040;
+  --color-status-warning-bg: #302215;
+  --color-status-warning-light: #3d2c1a;
+  --color-status-conflict: #f06292;
+  --color-status-conflict-bg: #301520;
+  --color-status-conflict-light: #2d1520;
+  --color-status-overdue: #7986CB;
+  --color-status-overdue-bg: #1a1d30;
+  --color-status-ok: #6db8ad;
+  --color-status-ok-bg: #162c2a;
+  --color-status-info: #64B5F6;
+  --color-status-info-bg: #152030;
+  --color-card-border: #2e2e30;
+
+  /* Leaderboard rank colors */
+  --color-rank-gold: #FFD54F;
+  --color-rank-gold-bg: #3a3015;
+  --color-rank-silver: #B0BEC5;
+  --color-rank-silver-bg: #2a2e30;
+  --color-rank-bronze: #FF8A65;
+  --color-rank-bronze-bg: #302215;
+
+  /* Sidebar */
+  --color-sidebar-bg: #1e1e20;
+  --color-sidebar-active-bg: #2a2a2c;
+  --color-sidebar-hover-bg: #252527;
+  --color-sidebar-border: #2e2e30;
+  --color-sidebar-icon-bg: #2a2a2c;
+
+  --shadow-ambient: 0 4px 20px rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Hide scrollbar while keeping scroll functionality */
@@ -91,5 +166,5 @@
 
 ::selection {
   background-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }

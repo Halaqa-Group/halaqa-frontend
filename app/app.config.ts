@@ -96,6 +96,18 @@ export default defineAppConfig({
       }]
     },
 
+    dashboardSidebar: {
+      slots: {
+        handle: 'bg-[var(--color-sidebar-border)] hover:bg-[var(--color-outline-variant)] transition-colors duration-150'
+      }
+    },
+
+    dashboardNavbar: {
+      slots: {
+        root: 'border-b border-[var(--color-card-border)]'
+      }
+    },
+
     table: {
       slots: {
         th: 'font-medium border-x border-x-default first-of-type:border-s-0 last-of-type:border-e-0 bg-default',

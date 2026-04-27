@@ -1,5 +1,7 @@
 {
   "language": "Language",
+  "dashboard": "Dashboard",
+  "home": "Home",
   "app": {
     "name": "Halaqa",
     "tagline": "Quran Halaqa Management System"
@@ -100,7 +102,9 @@
         "loadFailed": "Failed to load",
         "attendanceToday": "Today's attendance",
         "attendanceCount": "{present} of {total}",
-        "currentDay": "Today"
+        "currentDay": "Today",
+        "pendingReviews": "Pending reviews",
+        "vsLastWeek": "vs last week"
       },
       "quickActions": {
         "attendance": "Record daily attendance",
@@ -111,6 +115,49 @@
       "welcome": {
         "title": "Welcome to Halaqa",
         "message": "Halaqa not set up yet. Contact your admin to add students."
+      },
+      "schedule": {
+        "title": "Today's Schedule",
+        "noSessions": "No sessions scheduled for today",
+        "students": "students"
+      },
+      "weeklyAttendance": {
+        "title": "Weekly Attendance",
+        "present": "Present",
+        "absent": "Absent"
+      },
+      "topPerformers": {
+        "title": "Top Performers This Week",
+        "pages": "pages",
+        "noData": "Not enough data"
+      },
+      "recentActivity": {
+        "title": "Recent Activity",
+        "completedSurah": "{student} completed Surah {surah}",
+        "attendanceRecorded": "Attendance recorded for {halaqa}",
+        "newStudent": "New student {student} added",
+        "achievementLogged": "{student} logged a memorization achievement",
+        "planApproved": "Weekly plan approved for {halaqa}",
+        "timeAgo": {
+          "minutes": "{count} min ago",
+          "hours": "{count} hours ago",
+          "days": "{count} days ago"
+        }
+      },
+      "absenceAlerts": {
+        "title": "Absence Alerts",
+        "missedSessions": "Missed {count} consecutive sessions",
+        "contactParent": "Contact parent",
+        "noAlerts": "No absence alerts"
+      },
+      "days": {
+        "sat": "Sat",
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri"
       }
     },
     "attendance": {

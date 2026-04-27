@@ -8,7 +8,7 @@ const localePath = useLocalePath()
       <div class="flex-1 flex flex-col gap-y-15 w-full max-w-sm mx-auto">
         <div class="shrink-0">
           <NuxtLink :to="localePath('/auth/login')" class="flex items-center justify-center py-6">
-            <img src="/images/logo/halaqa_logo.png" alt="Halaqa Logo" class="max-w-32" />
+            <img src="/images/logo/halaqa_logo.png" alt="Halaqa Logo" class="max-w-32">
           </NuxtLink>
         </div>
         <div class="flex-1 flex flex-col justify-center">
@@ -22,9 +22,9 @@ const localePath = useLocalePath()
     <div class="relative hidden lg:flex items-center justify-center bg-linear-to-br from-primary-100 via-primary-300 to-secondary-100">
       <div class="absolute inset-0 bg-white/60 backdrop-blur-sm" />
       <div class="relative z-10 flex flex-col items-center justify-center w-full h-full">
-        <img src="/images/logo/halaqa_logo.png" alt="Halaqa Logo" class="w-52 h-auto mb-6" />
+        <img src="/images/logo/halaqa_logo.png" alt="Halaqa Logo" class="w-52 h-auto mb-6">
         <div class="text-2xl font-semibold text-primary-800 text-center max-w-md px-6 mb-2">
-          مرحبًا بكم في منصة حلقة<br />
+          مرحبًا بكم في منصة حلقة<br>
           <span class="text-primary-600">تعلم، أنجز، وارتقِ مع مجتمعك</span>
         </div>
       </div>

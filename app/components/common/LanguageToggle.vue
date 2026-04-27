@@ -1,7 +1,5 @@
 <script setup lang="ts">
-const { locale, locales } = useI18n()
-
-const switchLocalePath = useSwitchLocalePath()
+const { locale, locales, setLocale } = useI18n()
 </script>
 
 <template>
@@ -18,7 +16,7 @@ const switchLocalePath = useSwitchLocalePath()
         size="md"
         :color="locale === l.code ? 'primary' : 'neutral'"
         :variant="locale === l.code ? 'subtle' : 'outline'"
-        :to="switchLocalePath(l.code)"
+        @click="setLocale(l.code)"
       />
     </div>
   </div>

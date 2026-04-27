@@ -6,7 +6,8 @@ export default defineAppConfig({
   ui: {
     colors: {
       primary: 'primary',
-      secondary: 'secondary'
+      secondary: 'secondary',
+      neutral: 'neutral'
     },
 
     formField: {
@@ -18,7 +19,11 @@ export default defineAppConfig({
 
     input: {
       slots: {
-        root: 'relative flex items-center'
+        root: 'relative flex items-center',
+        base: [
+          'w-full rounded-md border-0 appearance-none placeholder:text-dimmed focus:outline-none disabled:cursor-not-allowed disabled:opacity-75',
+          'transition-all'
+        ]
       },
       defaultVariants: {
         // variant: 'subtle'

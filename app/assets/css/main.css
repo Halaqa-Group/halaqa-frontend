@@ -88,3 +88,8 @@
 *::-webkit-scrollbar {
   display: none;
 }
+
+::selection {
+  background-color: var(--color-primary);
+  color: #fff;
+}

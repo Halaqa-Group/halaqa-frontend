@@ -18,8 +18,6 @@ const links = computed<NavigationMenuItem[][]>(() => [[
   { label: t('nav.students'), icon: 'i-lucide-users', to: '/students' },
   { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' },
   { label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' }
-], [
-  { label: t('nav.tasks'), icon: 'i-lucide-list-checks', to: '/tasks' }
 ]])
 
 const breadcrumb = computed<BreadcrumbItem[]>(() => {

@@ -180,7 +180,37 @@
         "excellentEngagement": "تفاعل ممتاز",
         "groupReview": "مراجعة جماعية",
         "partCompleted": "تم الانتهاء من جزء"
-      }
+      },
+      "filters": {
+        "all": "كل الطلاب",
+        "present": "الحاضرون",
+        "absent": "الغائبون",
+        "late": "المتأخرون"
+      },
+      "markAllPresent": "تحديد الكل حاضر",
+      "markedAllPresent": "تم تحديد جميع الطلاب كحاضرين",
+      "undo": "تراجع",
+      "unsavedChanges": "لديك تغييرات غير محفوظة",
+      "discardChanges": "تجاهل",
+      "unsavedConfirmLeave": "لديك تغييرات غير محفوظة. هل تريد المغادرة؟",
+      "absentYesterday": "غائب بالأمس",
+      "gridView": "عرض البطاقات",
+      "listView": "عرض القائمة",
+      "addNote": "إضافة ملاحظة",
+      "noteFor": "ملاحظة عن {name}",
+      "noteEmpty": "لا توجد ملاحظة بعد",
+      "saveNote": "حفظ الملاحظة",
+      "viewFullCalendar": "عرض التقويم الكامل",
+      "calendarTitle": "التقويم الكامل",
+      "statsLabels": {
+        "attendanceRate": "نسبة الحضور",
+        "present": "الطلاب الحاضرون",
+        "absent": "الغائبون",
+        "late": "المتأخرون",
+        "studentUnit": "طالب",
+        "ofTotal": "{present} / {total} طالب"
+      },
+      "cycleStatusHint": "اضغط لتبديل الحالة"
     },
     "students": {
       "communityRecord": "سجل المجتمع",

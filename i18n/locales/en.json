@@ -180,7 +180,37 @@
         "excellentEngagement": "Excellent engagement",
         "groupReview": "Group review",
         "partCompleted": "Part completed"
-      }
+      },
+      "filters": {
+        "all": "All students",
+        "present": "Present",
+        "absent": "Absent",
+        "late": "Late"
+      },
+      "markAllPresent": "Mark all present",
+      "markedAllPresent": "All students marked present",
+      "undo": "Undo",
+      "unsavedChanges": "You have unsaved changes",
+      "discardChanges": "Discard",
+      "unsavedConfirmLeave": "You have unsaved changes. Are you sure you want to leave?",
+      "absentYesterday": "Absent yesterday",
+      "gridView": "Grid view",
+      "listView": "List view",
+      "addNote": "Add note",
+      "noteFor": "Note for {name}",
+      "noteEmpty": "No note yet",
+      "saveNote": "Save note",
+      "viewFullCalendar": "View full calendar",
+      "calendarTitle": "Full calendar",
+      "statsLabels": {
+        "attendanceRate": "Attendance rate",
+        "present": "Present students",
+        "absent": "Absent",
+        "late": "Late",
+        "studentUnit": "students",
+        "ofTotal": "{present} / {total} students"
+      },
+      "cycleStatusHint": "Click to cycle status"
     },
     "students": {
       "communityRecord": "Community record",

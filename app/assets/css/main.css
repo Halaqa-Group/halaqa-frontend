@@ -64,6 +64,8 @@
   --color-track-near-bg: #FCE4EC;
   --color-track-far: #C76400;
   --color-track-far-bg: #FFF3E0;
+  --color-track-all: #804c7d;
+  --color-track-all-bg: #F0E8EF;
 
   /* Status / analytics semantic colors */
   --color-status-warning: #F57C00;
@@ -121,6 +123,8 @@
   --color-track-near-bg: #301520;
   --color-track-far: #e8923a;
   --color-track-far-bg: #302215;
+  --color-track-all: #b890b3;
+  --color-track-all-bg: #2d1f2c;
 
   /* Status / analytics semantic colors */
   --color-status-warning: #ffa040;

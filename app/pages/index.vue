@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
   breadcrumb: [
-    { label: 'dashboard' }
+    { label: 'home' }
   ]
 })
 
@@ -190,8 +190,7 @@ onMounted(async () => {
       </div>
       <div
         class="flex items-center gap-2 px-4 py-2 rounded-xl shrink-0"
-        style="background-color: var(--color-primary-container);"
-      >
+        style="background-color: var(--color-primary-container);">
         <UIcon name="i-lucide-shield-check" class="w-4 h-4" style="color: var(--color-primary);" />
         <span class="text-sm font-semibold" style="color: var(--color-primary);">
           {{ $t(`roles.${user?.role === 'teacher' || user?.role === 'admin' ? user.role : 'parent'}`) }}
@@ -210,8 +209,7 @@ onMounted(async () => {
         <!-- Total Students -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);"
-        >
+          style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-primary-container);">
               <UIcon name="i-lucide-users" class="w-5 h-5" style="color: var(--color-primary);" />
@@ -223,8 +221,7 @@ onMounted(async () => {
                 stroke="var(--color-primary)"
                 stroke-width="2"
                 stroke-linecap="round"
-                stroke-linejoin="round"
-              />
+                stroke-linejoin="round" />
             </svg>
           </div>
           <div>
@@ -240,8 +237,7 @@ onMounted(async () => {
               class="text-xs font-bold px-1.5 py-0.5 rounded-md"
               :style="mockStatChanges.students.direction === 'up'
                 ? 'color: var(--color-status-ok); background-color: var(--color-status-ok-bg);'
-                : 'color: var(--color-error); background-color: var(--color-status-conflict-bg);'"
-            >
+                : 'color: var(--color-error); background-color: var(--color-status-conflict-bg);'">
               {{ mockStatChanges.students.direction === 'up' ? '↑' : '↓' }} {{ Math.abs(mockStatChanges.students.value) }}%
             </span>
             <span class="text-[11px]" style="color: var(--color-on-surface-variant);">
@@ -253,8 +249,7 @@ onMounted(async () => {
         <!-- Active Halaqat -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);"
-        >
+          style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-track-hifz-bg);">
               <UIcon name="i-lucide-layout-grid" class="w-5 h-5" style="color: var(--color-secondary);" />
@@ -266,8 +261,7 @@ onMounted(async () => {
                 stroke="var(--color-secondary)"
                 stroke-width="2"
                 stroke-linecap="round"
-                stroke-linejoin="round"
-              />
+                stroke-linejoin="round" />
             </svg>
           </div>
           <div>
@@ -284,8 +278,7 @@ onMounted(async () => {
         <!-- Attendance Today -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);"
-        >
+          style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-conflict-bg);">
               <UIcon name="i-lucide-user-check" class="w-5 h-5" style="color: var(--color-status-conflict);" />
@@ -297,8 +290,7 @@ onMounted(async () => {
                 stroke="var(--color-status-conflict)"
                 stroke-width="2"
                 stroke-linecap="round"
-                stroke-linejoin="round"
-              />
+                stroke-linejoin="round" />
             </svg>
           </div>
           <div>
@@ -318,8 +310,7 @@ onMounted(async () => {
               class="text-xs font-bold px-1.5 py-0.5 rounded-md"
               :style="mockStatChanges.attendance.direction === 'up'
                 ? 'color: var(--color-status-ok); background-color: var(--color-status-ok-bg);'
-                : 'color: var(--color-error); background-color: var(--color-status-conflict-bg);'"
-            >
+                : 'color: var(--color-error); background-color: var(--color-status-conflict-bg);'">
               {{ mockStatChanges.attendance.direction === 'up' ? '↑' : '↓' }} {{ Math.abs(mockStatChanges.attendance.value) }}%
             </span>
             <span class="text-[11px]" style="color: var(--color-on-surface-variant);">
@@ -331,8 +322,7 @@ onMounted(async () => {
         <!-- Current Day -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);"
-        >
+          style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-ok-bg);">
               <UIcon name="i-lucide-calendar-check" class="w-5 h-5" style="color: var(--color-status-ok);" />
@@ -352,8 +342,7 @@ onMounted(async () => {
         <!-- Pending Reviews (NEW) -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);"
-        >
+          style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-warning-bg);">
               <UIcon name="i-lucide-clock-4" class="w-5 h-5" style="color: var(--color-status-warning);" />
@@ -365,8 +354,7 @@ onMounted(async () => {
                 stroke="var(--color-status-warning)"
                 stroke-width="2"
                 stroke-linecap="round"
-                stroke-linejoin="round"
-              />
+                stroke-linejoin="round" />
             </svg>
           </div>
           <div>
@@ -382,8 +370,7 @@ onMounted(async () => {
               class="text-xs font-bold px-1.5 py-0.5 rounded-md"
               :style="mockStatChanges.reviews.direction === 'down'
                 ? 'color: var(--color-status-ok); background-color: var(--color-status-ok-bg);'
-                : 'color: var(--color-error); background-color: var(--color-status-conflict-bg);'"
-            >
+                : 'color: var(--color-error); background-color: var(--color-status-conflict-bg);'">
               {{ mockStatChanges.reviews.direction === 'down' ? '↓' : '↑' }} {{ Math.abs(mockStatChanges.reviews.value) }}%
             </span>
             <span class="text-[11px]" style="color: var(--color-on-surface-variant);">
@@ -398,8 +385,7 @@ onMounted(async () => {
         <!-- Today's Schedule -->
         <div
           class="rounded-2xl p-6 ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);"
-        >
+          style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-center gap-2 mb-5">
             <UIcon name="i-lucide-calendar-clock" class="w-5 h-5" style="color: var(--color-primary);" />
             <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
@@ -411,12 +397,10 @@ onMounted(async () => {
               v-for="session in mockSchedule"
               :key="session.id"
               class="flex items-center gap-4 p-4 rounded-xl"
-              style="background-color: var(--color-surface-container-low); border: 1px solid var(--color-card-border);"
-            >
+              style="background-color: var(--color-surface-container-low); border: 1px solid var(--color-card-border);">
               <div
                 class="w-1 self-stretch rounded-full shrink-0"
-                style="background-color: var(--color-primary);"
-              />
+                style="background-color: var(--color-primary);" />
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-semibold" style="color: var(--color-on-surface);">
                   {{ session.name }}
@@ -440,8 +424,7 @@ onMounted(async () => {
         <!-- Weekly Attendance Chart -->
         <div
           class="rounded-2xl p-6 ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);"
-        >
+          style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-bar-chart-3" class="w-5 h-5" style="color: var(--color-primary);" />
@@ -464,8 +447,7 @@ onMounted(async () => {
             <div
               v-for="day in mockWeeklyAttendance"
               :key="day.day"
-              class="flex flex-col items-center gap-2 flex-1"
-            >
+              class="flex flex-col items-center gap-2 flex-1">
               <div class="flex flex-col w-full items-center" style="height: 130px; justify-content: flex-end;">
                 <div
                   class="w-full max-w-[32px] rounded-t-md"
@@ -474,8 +456,7 @@ onMounted(async () => {
                     backgroundColor: 'var(--color-error)',
                     opacity: day.absent > 0 ? 1 : 0.2,
                     minHeight: day.absent > 0 ? '4px' : '0px'
-                  }"
-                />
+                  }" />
                 <div
                   class="w-full max-w-[32px] rounded-b-md"
                   :style="{
@@ -483,8 +464,7 @@ onMounted(async () => {
                     backgroundColor: 'var(--color-status-ok)',
                     opacity: day.present > 0 ? 1 : 0.2,
                     minHeight: day.present > 0 ? '4px' : '0px'
-                  }"
-                />
+                  }" />
               </div>
               <span class="text-[11px] font-semibold" style="color: var(--color-on-surface-variant);">
                 {{ $t(`pages.home.days.${day.day}`) }}
@@ -499,8 +479,7 @@ onMounted(async () => {
         <!-- Top Performers -->
         <div
           class="rounded-2xl p-6 ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);"
-        >
+          style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-center gap-2 mb-5">
             <UIcon name="i-lucide-trophy" class="w-5 h-5" style="color: var(--color-secondary);" />
             <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
@@ -514,8 +493,7 @@ onMounted(async () => {
               class="flex items-center gap-3 p-3 rounded-xl"
               :style="performer.rank <= 3
                 ? 'background-color: var(--color-surface-container-low); border: 1px solid var(--color-card-border);'
-                : ''"
-            >
+                : ''">
               <div
                 class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                 :style="performer.rank === 1
@@ -524,8 +502,7 @@ onMounted(async () => {
                     ? 'background-color: var(--color-rank-silver-bg); color: var(--color-rank-silver);'
                     : performer.rank === 3
                       ? 'background-color: var(--color-rank-bronze-bg); color: var(--color-rank-bronze);'
-                      : 'background-color: var(--color-surface-container); color: var(--color-on-surface-variant);'"
-              >
+                      : 'background-color: var(--color-surface-container); color: var(--color-on-surface-variant);'">
                 <UIcon v-if="performer.rank <= 3" :name="performer.badge" class="w-4 h-4" />
                 <span v-else class="text-xs font-bold">{{ performer.rank }}</span>
               </div>
@@ -552,8 +529,7 @@ onMounted(async () => {
         <!-- Absence Alerts -->
         <div
           class="rounded-2xl p-6 ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);"
-        >
+          style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-center gap-2 mb-5">
             <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-warning);" />
             <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
@@ -565,12 +541,10 @@ onMounted(async () => {
               v-for="alert in mockAbsenceAlerts"
               :key="alert.name"
               class="flex items-center gap-4 p-4 rounded-xl"
-              style="background-color: var(--color-status-warning-bg); border: 1px solid var(--color-status-warning-light);"
-            >
+              style="background-color: var(--color-status-warning-bg); border: 1px solid var(--color-status-warning-light);">
               <div
                 class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style="background-color: var(--color-status-warning-light);"
-              >
+                style="background-color: var(--color-status-warning-light);">
                 <UIcon name="i-lucide-user-x" class="w-5 h-5" style="color: var(--color-status-warning);" />
               </div>
               <div class="flex-1 min-w-0">
@@ -585,15 +559,13 @@ onMounted(async () => {
                 variant="soft"
                 size="xs"
                 class="shrink-0"
-                style="color: var(--color-status-warning);"
-              >
+                style="color: var(--color-status-warning);">
                 {{ $t('pages.home.absenceAlerts.contactParent') }}
               </UButton>
             </div>
             <div
               v-if="mockAbsenceAlerts.length === 0"
-              class="text-center py-8"
-            >
+              class="text-center py-8">
               <UIcon name="i-lucide-check-circle" class="w-8 h-8 mx-auto mb-2" style="color: var(--color-status-ok);" />
               <p class="text-sm" style="color: var(--color-on-surface-variant);">
                 {{ $t('pages.home.absenceAlerts.noAlerts') }}
@@ -606,8 +578,7 @@ onMounted(async () => {
       <!-- Recent Activity Feed -->
       <div
         class="rounded-2xl p-6 ring ring-card-border"
-        style="background-color: var(--color-surface-container-lowest);"
-      >
+        style="background-color: var(--color-surface-container-lowest);">
         <div class="flex items-center gap-2 mb-5">
           <UIcon name="i-lucide-activity" class="w-5 h-5" style="color: var(--color-primary);" />
           <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
@@ -619,12 +590,10 @@ onMounted(async () => {
             v-for="(activity, idx) in mockRecentActivity"
             :key="idx"
             class="flex items-start gap-4 py-3"
-            :style="idx < mockRecentActivity.length - 1 ? 'border-bottom: 1px solid var(--color-card-border);' : ''"
-          >
+            :style="idx < mockRecentActivity.length - 1 ? 'border-bottom: 1px solid var(--color-card-border);' : ''">
             <div
               class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-              :style="`background-color: color-mix(in srgb, ${activity.color} 15%, transparent);`"
-            >
+              :style="`background-color: color-mix(in srgb, ${activity.color} 15%, transparent);`">
               <UIcon :name="activity.icon" class="w-4.5 h-4.5" :style="`color: ${activity.color};`" />
             </div>
             <div class="flex-1 min-w-0">
@@ -653,12 +622,10 @@ onMounted(async () => {
             variant="ghost"
             color="neutral"
             class="rounded-2xl p-5 text-start flex flex-col items-start gap-3 bg-surface-container-lowest ring-1 ring-card-border"
-            @click="navigateTo(action.href)"
-          >
+            @click="navigateTo(action.href)">
             <div
               class="w-10 h-10 rounded-xl flex items-center justify-center"
-              :style="`background-color: ${action.bg};`"
-            >
+              :style="`background-color: ${action.bg};`">
               <UIcon :name="action.icon" class="w-5 h-5" :style="`color: ${action.color};`" />
             </div>
             <div>

@@ -16,15 +16,35 @@ interface ExistingRecord {
   notes: string
 }
 
+interface RowSnapshot {
+  status: AttendanceStatus
+  notes: string
+}
+
+export type StatusFilter = 'all' | AttendanceStatus
+export type ViewMode = 'grid' | 'list'
+
+export interface DateStripDay {
+  iso: string
+  dayName: string
+  dayNumber: number
+  rate: number | null
+  isToday: boolean
+  isFuture: boolean
+}
+
 const sessionNotes = ref('')
 const attendanceRows = ref<AttendanceRow[]>([])
 const existingRecords = ref<Map<string, ExistingRecord>>(new Map())
+const originalSnapshot = ref<Map<string, RowSnapshot>>(new Map())
 const selectedHalaqaId = ref<number | null>(null)
 const selectedDate = ref(new Date().toISOString().split('T')[0])
 const isLoading = ref(false)
 const isSaving = ref(false)
 const loadError = ref<string | null>(null)
 const saveError = ref<string | null>(null)
+const statusFilter = ref<StatusFilter>('all')
+const viewMode = ref<ViewMode>('grid')
 
 function backendToStatus(status: string): AttendanceStatus {
   if (status === 'Present') return 'present'
@@ -36,6 +56,14 @@ function statusToBackend(status: AttendanceStatus): string {
   if (status === 'present') return 'Present'
   if (status === 'late') return 'Late'
   return 'Absent'
+}
+
+function snapshotCurrentRows() {
+  const snap = new Map<string, RowSnapshot>()
+  attendanceRows.value.forEach((row) => {
+    snap.set(row.studentId, { status: row.status, notes: row.notes })
+  })
+  originalSnapshot.value = snap
 }
 
 export function useAttendance() {
@@ -70,6 +98,7 @@ export function useAttendance() {
           notes: ex?.notes || ''
         }
       })
+      snapshotCurrentRows()
     } catch (e: any) {
       loadError.value = e?.data?.message || 'حدث خطأ أثناء تحميل الحضور'
     } finally {
@@ -116,6 +145,7 @@ export function useAttendance() {
           })
         })
       )
+      snapshotCurrentRows()
     } catch (e: any) {
       saveError.value = e?.data?.message || 'حدث خطأ أثناء حفظ الحضور'
       throw e
@@ -129,6 +159,17 @@ export function useAttendance() {
     if (row) row.status = status
   }
 
+  function cycleStatus(studentId: string) {
+    const row = attendanceRows.value.find(r => r.studentId === studentId)
+    if (!row) return
+    const next: Record<AttendanceStatus, AttendanceStatus> = {
+      present: 'late',
+      late: 'absent',
+      absent: 'present'
+    }
+    row.status = next[row.status]
+  }
+
   function setNote(studentId: string, notes: string) {
     const row = attendanceRows.value.find(r => r.studentId === studentId)
     if (row) row.notes = notes
@@ -140,12 +181,120 @@ export function useAttendance() {
       : tag
   }
 
+  function setFilter(filter: StatusFilter) {
+    statusFilter.value = filter
+  }
+
+  function toggleFilter(filter: StatusFilter) {
+    statusFilter.value = statusFilter.value === filter ? 'all' : filter
+  }
+
+  function setViewMode(mode: ViewMode) {
+    viewMode.value = mode
+  }
+
+  function markAllPresent(): RowSnapshot[] {
+    const snap: RowSnapshot[] = attendanceRows.value.map(r => ({
+      status: r.status,
+      notes: r.notes
+    }))
+    const ids = attendanceRows.value.map(r => r.studentId)
+    attendanceRows.value.forEach((r) => { r.status = 'present' })
+    return snap.map((s, i) => ({ ...s, studentId: ids[i] } as any))
+  }
+
+  function applyUndoSnapshot(snap: any[]) {
+    snap.forEach((s) => {
+      const row = attendanceRows.value.find(r => r.studentId === s.studentId)
+      if (row) {
+        row.status = s.status
+        row.notes = s.notes
+      }
+    })
+  }
+
+  function discardChanges() {
+    attendanceRows.value.forEach((row) => {
+      const snap = originalSnapshot.value.get(row.studentId)
+      if (snap) {
+        row.status = snap.status
+        row.notes = snap.notes
+      }
+    })
+  }
+
+  // Mock: was student absent in the previous session?
+  // Deterministic by studentId so reloads don't flicker.
+  function wasAbsentYesterday(studentId: string): boolean {
+    const n = Number(studentId)
+    if (Number.isNaN(n)) {
+      let h = 0
+      for (let i = 0; i < studentId.length; i++) h = (h * 31 + studentId.charCodeAt(i)) | 0
+      return Math.abs(h) % 4 === 0
+    }
+    return n % 4 === 0
+  }
+
+  // Mock: deterministic attendance rate per past date for the date strip.
+  function mockRateForDate(d: Date): number {
+    const seed = d.getFullYear() * 372 + (d.getMonth() + 1) * 31 + d.getDate()
+    const rotated = ((seed * 9301 + 49297) % 233280) / 233280
+    return Math.round(rotated * 100)
+  }
+
+  function pad2(n: number) { return String(n).padStart(2, '0') }
+  function isoOf(d: Date) {
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+  }
+
+  function buildDateStrip(locale: string, days = 14): DateStripDay[] {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayIso = isoOf(today)
+    const fmt = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'short' })
+    const out: DateStripDay[] = []
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      const iso = isoOf(d)
+      const isToday = iso === todayIso
+      const isFuture = d > today
+      out.push({
+        iso,
+        dayName: fmt.format(d),
+        dayNumber: d.getDate(),
+        rate: isFuture || isToday ? null : mockRateForDate(d),
+        isToday,
+        isFuture
+      })
+    }
+    return out
+  }
+
   const presentCount = computed(() => attendanceRows.value.filter(r => r.status === 'present').length)
+  const absentCount = computed(() => attendanceRows.value.filter(r => r.status === 'absent').length)
+  const lateCount = computed(() => attendanceRows.value.filter(r => r.status === 'late').length)
   const attendanceRate = computed(() =>
     attendanceRows.value.length > 0
       ? Math.round((presentCount.value / attendanceRows.value.length) * 100)
       : 0
   )
+
+  const filteredRows = computed(() => {
+    if (statusFilter.value === 'all') return attendanceRows.value
+    return attendanceRows.value.filter(r => r.status === statusFilter.value)
+  })
+
+  const isDirty = computed(() => {
+    if (originalSnapshot.value.size === 0 && attendanceRows.value.length === 0) return false
+    for (const row of attendanceRows.value) {
+      const snap = originalSnapshot.value.get(row.studentId)
+      if (!snap) return true
+      if (snap.status !== row.status) return true
+      if (snap.notes !== row.notes) return true
+    }
+    return false
+  })
 
   return {
     attendanceRows,
@@ -157,11 +306,26 @@ export function useAttendance() {
     loadError,
     saveError,
     presentCount,
+    absentCount,
+    lateCount,
     attendanceRate,
+    filteredRows,
+    statusFilter,
+    viewMode,
+    isDirty,
     loadSession,
     submitSession,
     setStatus,
+    cycleStatus,
     setNote,
-    appendNote
+    appendNote,
+    setFilter,
+    toggleFilter,
+    setViewMode,
+    markAllPresent,
+    applyUndoSnapshot,
+    discardChanges,
+    wasAbsentYesterday,
+    buildDateStrip
   }
 }

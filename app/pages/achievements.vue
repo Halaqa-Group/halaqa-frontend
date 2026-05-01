@@ -13,7 +13,7 @@ const toast = useToast()
 
 const isStudentDropdownOpen = ref(false)
 const studentCardRef = ref<HTMLElement | null>(null)
-const triggerButtonRef = ref<HTMLButtonElement | null>(null)
+const triggerButtonRef = ref<HTMLDivElement | null>(null)
 const teleportedDropdownRef = ref<HTMLElement | null>(null)
 const studentSearch = ref('')
 const dropdownPos = ref({ top: 0, left: 0, width: 0 })
@@ -168,9 +168,8 @@ onUnmounted(() => {
             </div>
 
             <!-- Dropdown trigger -->
-            <div class="relative">
+            <div ref="triggerButtonRef" class="relative">
               <UButton
-                ref="triggerButtonRef"
                 variant="ghost"
                 color="neutral"
                 class="w-full backdrop-blur-md border border-white/20 rounded-2xl p-2 gap-3 group shadow-xl"

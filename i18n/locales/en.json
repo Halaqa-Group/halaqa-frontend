@@ -335,7 +335,79 @@
       "selectAll": "Select all",
       "daysSelected": "{count} days selected",
       "copy": "Copy",
-      "paste": "Paste ({count})"
+      "paste": "Paste ({count})",
+      "weekList": {
+        "title": "Pick a week",
+        "currentWeek": "This week",
+        "past": "Past",
+        "upcoming": "Upcoming",
+        "today": "Today",
+        "rangeButton": "Date range",
+        "noWeeks": "No weeks in this range",
+        "presets": {
+          "pastMonth1": "Last month",
+          "pastMonths3": "Last 3 months",
+          "pastMonths6": "Last 6 months",
+          "pastYear": "Last year",
+          "month1": "Next month",
+          "months3": "Next 3 months",
+          "months6": "Next 6 months",
+          "year": "Next year"
+        }
+      },
+      "columns": {
+        "applyToAllDays": "Apply to all days",
+        "applyConfirmTitle": "Apply to all days",
+        "applyConfirmMessage": "Copy the first filled cell in this column to the rest of the week?",
+        "appliedToast": "Applied to all days",
+        "noFilledCell": "No filled cell to apply"
+      },
+      "cell": {
+        "addLabel": "Add",
+        "edit": "Edit",
+        "clear": "Clear",
+        "fromAyahShort": "from",
+        "toAyahShort": "to",
+        "rangeShort": "ayah {from} to {to}",
+        "previewWithCount": "{surah}: ayah {from} to {to} ({count} ayahs)",
+        "popoverTitle": "Edit cell",
+        "popoverTitleNew": "Add lesson",
+        "surahLabel": "Surah",
+        "fromAyahLabel": "From ayah",
+        "toAyahLabel": "To ayah",
+        "errorOrder": "End ayah must be at or after start ayah",
+        "confirm": "Confirm",
+        "cancel": "Cancel"
+      },
+      "row": {
+        "restDay": "Rest day",
+        "restDayActive": "Rest day",
+        "copyToAllDays": "Copy to all days",
+        "copyConfirmTitle": "Copy this day's plan",
+        "copyConfirmMessage": "Copy this day's plan to all other days?",
+        "copiedToast": "Day plan copied to all days"
+      },
+      "summary": {
+        "title": "Weekly summary",
+        "totalMemAyahs": "Total memorization ayahs this week",
+        "reviewSessions": "Total review sessions",
+        "restDays": "Rest days",
+        "completedDays": "Days fully planned",
+        "ayahUnit": "ayahs",
+        "sessionUnit": "sessions",
+        "dayUnit": "days",
+        "outOfWeek": "{count} / 7"
+      },
+      "topActions": {
+        "clearAll": "Clear week",
+        "preview": "Preview plan",
+        "clearConfirmTitle": "Clear week",
+        "clearConfirmMessage": "All lessons and rest days for this week will be deleted. This cannot be undone.",
+        "clearedToast": "Week cleared",
+        "previewTitle": "Plan preview",
+        "previewEmpty": "No lessons this day",
+        "previewRestDay": "Rest day"
+      }
     }
   },
   "label": {

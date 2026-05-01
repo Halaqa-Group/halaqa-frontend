@@ -1,24 +1,22 @@
 <script setup lang="ts">
+import type { Student, LessonCategory } from '~/types'
+
 const {
   scheduleWithDates,
+  selectedWeekStart,
   isEditMode,
   planStatus,
-  selectedCount,
-  hasSelection,
-  clipboard,
   selectedStudent,
   isSaving,
-  isLoading,
   saveAsDraft,
   approvePlan,
   startEditing,
   cancelEditing,
-  deleteSelectedRows,
-  copySelectedRows,
-  pasteRows,
-  addDay,
   loadPlan,
-  resetState
+  resetState,
+  applyColumnToAllDays,
+  copyDayToAllDays,
+  clearAllDays
 } = useSchedule()
 
 const { t } = useI18n()
@@ -43,27 +41,47 @@ async function handleApprovePlan() {
   }
 }
 
-const isStudentDropdownOpen = ref(false)
-const studentDropdownRef = ref<HTMLElement | null>(null)
+// ── Student pill (inline pill + prev/next) ──────────────────────────────
+const isStudentPopoverOpen = ref(false)
 const studentSearch = ref('')
-const selectedStudentObj = computed(() => students.value.find(s => s.name === selectedStudent.value))
+
+const selectedStudentObj = computed(() =>
+  students.value.find(s => s.name === selectedStudent.value) || null
+)
+
 const filteredDropdownStudents = computed(() =>
   studentSearch.value.trim()
     ? students.value.filter(s => s.name.includes(studentSearch.value.trim()))
     : students.value
 )
 
-function selectStudent(name: string) {
-  selectedStudent.value = name
-  isStudentDropdownOpen.value = false
+const currentStudentIndex = computed(() =>
+  selectedStudentObj.value
+    ? students.value.findIndex(s => s.id === selectedStudentObj.value!.id)
+    : -1
+)
+
+const canPrevStudent = computed(() => currentStudentIndex.value > 0)
+const canNextStudent = computed(() =>
+  currentStudentIndex.value !== -1 && currentStudentIndex.value < students.value.length - 1
+)
+
+function pickStudent(s: Student) {
+  selectedStudent.value = s.name
+  isStudentPopoverOpen.value = false
   studentSearch.value = ''
 }
 
-function handleDocumentClick(e: MouseEvent) {
-  if (studentDropdownRef.value && !studentDropdownRef.value.contains(e.target as Node)) {
-    isStudentDropdownOpen.value = false
-    studentSearch.value = ''
-  }
+function prevStudent() {
+  if (!canPrevStudent.value) return
+  const prev = students.value[currentStudentIndex.value - 1]
+  if (prev) selectedStudent.value = prev.name
+}
+
+function nextStudent() {
+  if (!canNextStudent.value) return
+  const next = students.value[currentStudentIndex.value + 1]
+  if (next) selectedStudent.value = next.name
 }
 
 watch(selectedStudent, async (newVal, oldVal) => {
@@ -73,94 +91,272 @@ watch(selectedStudent, async (newVal, oldVal) => {
   }
 })
 
+// ── Confirmations: clear all, copy day, apply column ────────────────────
+const isClearConfirmOpen = ref(false)
+const isCopyDayConfirmOpen = ref(false)
+const copyDayTargetId = ref<string | null>(null)
+const isApplyColumnConfirmOpen = ref(false)
+const applyColumnTarget = ref<LessonCategory | null>(null)
+
+function requestClearAll() {
+  isClearConfirmOpen.value = true
+}
+function doClearAll() {
+  clearAllDays()
+  toast.add({ title: t('pages.planner.topActions.clearedToast'), icon: 'i-lucide-eraser', color: 'primary' })
+}
+
+function requestCopyDay(dayId: string) {
+  copyDayTargetId.value = dayId
+  isCopyDayConfirmOpen.value = true
+}
+function doCopyDay() {
+  if (!copyDayTargetId.value) return
+  const ok = copyDayToAllDays(copyDayTargetId.value)
+  copyDayTargetId.value = null
+  if (ok) toast.add({ title: t('pages.planner.row.copiedToast'), icon: 'i-lucide-copy', color: 'primary' })
+}
+
+function requestApplyColumn(cat: LessonCategory) {
+  applyColumnTarget.value = cat
+  isApplyColumnConfirmOpen.value = true
+}
+function doApplyColumn() {
+  if (!applyColumnTarget.value) return
+  const ok = applyColumnToAllDays(applyColumnTarget.value)
+  applyColumnTarget.value = null
+  if (ok) {
+    toast.add({ title: t('pages.planner.columns.appliedToast'), icon: 'i-lucide-copy', color: 'primary' })
+  } else {
+    toast.add({ title: t('pages.planner.columns.noFilledCell'), icon: 'i-lucide-info', color: 'neutral' })
+  }
+}
+
+// ── Preview modal ───────────────────────────────────────────────────────
+const isPreviewOpen = ref(false)
+
+// ── Column header definitions ───────────────────────────────────────────
+const columns: { key: LessonCategory, label: string, textClass: string, bgClass: string, icon: string }[] = [
+  { key: 'mem', label: 'tracks.hifzNew', textClass: 'text-track-hifz', bgClass: 'bg-track-hifz-bg', icon: 'i-lucide-book-open' },
+  { key: 'near', label: 'tracks.nearReview', textClass: 'text-track-near', bgClass: 'bg-track-near-bg', icon: 'i-lucide-rotate-ccw' },
+  { key: 'far', label: 'tracks.farReview', textClass: 'text-track-far', bgClass: 'bg-track-far-bg', icon: 'i-lucide-library' }
+]
+
 onMounted(async () => {
-  document.addEventListener('click', handleDocumentClick)
   await fetchStudents()
   if (students.value[0] && !selectedStudent.value) {
     selectedStudent.value = students.value[0].name
-    // watch fires on the assignment above and calls loadPlan
   } else if (selectedStudent.value) {
-    // Already have a student (returning to page) — load their plan
     await loadPlan()
   }
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleDocumentClick)
 })
 </script>
 
 <template>
   <div>
     <!-- Page header -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-      <div class="space-y-1">
-        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+    <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-6">
+      <div class="space-y-1 min-w-0">
+        <span class="text-xs font-bold uppercase tracking-widest text-primary">
           {{ $t('pages.planner.weeklyPlanning') }}
         </span>
-        <h2 class="display-lg" style="color: var(--color-on-surface);">
-          {{ $t('pages.planner.title') }}
-        </h2>
-        <p class="text-sm" style="color: var(--color-on-surface-variant);">
+
+        <div class="flex flex-wrap items-center gap-3">
+          <h2 class="display-lg text-on-surface">
+            {{ $t('pages.planner.title') }}
+          </h2>
+
+          <!-- Student pill + prev/next -->
+          <div class="flex items-center gap-1.5 shrink-0">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-chevron-right"
+              size="md"
+              class="rounded-full w-9 h-9 justify-center disabled:opacity-30"
+              :disabled="!canPrevStudent"
+              :aria-label="'الطالب السابق'"
+              @click="prevStudent"
+            />
+
+            <UPopover v-model:open="isStudentPopoverOpen" :ui="{ content: 'min-w-[280px] rounded-2xl' }">
+              <UButton
+                variant="soft"
+                color="primary"
+                class="rounded-full px-3 py-2 gap-2.5 hover:opacity-90"
+              >
+                <img
+                  v-if="selectedStudentObj"
+                  :src="selectedStudentObj.avatar"
+                  :alt="selectedStudentObj.name"
+                  class="w-7 h-7 rounded-full object-cover shrink-0"
+                  referrerpolicy="no-referrer"
+                >
+                <UIcon v-else name="i-lucide-user" class="w-4 h-4" />
+                <span class="font-semibold text-sm">
+                  {{ selectedStudentObj?.name || $t('common.selectStudent') }}
+                </span>
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="w-4 h-4 transition-transform"
+                  :class="{ 'rotate-180': isStudentPopoverOpen }"
+                />
+              </UButton>
+
+              <template #content>
+                <div class="w-[280px] p-2">
+                  <div class="px-2 pb-2">
+                    <UInput
+                      v-model="studentSearch"
+                      type="text"
+                      :placeholder="$t('common.searchPlaceholder')"
+                      leading-icon="i-lucide-search"
+                      variant="none"
+                      class="w-full"
+                      :ui="{
+                        base: 'w-full rounded-lg px-3 py-2 bg-surface-container-low text-sm text-on-surface',
+                        leadingIcon: 'w-3.5 h-3.5 text-on-surface-variant'
+                      }"
+                    />
+                  </div>
+
+                  <div class="flex flex-col gap-0.5 max-h-[280px] overflow-y-auto">
+                    <UButton
+                      v-for="s in filteredDropdownStudents"
+                      :key="s.id"
+                      variant="ghost"
+                      color="primary"
+                      class="w-full gap-3 px-3 py-2 rounded-xl font-normal justify-start"
+                      :class="selectedStudentObj?.id === s.id ? 'bg-primary text-white' : ''"
+                      @click="pickStudent(s)"
+                    >
+                      <img
+                        :src="s.avatar"
+                        :alt="s.name"
+                        class="w-8 h-8 rounded-full object-cover shrink-0"
+                        referrerpolicy="no-referrer"
+                      >
+                      <div class="flex-1 text-start">
+                        <p
+                          class="text-sm font-bold leading-tight"
+                          :class="selectedStudentObj?.id === s.id ? 'text-white' : 'text-on-surface'"
+                        >
+                          {{ s.name }}
+                        </p>
+                        <span
+                          v-if="s.halaqa && s.halaqa !== '—'"
+                          class="text-[11px]"
+                          :class="selectedStudentObj?.id === s.id ? 'text-white/75' : 'text-on-surface-variant'"
+                        >{{ s.halaqa }}</span>
+                      </div>
+                      <UIcon
+                        v-if="selectedStudentObj?.id === s.id"
+                        name="i-lucide-check"
+                        class="w-4 h-4 shrink-0"
+                      />
+                    </UButton>
+
+                    <div v-if="filteredDropdownStudents.length === 0" class="px-3 py-4 text-center">
+                      <p class="text-sm text-on-surface-variant">
+                        {{ $t('common.noResults') }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </UPopover>
+
+            <UButton
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-chevron-left"
+              size="md"
+              class="rounded-full w-9 h-9 justify-center disabled:opacity-30"
+              :disabled="!canNextStudent"
+              :aria-label="'الطالب التالي'"
+              @click="nextStudent"
+            />
+          </div>
+        </div>
+
+        <p class="text-sm text-on-surface-variant">
           {{ $t('pages.planner.subtitle') }}
         </p>
       </div>
 
-      <div class="flex items-center gap-3 shrink-0">
-        <!-- NEW: enter values, save as draft -->
+      <!-- Top action bar -->
+      <div class="flex flex-wrap items-center gap-2 shrink-0">
+        <UButton
+          variant="outline"
+          color="neutral"
+          :label="$t('pages.planner.copyFromLastWeek')"
+          icon="i-lucide-copy"
+          size="md"
+          class="font-semibold rounded-full px-4"
+        />
+        <UButton
+          variant="outline"
+          color="error"
+          :label="$t('pages.planner.topActions.clearAll')"
+          icon="i-lucide-eraser"
+          size="md"
+          class="font-semibold rounded-full px-4"
+          @click="requestClearAll"
+        />
+        <UButton
+          variant="outline"
+          color="primary"
+          :label="$t('pages.planner.topActions.preview')"
+          icon="i-lucide-eye"
+          size="md"
+          class="font-semibold rounded-full px-4"
+          @click="isPreviewOpen = true"
+        />
+
+        <!-- Status-aware primary action -->
         <template v-if="planStatus === 'new'">
-          <UButton
-            variant="outline"
-            color="neutral"
-            :label="$t('pages.planner.copyFromLastWeek')"
-            icon="i-lucide-copy"
-            size="lg"
-            class="font-bold rounded-full px-6"
-          />
           <UButton
             color="primary"
             :label="$t('pages.planner.saveAsDraft')"
             icon="i-lucide-save"
-            size="lg"
-            class="font-bold rounded-full px-6"
+            size="md"
+            class="font-bold rounded-full px-5"
             :loading="isSaving"
             :disabled="isSaving"
             @click="handleSaveAsDraft"
           />
         </template>
 
-        <!-- DRAFT, viewing -->
         <template v-else-if="planStatus === 'draft' && !isEditMode">
           <UButton
             variant="outline"
             color="neutral"
             :label="$t('pages.planner.editPlan')"
             icon="i-lucide-pencil"
-            size="lg"
-            class="font-bold rounded-full px-6"
+            size="md"
+            class="font-semibold rounded-full px-4"
             @click="startEditing"
           />
           <UButton
             color="primary"
             :label="$t('pages.planner.approvePlan')"
             icon="i-lucide-check-circle"
-            size="lg"
-            class="font-bold rounded-full px-6"
+            size="md"
+            class="font-bold rounded-full px-5"
             :loading="isSaving"
             :disabled="isSaving"
             @click="handleApprovePlan"
           />
         </template>
 
-        <!-- DRAFT, editing -->
         <template v-else-if="planStatus === 'draft' && isEditMode">
           <UButton
             variant="ghost"
             color="neutral"
             :label="$t('common.cancel')"
             icon="i-lucide-x"
-            size="lg"
-            class="font-bold rounded-full px-6"
+            size="md"
+            class="font-semibold rounded-full px-4"
             :disabled="isSaving"
             @click="cancelEditing"
           />
@@ -168,20 +364,16 @@ onUnmounted(() => {
             color="primary"
             :label="$t('pages.planner.saveAsDraft')"
             icon="i-lucide-save"
-            size="lg"
-            class="font-bold rounded-full px-6"
+            size="md"
+            class="font-bold rounded-full px-5"
             :loading="isSaving"
             :disabled="isSaving"
             @click="handleSaveAsDraft"
           />
         </template>
 
-        <!-- APPROVED, viewing -->
         <template v-else-if="planStatus === 'approved' && !isEditMode">
-          <div
-            class="flex items-center gap-2 px-5 py-2.5 rounded-full border font-semibold text-sm"
-            style="background-color: #E0F0EE; border-color: #4A8E85; color: #4A8E85;"
-          >
+          <div class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold text-sm bg-status-ok-bg border-status-ok/40 text-status-ok">
             <UIcon name="i-lucide-check-circle" class="w-4 h-4" />
             {{ $t('pages.planner.approved') }}
           </div>
@@ -190,21 +382,20 @@ onUnmounted(() => {
             color="neutral"
             :label="$t('pages.planner.editPlan')"
             icon="i-lucide-pencil"
-            size="lg"
-            class="font-bold rounded-full px-6"
+            size="md"
+            class="font-semibold rounded-full px-4"
             @click="startEditing"
           />
         </template>
 
-        <!-- APPROVED, editing -->
         <template v-else-if="planStatus === 'approved' && isEditMode">
           <UButton
             variant="ghost"
             color="neutral"
             :label="$t('common.cancel')"
             icon="i-lucide-x"
-            size="lg"
-            class="font-bold rounded-full px-6"
+            size="md"
+            class="font-semibold rounded-full px-4"
             :disabled="isSaving"
             @click="cancelEditing"
           />
@@ -212,8 +403,8 @@ onUnmounted(() => {
             color="primary"
             :label="$t('pages.planner.saveChanges')"
             icon="i-lucide-save"
-            size="lg"
-            class="font-bold rounded-full px-6"
+            size="md"
+            class="font-bold rounded-full px-5"
             :loading="isSaving"
             :disabled="isSaving"
             @click="handleSaveAsDraft"
@@ -222,226 +413,94 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- Two-column layout: sidebar (right in RTL) + table (left in RTL) -->
-    <div class="flex gap-14 items-start w-full">
-      <!-- RIGHT sidebar (first child = right in RTL) -->
-      <div class="w-full lg:w-[320px] shrink-0 space-y-10 mt-8">
-        <!-- Student selector card -->
-        <div
-          ref="studentDropdownRef"
-          class="relative z-30 bg-primary text-on-primary p-5 rounded-2xl flex flex-col gap-4 shadow-2xl shadow-primary/30 hover:scale-[1.01] transition-all border border-white/10"
-        >
-          <!-- Gradient overlays -->
-          <div class="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-            <div class="absolute top-0 start-0 w-full h-full bg-gradient-to-br from-white/20 to-transparent opacity-50" />
-            <div class="absolute -bottom-8 -end-8 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
-          </div>
+    <!-- Week list -->
+    <div class="mb-6">
+      <PlannerWeekList />
+    </div>
 
-          <!-- Header row -->
-          <div class="flex items-center justify-center px-2 relative z-10">
-            <p class="text-sm font-semibold text-white">
-              {{ $t('common.selectStudent') }}
-            </p>
-          </div>
+    <!-- Weekly summary -->
+    <div class="mb-4">
+      <PlannerSummaryBar />
+    </div>
 
-          <!-- Dropdown trigger -->
-          <div class="relative z-20">
-            <UButton
-              variant="ghost"
-              color="neutral"
-              class="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-2 gap-3 hover:bg-white/20 group shadow-xl"
-              @click="isStudentDropdownOpen = !isStudentDropdownOpen"
-            >
-              <div class="w-11 h-11 rounded-xl overflow-hidden border-2 border-white/40 shadow-inner shrink-0 group-hover:rotate-1 transition-transform">
-                <img
-                  :src="selectedStudentObj?.avatar ?? `https://api.dicebear.com/9.x/notionists/svg?seed=default`"
-                  :alt="selectedStudent ?? ''"
-                  class="w-full h-full object-cover"
-                  referrerpolicy="no-referrer"
-                >
-              </div>
-              <div class="flex-1 text-start">
-                <h3 class="text-on-primary font-bold text-base tracking-tight leading-tight">
-                  {{ selectedStudent || $t('common.selectStudent') }}
-                </h3>
-              </div>
-              <div class="ps-3 text-on-primary/30 group-hover:text-on-primary transition-colors">
-                <UIcon
-                  name="i-lucide-chevron-down"
-                  class="w-4 h-4 transition-transform duration-300"
-                  :class="{ 'rotate-180': isStudentDropdownOpen }"
-                />
-              </div>
-            </UButton>
-
-            <!-- Dropdown list -->
-            <Transition
-              enter-active-class="transition-all duration-200 ease-out"
-              enter-from-class="opacity-0 scale-95 -translate-y-2"
-              enter-to-class="opacity-100 scale-100 translate-y-0"
-              leave-active-class="transition-all duration-150 ease-in"
-              leave-from-class="opacity-100 scale-100 translate-y-0"
-              leave-to-class="opacity-0 scale-95 -translate-y-2"
-            >
-              <div
-                v-if="isStudentDropdownOpen"
-                class="absolute top-full mt-3 w-full bg-white rounded-2xl shadow-xl border border-black/5 overflow-hidden"
-              >
-                <!-- Search bar -->
-                <div class="px-3 pt-3 pb-2">
-                  <UInput
-                    v-model="studentSearch"
-                    type="text"
-                    :placeholder="$t('common.searchPlaceholder')"
-                    leading-icon="i-lucide-search"
-                    variant="none"
-                    class="w-full"
-                    :ui="{
-                      root: 'flex items-center gap-2 bg-black/5 rounded-lg px-3 py-2 w-full',
-                      base: 'flex-1 bg-transparent text-sm text-on-surface placeholder:text-on-surface-variant/60 text-start',
-                      leading: 'static flex items-center',
-                      leadingIcon: 'w-3.5 h-3.5 text-on-surface-variant shrink-0'
-                    }"
-                  />
-                </div>
-
-                <div class="px-2 pb-2 flex flex-col gap-0.5 max-h-[280px] overflow-y-auto [&::-webkit-scrollbar]:w-[2px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-primary/20 [&::-webkit-scrollbar-thumb]:rounded-full">
-                  <UButton
-                    v-for="s in filteredDropdownStudents"
-                    :key="s.id"
-                    variant="ghost"
-                    color="primary"
-                    class="w-full gap-3 px-3 py-2.5 rounded-xl font-normal"
-                    :class="selectedStudent === s.name ? 'bg-primary' : 'hover:bg-primary/5'"
-                    @click="selectStudent(s.name)"
-                  >
-                    <!-- Avatar (first child = rightmost in RTL) -->
-                    <div
-                      class="w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0"
-                      :class="selectedStudent === s.name ? 'border-white/30' : 'border-primary/15'"
-                    >
-                      <img :src="s.avatar" :alt="s.name" class="w-full h-full object-cover" referrerpolicy="no-referrer">
-                    </div>
-
-                    <!-- Name + halaqa subtitle -->
-                    <div class="flex-1 text-start">
-                      <p
-                        class="font-bold text-sm leading-tight"
-                        :class="selectedStudent === s.name ? 'text-on-primary' : 'text-on-surface'"
-                      >
-                        {{ s.name }}
-                      </p>
-                      <p
-                        v-if="s.halaqa && s.halaqa !== '—'"
-                        class="text-[11px] mt-0.5"
-                        :class="selectedStudent === s.name ? 'text-on-primary/60' : 'text-on-surface-variant'"
-                      >
-                        {{ s.halaqa }}
-                      </p>
-                    </div>
-
-                    <!-- Checkmark / spacer (last child = leftmost in RTL) -->
-                    <UIcon
-                      v-if="selectedStudent === s.name"
-                      name="i-lucide-check"
-                      class="w-4 h-4 text-on-primary/70 shrink-0"
-                    />
-                    <span v-else class="w-4 shrink-0" />
-                  </UButton>
-                </div>
-              </div>
-            </Transition>
-          </div>
-        </div>
-
-        <!-- Calendar -->
-        <div class="flex flex-col gap-3 mt-6">
-          <p class="text-sm font-semibold text-center" style="color: var(--color-on-surface-variant);">
-            {{ $t('pages.planner.selectWeek') }}
-          </p>
-          <PlannerCalendar />
-        </div>
-      </div>
-
-      <!-- LEFT table (second child = left in RTL) -->
-      <div class="flex-1 min-w-0 flex flex-col gap-4">
+    <!-- Grid -->
+    <div class="overflow-x-auto -mx-2 px-2 pb-2">
+      <div class="min-w-[760px] flex flex-col gap-4">
         <!-- Column headers -->
-        <div class="flex items-center gap-4 px-4">
-          <div v-if="isEditMode" class="w-8 shrink-0 flex items-center justify-center">
-            <span class="text-xs text-muted whitespace-nowrap">{{ $t('pages.planner.selectAll') }}</span>
-          </div>
-          <div class="w-[110px] shrink-0" />
+        <div class="flex items-stretch gap-4 px-4">
+          <div class="w-[150px] shrink-0" />
           <div class="flex-1 flex gap-6">
-            <div class="flex-[4] flex justify-center">
-              <span class="text-xs font-medium text-muted">{{ $t('tracks.hifzNew') }}</span>
-            </div>
-            <div class="flex-[4] flex justify-center">
-              <span class="text-xs font-medium text-muted">{{ $t('tracks.nearReview') }}</span>
-            </div>
-            <div class="flex-[4] flex justify-center">
-              <span class="text-xs font-medium text-muted">{{ $t('tracks.farReview') }}</span>
+            <div
+              v-for="col in columns"
+              :key="col.key"
+              class="flex-[4] flex flex-col gap-2 rounded-t-xl border-t-4 px-3 py-2"
+              :class="[col.bgClass, {
+                'border-track-hifz': col.key === 'mem',
+                'border-track-near': col.key === 'near',
+                'border-track-far': col.key === 'far'
+              }]"
+            >
+              <div class="flex items-center justify-center gap-2">
+                <UIcon :name="col.icon" class="w-4 h-4" :class="col.textClass" />
+                <span class="text-sm font-bold" :class="col.textClass">
+                  {{ $t(col.label) }}
+                </span>
+              </div>
+              <UButton
+                v-if="isEditMode"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                icon="i-lucide-arrow-down-up"
+                class="rounded-full mx-auto px-2"
+                :class="col.textClass + ' hover:bg-white/50'"
+                @click="requestApplyColumn(col.key)"
+              >
+                <span class="text-[11px]">{{ $t('pages.planner.columns.applyToAllDays') }}</span>
+              </UButton>
             </div>
           </div>
         </div>
-
-        <!-- Batch action bar -->
-        <Transition name="slide-down">
-          <div
-            v-if="isEditMode && hasSelection"
-            class="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-elevated border border-default"
-          >
-            <span class="text-sm text-muted">{{ $t('pages.planner.daysSelected', { count: selectedCount }) }}</span>
-            <div class="flex gap-2 ms-auto">
-              <UButton
-                variant="soft"
-                color="neutral"
-                icon="i-lucide-copy"
-                :label="$t('pages.planner.copy')"
-                size="sm"
-                @click="copySelectedRows"
-              />
-              <UButton
-                variant="soft"
-                color="error"
-                icon="i-lucide-trash-2"
-                :label="$t('common.delete')"
-                size="sm"
-                @click="deleteSelectedRows"
-              />
-              <UButton
-                v-if="clipboard.length > 0"
-                variant="soft"
-                color="primary"
-                icon="i-lucide-clipboard"
-                :label="$t('pages.planner.paste', { count: clipboard.length })"
-                size="sm"
-                @click="pasteRows"
-              />
-            </div>
-          </div>
-        </Transition>
 
         <!-- Day rows -->
-        <div class="flex flex-col gap-5">
+        <div class="flex flex-col gap-3">
           <PlannerDayRow
-            v-for="day in scheduleWithDates"
+            v-for="(day, idx) in scheduleWithDates"
             :key="day.id"
             :data="day"
+            :week-start="selectedWeekStart"
+            :day-index="idx"
+            @request-copy-day="requestCopyDay"
           />
         </div>
       </div>
     </div>
+
+    <!-- Preview modal -->
+    <PlannerPreviewModal v-model:open="isPreviewOpen" />
+
+    <!-- Confirmations -->
+    <PlannerConfirmDialog
+      v-model:open="isClearConfirmOpen"
+      :title="$t('pages.planner.topActions.clearConfirmTitle')"
+      :message="$t('pages.planner.topActions.clearConfirmMessage')"
+      :confirm-label="$t('pages.planner.topActions.clearAll')"
+      destructive
+      @confirm="doClearAll"
+    />
+
+    <PlannerConfirmDialog
+      v-model:open="isCopyDayConfirmOpen"
+      :title="$t('pages.planner.row.copyConfirmTitle')"
+      :message="$t('pages.planner.row.copyConfirmMessage')"
+      @confirm="doCopyDay"
+    />
+
+    <PlannerConfirmDialog
+      v-model:open="isApplyColumnConfirmOpen"
+      :title="$t('pages.planner.columns.applyConfirmTitle')"
+      :message="$t('pages.planner.columns.applyConfirmMessage')"
+      @confirm="doApplyColumn"
+    />
   </div>
 </template>
-
-<style scoped>
-.slide-down-enter-active,
-.slide-down-leave-active {
-  transition: all 0.2s ease;
-}
-.slide-down-enter-from,
-.slide-down-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-</style>

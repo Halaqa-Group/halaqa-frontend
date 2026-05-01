@@ -335,7 +335,79 @@
       "selectAll": "تحديد الكل",
       "daysSelected": "{count} أيام محددة",
       "copy": "نسخ",
-      "paste": "لصق ({count})"
+      "paste": "لصق ({count})",
+      "weekList": {
+        "title": "اختر الأسبوع",
+        "currentWeek": "هذا الأسبوع",
+        "past": "سابق",
+        "upcoming": "قادم",
+        "today": "اليوم",
+        "rangeButton": "نطاق التواريخ",
+        "noWeeks": "لا توجد أسابيع في هذا النطاق",
+        "presets": {
+          "pastMonth1": "آخر شهر",
+          "pastMonths3": "آخر ٣ أشهر",
+          "pastMonths6": "آخر ٦ أشهر",
+          "pastYear": "آخر سنة",
+          "month1": "الشهر القادم",
+          "months3": "٣ أشهر قادمة",
+          "months6": "٦ أشهر قادمة",
+          "year": "السنة القادمة"
+        }
+      },
+      "columns": {
+        "applyToAllDays": "تطبيق على كل الأيام",
+        "applyConfirmTitle": "تطبيق على كل الأيام",
+        "applyConfirmMessage": "نسخ أول خلية في هذا العمود إلى بقية أيام الأسبوع؟",
+        "appliedToast": "تم تطبيق الخلية على كل الأيام",
+        "noFilledCell": "لا توجد خلية مملوءة لتطبيقها"
+      },
+      "cell": {
+        "addLabel": "إضافة",
+        "edit": "تعديل",
+        "clear": "إزالة",
+        "fromAyahShort": "من الآية",
+        "toAyahShort": "إلى الآية",
+        "rangeShort": "من آية {from} إلى {to}",
+        "previewWithCount": "{surah}: من آية {from} إلى {to} ({count} آيات)",
+        "popoverTitle": "تعديل الخلية",
+        "popoverTitleNew": "إضافة درس جديد",
+        "surahLabel": "السورة",
+        "fromAyahLabel": "من الآية",
+        "toAyahLabel": "إلى الآية",
+        "errorOrder": "آية النهاية يجب أن تكون بعد آية البداية",
+        "confirm": "تأكيد",
+        "cancel": "إلغاء"
+      },
+      "row": {
+        "restDay": "يوم راحة",
+        "restDayActive": "يوم راحة",
+        "copyToAllDays": "نسخ لكل الأيام",
+        "copyConfirmTitle": "نسخ خطة هذا اليوم",
+        "copyConfirmMessage": "هل تريد نسخ خطة هذا اليوم لجميع الأيام؟",
+        "copiedToast": "تم نسخ خطة اليوم لجميع الأيام"
+      },
+      "summary": {
+        "title": "ملخص الأسبوع",
+        "totalMemAyahs": "إجمالي آيات الحفظ هذا الأسبوع",
+        "reviewSessions": "إجمالي جلسات المراجعة",
+        "restDays": "أيام الراحة",
+        "completedDays": "أيام مكتملة التخطيط",
+        "ayahUnit": "آية",
+        "sessionUnit": "جلسة",
+        "dayUnit": "أيام",
+        "outOfWeek": "{count} / 7"
+      },
+      "topActions": {
+        "clearAll": "مسح الأسبوع كله",
+        "preview": "معاينة الخطة",
+        "clearConfirmTitle": "مسح الأسبوع كله",
+        "clearConfirmMessage": "سيتم حذف جميع الدروس وأيام الراحة لهذا الأسبوع. لا يمكن التراجع.",
+        "clearedToast": "تم مسح الأسبوع",
+        "previewTitle": "معاينة الخطة",
+        "previewEmpty": "لا توجد دروس في هذا اليوم",
+        "previewRestDay": "يوم راحة"
+      }
     }
   },
   "label": {

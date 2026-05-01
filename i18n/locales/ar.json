@@ -222,7 +222,59 @@
       "statusActive": "نشط",
       "statusInactive": "غير نشط",
       "noStudents": "لا يوجد طلاب",
-      "showingCount": "عرض {filtered} من {total} طالباً"
+      "showingCount": "عرض {filtered} من {total} طالباً",
+      "stats": {
+        "totalStudents": "إجمالي الطلاب",
+        "activeStudents": "النشطون",
+        "inactiveStudents": "غير النشطين",
+        "avgMemorization": "متوسط نسبة الحفظ",
+        "weeklyAttendance": "نسبة الحضور هذا الأسبوع"
+      },
+      "sort": {
+        "label": "ترتيب",
+        "newest": "الأحدث إضافةً",
+        "topMemorizers": "الأكثر حفظاً",
+        "lowestAttendance": "الأقل حضوراً",
+        "nameAsc": "الاسم (أ-ي)"
+      },
+      "view": {
+        "grid": "عرض البطاقات",
+        "list": "عرض القائمة"
+      },
+      "statusBadge": {
+        "active": "نشط",
+        "frequentAbsent": "غائب متكرر",
+        "stopped": "متوقف",
+        "new": "جديد"
+      },
+      "card": {
+        "notStarted": "لم يبدأ بعد",
+        "awaitingFirst": "في انتظار أول إنجاز",
+        "lastSession": "آخر جلسة",
+        "noSessions": "لا توجد جلسات",
+        "today": "اليوم",
+        "yesterday": "أمس",
+        "daysAgo": "منذ {count} أيام",
+        "weeksAgo": "منذ {count} أسابيع",
+        "totalAyahs": "إجمالي الآيات المحفوظة",
+        "ayahUnit": "آية",
+        "attendanceRate": "نسبة الحضور",
+        "currentSurah": "السورة الحالية",
+        "viewProfile": "عرض الملف"
+      },
+      "actions": {
+        "logAchievement": "تسجيل إنجاز",
+        "recordAttendance": "تسجيل حضور",
+        "notifyParent": "إرسال تنبيه للولي",
+        "editStudent": "تعديل بيانات الطالب",
+        "notifyParentToast": "تم إرسال التنبيه لولي الأمر"
+      },
+      "empty": {
+        "noMatchTitle": "لا يوجد طلاب مطابقون للبحث",
+        "clearFilters": "مسح الفلتر",
+        "welcomeTitle": "ابدأ بإضافة أول طالب في حلقتك"
+      },
+      "loadMore": "تحميل المزيد"
     },
     "achievements": {
       "recordLabel": "السجل",

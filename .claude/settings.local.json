@@ -6,7 +6,9 @@
       "Bash(pnpm typecheck *)",
       "Bash(pnpm dev *)",
       "Bash(node *)",
-      "Bash(npx nuxi *)"
+      "Bash(npx nuxi *)",
+      "Bash(npx nuxt *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

@@ -222,7 +222,59 @@
       "statusActive": "Active",
       "statusInactive": "Inactive",
       "noStudents": "No students",
-      "showingCount": "Showing {filtered} of {total} students"
+      "showingCount": "Showing {filtered} of {total} students",
+      "stats": {
+        "totalStudents": "Total students",
+        "activeStudents": "Active",
+        "inactiveStudents": "Inactive",
+        "avgMemorization": "Avg memorization",
+        "weeklyAttendance": "Attendance this week"
+      },
+      "sort": {
+        "label": "Sort",
+        "newest": "Newest first",
+        "topMemorizers": "Top memorizers",
+        "lowestAttendance": "Lowest attendance",
+        "nameAsc": "Name (A-Z)"
+      },
+      "view": {
+        "grid": "Grid view",
+        "list": "List view"
+      },
+      "statusBadge": {
+        "active": "Active",
+        "frequentAbsent": "Frequently absent",
+        "stopped": "Stopped",
+        "new": "New"
+      },
+      "card": {
+        "notStarted": "Not started yet",
+        "awaitingFirst": "Awaiting first achievement",
+        "lastSession": "Last session",
+        "noSessions": "No sessions yet",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "daysAgo": "{count} days ago",
+        "weeksAgo": "{count} weeks ago",
+        "totalAyahs": "Memorized ayahs",
+        "ayahUnit": "ayah",
+        "attendanceRate": "Attendance",
+        "currentSurah": "Current surah",
+        "viewProfile": "View profile"
+      },
+      "actions": {
+        "logAchievement": "Log achievement",
+        "recordAttendance": "Record attendance",
+        "notifyParent": "Notify parent",
+        "editStudent": "Edit student details",
+        "notifyParentToast": "Notification sent to parent"
+      },
+      "empty": {
+        "noMatchTitle": "No students match your search",
+        "clearFilters": "Clear filters",
+        "welcomeTitle": "Start by adding your first student"
+      },
+      "loadMore": "Load more"
     },
     "achievements": {
       "recordLabel": "Record",

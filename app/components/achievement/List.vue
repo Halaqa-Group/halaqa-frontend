@@ -17,10 +17,10 @@ const emit = defineEmits<{
 
 type TrackKey = 'Hifz' | 'Near' | 'Far'
 
-const TRACK_CLASS: Record<TrackKey, { textClass: string, bgClass: string, borderClass: string }> = {
-  Hifz: { textClass: 'text-track-hifz', bgClass: 'bg-track-hifz-bg', borderClass: 'border-track-hifz' },
-  Near: { textClass: 'text-track-near', bgClass: 'bg-track-near-bg', borderClass: 'border-track-near' },
-  Far:  { textClass: 'text-track-far', bgClass: 'bg-track-far-bg', borderClass: 'border-track-far' }
+const TRACK_CLASS: Record<TrackKey, { textClass: string, bgClass: string }> = {
+  Hifz: { textClass: 'text-track-hifz', bgClass: 'bg-track-hifz-bg' },
+  Near: { textClass: 'text-track-near', bgClass: 'bg-track-near-bg' },
+  Far:  { textClass: 'text-track-far', bgClass: 'bg-track-far-bg' }
 }
 
 const QUALITY = {
@@ -91,11 +91,8 @@ const totals = computed(() => {
       <div
         v-for="achievement in achievements"
         :key="achievement.id"
-        class="rounded-2xl p-5 relative bg-surface-container-lowest shadow-card border-e-4"
-        :class="[
-          getTrackClass(achievement.track_type).borderClass,
-          editingId === achievement.id ? 'outline-2 outline-primary outline-offset-2' : ''
-        ]"
+        class="rounded-2xl p-5 relative bg-surface-container-lowest ring ring-card-border"
+        :class="editingId === achievement.id ? 'ring-2 ring-primary' : ''"
       >
         <!-- Track badge + quality + actions -->
         <div class="flex items-center justify-between gap-2 mb-4 flex-wrap">

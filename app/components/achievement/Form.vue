@@ -20,7 +20,7 @@ const emit = defineEmits<{
 
 type TrackKey = 'Hifz' | 'Near' | 'Far'
 
-type TrackColor = 'success' | 'error' | 'warning'
+type TrackColor = 'primary' | 'success' | 'info' | 'warning' | 'error' | 'secondary' | 'neutral'
 
 const TRACK_META: Record<TrackKey, { icon: string, color: TrackColor }> = {
   Hifz: { icon: 'i-lucide-book-open', color: 'primary' },

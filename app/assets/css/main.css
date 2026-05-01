@@ -31,6 +31,58 @@
   --color-secondary-800: #7a621e;
   --color-secondary-900: #4d3d12;
   --color-secondary-950: #281f09;
+
+  /* Error scale — anchored on design system #ba1a1a (600) */
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #f99393;
+  --color-error-400: #ec5e5e;
+  --color-error-500: #db2929;
+  --color-error-600: #ba1a1a;
+  --color-error-700: #971515;
+  --color-error-800: #7a1212;
+  --color-error-900: #631111;
+  --color-error-950: #350606;
+
+  /* Warning scale — anchored on design system #F57C00 (500) */
+  --color-warning-50: #fff8eb;
+  --color-warning-100: #ffeec7;
+  --color-warning-200: #ffd98a;
+  --color-warning-300: #ffbd4d;
+  --color-warning-400: #ffa024;
+  --color-warning-500: #f57c00;
+  --color-warning-600: #c25e00;
+  --color-warning-700: #9c4700;
+  --color-warning-800: #7e3805;
+  --color-warning-900: #672e0a;
+  --color-warning-950: #3e1505;
+
+  /* Success scale — anchored on design system #4A8E85 (500) */
+  --color-success-50: #f0faf8;
+  --color-success-100: #d6f1ec;
+  --color-success-200: #b1e2da;
+  --color-success-300: #82cbc1;
+  --color-success-400: #5fafa4;
+  --color-success-500: #4a8e85;
+  --color-success-600: #3a7470;
+  --color-success-700: #305d5a;
+  --color-success-800: #2a4b48;
+  --color-success-900: #243f3d;
+  --color-success-950: #122220;
+
+  /* Info scale — anchored on design system #2196F3 (500) */
+  --color-info-50: #ebf6fe;
+  --color-info-100: #d6ecfd;
+  --color-info-200: #aedafc;
+  --color-info-300: #7dc4f9;
+  --color-info-400: #4dadf6;
+  --color-info-500: #2196f3;
+  --color-info-600: #0e7ed8;
+  --color-info-700: #0c66ad;
+  --color-info-800: #0d568f;
+  --color-info-900: #114873;
+  --color-info-950: #082c4a;
 }
 
 @theme {
@@ -55,7 +107,7 @@
   --color-outline: #80737c;
   --color-outline-variant: #d1c2cc;
   --color-background: #f9f9f9;
-  --color-error: #ba1a1a;
+  --color-error: var(--color-error-600);
 
   /* Track type semantic colors */
   --color-track-hifz: #2A6B64;

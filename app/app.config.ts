@@ -7,7 +7,11 @@ export default defineAppConfig({
     colors: {
       primary: 'primary',
       secondary: 'secondary',
-      neutral: 'neutral'
+      neutral: 'neutral',
+      error: 'error',
+      warning: 'warning',
+      success: 'success',
+      info: 'info'
     },
 
     formField: {

@@ -11,8 +11,8 @@ const emit = defineEmits<{
 }>()
 
 const statusConfig = {
-  Present: { color: '#2A6B64', bg: '#E0F0EE', label: 'حاضر' },
-  Late: { color: '#C76400', bg: '#FFF3E0', label: 'متأخر' }
+  Present: { textClass: 'text-track-hifz', bgClass: 'bg-track-hifz-bg', label: 'حاضر' },
+  Late: { textClass: 'text-track-far', bgClass: 'bg-track-far-bg', label: 'متأخر' }
 }
 
 const config = computed(() =>
@@ -27,16 +27,16 @@ const config = computed(() =>
     variant="ghost"
     color="neutral"
     class="w-full rounded-2xl p-3 gap-3 text-start"
-    :style="selected
-      ? 'background-color: var(--color-primary); box-shadow: 0 4px 14px rgba(128,76,125,0.25);'
-      : 'background-color: var(--color-surface-container-lowest); border: 1.5px solid var(--color-outline-variant);'"
+    :class="selected
+      ? 'bg-primary shadow-lg shadow-primary/25'
+      : 'bg-surface-container-lowest border-[1.5px] border-outline-variant'"
     @click="emit('select', student)"
   >
     <img :src="student.avatar" class="w-11 h-11 rounded-full object-cover shrink-0" :alt="student.name">
 
     <p
       class="flex-1 min-w-0 text-base font-bold truncate"
-      :style="selected ? 'color: white;' : 'color: var(--color-on-surface);'"
+      :class="selected ? 'text-white' : 'text-on-surface'"
     >
       {{ student.name }}
     </p>
@@ -44,9 +44,7 @@ const config = computed(() =>
     <span
       v-if="config"
       class="shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold"
-      :style="selected
-        ? 'background-color: rgba(255,255,255,0.2); color: white;'
-        : `background-color: ${config.bg}; color: ${config.color};`"
+      :class="selected ? 'bg-white/20 text-white' : [config.textClass, config.bgClass]"
     >
       {{ config.label }}
     </span>

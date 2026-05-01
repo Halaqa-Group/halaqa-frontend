@@ -4,7 +4,9 @@
       "Bash(pnpm nuxt *)",
       "Bash(pnpm add *)",
       "Bash(pnpm typecheck *)",
-      "Bash(pnpm dev *)"
+      "Bash(pnpm dev *)",
+      "Bash(node *)",
+      "Bash(npx nuxi *)"
     ]
   }
 }

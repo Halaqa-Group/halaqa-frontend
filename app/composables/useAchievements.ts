@@ -101,6 +101,24 @@ export function useAchievements() {
   }
 
   /**
+   * Updates an existing achievement
+   */
+  async function updateAchievement(id: number, data: CreateAchievementDto) {
+    isSaving.value = true
+    try {
+      const updated = await api<ApiAchievement>(`/achievements/${id}`, {
+        method: 'PATCH',
+        body: data
+      })
+      const idx = achievements.value.findIndex(a => a.id === id)
+      if (idx !== -1) achievements.value[idx] = updated
+      return updated
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  /**
    * Deletes an achievement
    */
   async function deleteAchievement(id: number) {
@@ -148,6 +166,7 @@ export function useAchievements() {
     selectStudent,
     loadAchievements,
     addAchievement,
+    updateAchievement,
     deleteAchievement,
     reset
   }

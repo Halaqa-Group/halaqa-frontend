@@ -8,7 +8,12 @@
       "Bash(node *)",
       "Bash(npx nuxi *)",
       "Bash(npx nuxt *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(git -C C:/Users/nassr/Github/my-work/halaqa-nuxtjs status --short)",
+      "Bash(git -C C:/Users/nassr/Github/my-work/halaqa-nuxtjs stash)",
+      "Bash(pnpm --dir C:/Users/nassr/Github/my-work/halaqa-nuxtjs typecheck)",
+      "Bash(git -C C:/Users/nassr/Github/my-work/halaqa-nuxtjs stash pop)",
+      "Bash(grep -qE \"ready in|Local:.*http|ERROR|error\" \"C:\\\\\\\\Users\\\\\\\\nassr\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-nassr-Github-my-work-halaqa-nuxtjs\\\\\\\\4e4034c0-c6d5-41c2-be33-dfa9b499c5b6\\\\\\\\tasks\\\\\\\\bdslex6d9.output\")"
     ]
   }
 }

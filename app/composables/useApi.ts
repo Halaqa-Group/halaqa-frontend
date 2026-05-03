@@ -1,10 +1,12 @@
+import { tryMock } from '~/mocks'
+
 export function useApi() {
   const config = useRuntimeConfig()
   // useCookie() is a reactive ref — it always holds the latest in-memory value
   // even on the same tick it was written, unlike document.cookie which may lag.
   const token = useCookie<string | null>('auth_token')
 
-  return $fetch.create({
+  const real = $fetch.create({
     baseURL: config.public.apiBase as string,
     onRequest({ options }) {
       if (token.value) {
@@ -31,4 +33,12 @@ export function useApi() {
       }
     }
   })
+
+  // Mock-first wrapper: routes registered in app/mocks/handlers.ts win;
+  // anything else falls through to the real $fetch above.
+  return async <T = unknown>(url: string, opts: any = {}): Promise<T> => {
+    const result = await tryMock(url, opts)
+    if (result.matched) return result.data as T
+    return real<T>(url, opts)
+  }
 }

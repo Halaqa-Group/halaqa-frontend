@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import type { AttendanceStatus } from '~/types'
+import type { ApiAttendance, ApiStudent, AttendanceStatus } from '~/types'
 
 interface AttendanceRow {
   studentId: string
@@ -37,14 +37,25 @@ const sessionNotes = ref('')
 const attendanceRows = ref<AttendanceRow[]>([])
 const existingRecords = ref<Map<string, ExistingRecord>>(new Map())
 const originalSnapshot = ref<Map<string, RowSnapshot>>(new Map())
+// Past 14 days of attendance for the loaded halaqa, grouped by ISO date.
+// Populated by loadSession; powers buildDateStrip and wasAbsentYesterday.
+const historyByDate = ref<Map<string, ApiAttendance[]>>(new Map())
 const selectedHalaqaId = ref<number | null>(null)
-const selectedDate = ref(new Date().toISOString().split('T')[0])
+const selectedDate = ref<string>(new Date().toISOString().split('T')[0]!)
 const isLoading = ref(false)
 const isSaving = ref(false)
 const loadError = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const statusFilter = ref<StatusFilter>('all')
 const viewMode = ref<ViewMode>('grid')
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0')
+}
+
+function isoOf(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+}
 
 function backendToStatus(status: string): AttendanceStatus {
   if (status === 'Present') return 'present'
@@ -68,7 +79,6 @@ function snapshotCurrentRows() {
 
 export function useAttendance() {
   const api = useApi()
-  const { user } = useAuth()
 
   async function loadSession(halaqaId: number, date: string) {
     selectedHalaqaId.value = halaqaId
@@ -77,23 +87,37 @@ export function useAttendance() {
     isLoading.value = true
     loadError.value = null
     try {
-      const [studentsData, existingData] = await Promise.all([
-        api<any[]>(`/students?halaqaId=${halaqaId}`),
-        api<any[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`)
+      const sessionDate = new Date(date)
+      const fromDate = new Date(sessionDate)
+      fromDate.setDate(fromDate.getDate() - 14)
+
+      const [studentsData, existingData, historyData] = await Promise.all([
+        api<ApiStudent[]>(`/students?halaqaId=${halaqaId}`),
+        api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`),
+        api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&from=${isoOf(fromDate)}&to=${date}`)
       ])
+
       const recMap = new Map<string, ExistingRecord>()
-      existingData.forEach((a: any) => {
+      existingData.forEach((a) => {
         recMap.set(String(a.student_id), { id: a.id, status: a.status, notes: a.notes || '' })
       })
       existingRecords.value = recMap
 
-      attendanceRows.value = studentsData.map((s: any) => {
+      const histMap = new Map<string, ApiAttendance[]>()
+      for (const r of historyData) {
+        const bucket = histMap.get(r.date) ?? []
+        bucket.push(r)
+        histMap.set(r.date, bucket)
+      }
+      historyByDate.value = histMap
+
+      attendanceRows.value = studentsData.map((s) => {
         const ex = recMap.get(String(s.id))
         return {
           studentId: String(s.id),
           name: s.name,
           avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
-          currentSurah: '—',
+          currentSurah: s.current_surah ?? '—',
           status: ex ? backendToStatus(ex.status) : 'present' as AttendanceStatus,
           notes: ex?.notes || ''
         }
@@ -223,28 +247,18 @@ export function useAttendance() {
     })
   }
 
-  // Mock: was student absent in the previous session?
-  // Deterministic by studentId so reloads don't flicker.
   function wasAbsentYesterday(studentId: string): boolean {
-    const n = Number(studentId)
-    if (Number.isNaN(n)) {
-      let h = 0
-      for (let i = 0; i < studentId.length; i++) h = (h * 31 + studentId.charCodeAt(i)) | 0
-      return Math.abs(h) % 4 === 0
-    }
-    return n % 4 === 0
+    const yesterday = new Date(selectedDate.value)
+    yesterday.setDate(yesterday.getDate() - 1)
+    const recs = historyByDate.value.get(isoOf(yesterday)) ?? []
+    return recs.some(r => String(r.student_id) === studentId && r.status === 'Absent')
   }
 
-  // Mock: deterministic attendance rate per past date for the date strip.
-  function mockRateForDate(d: Date): number {
-    const seed = d.getFullYear() * 372 + (d.getMonth() + 1) * 31 + d.getDate()
-    const rotated = ((seed * 9301 + 49297) % 233280) / 233280
-    return Math.round(rotated * 100)
-  }
-
-  function pad2(n: number) { return String(n).padStart(2, '0') }
-  function isoOf(d: Date) {
-    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+  function rateForDate(iso: string): number | null {
+    const recs = historyByDate.value.get(iso)
+    if (!recs || recs.length === 0) return null
+    const present = recs.filter(r => r.status === 'Present').length
+    return Math.round((present / recs.length) * 100)
   }
 
   function buildDateStrip(locale: string, days = 14): DateStripDay[] {
@@ -263,7 +277,7 @@ export function useAttendance() {
         iso,
         dayName: fmt.format(d),
         dayNumber: d.getDate(),
-        rate: isFuture || isToday ? null : mockRateForDate(d),
+        rate: isFuture || isToday ? null : rateForDate(iso),
         isToday,
         isFuture
       })

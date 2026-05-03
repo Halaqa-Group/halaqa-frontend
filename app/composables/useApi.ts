@@ -16,20 +16,14 @@ export function useApi() {
       }
     },
     onResponseError({ request, response }) {
-      if (response.status === 401 && import.meta.client) {
+      if (!import.meta.client) return
+      if (response.status === 401) {
         token.value = null
         navigateTo('/auth/login')
+        return
       }
-      // Log 400 errors for debugging
-      if (response.status === 400 && import.meta.client) {
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-        console.error('🚨 API 400 Bad Request Error')
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-        console.error('URL:', request)
-        console.error('Status:', response.status)
-        console.error('Message:', response._data?.message || response.statusText)
-        console.error('Error Details:', JSON.stringify(response._data, null, 2))
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+      if (response.status === 400) {
+        console.error('[API 400]', request, response._data ?? response.statusText)
       }
     }
   })

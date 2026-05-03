@@ -57,6 +57,12 @@ export interface ApiStudent {
   daily_far_pages_capacity: number
   notes: string | null
   photo_url: string | null
+  // Summary fields populated by list/detail endpoints. Optional so the entity
+  // shape stays usable for create/update payloads where these are absent.
+  progress_percent?: number
+  current_surah?: string
+  halaqa_name?: string
+  attendance_rate?: number
 }
 
 export interface ApiHalaqa {

@@ -151,8 +151,8 @@ export function useSchedule() {
 
       schedule.value = newSchedule
       savedItemKeys.value = newSavedKeys
-    } catch {
-      // On error keep fresh state
+    } catch (e) {
+      console.warn('[useSchedule] failed to load plan, keeping fresh state', e)
     } finally {
       isLoading.value = false
     }

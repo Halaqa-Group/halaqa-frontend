@@ -1,3 +1,4 @@
+import { SURAH_NAMES } from '~/data/constants'
 import type {
   ApiAchievement,
   ApiAttendance,
@@ -7,6 +8,33 @@ import type {
 } from '~/types'
 import { db } from './db'
 import { MockError, register } from './router'
+
+function withSummary(s: ApiStudent): ApiStudent {
+  const achievements = db.achievements.filter(a => a.student_id === s.id)
+  const records = db.attendance.filter(a => a.student_id === s.id)
+  const enrollment = db.enrollments.find(e => e.studentId === s.id)
+  const halaqa = enrollment ? db.halaqat.find(h => h.id === enrollment.halaqaId) : undefined
+
+  const latest = achievements[achievements.length - 1]
+  const current_surah = latest ? SURAH_NAMES[latest.end_surah] : undefined
+
+  const present = records.filter(a => a.status === 'Present').length
+  const attendance_rate = records.length > 0
+    ? Math.round((present / records.length) * 100)
+    : undefined
+
+  // Deterministic per-student progress so demos look varied without leaking
+  // hash-based fakery into UI code.
+  const progress_percent = ((s.id * 17 + 23) % 80) + 10
+
+  return {
+    ...s,
+    progress_percent,
+    current_surah,
+    halaqa_name: halaqa?.name,
+    attendance_rate
+  }
+}
 
 function b64url(s: string): string {
   const utf8 = new TextEncoder().encode(s)
@@ -54,21 +82,22 @@ register('GET', '/halaqat', ({ query }) => {
 // ── Students ────────────────────────────────────────────────────────────────
 
 register('GET', '/students', ({ query }) => {
+  let list = db.students
   if (query.halaqaId) {
     const hid = Number(query.halaqaId)
     const enrolledIds = new Set(
       db.enrollments.filter(e => e.halaqaId === hid).map(e => e.studentId)
     )
-    return db.students.filter(s => enrolledIds.has(s.id))
+    list = list.filter(s => enrolledIds.has(s.id))
   }
-  return db.students
+  return list.map(withSummary)
 })
 
 register('GET', '/students/:id', ({ params }) => {
   const id = Number(params.id)
   const student = db.students.find(s => s.id === id)
   if (!student) throw new MockError(404, 'Student not found')
-  return student
+  return withSummary(student)
 })
 
 register('POST', '/students', ({ body }) => {
@@ -112,6 +141,8 @@ register('GET', '/attendance', ({ query }) => {
   if (query.halaqaId) list = list.filter(a => a.halaqa_id === Number(query.halaqaId))
   if (query.date) list = list.filter(a => a.date === query.date)
   if (query.studentId) list = list.filter(a => a.student_id === Number(query.studentId))
+  if (query.from) list = list.filter(a => a.date >= query.from!)
+  if (query.to) list = list.filter(a => a.date <= query.to!)
   return list
 })
 

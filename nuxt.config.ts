@@ -42,12 +42,6 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-15',
 
-  nitro: {
-    devProxy: {
-      '/api': { target: 'http://127.0.0.1:3001/api', changeOrigin: true }
-    }
-  },
-
   i18n: {
     defaultLocale: 'ar',
     strategy: 'no_prefix',

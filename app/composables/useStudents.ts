@@ -12,15 +12,15 @@ const searchQuery = ref('')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
-function apiToStudent(s: any): Student {
+function apiToStudent(s: ApiStudent): Student {
   return {
     id: String(s.id),
     name: s.name,
-    status: s.status as 'active' | 'inactive',
-    currentSurah: '—',
-    progress: 0,
-    halaqa: '—',
-    attendance: 0,
+    status: s.status,
+    currentSurah: s.current_surah ?? '—',
+    progress: s.progress_percent ?? 0,
+    halaqa: s.halaqa_name ?? '—',
+    attendance: s.attendance_rate ?? 0,
     avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`
   }
 }
@@ -35,7 +35,7 @@ export function useStudents() {
     try {
       const params = new URLSearchParams()
       if (halaqaId) params.set('halaqaId', String(halaqaId))
-      const data = await api<any[]>(`/students${params.toString() ? `?${params}` : ''}`)
+      const data = await api<ApiStudent[]>(`/students${params.toString() ? `?${params}` : ''}`)
       students.value = data.map(apiToStudent)
     } catch (e: any) {
       error.value = e?.data?.message || 'حدث خطأ أثناء تحميل الطلاب'
@@ -54,7 +54,7 @@ export function useStudents() {
       school_id: Number(user.value.school_id)
     }
 
-    const data = await api<any>('/students', {
+    const data = await api<ApiStudent>('/students', {
       method: 'POST',
       body: requestBody
     })
@@ -102,7 +102,7 @@ export function useStudents() {
   }
 
   async function updateStudent(id: number, dto: Record<string, any>) {
-    const data = await api<any>(`/students/${id}`, {
+    const data = await api<ApiStudent>(`/students/${id}`, {
       method: 'PATCH',
       body: dto
     })

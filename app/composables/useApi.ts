@@ -29,10 +29,19 @@ export function useApi() {
   })
 
   // Mock-first wrapper: routes registered in app/mocks/handlers.ts win;
-  // anything else falls through to the real $fetch above.
+  // anything else falls through to the real $fetch above. Both branches
+  // produce the same { code, data } envelope, which we unwrap here so
+  // composables consume the inner shape directly.
   return async <T = unknown>(url: string, opts: any = {}): Promise<T> => {
     const result = await tryMock(url, opts)
-    if (result.matched) return result.data as T
-    return real<T>(url, opts)
+    const raw = result.matched ? result.data : await real<unknown>(url, opts)
+    return unwrap<T>(raw)
   }
+}
+
+function unwrap<T>(raw: unknown): T {
+  if (raw && typeof raw === 'object' && 'code' in (raw as Record<string, unknown>) && 'data' in (raw as Record<string, unknown>)) {
+    return (raw as { data: T }).data
+  }
+  return raw as T
 }

@@ -86,8 +86,8 @@ onMounted(async () => {
             <div class="flex items-center gap-3">
               <UDashboardSidebarCollapse :icon="isCollapsed ? 'i-lucide-panel-left-close' : 'i-lucide-panel-left-open'" />
               <div>
-                <h2 class="font-bold text-base mb-1">
-                  {{ user?.school_name }}
+                <h2 v-if="user?.name" class="font-bold text-base mb-1">
+                  {{ user.name }}
                 </h2>
                 <UBreadcrumb :items="breadcrumb" :ui="{ linkLabel: 'text-xs' }" />
               </div>

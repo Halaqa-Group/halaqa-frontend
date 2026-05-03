@@ -27,7 +27,6 @@ function apiToStudent(s: ApiStudent): Student {
 
 export function useStudents() {
   const api = useApi()
-  const { user } = useAuth()
 
   async function fetchStudents(halaqaId?: number) {
     isLoading.value = true
@@ -45,20 +44,11 @@ export function useStudents() {
   }
 
   async function createStudent(dto: Record<string, any>) {
-    if (!user.value?.school_id) {
-      throw new Error('User school_id is required to create a student')
-    }
-
-    const requestBody = {
-      ...dto,
-      school_id: Number(user.value.school_id)
-    }
-
+    // Backend forces school_id from the authenticated user; we don't send it.
     const data = await api<ApiStudent>('/students', {
       method: 'POST',
-      body: requestBody
+      body: dto
     })
-
     students.value.unshift(apiToStudent(data))
     return data
   }

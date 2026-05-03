@@ -17,6 +17,13 @@ const attendanceError = ref(false)
 
 const today = new Date().toISOString().split('T')[0]
 
+const userRoleLabel = computed(() => {
+  const roles = user.value?.roles ?? []
+  if (roles.includes('teacher')) return 'teacher'
+  if (roles.some(r => ['principal', 'vice_principal', 'supervisor', 'admin'].includes(r))) return 'admin'
+  return 'parent'
+})
+
 const presentToday = computed(() =>
   todayAttendance.value.filter(a => a.status === 'Present').length
 )
@@ -193,7 +200,7 @@ onMounted(async () => {
         style="background-color: var(--color-primary-container);">
         <UIcon name="i-lucide-shield-check" class="w-4 h-4" style="color: var(--color-primary);" />
         <span class="text-sm font-semibold" style="color: var(--color-primary);">
-          {{ $t(`roles.${user?.role === 'teacher' || user?.role === 'admin' ? user.role : 'parent'}`) }}
+          {{ $t(`roles.${userRoleLabel}`) }}
         </span>
       </div>
     </div>

@@ -36,37 +36,8 @@ function withSummary(s: ApiStudent): ApiStudent {
   }
 }
 
-function b64url(s: string): string {
-  const utf8 = new TextEncoder().encode(s)
-  let bin = ''
-  for (const b of utf8) bin += String.fromCharCode(b)
-  return btoa(bin).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
-}
-
-function makeFakeJWT(payload: Record<string, unknown>): string {
-  const header = b64url(JSON.stringify({ alg: 'none', typ: 'JWT' }))
-  const body = b64url(JSON.stringify(payload))
-  return `${header}.${body}.mock-signature`
-}
-
-// ── Auth ────────────────────────────────────────────────────────────────────
-
-register('POST', '/auth/login', ({ body }) => {
-  const user = db.users[0]!
-  const email = (body as { email?: string } | undefined)?.email ?? user.email
-  const payload = {
-    sub: user.id,
-    id: user.id,
-    name: user.name,
-    email,
-    role: user.role,
-    school_id: user.school_id,
-    school_name: user.school_name,
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7
-  }
-  return { access_token: makeFakeJWT(payload), user }
-})
+// Auth endpoints are real (POST /auth/login, GET /auth/me, POST /auth/logout, …);
+// the absence of mock handlers here makes them fall through to $fetch in useApi.
 
 // ── Halaqat ─────────────────────────────────────────────────────────────────
 

@@ -38,13 +38,14 @@ function delay(ms: number): Promise<void> {
 
 export class MockError extends Error {
   status: number
-  data: { message: string }
-  response: { status: number, _data: { message: string } }
+  data: { code: number, message: string }
+  response: { status: number, _data: { code: number, message: string } }
   constructor(status: number, message: string) {
     super(message)
     this.status = status
-    this.data = { message }
-    this.response = { status, _data: { message } }
+    const body = { code: status, message }
+    this.data = body
+    this.response = { status, _data: body }
   }
 }
 
@@ -70,7 +71,8 @@ export async function tryMock(
     if (params === null) continue
     await delay(80 + Math.random() * 120)
     const data = await route.handler({ params, query, body: opts.body })
-    return { matched: true, data }
+    // Mirror the real backend's success envelope so useApi can unwrap uniformly.
+    return { matched: true, data: { code: 200, data } }
   }
   return { matched: false }
 }

@@ -1,3 +1,9 @@
+import type { FetchOptions } from 'ofetch'
+
+// ── API client ──────────────────────────────────────────────────────────────
+
+export type ApiClient = <T = unknown>(url: string, opts?: FetchOptions) => Promise<T>
+
 // ── UI types (used by existing components) ──────────────────────────────────
 
 export interface LessonItem {

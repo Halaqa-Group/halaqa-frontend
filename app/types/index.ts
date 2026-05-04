@@ -78,6 +78,14 @@ export interface ApiHalaqa {
   school_id: number
   teacher_id: number
   schedules: { id: number, day_of_week: number }[]
+  /** Present on list responses when the API joins teacher info */
+  teacher_name?: string
+}
+
+export interface ApiTeacherOption {
+  id: number
+  name: string
+  email: string
 }
 
 export interface ApiAttendance {

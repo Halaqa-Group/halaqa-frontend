@@ -101,8 +101,53 @@
     "halaqat": {
       "title": "حلقات",
       "subtitle": "إدارة حلقات المدرسة",
-      "managementTitle": "إدارة الحلقات",
-      "comingSoon": "سيتم إضافة أدوات إدارة الحلقات قريباً."
+      "managementTitle": "قائمة الحلقات",
+      "add": "إضافة حلقة",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "actions": "إجراءات",
+      "formAddTitle": "حلقة جديدة",
+      "formEditTitle": "تعديل الحلقة",
+      "formHint": "اختر المعلم والأيام التي تعقد فيها الحلقة.",
+      "fieldName": "الاسم",
+      "fieldNamePlaceholder": "مثال: حلقة الفجر",
+      "fieldType": "النوع",
+      "fieldTeacher": "المعلم",
+      "fieldTeacherPlaceholder": "اختر معلماً",
+      "fieldDays": "أيام الأسبوع",
+      "fieldDaysHint": "اضغط الأيام التي تعقد فيها الحلقة.",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "deleteConfirmTitle": "حذف الحلقة؟",
+      "deleteConfirmMessage": "سيتم حذف «{name}» وفك الربط مع التسجيل والسجلات في العرض التجريبي.",
+      "toastCreated": "تم إنشاء الحلقة",
+      "toastUpdated": "تم تحديث الحلقة",
+      "toastDeleted": "تم حذف الحلقة",
+      "toastError": "حدث خطأ",
+      "validationName": "الاسم مطلوب",
+      "validationTeacher": "يرجى اختيار معلم",
+      "validationDays": "اختر يوماً واحداً على الأقل",
+      "types": {
+        "Memorization": "حفظ",
+        "Tajweed": "تجويد",
+        "Aqeedah": "عقيدة"
+      },
+      "table": {
+        "id": "المعرّف",
+        "name": "الاسم",
+        "type": "النوع",
+        "teacher": "المعلم",
+        "schedule": "الجدول"
+      },
+      "dayShort": {
+        "sat": "س",
+        "sun": "ح",
+        "mon": "ن",
+        "tue": "ث",
+        "wed": "ر",
+        "thu": "خ",
+        "fri": "ج"
+      }
     },
     "teachers": {
       "title": "المعلمون",

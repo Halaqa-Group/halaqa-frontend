@@ -1,7 +1,14 @@
-import type { ApiHalaqa } from '~/types'
+import type { ApiHalaqa, ApiTeacherOption } from '~/types'
 
 const halaqat = ref<ApiHalaqa[]>([])
 const isLoading = ref(false)
+
+export interface SaveHalaqaPayload {
+  name: string
+  type: ApiHalaqa['type']
+  teacher_id: number
+  days: number[]
+}
 
 export function useHalaqat() {
   const api = useApi()
@@ -23,5 +30,45 @@ export function useHalaqat() {
     }
   }
 
-  return { halaqat, isLoading, fetchHalaqat }
+  async function fetchTeachers(): Promise<ApiTeacherOption[]> {
+    return api<ApiTeacherOption[]>('/teachers')
+  }
+
+  async function createHalaqa(payload: SaveHalaqaPayload) {
+    return api<ApiHalaqa>('/halaqat', {
+      method: 'POST',
+      body: {
+        name: payload.name,
+        type: payload.type,
+        teacher_id: payload.teacher_id,
+        days: payload.days
+      }
+    })
+  }
+
+  async function updateHalaqa(id: number, payload: SaveHalaqaPayload) {
+    return api<ApiHalaqa>(`/halaqat/${id}`, {
+      method: 'PATCH',
+      body: {
+        name: payload.name,
+        type: payload.type,
+        teacher_id: payload.teacher_id,
+        days: payload.days
+      }
+    })
+  }
+
+  async function deleteHalaqa(id: number) {
+    await api(`/halaqat/${id}`, { method: 'DELETE' })
+  }
+
+  return {
+    halaqat,
+    isLoading,
+    fetchHalaqat,
+    fetchTeachers,
+    createHalaqa,
+    updateHalaqa,
+    deleteHalaqa
+  }
 }

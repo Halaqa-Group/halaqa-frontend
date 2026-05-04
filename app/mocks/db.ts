@@ -174,6 +174,14 @@ function buildSeed(): MockDB {
         role: 'teacher',
         school_id: 1,
         school_name: 'مدرسة الحلقة'
+      },
+      {
+        id: 2,
+        name: 'الأستاذ خالد',
+        email: 'khaled@halaqa.app',
+        role: 'teacher',
+        school_id: 1,
+        school_name: 'مدرسة الحلقة'
       }
     ],
     halaqat,

@@ -2,6 +2,7 @@ import { SURAH_NAMES } from '~/data/constants'
 import type {
   ApiAchievement,
   ApiAttendance,
+  ApiHalaqa,
   ApiStudent,
   ApiWeeklyPlan,
   ApiWeeklyPlanItem
@@ -41,13 +42,124 @@ function withSummary(s: ApiStudent): ApiStudent {
 
 // ── Halaqat ─────────────────────────────────────────────────────────────────
 
+function withTeacherName(h: ApiHalaqa): ApiHalaqa {
+  const teacher = db.users.find(u => u.id === h.teacher_id)
+  return {
+    ...h,
+    teacher_name: teacher?.name
+  }
+}
+
+function nextHalaqaId(): number {
+  return db.halaqat.length ? Math.max(...db.halaqat.map(h => h.id)) + 1 : 1
+}
+
 register('GET', '/halaqat', ({ query }) => {
   let list = db.halaqat
   if (query.teacherId) {
     const tid = Number(query.teacherId)
     list = list.filter(h => h.teacher_id === tid)
   }
-  return list
+  return list.map(withTeacherName)
+})
+
+register('GET', '/teachers', () => {
+  return db.users
+    .filter(u => u.role === 'teacher')
+    .map(u => ({ id: u.id, name: u.name, email: u.email }))
+})
+
+register('POST', '/halaqat', ({ body }) => {
+  const b = (body ?? {}) as Partial<{
+    name: string
+    type: ApiHalaqa['type']
+    teacher_id: number | string
+    days: number[]
+  }>
+  const name = (b.name ?? '').trim()
+  if (!name) throw new MockError(400, 'Name is required')
+  if (b.teacher_id === undefined || b.teacher_id === null) throw new MockError(400, 'Teacher is required')
+  const teacherId = Number(b.teacher_id)
+  const teacher = db.users.find(u => u.id === teacherId && u.role === 'teacher')
+  if (!teacher) throw new MockError(400, 'Invalid teacher')
+  const days = (b.days && b.days.length > 0 ? [...b.days] : [0, 1, 2, 3, 4])
+    .map(Number)
+    .filter(d => d >= 0 && d <= 6)
+  const uniqueDays = [...new Set(days)].sort((a, b) => a - b)
+  if (!uniqueDays.length) throw new MockError(400, 'At least one weekday is required')
+  let maxSch = 0
+  for (const h of db.halaqat) {
+    for (const s of h.schedules) maxSch = Math.max(maxSch, s.id)
+  }
+  const schedules = uniqueDays.map((day_of_week, i) => ({
+    id: maxSch + i + 1,
+    day_of_week
+  }))
+  const created: ApiHalaqa = {
+    id: nextHalaqaId(),
+    name,
+    type: b.type && ['Memorization', 'Tajweed', 'Aqeedah'].includes(b.type) ? b.type : 'Memorization',
+    school_id: 1,
+    teacher_id: teacherId,
+    schedules
+  }
+  db.halaqat.push(created)
+  return withTeacherName(created)
+})
+
+register('PATCH', '/halaqat/:id', ({ params, body }) => {
+  const id = Number(params.id)
+  const idx = db.halaqat.findIndex(h => h.id === id)
+  if (idx === -1) throw new MockError(404, 'Halaqa not found')
+  const cur = db.halaqat[idx]!
+  const b = (body ?? {}) as Partial<{
+    name: string
+    type: ApiHalaqa['type']
+    teacher_id: number | string
+    days: number[]
+  }>
+  if (b.teacher_id !== undefined && b.teacher_id !== null) {
+    const teacherId = Number(b.teacher_id)
+    const teacher = db.users.find(u => u.id === teacherId && u.role === 'teacher')
+    if (!teacher) throw new MockError(400, 'Invalid teacher')
+  }
+  let schedules = cur.schedules
+  if (b.days && b.days.length > 0) {
+    const days = [...b.days].map(Number).filter(d => d >= 0 && d <= 6)
+    const uniqueDays = [...new Set(days)].sort((a, b) => a - b)
+    if (!uniqueDays.length) throw new MockError(400, 'At least one weekday is required')
+    let maxSch = 0
+    for (const h of db.halaqat) {
+      for (const s of h.schedules) maxSch = Math.max(maxSch, s.id)
+    }
+    schedules = uniqueDays.map((day_of_week, i) => ({
+      id: maxSch + i + 1,
+      day_of_week
+    }))
+  }
+  const next: ApiHalaqa = {
+    ...cur,
+    name: b.name !== undefined ? String(b.name).trim() || cur.name : cur.name,
+    type: b.type && ['Memorization', 'Tajweed', 'Aqeedah'].includes(b.type) ? b.type : cur.type,
+    teacher_id: b.teacher_id !== undefined && b.teacher_id !== null ? Number(b.teacher_id) : cur.teacher_id,
+    schedules,
+    id: cur.id,
+    school_id: cur.school_id
+  }
+  db.halaqat[idx] = next
+  return withTeacherName(next)
+})
+
+register('DELETE', '/halaqat/:id', ({ params }) => {
+  const id = Number(params.id)
+  const idx = db.halaqat.findIndex(h => h.id === id)
+  if (idx === -1) throw new MockError(404, 'Halaqa not found')
+  db.enrollments = db.enrollments.filter(e => e.halaqaId !== id)
+  db.attendance = db.attendance.filter(a => a.halaqa_id !== id)
+  db.achievements = db.achievements.filter(a => a.halaqa_id !== id)
+  db.plans = db.plans.filter(p => p.halaqa_id !== id)
+  db.halaqat.splice(idx, 1)
+  return { success: true }
 })
 
 // ── Students ────────────────────────────────────────────────────────────────

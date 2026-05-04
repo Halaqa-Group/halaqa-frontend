@@ -101,8 +101,53 @@
     "halaqat": {
       "title": "Halaqat",
       "subtitle": "Manage school halaqat",
-      "managementTitle": "Halaqat Management",
-      "comingSoon": "Halaqat management tools will be added soon."
+      "managementTitle": "Halaqat list",
+      "add": "Add halaqa",
+      "edit": "Edit",
+      "delete": "Delete",
+      "actions": "Actions",
+      "formAddTitle": "New halaqa",
+      "formEditTitle": "Edit halaqa",
+      "formHint": "Choose a teacher and the weekdays this halaqa runs.",
+      "fieldName": "Name",
+      "fieldNamePlaceholder": "e.g. Fajr circle",
+      "fieldType": "Type",
+      "fieldTeacher": "Teacher",
+      "fieldTeacherPlaceholder": "Select a teacher",
+      "fieldDays": "Weekdays",
+      "fieldDaysHint": "Tap days when this halaqa meets.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "deleteConfirmTitle": "Delete halaqa?",
+      "deleteConfirmMessage": "This will remove “{name}” and unlink related enrollments and records in this demo.",
+      "toastCreated": "Halaqa created",
+      "toastUpdated": "Halaqa updated",
+      "toastDeleted": "Halaqa deleted",
+      "toastError": "Something went wrong",
+      "validationName": "Name is required",
+      "validationTeacher": "Please select a teacher",
+      "validationDays": "Select at least one weekday",
+      "types": {
+        "Memorization": "Memorization",
+        "Tajweed": "Tajweed",
+        "Aqeedah": "Aqeedah"
+      },
+      "table": {
+        "id": "ID",
+        "name": "Name",
+        "type": "Type",
+        "teacher": "Teacher",
+        "schedule": "Schedule"
+      },
+      "dayShort": {
+        "sat": "Sat",
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri"
+      }
     },
     "teachers": {
       "title": "Teachers",

@@ -33,7 +33,11 @@
     "logout": "Sign out",
     "email": "Email",
     "password": "Password",
-    "invalidCredentials": "Invalid credentials"
+    "invalidCredentials": "Invalid credentials",
+    "forgotPasswordLink": "Forgot password?",
+    "passwordMismatch": "Passwords do not match",
+    "genericError": "Something went wrong. Please try again.",
+    "sessionExpired": "Your session expired. Please sign in again."
   },
   "validation": {
     "required": "This field is required.",
@@ -53,9 +57,12 @@
     "invalid_dimensions": "The image dimensions are invalid. Please upload an image between {min} and {max} pixels."
   },
   "roles": {
+    "principal": "Principal",
+    "vice_principal": "Vice Principal",
+    "supervisor": "Supervisor",
     "teacher": "Teacher",
-    "admin": "Admin",
-    "parent": "Parent"
+    "parent": "Parent",
+    "admin": "Admin"
   },
   "nav": {
     "home": "Home",
@@ -64,7 +71,9 @@
     "achievements": "Achievements",
     "analytics": "Analytics",
     "planner": "Planner",
-    "tasks": "Tasks"
+    "tasks": "Tasks",
+    "profile": "Profile",
+    "users": "Users"
   },
   "attendance": {
     "status": {
@@ -86,6 +95,136 @@
     "login": {
       "title": "Sign in to your account",
       "description": "Enter your email and password to access your account."
+    },
+    "forgotPassword": {
+      "title": "Forgot your password?",
+      "description": "Enter your email and we'll send you a link to reset it.",
+      "successTitle": "Check your inbox",
+      "successDescription": "If an account exists for this email, you will receive a reset link shortly.",
+      "backToLogin": "Back to sign in"
+    },
+    "resetPassword": {
+      "title": "Set a new password",
+      "description": "Enter a new password for {email}.",
+      "verifying": "Verifying link...",
+      "expiredTitle": "This link is no longer valid",
+      "expiredDescription": "Reset links expire after one hour and can only be used once.",
+      "requestNew": "Request a new link",
+      "successToast": "Password updated. You can sign in with your new password."
+    },
+    "users": {
+      "title": "User management",
+      "subtitle": "Add, edit, deactivate, and reset passwords for everyone in your school.",
+      "addButton": "Add user",
+      "searchPlaceholder": "Search by name or email...",
+      "filters": {
+        "allRoles": "All roles",
+        "allStatuses": "All statuses"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "suspended": "Suspended"
+      },
+      "columns": {
+        "user": "User",
+        "roles": "Roles",
+        "status": "Status",
+        "lastLogin": "Last login",
+        "actions": ""
+      },
+      "neverLoggedIn": "Never",
+      "noResults": "No users match the current filters.",
+      "loadError": "Failed to load users",
+      "showingCount": "Showing {from}–{to} of {total}",
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete",
+        "resetPassword": "Reset password",
+        "manageRoles": "Manage roles"
+      },
+      "addModal": {
+        "title": "Add a user",
+        "description": "Create an account and assign roles. The new user will be able to sign in immediately.",
+        "saveButton": "Create user",
+        "savedToast": "User created"
+      },
+      "editModal": {
+        "title": "Edit user",
+        "description": "Update profile fields, assign or remove roles, or reset the password.",
+        "saveButton": "Save changes",
+        "savedToast": "User updated",
+        "rolesSection": "Roles",
+        "rolesEmpty": "No roles assigned yet.",
+        "dangerZone": "Account actions",
+        "resetPasswordTrigger": "Reset password",
+        "deleteTrigger": "Deactivate user"
+      },
+      "deleteConfirm": {
+        "title": "Deactivate this user?",
+        "message": "The user will be soft-deleted and signed out from every device. You can reactivate the account later from the database.",
+        "deletedToast": "User deactivated"
+      },
+      "adminReset": {
+        "title": "Reset {name}'s password",
+        "description": "Set a new password for this user. They will need to sign in with it.",
+        "warning": "All of this user's active sessions will be revoked.",
+        "saveButton": "Reset password",
+        "savedToast": "Password reset"
+      },
+      "rolesError": "Could not update roles"
+    },
+    "profile": {
+      "title": "My profile",
+      "subtitle": "Manage your personal information and account security.",
+      "tabs": {
+        "profile": "Profile",
+        "security": "Reset password",
+        "sessions": "Sessions"
+      },
+      "profileCard": {
+        "title": "Personal information",
+        "description": "Your name and contact details.",
+        "emailHint": "Email cannot be changed. Contact an administrator if you need to update it.",
+        "saveButton": "Save changes",
+        "savedToast": "Profile updated"
+      },
+      "securityCard": {
+        "title": "Change password",
+        "description": "Pick a new password to use the next time you sign in. Other devices will be signed out.",
+        "saveButton": "Update password",
+        "savedToast": "Password updated"
+      },
+      "sessions": {
+        "title": "Active sessions",
+        "description": "Devices currently signed in to your account. Revoke any session you don't recognise.",
+        "current": "This device",
+        "loadError": "Failed to load sessions",
+        "empty": "No active sessions.",
+        "columns": {
+          "device": "Device",
+          "ipAddress": "IP address",
+          "lastUsed": "Last active",
+          "issued": "Signed in",
+          "actions": ""
+        },
+        "deviceType": {
+          "web": "Web browser",
+          "mobile_ios": "iOS",
+          "mobile_android": "Android",
+          "desktop": "Desktop app",
+          "other": "Other"
+        },
+        "revoke": "Revoke",
+        "revokeConfirmTitle": "Revoke this session?",
+        "revokeConfirmMessage": "The device will be signed out the next time it makes a request.",
+        "revokedToast": "Session revoked",
+        "revokeError": "Failed to revoke session",
+        "logoutAll": "Sign out everywhere",
+        "logoutAllConfirmTitle": "Sign out from all devices?",
+        "logoutAllConfirmMessage": "You will be signed out from this device too and asked to sign in again.",
+        "never": "Never"
+      }
     },
     "tasks": {
       "title": "Tasks",
@@ -413,14 +552,24 @@
   "label": {
     "email_address": "Email address",
     "password": "Password",
-    "remember_me": "Remember me"
+    "remember_me": "Remember me",
+    "new_password": "New password",
+    "password_confirmation": "Confirm password",
+    "current_password": "Current password",
+    "full_name": "Full name",
+    "phone": "Phone number",
+    "photo_url": "Photo URL"
   },
   "placeholder": {
-    "password": "Enter your password"
+    "password": "Enter your password",
+    "new_password": "At least 8 characters",
+    "password_confirmation": "Re-enter your password"
   },
   "action": {
     "sign_in": "Sign in",
     "show_password": "Show password",
-    "hide_password": "Hide password"
+    "hide_password": "Hide password",
+    "send_reset_link": "Send reset link",
+    "reset_password": "Reset password"
   }
 }

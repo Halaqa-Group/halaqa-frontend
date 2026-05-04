@@ -53,7 +53,9 @@ function createClient(): ApiClient {
       } catch {
         return false
       } finally {
-        queueMicrotask(() => { refreshPromise = null })
+        queueMicrotask(() => {
+          refreshPromise = null
+        })
       }
     })()
     return refreshPromise
@@ -72,8 +74,20 @@ function createClient(): ApiClient {
 
       const ok = await attemptRefresh()
       if (!ok) {
+        const hadToken = !!token.value
         token.value = null
-        if (import.meta.client) navigateTo('/auth/login')
+        if (import.meta.client) {
+          // Toast only when the user actually had a session — avoids surprising
+          // public-page visitors who happened to fetch something protected.
+          if (hadToken) {
+            const { t } = useI18n()
+            useToast().add({
+              title: t('auth.sessionExpired'),
+              color: 'warning'
+            })
+          }
+          navigateTo('/auth/login')
+        }
         throw e
       }
       // onRequest reads token reactively, so the retry sends the new access token.

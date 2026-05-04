@@ -11,14 +11,23 @@ const localePath = useLocalePath()
 const open = ref(false)
 const isCollapsed = ref(false)
 
-const links = computed<NavigationMenuItem[][]>(() => [[
-  { label: t('nav.home'), icon: 'i-lucide-layout-grid', to: '/' },
-  { label: t('nav.attendance'), icon: 'i-lucide-user-check', to: '/attendance' },
-  { label: t('nav.achievements'), icon: 'i-lucide-award', to: '/achievements' },
-  { label: t('nav.students'), icon: 'i-lucide-users', to: '/students' },
-  { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' },
-  { label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' }
-]])
+const isPrincipal = computed(() => user.value?.roles.includes('principal') ?? false)
+
+const links = computed<NavigationMenuItem[][]>(() => {
+  const main: NavigationMenuItem[] = [
+    { label: t('nav.home'), icon: 'i-lucide-layout-grid', to: '/' },
+    { label: t('nav.attendance'), icon: 'i-lucide-user-check', to: '/attendance' },
+    { label: t('nav.achievements'), icon: 'i-lucide-award', to: '/achievements' },
+    { label: t('nav.students'), icon: 'i-lucide-users', to: '/students' },
+    { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' },
+    { label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' }
+  ]
+  const bottom: NavigationMenuItem[] = []
+  if (isPrincipal.value) {
+    bottom.push({ label: t('nav.users'), icon: 'i-lucide-users-round', to: '/users' })
+  }
+  return [main, bottom]
+})
 
 const breadcrumb = computed<BreadcrumbItem[]>(() => {
   const items = route.meta?.breadcrumb as { label: string, to?: string }[] | undefined
@@ -71,6 +80,7 @@ onMounted(async () => {
           orientation="vertical"
           tooltip
           class="mt-auto"
+          :ui="{ link: collapsed ? 'justify-center py-3' : ' py-3' }"
         />
       </template>
 

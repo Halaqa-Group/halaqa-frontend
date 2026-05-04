@@ -1,14 +1,18 @@
+const PUBLIC_ROUTES = new Set([
+  '/auth/login',
+  '/auth/forgot-password',
+  '/auth/reset-password'
+])
+
 export default defineNuxtRouteMiddleware((to) => {
   const token = useCookie('auth_token')
-  // const { user } = useAuth()
+  const isPublic = PUBLIC_ROUTES.has(to.path)
 
-  // Redirect to login if no token
-  if (!token.value && to.path !== '/auth/login') {
+  if (!token.value && !isPublic) {
     return navigateTo('/auth/login')
   }
 
-  // Redirect to dashboard if already logged in
-  if (token.value && to.path === '/auth/login') {
+  if (token.value && isPublic) {
     return navigateTo('/')
   }
 })

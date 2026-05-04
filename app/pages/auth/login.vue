@@ -6,6 +6,7 @@ definePageMeta({ layout: 'auth' })
 
 const { t } = useI18n()
 const { login } = useAuth()
+const apiError = useApiError()
 
 const schema = z.object({
   email: z.email({ error: () => t('validation.email') }),
@@ -32,8 +33,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   try {
     await login(event.data.email, event.data.password)
     await navigateTo('/')
-  } catch (e: any) {
-    error.value = e?.data?.message || t('auth.invalidCredentials')
+  } catch (e: unknown) {
+    error.value = apiError.format(e, t('auth.invalidCredentials'))
   } finally {
     isLoading.value = false
   }
@@ -57,7 +58,12 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       <UFormField :label="$t('label.password')" name="password">
         <CommonPasswordToggle v-model:password="state.password" :placeholder="$t('placeholder.password')" />
       </UFormField>
-      <UCheckbox v-model="state.remember_me" :label="$t('label.remember_me')" name="remember" />
+      <div class="flex items-center justify-between">
+        <UCheckbox v-model="state.remember_me" :label="$t('label.remember_me')" name="remember" />
+        <NuxtLink to="/auth/forgot-password" class="text-sm text-primary hover:underline">
+          {{ $t('auth.forgotPasswordLink') }}
+        </NuxtLink>
+      </div>
       <UButton type="submit" :label="$t('action.sign_in')" :loading="isLoading" block />
     </UForm>
   </div>

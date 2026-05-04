@@ -2,23 +2,39 @@
 import type { NavigationMenuItem, BreadcrumbItem } from '@nuxt/ui'
 
 const { t } = useI18n()
-const { user } = useAuth()
+const { user, activeRole } = useAuth()
 const { initializeHalaqa } = useGlobalHalaqa()
-const { isNotificationsSlideoverOpen } = useDashboard()
 const route = useRoute()
 const localePath = useLocalePath()
 
 const open = ref(false)
 const isCollapsed = ref(false)
 
-const links = computed<NavigationMenuItem[][]>(() => [[
-  { label: t('nav.home'), icon: 'i-lucide-layout-grid', to: '/' },
-  { label: t('nav.attendance'), icon: 'i-lucide-user-check', to: '/attendance' },
-  { label: t('nav.achievements'), icon: 'i-lucide-award', to: '/achievements' },
-  { label: t('nav.students'), icon: 'i-lucide-users', to: '/students' },
-  { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' },
-  { label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' }
-]])
+const links = computed<NavigationMenuItem[][]>(() => {
+  if (activeRole.value === 'parent') {
+    return [[
+      { label: t('nav.parentOverview'), icon: 'i-lucide-heart-handshake', to: '/parent' }
+    ]]
+  }
+
+  const mainLinks: NavigationMenuItem[] = [
+    { label: t('nav.home'), icon: 'i-lucide-layout-grid', to: '/' }
+  ]
+
+  if (activeRole.value === 'principal') {
+    mainLinks.push({ label: t('nav.halaqat'), icon: 'i-lucide-building-2', to: '/halaqat' })
+  }
+
+  mainLinks.push(
+    { label: t('nav.attendance'), icon: 'i-lucide-user-check', to: '/attendance' },
+    { label: t('nav.achievements'), icon: 'i-lucide-award', to: '/achievements' },
+    { label: t('nav.students'), icon: 'i-lucide-users', to: '/students' },
+    { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' },
+    { label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' }
+  )
+
+  return [mainLinks]
+})
 
 const breadcrumb = computed<BreadcrumbItem[]>(() => {
   const items = route.meta?.breadcrumb as { label: string, to?: string }[] | undefined
@@ -29,6 +45,33 @@ const breadcrumb = computed<BreadcrumbItem[]>(() => {
     label: $t(item.label),
     ...(item?.to ? { to: localePath(item.to) } : {})
   }))
+})
+
+const roleOptions = computed(() => user.value?.roles?.map(role => ({
+  label: t(`roles.${role}`),
+  value: role
+})))
+
+const hasMultipleRoles = computed(() => user.value?.roles?.length > 1)
+
+watch(activeRole, async (role) => {
+  if (!role) return
+
+  await refreshNuxtData()
+
+  if (role === 'parent' && route.path !== '/parent') {
+    await navigateTo('/parent')
+    return
+  }
+
+  if (route.path === '/parent' && role !== 'parent') {
+    await navigateTo('/')
+    return
+  }
+
+  if (route.path.startsWith('/halaqat') && role !== 'principal') {
+    await navigateTo('/')
+  }
 })
 
 onMounted(async () => {
@@ -66,6 +109,7 @@ onMounted(async () => {
         />
 
         <UNavigationMenu
+          v-if="links[1]?.length"
           :collapsed="collapsed"
           :items="links[1]"
           orientation="vertical"
@@ -95,18 +139,14 @@ onMounted(async () => {
           </template>
 
           <template #right>
-            <UTooltip text="Notifications" :shortcuts="['N']">
-              <UButton
-                color="neutral"
-                variant="ghost"
-                square
-                @click="isNotificationsSlideoverOpen = true"
-              >
-                <UChip color="error" inset>
-                  <UIcon name="i-lucide-bell" class="size-5 shrink-0" />
-                </UChip>
-              </UButton>
-            </UTooltip>
+            <USelect
+              v-if="hasMultipleRoles"
+              v-model="activeRole"
+              :items="roleOptions"
+              value-key="value"
+              class="w-40"
+              size="sm"
+            />
           </template>
         </UDashboardNavbar>
       </template>

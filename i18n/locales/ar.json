@@ -53,12 +53,16 @@
     "slug": "يجب أن يكون هذا الحقل رابطًا صالحًا (أحرف صغيرة وأرقام وشرطات فقط)."
   },
   "roles": {
+    "principal": "مدير المدرسة",
+    "vice_principal": "وكيل المدرسة",
+    "supervisor": "مشرف",
     "teacher": "معلم",
-    "admin": "مدير",
     "parent": "ولي أمر"
   },
   "nav": {
     "home": "الرئيسية",
+    "halaqat": "حلقات",
+    "parentOverview": "أبنائي",
     "attendance": "الحضور",
     "students": "الطلاب",
     "achievements": "الإنجازات",
@@ -90,6 +94,27 @@
     "tasks": {
       "title": "المهام",
       "comingSoon": "قائمة المهام والمتابعة ستكون متاحة هنا قريباً"
+    },
+    "halaqat": {
+      "title": "حلقات",
+      "subtitle": "إدارة حلقات المدرسة",
+      "managementTitle": "إدارة الحلقات",
+      "comingSoon": "سيتم إضافة أدوات إدارة الحلقات قريباً."
+    },
+    "parent": {
+      "title": "متابعة الأبناء",
+      "subtitle": "عرض إنجازات الأبناء وإحصاءات الحفظ بشكل مبسط",
+      "bestChild": "أعلى مستوى حفظ",
+      "childrenAchievements": "إنجازات الأبناء",
+      "noChildren": "لا يوجد أبناء لعرض بياناتهم حالياً",
+      "currentSurah": "السورة الحالية",
+      "memorizationProgress": "نسبة حفظ القرآن",
+      "attendanceRate": "نسبة الحضور",
+      "stats": {
+        "childrenCount": "عدد الأبناء",
+        "avgProgress": "متوسط الحفظ",
+        "avgAttendance": "متوسط الحضور"
+      }
     },
     "home": {
       "greeting": "أهلاً، {name}",

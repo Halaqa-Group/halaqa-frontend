@@ -53,12 +53,16 @@
     "invalid_dimensions": "The image dimensions are invalid. Please upload an image between {min} and {max} pixels."
   },
   "roles": {
+    "principal": "Principal",
+    "vice_principal": "Vice Principal",
+    "supervisor": "Supervisor",
     "teacher": "Teacher",
-    "admin": "Admin",
     "parent": "Parent"
   },
   "nav": {
     "home": "Home",
+    "halaqat": "Halaqat",
+    "parentOverview": "My Children",
     "attendance": "Attendance",
     "students": "Students",
     "achievements": "Achievements",
@@ -90,6 +94,27 @@
     "tasks": {
       "title": "Tasks",
       "comingSoon": "Tasks and follow-up list coming soon"
+    },
+    "halaqat": {
+      "title": "Halaqat",
+      "subtitle": "Manage school halaqat",
+      "managementTitle": "Halaqat Management",
+      "comingSoon": "Halaqat management tools will be added soon."
+    },
+    "parent": {
+      "title": "Children Overview",
+      "subtitle": "Simple view for children achievements and Quran memorization stats",
+      "bestChild": "Top memorization progress",
+      "childrenAchievements": "Children Achievements",
+      "noChildren": "No children data available yet",
+      "currentSurah": "Current surah",
+      "memorizationProgress": "Quran memorization progress",
+      "attendanceRate": "Attendance rate",
+      "stats": {
+        "childrenCount": "Children count",
+        "avgProgress": "Average memorization",
+        "avgAttendance": "Average attendance"
+      }
     },
     "home": {
       "greeting": "Hi, {name}",

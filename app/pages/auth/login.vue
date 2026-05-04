@@ -31,7 +31,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   error.value = ''
   isLoading.value = true
   try {
-    await login(event.data.email, event.data.password)
+    await login(event.data.email, event.data.password, event.data.remember_me ?? false)
     await navigateTo('/')
   } catch (e: unknown) {
     error.value = apiError.format(e, t('auth.invalidCredentials'))

@@ -40,10 +40,10 @@ export function useAuth() {
   const user = useState<AuthUser | null>('auth_user', () => null)
   const isLoggedIn = computed(() => !!token.value)
 
-  async function login(email: string, password: string) {
+  async function login(email: string, password: string, rememberMe = false) {
     const data = await api<LoginResponse>('/auth/login', {
       method: 'POST',
-      body: { email, password }
+      body: { email, password, rememberMe }
     })
     token.value = data.accessToken
     user.value = data.user

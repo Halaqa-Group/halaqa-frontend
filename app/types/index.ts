@@ -88,6 +88,27 @@ export interface ApiTeacherOption {
   email: string
 }
 
+/** Full teacher row for school management (list + forms). */
+export interface ApiTeacher extends ApiTeacherOption {
+  identity_number: string
+  phone: string | null
+  status: 'active' | 'inactive'
+  assigned_halaqat: string
+}
+
+/** Parent/guardian record for school management (list + forms). */
+export interface ApiParent {
+  id: number
+  school_id: number
+  name: string
+  email: string
+  phone: string | null
+  identity_number: string
+  children_count: number
+  children_names: string
+  status: 'active' | 'inactive'
+}
+
 export interface ApiAttendance {
   id: number
   student_id: number

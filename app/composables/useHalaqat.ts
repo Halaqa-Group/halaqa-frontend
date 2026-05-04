@@ -1,4 +1,4 @@
-import type { ApiHalaqa, ApiTeacherOption } from '~/types'
+import type { ApiHalaqa, ApiTeacher, ApiTeacherOption } from '~/types'
 
 const halaqat = ref<ApiHalaqa[]>([])
 const isLoading = ref(false)
@@ -31,7 +31,8 @@ export function useHalaqat() {
   }
 
   async function fetchTeachers(): Promise<ApiTeacherOption[]> {
-    return api<ApiTeacherOption[]>('/teachers')
+    const list = await api<ApiTeacher[]>('/teachers')
+    return list.map(({ id, name, email }) => ({ id, name, email }))
   }
 
   async function createHalaqa(payload: SaveHalaqaPayload) {

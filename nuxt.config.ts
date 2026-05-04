@@ -44,7 +44,10 @@ export default defineNuxtConfig({
 
   nitro: {
     devProxy: {
-      '/api': { target: 'http://127.0.0.1:8080/api', changeOrigin: true }
+      '/api': {
+        target: `http://127.0.0.1:${process.env.NUXT_BACKEND_PORT}/api`,
+        changeOrigin: true
+      }
     }
   },
 

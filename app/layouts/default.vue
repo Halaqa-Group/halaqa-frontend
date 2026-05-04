@@ -22,7 +22,11 @@ const links = computed<NavigationMenuItem[][]>(() => {
   ]
 
   if (activeRole.value === 'principal') {
-    mainLinks.push({ label: t('nav.halaqat'), icon: 'i-lucide-building-2', to: '/halaqat' })
+    mainLinks.push(
+      { label: t('nav.halaqat'), icon: 'i-lucide-building-2', to: '/halaqat' },
+      { label: t('nav.teachers'), icon: 'i-lucide-user-cog', to: '/teachers' },
+      { label: t('nav.parents'), icon: 'i-lucide-users-round', to: '/parents' }
+    )
   }
 
   mainLinks.push(
@@ -73,6 +77,14 @@ watch(activeRole, async (role) => {
   }
 
   if (route.path.startsWith('/halaqat') && role !== 'principal') {
+    await navigateTo('/')
+  }
+
+  if (route.path.startsWith('/teachers') && role !== 'principal') {
+    await navigateTo('/')
+  }
+
+  if (route.path.startsWith('/parents') && role !== 'principal') {
     await navigateTo('/')
   }
 })

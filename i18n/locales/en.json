@@ -62,6 +62,8 @@
   "nav": {
     "home": "Home",
     "halaqat": "Halaqat",
+    "teachers": "Teachers",
+    "parents": "Parents",
     "parentOverview": "My Children",
     "attendance": "Attendance",
     "students": "Students",
@@ -100,6 +102,18 @@
       "subtitle": "Manage school halaqat",
       "managementTitle": "Halaqat Management",
       "comingSoon": "Halaqat management tools will be added soon."
+    },
+    "teachers": {
+      "title": "Teachers",
+      "subtitle": "Manage teachers in your school",
+      "managementTitle": "Teacher management",
+      "comingSoon": "Teacher management tools will be added soon."
+    },
+    "parents": {
+      "title": "Parents",
+      "subtitle": "Manage parents linked to your school",
+      "managementTitle": "Parent management",
+      "comingSoon": "Parent management tools will be added soon."
     },
     "parent": {
       "title": "Children Overview",

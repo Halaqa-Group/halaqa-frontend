@@ -20,6 +20,7 @@ function createClient(): ApiClient {
   // the `api` function returned at the bottom.
   const network = $fetch.create({
     baseURL: config.public.apiBase as string,
+    credentials: 'include',
     onRequest({ options }) {
       if (token.value) {
         const headers = new Headers(options.headers)

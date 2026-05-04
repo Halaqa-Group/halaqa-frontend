@@ -24,7 +24,8 @@
     "yes": "Yes",
     "no": "No",
     "selectHalaqaPrompt": "Use the halaqa icon in the sidebar to select a halaqa",
-    "selectStudent": "Select a student"
+    "selectStudent": "Select a student",
+    "callPhoneAria": "Call {phone}"
   },
   "auth": {
     "login": "Sign in",
@@ -107,13 +108,34 @@
       "title": "Teachers",
       "subtitle": "Manage teachers in your school",
       "managementTitle": "Teacher management",
-      "comingSoon": "Teacher management tools will be added soon."
+      "comingSoon": "More actions (add, edit, assign halaqat) will be added when the API is ready.",
+      "table": {
+        "id": "ID",
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "assignedHalaqat": "Assigned halaqat",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive"
+      }
     },
     "parents": {
       "title": "Parents",
       "subtitle": "Manage parents linked to your school",
       "managementTitle": "Parent management",
-      "comingSoon": "Parent management tools will be added soon."
+      "comingSoon": "More actions (add, edit, link children) will be added when the API is ready.",
+      "table": {
+        "id": "ID",
+        "name": "Name",
+        "email": "Email",
+        "phone": "Phone",
+        "childrenCount": "Children",
+        "childrenNames": "Linked students",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive"
+      }
     },
     "parent": {
       "title": "Children Overview",

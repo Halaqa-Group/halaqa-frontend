@@ -29,9 +29,12 @@ const links = computed<NavigationMenuItem[][]>(() => {
     { label: t('nav.attendance'), icon: 'i-lucide-user-check', to: '/attendance' },
     { label: t('nav.achievements'), icon: 'i-lucide-award', to: '/achievements' },
     { label: t('nav.students'), icon: 'i-lucide-users', to: '/students' },
-    { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' },
-    { label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' }
+    { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' }
   )
+
+  if (activeRole.value !== 'teacher') {
+    mainLinks.push({ label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' })
+  }
 
   return [mainLinks]
 })

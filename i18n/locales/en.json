@@ -269,6 +269,25 @@
         "achievements": "Track recitation and memorization",
         "analytics": "Performance reports and alerts"
       },
+      "schoolCard": {
+        "title": "Your school",
+        "subtitle": "Keep this information accurate for staff, parents, and records.",
+        "edit": "Edit details",
+        "address": "Address",
+        "phone": "Phone",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "formTitle": "Update school",
+        "formHint": "Changes apply to your school profile in this workspace.",
+        "fieldName": "School name",
+        "fieldAddress": "Address",
+        "fieldPhone": "Phone",
+        "fieldStatus": "School status",
+        "toastSaved": "School updated",
+        "toastError": "Could not save school",
+        "validationName": "School name is required"
+      },
       "welcome": {
         "title": "Welcome to Halaqa",
         "message": "Halaqa not set up yet. Contact your admin to add students."

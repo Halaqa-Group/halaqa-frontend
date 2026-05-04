@@ -71,6 +71,15 @@ export interface ApiStudent {
   attendance_rate?: number
 }
 
+/** Current school profile (principal dashboard / settings). */
+export interface ApiSchool {
+  id: number
+  name: string
+  address: string
+  phone: string | null
+  status: 'active' | 'inactive'
+}
+
 export interface ApiHalaqa {
   id: number
   name: string

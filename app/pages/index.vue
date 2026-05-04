@@ -202,6 +202,8 @@ onMounted(async () => {
       </div>
     </div>
 
+    <SchoolSummaryCard />
+
     <!-- Loading -->
     <div v-if="isLoading" class="flex justify-center py-16">
       <UIcon name="i-lucide-loader-circle" class="w-10 h-10 animate-spin" style="color: var(--color-primary);" />

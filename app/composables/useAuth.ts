@@ -79,9 +79,8 @@ export function useAuth() {
       // Best-effort: clear local state regardless of server outcome.
     }
     token.value = null
-    if (import.meta.client && activeRoleStorageKey.value) {
-      localStorage.removeItem(activeRoleStorageKey.value)
-    }
+    // Keep auth_active_role_{userId} in localStorage so the same preference
+    // is restored on the next login for this account.
     user.value = null
     activeRole.value = null
     return navigateTo('/auth/login')

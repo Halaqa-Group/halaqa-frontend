@@ -4,6 +4,7 @@ import type {
   ApiAttendance,
   ApiHalaqa,
   ApiParent,
+  ApiSchool,
   ApiStudent,
   ApiTeacher,
   ApiWeeklyPlan,
@@ -41,6 +42,41 @@ function withSummary(s: ApiStudent): ApiStudent {
 
 // Auth endpoints are real (POST /auth/login, GET /auth/me, POST /auth/logout, …);
 // the absence of mock handlers here makes them fall through to $fetch in useApi.
+
+function currentSchool(): ApiSchool {
+  const school = db.schools[0]
+  if (!school) throw new MockError(404, 'School not found')
+  return school
+}
+
+register('GET', '/school', () => {
+  return currentSchool()
+})
+
+register('PATCH', '/school', ({ body }) => {
+  const school = currentSchool()
+  const b = (body ?? {}) as Partial<Pick<ApiSchool, 'name' | 'address' | 'phone' | 'status'>>
+  if (b.name !== undefined) {
+    const n = String(b.name).trim()
+    if (!n) throw new MockError(400, 'Name is required')
+    school.name = n
+    for (const u of db.users) {
+      if (u.school_id === school.id) u.school_name = n
+    }
+  }
+  if (b.address !== undefined) school.address = String(b.address).trim()
+  if (b.phone !== undefined) {
+    const p = b.phone
+    school.phone = p === null || p === '' ? null : String(p).trim()
+  }
+  if (b.status !== undefined) {
+    if (b.status !== 'active' && b.status !== 'inactive') {
+      throw new MockError(400, 'Invalid status')
+    }
+    school.status = b.status
+  }
+  return school
+})
 
 // ── Halaqat ─────────────────────────────────────────────────────────────────
 
@@ -122,7 +158,7 @@ register('POST', '/teachers', ({ body }) => {
     email,
     role: 'teacher',
     school_id: 1,
-    school_name: 'مدرسة الحلقة',
+    school_name: currentSchool().name,
     identity_number,
     phone: b.phone?.trim() || null,
     status: b.status === 'inactive' ? 'inactive' : 'active'

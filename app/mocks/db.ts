@@ -3,6 +3,7 @@ import type {
   ApiAttendance,
   ApiHalaqa,
   ApiParent,
+  ApiSchool,
   ApiStudent,
   ApiWeeklyPlan
 } from '~/types'
@@ -34,7 +35,7 @@ interface Sequences {
 }
 
 export interface MockDB {
-  schools: { id: number, name: string }[]
+  schools: ApiSchool[]
   users: MockUser[]
   parents: ApiParent[]
   halaqat: ApiHalaqa[]
@@ -171,7 +172,13 @@ function buildSeed(): MockDB {
   }
 
   return {
-    schools: [{ id: 1, name: 'مدرسة الحلقة' }],
+    schools: [{
+      id: 1,
+      name: 'مدرسة الحلقة',
+      address: 'طريق الملك فهد، حي النرجس، الرياض',
+      phone: '+966112345678',
+      status: 'active'
+    }],
     users: [
       {
         id: 1,

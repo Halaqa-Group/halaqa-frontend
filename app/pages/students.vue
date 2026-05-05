@@ -5,7 +5,7 @@ const { t } = useI18n()
 const { students, searchQuery, isLoading, error, fetchStudents, openAdd } = useStudents()
 const { selectedHalaqaId } = useGlobalHalaqa()
 
-type SortKey = 'newest' | 'topMemorizers' | 'lowestAttendance' | 'nameAsc'
+type SortKey = 'newest' | 'nameAsc' | 'joinDateDesc'
 type ViewMode = 'grid' | 'list'
 
 const filterStatus = ref<string | null>(null)
@@ -13,18 +13,14 @@ const sortKey = ref<SortKey>('newest')
 const viewMode = ref<ViewMode>('grid')
 const visibleCount = ref(12)
 
-const studentsWithMeta = computed(() =>
-  students.value.map(s => ({ student: s, meta: getStudentMockMeta(s) }))
-)
-
 const searchFiltered = computed(() =>
-  studentsWithMeta.value.filter(({ student }) =>
+  students.value.filter(student =>
     !searchQuery.value || student.name.includes(searchQuery.value)
   )
 )
 
 const filteredStudents = computed(() =>
-  searchFiltered.value.filter(({ student }) =>
+  searchFiltered.value.filter(student =>
     filterStatus.value === null || student.status === filterStatus.value
   )
 )
@@ -32,12 +28,10 @@ const filteredStudents = computed(() =>
 const sortedStudents = computed(() => {
   const arr = [...filteredStudents.value]
   switch (sortKey.value) {
-    case 'topMemorizers':
-      return arr.sort((a, b) => b.meta.progress - a.meta.progress)
-    case 'lowestAttendance':
-      return arr.sort((a, b) => a.meta.attendanceRate - b.meta.attendanceRate)
+    case 'joinDateDesc':
+      return arr.sort((a, b) => b.joinDate.localeCompare(a.joinDate))
     case 'nameAsc':
-      return arr.sort((a, b) => a.student.name.localeCompare(b.student.name, 'ar'))
+      return arr.sort((a, b) => a.name.localeCompare(b.name, 'ar'))
     case 'newest':
     default:
       return arr
@@ -52,36 +46,34 @@ watch([searchQuery, filterStatus, sortKey], () => {
 
 const filterCounts = computed(() => {
   const all = searchFiltered.value.length
-  const active = searchFiltered.value.filter(s => s.student.status === 'active').length
-  const inactive = searchFiltered.value.filter(s => s.student.status === 'inactive').length
-  return { all, active, inactive }
+  const active = searchFiltered.value.filter(s => s.status === 'active').length
+  const inactive = searchFiltered.value.filter(s => s.status === 'inactive').length
+  const graduated = searchFiltered.value.filter(s => s.status === 'graduated').length
+  return { all, active, inactive, graduated }
 })
 
 const statusFilters = computed<{ label: string, value: string | null, count: number }[]>(() => [
   { label: t('pages.students.statusAll'), value: null, count: filterCounts.value.all },
   { label: t('pages.students.statusActive'), value: 'active', count: filterCounts.value.active },
-  { label: t('pages.students.statusInactive'), value: 'inactive', count: filterCounts.value.inactive }
+  { label: t('pages.students.statusInactive'), value: 'inactive', count: filterCounts.value.inactive },
+  { label: t('pages.students.statusGraduated'), value: 'graduated', count: filterCounts.value.graduated }
 ])
 
 // Page-level summary stats (across all students, before search/filter)
 const summary = computed(() => {
   const total = students.value.length
   const active = students.value.filter(s => s.status === 'active').length
-  const inactive = total - active
-  const metas = studentsWithMeta.value.map(s => s.meta)
-  const avgProgress = metas.length
-    ? Math.round(metas.reduce((sum, m) => sum + m.progress, 0) / metas.length)
+  const inactive = students.value.filter(s => s.status === 'inactive').length
+  const graduated = students.value.filter(s => s.status === 'graduated').length
+  const avgHifzCapacity = students.value.length
+    ? Math.round(students.value.reduce((sum, s) => sum + s.dailyHifzPagesCapacity, 0) / students.value.length)
     : 0
-  const avgAttendance = metas.length
-    ? Math.round(metas.reduce((sum, m) => sum + m.attendanceRate, 0) / metas.length)
-    : 0
-  return { total, active, inactive, avgProgress, avgAttendance }
+  return { total, active, inactive, graduated, avgHifzCapacity }
 })
 
 const sortItems = computed<DropdownMenuItem[][]>(() => [[
   { label: t('pages.students.sort.newest'), icon: 'i-lucide-clock', onSelect: () => { sortKey.value = 'newest' } },
-  { label: t('pages.students.sort.topMemorizers'), icon: 'i-lucide-trending-up', onSelect: () => { sortKey.value = 'topMemorizers' } },
-  { label: t('pages.students.sort.lowestAttendance'), icon: 'i-lucide-trending-down', onSelect: () => { sortKey.value = 'lowestAttendance' } },
+  { label: t('pages.students.sort.joinDateDesc'), icon: 'i-lucide-calendar', onSelect: () => { sortKey.value = 'joinDateDesc' } },
   { label: t('pages.students.sort.nameAsc'), icon: 'i-lucide-arrow-down-a-z', onSelect: () => { sortKey.value = 'nameAsc' } }
 ]])
 
@@ -181,15 +173,15 @@ onMounted(() => {
       </div>
       <div class="bg-white border border-outline-variant rounded-2xl px-4 py-3 flex flex-col gap-1">
         <span class="text-xs text-on-surface-variant">
-          {{ $t('pages.students.stats.avgMemorization') }}
+          {{ $t('pages.students.stats.graduatedStudents') }}
         </span>
-        <span class="text-2xl font-bold text-primary">{{ summary.avgProgress }}%</span>
+        <span class="text-2xl font-bold text-primary">{{ summary.graduated }}</span>
       </div>
       <div class="bg-white border border-outline-variant rounded-2xl px-4 py-3 flex flex-col gap-1 col-span-2 md:col-span-1">
         <span class="text-xs text-on-surface-variant">
-          {{ $t('pages.students.stats.weeklyAttendance') }}
+          {{ $t('pages.students.stats.avgHifzCapacity') }}
         </span>
-        <span class="text-2xl font-bold text-primary">{{ summary.avgAttendance }}%</span>
+        <span class="text-2xl font-bold text-primary">{{ summary.avgHifzCapacity }}</span>
       </div>
     </div>
 
@@ -311,20 +303,12 @@ onMounted(() => {
 
     <!-- Grid view -->
     <div v-else-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <StudentCard
-        v-for="{ student } in visibleStudents"
-        :key="student.id"
-        :student="student"
-      />
+      <StudentCard v-for="student in visibleStudents" :key="student.id" :student="student" />
     </div>
 
     <!-- List view -->
     <div v-else class="flex flex-col gap-2">
-      <StudentRow
-        v-for="{ student } in visibleStudents"
-        :key="student.id"
-        :student="student"
-      />
+      <StudentRow v-for="student in visibleStudents" :key="student.id" :student="student" />
     </div>
 
     <!-- Load more -->

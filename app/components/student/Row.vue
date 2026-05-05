@@ -6,29 +6,10 @@ const props = defineProps<{ student: Student }>()
 const { t } = useI18n()
 const { openView, openEdit } = useStudents()
 const toast = useToast()
-
-const meta = computed(() => getStudentMockMeta(props.student))
-const badge = computed(() => STATUS_BADGE_CLASSES[meta.value.statusVariant])
-const progressClasses = computed(() => progressColorClasses(meta.value.progress))
-const attendanceDot = computed(() => attendanceDotClass(meta.value.attendanceRate))
-
-const lastSessionLabel = computed(() => {
-  const d = meta.value.lastSessionDays
-  if (d === null) return t('pages.students.card.noSessions')
-  if (d === 0) return t('pages.students.card.today')
-  if (d === 1) return t('pages.students.card.yesterday')
-  if (d < 7) return t('pages.students.card.daysAgo', { count: d })
-  return t('pages.students.card.weeksAgo', { count: Math.floor(d / 7) })
-})
-
 const statusLabel = computed(() => {
-  switch (meta.value.statusVariant) {
-    case 'active': return t('pages.students.statusBadge.active')
-    case 'frequentAbsent': return t('pages.students.statusBadge.frequentAbsent')
-    case 'stopped': return t('pages.students.statusBadge.stopped')
-    case 'new': return t('pages.students.statusBadge.new')
-  }
-  return ''
+  if (props.student.status === 'active') return t('pages.students.statusActive')
+  if (props.student.status === 'inactive') return t('pages.students.statusInactive')
+  return t('pages.students.statusGraduated')
 })
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [[
@@ -76,18 +57,17 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
         >
         <span
           class="absolute bottom-0 end-0 w-3 h-3 rounded-full border-2 border-white"
-          :class="badge.dot"
+          :class="student.status === 'active'
+            ? 'bg-green-500'
+            : student.status === 'inactive'
+              ? 'bg-yellow-500'
+              : 'bg-blue-500'"
         />
       </div>
       <div class="flex flex-col min-w-0">
         <span class="font-bold truncate text-on-surface">{{ student.name }}</span>
         <span class="text-xs truncate text-on-surface-variant">
-          <template v-if="meta.hasAnyAchievement">
-            {{ $t('pages.students.card.currentSurah') }}: {{ meta.currentSurah }}
-          </template>
-          <template v-else>
-            {{ $t('pages.students.card.notStarted') }}
-          </template>
+          {{ $t('pages.students.card.currentSurah') }}: {{ student.currentSurah }}
         </span>
       </div>
     </div>
@@ -95,54 +75,46 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
     <!-- Status badge -->
     <span
       class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold shrink-0"
-      :class="badge.container"
+      :class="student.status === 'active'
+        ? 'bg-track-hifz-bg text-track-hifz'
+        : student.status === 'inactive'
+          ? 'bg-status-warning-bg text-status-warning'
+          : 'bg-status-info-bg text-status-info'"
     >
-      <span class="w-1.5 h-1.5 rounded-full" :class="badge.dot" />
+      <span class="w-1.5 h-1.5 rounded-full" :class="student.status === 'active' ? 'bg-green-500' : student.status === 'inactive' ? 'bg-yellow-500' : 'bg-blue-500'" />
       {{ statusLabel }}
     </span>
 
     <!-- Progress -->
     <div class="hidden xl:flex flex-col shrink-0 w-20">
       <span class="text-[10px] uppercase tracking-wide text-on-surface-variant">
-        {{ $t('pages.students.stats.avgMemorization') }}
+        {{ $t('pages.students.card.dailyHifz') }}
       </span>
-      <span v-if="meta.hasAnyAchievement" class="text-sm font-bold" :class="progressClasses.text">
-        {{ meta.progress }}%
-      </span>
-      <span v-else class="text-xs text-on-surface-variant">
-        {{ $t('pages.students.card.notStarted') }}
-      </span>
+      <span class="text-sm font-bold text-on-surface">{{ student.dailyHifzPagesCapacity }}</span>
     </div>
 
     <!-- Attendance -->
     <div class="hidden md:flex flex-col shrink-0 w-20">
       <span class="text-[10px] uppercase tracking-wide text-on-surface-variant">
-        {{ $t('pages.students.card.attendanceRate') }}
+        {{ $t('pages.students.card.dailyNear') }}
       </span>
-      <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface">
-        <span class="w-2 h-2 rounded-full shrink-0" :class="attendanceDot" />
-        {{ meta.attendanceRate }}%
-      </span>
+      <span class="text-sm font-semibold text-on-surface">{{ student.dailyNearPagesCapacity }}</span>
     </div>
 
     <!-- Memorized ayahs -->
     <div class="hidden lg:flex flex-col shrink-0 w-20">
       <span class="text-[10px] uppercase tracking-wide text-on-surface-variant">
-        {{ $t('pages.students.card.totalAyahs') }}
+        {{ $t('pages.students.card.dailyFar') }}
       </span>
-      <span class="text-sm font-semibold text-on-surface">
-        {{ meta.ayahCount }} {{ $t('pages.students.card.ayahUnit') }}
-      </span>
+      <span class="text-sm font-semibold text-on-surface">{{ student.dailyFarPagesCapacity }}</span>
     </div>
 
     <!-- Last session -->
     <div class="hidden md:flex flex-col shrink-0 w-24">
       <span class="text-[10px] uppercase tracking-wide text-on-surface-variant">
-        {{ $t('pages.students.card.lastSession') }}
+        {{ $t('pages.students.card.guardians') }}
       </span>
-      <span class="text-sm text-on-surface">
-        {{ lastSessionLabel }}
-      </span>
+      <span class="text-sm text-on-surface">{{ student.guardians.length }}</span>
     </div>
 
     <!-- Quick actions -->

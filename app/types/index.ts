@@ -27,11 +27,19 @@ export interface DayData {
 export interface Student {
   id: string
   name: string
-  status: 'active' | 'inactive'
+  gender: 'male' | 'female'
+  status: 'active' | 'inactive' | 'graduated'
+  dob: string | null
+  joinDate: string
+  notes: string | null
   currentSurah: string
   progress: number
   halaqa: string
   attendance: number
+  dailyHifzPagesCapacity: number
+  dailyNearPagesCapacity: number
+  dailyFarPagesCapacity: number
+  guardians: ApiGuardian[]
   avatar: string
 }
 
@@ -50,25 +58,44 @@ export interface AttendanceEntry {
 
 export interface ApiStudent {
   id: number
-  school_id: number
-  father_id: number | null
-  mother_id: number | null
+  school_id?: number
+  father_id?: number | null
+  mother_id?: number | null
+  email?: string | null
   name: string
-  email: string | null
+  gender?: 'male' | 'female'
   dob: string | null
   join_date: string
-  status: 'active' | 'inactive'
-  daily_hifz_pages_capacity: number
-  daily_near_pages_capacity: number
-  daily_far_pages_capacity: number
+  status: 'active' | 'inactive' | 'graduated'
+  daily_hifz_pages_capacity: number | string
+  daily_near_pages_capacity: number | string
+  daily_far_pages_capacity: number | string
   notes: string | null
   photo_url: string | null
-  // Summary fields populated by list/detail endpoints. Optional so the entity
-  // shape stays usable for create/update payloads where these are absent.
   progress_percent?: number
   current_surah?: string
   halaqa_name?: string
   attendance_rate?: number
+  guardians?: ApiGuardian[]
+}
+
+export interface ApiStudentListResult {
+  items: ApiStudent[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface ApiGuardian {
+  user: {
+    id: number
+    name: string
+    email: string
+    phone: string | null
+  }
+  relation: string
+  is_primary: boolean
+  can_pickup: boolean
 }
 
 /** Current school profile (principal dashboard / settings). */

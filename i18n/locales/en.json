@@ -533,20 +533,20 @@
       "statusAll": "All",
       "statusActive": "Active",
       "statusInactive": "Inactive",
+      "statusGraduated": "Graduated",
       "noStudents": "No students",
       "showingCount": "Showing {filtered} of {total} students",
       "stats": {
         "totalStudents": "Total students",
         "activeStudents": "Active",
         "inactiveStudents": "Inactive",
-        "avgMemorization": "Avg memorization",
-        "weeklyAttendance": "Attendance this week"
+        "graduatedStudents": "Graduated",
+        "avgHifzCapacity": "Avg daily hifz pages"
       },
       "sort": {
         "label": "Sort",
         "newest": "Newest first",
-        "topMemorizers": "Top memorizers",
-        "lowestAttendance": "Lowest attendance",
+        "joinDateDesc": "Latest join date",
         "nameAsc": "Name (A-Z)"
       },
       "view": {
@@ -562,6 +562,11 @@
       "card": {
         "notStarted": "Not started yet",
         "awaitingFirst": "Awaiting first achievement",
+        "dailyHifz": "Daily hifz",
+        "dailyNear": "Daily near review",
+        "dailyFar": "Daily far review",
+        "pagesUnit": "pages",
+        "guardians": "Guardians",
         "lastSession": "Last session",
         "noSessions": "No sessions yet",
         "today": "Today",

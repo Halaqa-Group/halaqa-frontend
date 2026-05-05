@@ -8,6 +8,7 @@ const toast = useToast()
 
 type StudentForm = {
   name: string
+  gender: 'male' | 'female'
   dob: string
   joinDate: string
   fatherName: string
@@ -23,6 +24,7 @@ type StudentForm = {
 function emptyState(): StudentForm {
   return {
     name: '',
+    gender: 'male',
     dob: '',
     joinDate: '',
     fatherName: '',
@@ -60,11 +62,32 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
     // Create the student
     const newStudent = await createStudent({
       name: state.name.trim(),
+      gender: state.gender,
       dob: state.dob,
       join_date: state.joinDate,
       daily_hifz_pages_capacity: state.memPages,
       daily_near_pages_capacity: state.nearPages,
       daily_far_pages_capacity: state.farPages,
+      guardians: [
+        ...(state.fatherEmail.trim()
+          ? [{
+              email: state.fatherEmail.trim(),
+              name: state.fatherName.trim() || undefined,
+              relation: 'father',
+              is_primary: true,
+              can_pickup: true
+            }]
+          : []),
+        ...(state.motherEmail.trim()
+          ? [{
+              email: state.motherEmail.trim(),
+              name: state.motherName.trim() || undefined,
+              relation: 'mother',
+              is_primary: false,
+              can_pickup: true
+            }]
+          : [])
+      ],
       ...(state.notes.trim() ? { notes: state.notes.trim() } : {})
     })
 
@@ -196,6 +219,16 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
             <div class="md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <UFormField label="الاسم الكامل" name="name" class="sm:col-span-2">
                 <UInput v-model="state.name" placeholder="اسم الطالب الرباعي" class="w-full" />
+              </UFormField>
+              <UFormField label="الجنس" name="gender">
+                <USelect
+                  v-model="state.gender"
+                  :items="[
+                    { label: 'ذكر', value: 'male' },
+                    { label: 'أنثى', value: 'female' }
+                  ]"
+                  class="w-full"
+                />
               </UFormField>
               <UFormField label="تاريخ الميلاد" name="dob">
                 <UInput v-model="state.dob" type="date" class="w-full" />

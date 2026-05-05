@@ -533,20 +533,20 @@
       "statusAll": "الكل",
       "statusActive": "نشط",
       "statusInactive": "غير نشط",
+      "statusGraduated": "متخرج",
       "noStudents": "لا يوجد طلاب",
       "showingCount": "عرض {filtered} من {total} طالباً",
       "stats": {
         "totalStudents": "إجمالي الطلاب",
         "activeStudents": "النشطون",
         "inactiveStudents": "غير النشطين",
-        "avgMemorization": "متوسط نسبة الحفظ",
-        "weeklyAttendance": "نسبة الحضور هذا الأسبوع"
+        "graduatedStudents": "المتخرجون",
+        "avgHifzCapacity": "متوسط صفحات الحفظ اليومية"
       },
       "sort": {
         "label": "ترتيب",
         "newest": "الأحدث إضافةً",
-        "topMemorizers": "الأكثر حفظاً",
-        "lowestAttendance": "الأقل حضوراً",
+        "joinDateDesc": "الأحدث انضماماً",
         "nameAsc": "الاسم (أ-ي)"
       },
       "view": {
@@ -562,6 +562,11 @@
       "card": {
         "notStarted": "لم يبدأ بعد",
         "awaitingFirst": "في انتظار أول إنجاز",
+        "dailyHifz": "الحفظ اليومي",
+        "dailyNear": "المراجعة القريبة اليومية",
+        "dailyFar": "المراجعة البعيدة اليومية",
+        "pagesUnit": "صفحات",
+        "guardians": "أولياء الأمور",
         "lastSession": "آخر جلسة",
         "noSessions": "لا توجد جلسات",
         "today": "اليوم",

@@ -8,7 +8,7 @@ type EditForm = {
   name: string
   dob: string
   joinDate: string
-  status: 'active' | 'inactive'
+  status: 'active' | 'inactive' | 'graduated'
   memPages: number
   nearPages: number
   farPages: number
@@ -34,9 +34,9 @@ watch(editingApiStudent, (student) => {
     state.dob = student.dob ?? ''
     state.joinDate = student.join_date
     state.status = student.status
-    state.memPages = student.daily_hifz_pages_capacity
-    state.nearPages = student.daily_near_pages_capacity
-    state.farPages = student.daily_far_pages_capacity
+    state.memPages = Number(student.daily_hifz_pages_capacity) || 0
+    state.nearPages = Number(student.daily_near_pages_capacity) || 0
+    state.farPages = Number(student.daily_far_pages_capacity) || 0
     state.notes = student.notes ?? ''
   }
 })
@@ -75,7 +75,8 @@ async function handleSubmit(_event: FormSubmitEvent<EditForm>) {
 
 const statusOptions = [
   { label: 'نشط', value: 'active' },
-  { label: 'غير نشط', value: 'inactive' }
+  { label: 'غير نشط', value: 'inactive' },
+  { label: 'متخرج', value: 'graduated' }
 ]
 </script>
 

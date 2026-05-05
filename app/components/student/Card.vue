@@ -6,34 +6,10 @@ const props = defineProps<{ student: Student }>()
 const { t } = useI18n()
 const { openView, openEdit } = useStudents()
 const toast = useToast()
-
-const meta = computed(() => getStudentMockMeta(props.student))
-const badge = computed(() => STATUS_BADGE_CLASSES[meta.value.statusVariant])
-const progressClasses = computed(() => progressColorClasses(meta.value.progress))
-const attendanceDot = computed(() => attendanceDotClass(meta.value.attendanceRate))
-
-const progressBarWidth = computed(() => {
-  const p = meta.value.progress
-  return p === 0 ? '4px' : `${p}%`
-})
-
-const lastSessionLabel = computed(() => {
-  const d = meta.value.lastSessionDays
-  if (d === null) return t('pages.students.card.noSessions')
-  if (d === 0) return t('pages.students.card.today')
-  if (d === 1) return t('pages.students.card.yesterday')
-  if (d < 7) return t('pages.students.card.daysAgo', { count: d })
-  return t('pages.students.card.weeksAgo', { count: Math.floor(d / 7) })
-})
-
 const statusLabel = computed(() => {
-  switch (meta.value.statusVariant) {
-    case 'active': return t('pages.students.statusBadge.active')
-    case 'frequentAbsent': return t('pages.students.statusBadge.frequentAbsent')
-    case 'stopped': return t('pages.students.statusBadge.stopped')
-    case 'new': return t('pages.students.statusBadge.new')
-  }
-  return ''
+  if (props.student.status === 'active') return t('pages.students.statusActive')
+  if (props.student.status === 'inactive') return t('pages.students.statusInactive')
+  return t('pages.students.statusGraduated')
 })
 
 const menuItems = computed<DropdownMenuItem[][]>(() => [[
@@ -81,7 +57,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
           >
           <span
             class="absolute bottom-0 end-0 w-4 h-4 rounded-full border-2 border-white"
-            :class="badge.dot"
+            :class="student.status === 'active' ? 'bg-green-500' : student.status === 'inactive' ? 'bg-yellow-500' : 'bg-blue-500'"
           />
         </div>
         <h3 class="text-xl font-bold leading-tight truncate text-on-surface">
@@ -92,9 +68,9 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
       <div class="flex items-center gap-1 shrink-0">
         <span
           class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
-          :class="badge.container"
+          :class="student.status === 'active' ? 'bg-track-hifz-bg text-track-hifz' : student.status === 'inactive' ? 'bg-status-warning-bg text-status-warning' : 'bg-status-info-bg text-status-info'"
         >
-          <span class="w-1.5 h-1.5 rounded-full" :class="badge.dot" />
+          <span class="w-1.5 h-1.5 rounded-full" :class="student.status === 'active' ? 'bg-green-500' : student.status === 'inactive' ? 'bg-yellow-500' : 'bg-blue-500'" />
           {{ statusLabel }}
         </span>
 
@@ -117,26 +93,9 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
     <!-- Progress -->
     <div>
       <div class="flex justify-between items-center mb-2">
-        <span v-if="meta.hasAnyAchievement" class="text-sm text-on-surface-variant">
-          {{ $t('pages.students.card.currentSurah') }}: {{ meta.currentSurah }}
+        <span class="text-sm text-on-surface-variant">
+          {{ $t('pages.students.card.currentSurah') }}: {{ student.currentSurah }}
         </span>
-        <span v-else class="text-sm text-on-surface-variant">
-          {{ $t('pages.students.card.awaitingFirst') }}
-        </span>
-
-        <span v-if="meta.hasAnyAchievement" class="text-sm font-bold" :class="progressClasses.text">
-          {{ meta.progress }}%
-        </span>
-        <span v-else class="text-sm font-medium text-on-surface-variant">
-          {{ $t('pages.students.card.notStarted') }}
-        </span>
-      </div>
-      <div class="w-full h-2 rounded-full overflow-hidden bg-primary-container">
-        <div
-          class="h-full rounded-full transition-all duration-200"
-          :class="progressClasses.bg"
-          :style="{ width: progressBarWidth }"
-        />
       </div>
     </div>
 
@@ -144,35 +103,34 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
     <div class="grid grid-cols-2 gap-3 text-sm">
       <div class="flex flex-col gap-0.5">
         <span class="text-xs text-on-surface-variant">
-          {{ $t('pages.students.card.lastSession') }}
+          {{ $t('pages.students.card.dailyHifz') }}
         </span>
         <span class="text-on-surface">
-          {{ lastSessionLabel }}
+          {{ student.dailyHifzPagesCapacity }} {{ $t('pages.students.card.pagesUnit') }}
         </span>
       </div>
       <div class="flex flex-col gap-0.5">
         <span class="text-xs text-on-surface-variant">
-          {{ $t('pages.students.card.totalAyahs') }}
+          {{ $t('pages.students.card.dailyNear') }}
         </span>
         <span class="text-on-surface">
-          {{ meta.ayahCount }} {{ $t('pages.students.card.ayahUnit') }}
+          {{ student.dailyNearPagesCapacity }} {{ $t('pages.students.card.pagesUnit') }}
         </span>
       </div>
       <div class="flex flex-col gap-0.5">
         <span class="text-xs text-on-surface-variant">
-          {{ $t('pages.students.card.attendanceRate') }}
+          {{ $t('pages.students.card.dailyFar') }}
         </span>
-        <span class="inline-flex items-center gap-1.5 text-on-surface">
-          <span class="w-2 h-2 rounded-full shrink-0" :class="attendanceDot" />
-          {{ meta.attendanceRate }}%
+        <span class="text-on-surface">
+          {{ student.dailyFarPagesCapacity }} {{ $t('pages.students.card.pagesUnit') }}
         </span>
       </div>
       <div class="flex flex-col gap-0.5">
         <span class="text-xs text-on-surface-variant">
-          {{ $t('pages.students.card.currentSurah') }}
+          {{ $t('pages.students.card.guardians') }}
         </span>
         <span class="truncate text-on-surface">
-          {{ meta.hasAnyAchievement ? meta.currentSurah : '—' }}
+          {{ student.guardians.length }}
         </span>
       </div>
     </div>

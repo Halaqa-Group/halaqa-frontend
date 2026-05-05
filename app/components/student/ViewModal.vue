@@ -49,15 +49,8 @@ function handleEditClick() {
           <!-- Attendance summary card -->
           <div class="w-full rounded-xl p-4 space-y-3" style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);">
             <div class="flex justify-between items-center">
-              <span class="body-md" style="color: var(--color-on-surface-variant);">ملخص الحضور</span>
-              <span class="body-lg font-bold" style="color: var(--color-primary);">{{ viewingStudent.attendance }}%</span>
-            </div>
-            <div class="w-full h-2 rounded-full overflow-hidden" style="background-color: var(--color-surface-container);">
-              <div
-                class="h-full rounded-full transition-all"
-                style="background-color: var(--color-secondary);"
-                :style="`width: ${viewingStudent.attendance}%;`"
-              />
+              <span class="body-md" style="color: var(--color-on-surface-variant);">عدد أولياء الأمور</span>
+              <span class="body-lg font-bold" style="color: var(--color-primary);">{{ viewingStudent.guardians.length }}</span>
             </div>
           </div>
 
@@ -106,30 +99,22 @@ function handleEditClick() {
             <div class="flex justify-between items-end mb-4">
               <div>
                 <span class="label-md block mb-1" style="color: var(--color-on-surface-variant);">السورة الحالية</span>
-                <span class="display-md" style="color: var(--color-on-surface);">سورة {{ viewingStudent.currentSurah }}</span>
+                <span class="display-md" style="color: var(--color-on-surface);">{{ viewingStudent.currentSurah }}</span>
               </div>
-              <span class="display-md" style="color: var(--color-primary);">{{ viewingStudent.progress }}%</span>
-            </div>
-            <div class="w-full h-3 rounded-full overflow-hidden" style="background-color: var(--color-surface-container-high);">
-              <div
-                class="h-full rounded-full transition-all"
-                style="background-color: var(--color-primary);"
-                :style="`width: ${viewingStudent.progress}%;`"
-              />
             </div>
             <!-- Page stats -->
             <div class="mt-4 grid grid-cols-3 gap-3">
               <div class="text-center p-3 rounded-lg" style="background-color: white;">
                 <span class="label-md block" style="color: var(--color-on-surface-variant);">الحفظ الجديد</span>
-                <span class="body-lg font-bold" style="color: var(--color-on-surface);">3 صفحات</span>
+                <span class="body-lg font-bold" style="color: var(--color-on-surface);">{{ viewingStudent.dailyHifzPagesCapacity }} صفحات</span>
               </div>
               <div class="text-center p-3 rounded-lg" style="background-color: white;">
                 <span class="label-md block" style="color: var(--color-on-surface-variant);">مراجعة قريبة</span>
-                <span class="body-lg font-bold" style="color: var(--color-on-surface);">5 صفحات</span>
+                <span class="body-lg font-bold" style="color: var(--color-on-surface);">{{ viewingStudent.dailyNearPagesCapacity }} صفحات</span>
               </div>
               <div class="text-center p-3 rounded-lg" style="background-color: white;">
                 <span class="label-md block" style="color: var(--color-on-surface-variant);">مراجعة بعيدة</span>
-                <span class="body-lg font-bold" style="color: var(--color-on-surface);">15 صفحة</span>
+                <span class="body-lg font-bold" style="color: var(--color-on-surface);">{{ viewingStudent.dailyFarPagesCapacity }} صفحات</span>
               </div>
             </div>
           </div>
@@ -145,15 +130,15 @@ function handleEditClick() {
               <div class="space-y-3">
                 <div class="flex justify-between items-center">
                   <span class="body-md" style="color: var(--color-on-surface);">الحفظ (Hifz)</span>
-                  <span class="body-md font-bold" style="color: var(--color-on-surface);">ممتاز</span>
+                  <span class="body-md font-bold" style="color: var(--color-on-surface);">{{ viewingStudent.dailyHifzPagesCapacity }} صفحات</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="body-md" style="color: var(--color-on-surface);">قريب (Near)</span>
-                  <span class="body-md font-bold" style="color: var(--color-on-surface);">جيد جداً</span>
+                  <span class="body-md font-bold" style="color: var(--color-on-surface);">{{ viewingStudent.dailyNearPagesCapacity }} صفحات</span>
                 </div>
                 <div class="flex justify-between items-center">
                   <span class="body-md" style="color: var(--color-on-surface);">بعيد (Far)</span>
-                  <span class="body-md font-bold" style="color: var(--color-on-surface);">منتظم</span>
+                  <span class="body-md font-bold" style="color: var(--color-on-surface);">{{ viewingStudent.dailyFarPagesCapacity }} صفحات</span>
                 </div>
               </div>
             </div>
@@ -165,17 +150,22 @@ function handleEditClick() {
                 معلومات ولي الأمر
               </h4>
               <div class="space-y-3">
-                <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-user" class="w-4 h-4 shrink-0" style="color: var(--color-outline);" />
-                  <span class="body-md" style="color: var(--color-on-surface);">أ. عبدالرحمن محمد</span>
+                <div v-if="viewingStudent.guardians.length === 0" class="body-md" style="color: var(--color-on-surface-variant);">
+                  لا يوجد أولياء أمور مرتبطون
                 </div>
-                <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-phone" class="w-4 h-4 shrink-0" style="color: var(--color-outline);" />
-                  <span class="body-md" style="color: var(--color-on-surface);" dir="ltr">+966 50 123 4567</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <UIcon name="i-lucide-mail" class="w-4 h-4 shrink-0" style="color: var(--color-outline);" />
-                  <span class="body-md" style="color: var(--color-on-surface);">a.rahman@email.com</span>
+                <div v-for="g in viewingStudent.guardians" :key="g.user.id" class="space-y-1 rounded-lg p-3" style="background-color: var(--color-surface-container-low);">
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-lucide-user" class="w-4 h-4 shrink-0" style="color: var(--color-outline);" />
+                    <span class="body-md" style="color: var(--color-on-surface);">{{ g.user.name }} ({{ g.relation }})</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-lucide-phone" class="w-4 h-4 shrink-0" style="color: var(--color-outline);" />
+                    <span class="body-md" style="color: var(--color-on-surface);" dir="ltr">{{ g.user.phone || '—' }}</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <UIcon name="i-lucide-mail" class="w-4 h-4 shrink-0" style="color: var(--color-outline);" />
+                    <span class="body-md" style="color: var(--color-on-surface);">{{ g.user.email }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -191,10 +181,10 @@ function handleEditClick() {
               style="background-color: var(--color-surface-container-low); border-color: var(--color-primary);"
             >
               <p class="body-md" style="color: var(--color-on-surface);">
-                أميرة تظهر تفوقاً ملحوظاً في ضبط مخارج الحروف. تحتاج إلى التركيز أكثر على مراجعة الصفحات الخمس الأخيرة من سورة مريم لثبات الحفظ.
+                {{ viewingStudent.notes || 'لا توجد ملاحظات بعد.' }}
               </p>
               <span class="block mt-2 label-md" style="color: var(--color-outline);">
-                تم التحديث بواسطة الشيخ أحمد · أمس
+                آخر تحديث لملف الطالب
               </span>
             </div>
           </div>

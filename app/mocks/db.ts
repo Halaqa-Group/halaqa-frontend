@@ -17,7 +17,7 @@ interface MockUser {
   id: number
   name: string
   email: string
-  role: 'teacher' | 'parent' | 'admin'
+  role: 'teacher' | 'parent' | 'admin' | 'principal'
   school_id: number
   school_name: string
   identity_number: string
@@ -200,6 +200,17 @@ function buildSeed(): MockDB {
         school_name: 'مدرسة الحلقة',
         identity_number: '1000000002',
         phone: '+966501000002',
+        status: 'active'
+      },
+      {
+        id: 50,
+        name: 'مدير المدرسة',
+        email: 'principal@halaqa.app',
+        role: 'principal',
+        school_id: 1,
+        school_name: 'مدرسة الحلقة',
+        identity_number: '1000000050',
+        phone: '+966501000050',
         status: 'active'
       }
     ],

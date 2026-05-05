@@ -105,6 +105,22 @@ export interface ApiTeacher extends ApiTeacherOption {
   assigned_halaqat: string
 }
 
+/** Unified directory row: staff (`db.users`) or guardian (`db.parents`). */
+export type UserDirectoryKind = 'staff' | 'parent'
+
+export type UserDirectoryRole = 'teacher' | 'parent' | 'principal' | 'admin'
+
+export interface ApiUserDirectoryRow {
+  kind: UserDirectoryKind
+  id: number
+  name: string
+  email: string
+  identity_number: string
+  phone: string | null
+  role: UserDirectoryRole
+  status: 'active' | 'inactive'
+}
+
 /** Parent/guardian record for school management (list + forms). */
 export interface ApiParent {
   id: number

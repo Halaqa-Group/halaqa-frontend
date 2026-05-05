@@ -209,7 +209,7 @@
       "fieldPhone": "Phone",
       "fieldChildrenCount": "Number of children",
       "fieldChildrenNames": "Children names",
-      "fieldChildrenNamesHint": "Separate names with commas if needed.",
+      "fieldChildrenNamesHint": "Select one or more children from the list.",
       "fieldStatus": "Status",
       "save": "Save",
       "cancel": "Cancel",

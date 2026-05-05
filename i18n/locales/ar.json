@@ -209,7 +209,7 @@
       "fieldPhone": "الجوال",
       "fieldChildrenCount": "عدد الأبناء",
       "fieldChildrenNames": "أسماء الأبناء",
-      "fieldChildrenNamesHint": "يمكن فصل الأسماء بفواصل.",
+      "fieldChildrenNamesHint": "اختر ابناً واحداً أو أكثر من القائمة.",
       "fieldStatus": "الحالة",
       "save": "حفظ",
       "cancel": "إلغاء",

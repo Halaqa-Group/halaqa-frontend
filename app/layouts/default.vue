@@ -131,6 +131,7 @@ onMounted(async () => {
           orientation="vertical"
           tooltip
           class="mt-auto"
+          :ui="{ link: collapsed ? 'justify-center py-3' : ' py-3' }"
         />
       </template>
 

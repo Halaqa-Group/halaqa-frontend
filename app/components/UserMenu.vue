@@ -10,6 +10,7 @@ const colorMode = useColorMode()
 const { user, logout } = useAuth()
 
 const userAvatar = computed(() => ({
+  src: user.value?.photoUrl ?? undefined,
   alt: user.value?.name ?? '',
   text: (user.value?.name ?? '?').slice(0, 1).toUpperCase()
 }))
@@ -19,6 +20,10 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   label: user.value?.name ?? '',
   avatar: userAvatar.value
 }], [{
+  label: t('nav.profile'),
+  icon: 'i-lucide-user',
+  to: '/profile'
+}, {
   label: locale.value === 'ar' ? 'English' : 'العربية',
   icon: 'i-lucide-languages',
   onSelect: (e: Event) => {

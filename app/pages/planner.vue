@@ -480,7 +480,7 @@ onMounted(async () => {
     <PlannerPreviewModal v-model:open="isPreviewOpen" />
 
     <!-- Confirmations -->
-    <PlannerConfirmDialog
+    <CommonConfirmDialog
       v-model:open="isClearConfirmOpen"
       :title="$t('pages.planner.topActions.clearConfirmTitle')"
       :message="$t('pages.planner.topActions.clearConfirmMessage')"
@@ -489,14 +489,14 @@ onMounted(async () => {
       @confirm="doClearAll"
     />
 
-    <PlannerConfirmDialog
+    <CommonConfirmDialog
       v-model:open="isCopyDayConfirmOpen"
       :title="$t('pages.planner.row.copyConfirmTitle')"
       :message="$t('pages.planner.row.copyConfirmMessage')"
       @confirm="doCopyDay"
     />
 
-    <PlannerConfirmDialog
+    <CommonConfirmDialog
       v-model:open="isApplyColumnConfirmOpen"
       :title="$t('pages.planner.columns.applyConfirmTitle')"
       :message="$t('pages.planner.columns.applyConfirmMessage')"

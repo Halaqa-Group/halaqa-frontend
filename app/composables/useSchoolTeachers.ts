@@ -3,7 +3,7 @@ import type { ApiTeacher } from '~/types'
 export interface SaveTeacherPayload {
   name: string
   email: string
-  identity_number: string
+  password?: string
   phone: string | null
   status: 'active' | 'inactive'
 }
@@ -11,28 +11,72 @@ export interface SaveTeacherPayload {
 const teachers = ref<ApiTeacher[]>([])
 const isLoading = ref(false)
 
+interface UsersListResponse<T> {
+  items: T[]
+}
+
+interface ApiUser {
+  id: number
+  name: string
+  email: string
+  phone: string | null
+  status: 'active' | 'inactive' | 'suspended'
+}
+
+function toTeacherRow(user: ApiUser): ApiTeacher {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    status: user.status === 'active' ? 'active' : 'inactive',
+    identity_number: '—',
+    assigned_halaqat: '—'
+  }
+}
+
 export function useSchoolTeachers() {
   const api = useApi()
 
   async function fetchTeachers() {
     isLoading.value = true
     try {
-      teachers.value = await api<ApiTeacher[]>('/teachers')
+      const response = await api<UsersListResponse<ApiUser>>('/users?role=teacher&limit=100')
+      teachers.value = response.items.map(toTeacherRow)
     } finally {
       isLoading.value = false
     }
   }
 
   async function createTeacher(payload: SaveTeacherPayload) {
-    return api<ApiTeacher>('/teachers', { method: 'POST', body: payload })
+    const created = await api<ApiUser>('/users', {
+      method: 'POST',
+      body: {
+        name: payload.name,
+        email: payload.email,
+        password: payload.password,
+        phone: payload.phone,
+        status: payload.status,
+        roles: ['teacher']
+      }
+    })
+    return toTeacherRow(created)
   }
 
   async function updateTeacher(id: number, payload: SaveTeacherPayload) {
-    return api<ApiTeacher>(`/teachers/${id}`, { method: 'PATCH', body: payload })
+    const updated = await api<ApiUser>(`/users/${id}`, {
+      method: 'PATCH',
+      body: {
+        name: payload.name,
+        phone: payload.phone,
+        status: payload.status
+      }
+    })
+    return toTeacherRow(updated)
   }
 
   async function deleteTeacher(id: number) {
-    await api(`/teachers/${id}`, { method: 'DELETE' })
+    await api(`/users/${id}`, { method: 'DELETE' })
   }
 
   return {

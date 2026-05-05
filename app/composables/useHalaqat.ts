@@ -14,6 +14,10 @@ export function useHalaqat() {
   const api = useApi()
   const { user } = useAuth()
 
+  interface UsersListResponse<T> {
+    items: T[]
+  }
+
   async function fetchHalaqat() {
     isLoading.value = true
     try {
@@ -31,7 +35,8 @@ export function useHalaqat() {
   }
 
   async function fetchTeachers(): Promise<ApiTeacherOption[]> {
-    const list = await api<ApiTeacher[]>('/teachers')
+    const response = await api<UsersListResponse<ApiTeacher>>('/users?role=teacher&limit=100')
+    const list = response.items
     return list.map(({ id, name, email }) => ({ id, name, email }))
   }
 

@@ -29,7 +29,7 @@ const editingId = ref<number | null>(null)
 const form = reactive({
   name: '',
   email: '',
-  identity_number: '',
+  password: '',
   phone: '',
   status: 'active' as 'active' | 'inactive'
 })
@@ -74,7 +74,7 @@ const columns = computed<TableColumn<ApiTeacher>[]>(() => [
 function resetForm() {
   form.name = ''
   form.email = ''
-  form.identity_number = ''
+  form.password = ''
   form.phone = ''
   form.status = 'active'
 }
@@ -89,7 +89,7 @@ function openEdit(row: ApiTeacher) {
   editingId.value = row.id
   form.name = row.name
   form.email = row.email
-  form.identity_number = row.identity_number
+  form.password = ''
   form.phone = row.phone ?? ''
   form.status = row.status
   formOpen.value = true
@@ -102,7 +102,7 @@ function closeForm() {
 function validateForm(): string | null {
   if (!form.name.trim()) return t('pages.teachers.validationName')
   if (!form.email.trim()) return t('pages.teachers.validationEmail')
-  if (!form.identity_number.trim()) return t('pages.teachers.validationIdentity')
+  if (editingId.value == null && form.password.trim().length < 8) return t('pages.teachers.validationPassword')
   return null
 }
 
@@ -111,7 +111,7 @@ function payloadFromForm() {
   return {
     name: form.name.trim(),
     email: form.email.trim(),
-    identity_number: form.identity_number.trim(),
+    password: form.password.trim() || undefined,
     phone: phone.length ? phone : null,
     status: form.status
   }
@@ -261,10 +261,15 @@ onMounted(() => {
           <UFormField :label="t('pages.teachers.fieldEmail')" name="email">
             <UInput v-model="form.email" type="email" class="w-full" />
           </UFormField>
-          <UFormField :label="t('pages.teachers.fieldIdentity')" name="identity_number">
+          <UFormField
+            v-if="editingId == null"
+            :label="t('pages.teachers.fieldPassword')"
+            name="password"
+          >
             <UInput
-              v-model="form.identity_number"
-              :placeholder="t('pages.teachers.fieldIdentityPlaceholder')"
+              v-model="form.password"
+              type="password"
+              :placeholder="t('pages.teachers.fieldPasswordPlaceholder')"
               class="w-full"
               dir="ltr"
             />

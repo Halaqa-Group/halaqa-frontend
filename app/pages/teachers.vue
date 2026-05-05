@@ -2,7 +2,7 @@
 import type { TableColumn } from '@nuxt/ui'
 import * as z from 'zod'
 import type { ApiTeacher } from '~/types'
-import ConfirmDialog from '~/components/planner/ConfirmDialog.vue'
+import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 
 definePageMeta({
   middleware: ['principal-only'],

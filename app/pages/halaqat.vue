@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
 import type { ApiHalaqa } from '~/types'
-import ConfirmDialog from '~/components/planner/ConfirmDialog.vue'
+import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 
 definePageMeta({
   middleware: ['principal-only'],

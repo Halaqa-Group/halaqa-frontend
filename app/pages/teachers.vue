@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import * as z from 'zod'
 import type { ApiTeacher } from '~/types'
 import ConfirmDialog from '~/components/planner/ConfirmDialog.vue'
 
@@ -33,6 +34,8 @@ const form = reactive({
   phone: '',
   status: 'active' as 'active' | 'inactive'
 })
+type TeacherFormKey = 'name' | 'email' | 'password' | 'phone' | 'status'
+const formErrors = reactive<Partial<Record<TeacherFormKey, string>>>({})
 
 const deleteOpen = ref(false)
 const deleteTarget = ref<ApiTeacher | null>(null)
@@ -77,6 +80,7 @@ function resetForm() {
   form.password = ''
   form.phone = ''
   form.status = 'active'
+  clearFormErrors()
 }
 
 function openAdd() {
@@ -97,13 +101,39 @@ function openEdit(row: ApiTeacher) {
 
 function closeForm() {
   formOpen.value = false
+  clearFormErrors()
 }
 
-function validateForm(): string | null {
-  if (!form.name.trim()) return t('pages.teachers.validationName')
-  if (!form.email.trim()) return t('pages.teachers.validationEmail')
-  if (editingId.value == null && form.password.trim().length < 8) return t('pages.teachers.validationPassword')
-  return null
+function clearFormErrors() {
+  formErrors.name = undefined
+  formErrors.email = undefined
+  formErrors.password = undefined
+  formErrors.phone = undefined
+  formErrors.status = undefined
+}
+
+function validateForm(): boolean {
+  clearFormErrors()
+  const schema = z.object({
+    name: z.string().trim().min(1, t('pages.teachers.validationName')),
+    email: z.string().trim().min(1, t('pages.teachers.validationEmail')).email(t('validation.email')),
+    password: editingId.value == null
+      ? z.string().trim().min(8, t('pages.teachers.validationPassword'))
+      : z.string().optional(),
+    phone: z.string().optional(),
+    status: z.enum(['active', 'inactive'])
+  })
+
+  const parsed = schema.safeParse(form)
+  if (parsed.success) return true
+
+  for (const issue of parsed.error.issues) {
+    const field = issue.path[0]
+    if (typeof field === 'string' && field in formErrors) {
+      formErrors[field as TeacherFormKey] = issue.message
+    }
+  }
+  return false
 }
 
 function payloadFromForm() {
@@ -118,11 +148,7 @@ function payloadFromForm() {
 }
 
 async function submitForm() {
-  const err = validateForm()
-  if (err) {
-    toast.add({ title: err, color: 'error' })
-    return
-  }
+  if (!validateForm()) return
   saving.value = true
   try {
     const payload = payloadFromForm()
@@ -255,16 +281,17 @@ onMounted(() => {
       <UButton class="sr-only" :label="t('pages.teachers.add')" tabindex="-1" />
       <template #body>
         <div class="space-y-4">
-          <UFormField :label="t('pages.teachers.fieldName')" name="name">
+          <UFormField :label="t('pages.teachers.fieldName')" name="name" :error="formErrors.name">
             <UInput v-model="form.name" class="w-full" />
           </UFormField>
-          <UFormField :label="t('pages.teachers.fieldEmail')" name="email">
+          <UFormField :label="t('pages.teachers.fieldEmail')" name="email" :error="formErrors.email">
             <UInput v-model="form.email" type="email" class="w-full" />
           </UFormField>
           <UFormField
             v-if="editingId == null"
             :label="t('pages.teachers.fieldPassword')"
             name="password"
+            :error="formErrors.password"
           >
             <UInput
               v-model="form.password"
@@ -274,10 +301,10 @@ onMounted(() => {
               dir="ltr"
             />
           </UFormField>
-          <UFormField :label="t('pages.teachers.fieldPhone')" name="phone">
+          <UFormField :label="t('pages.teachers.fieldPhone')" name="phone" :error="formErrors.phone">
             <UInput v-model="form.phone" class="w-full" dir="ltr" />
           </UFormField>
-          <UFormField :label="t('pages.teachers.fieldStatus')" name="status">
+          <UFormField :label="t('pages.teachers.fieldStatus')" name="status" :error="formErrors.status">
             <USelect
               v-model="form.status"
               :items="statusItems"

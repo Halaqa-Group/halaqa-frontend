@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
+import * as z from 'zod'
 import type { ApiParent, ApiStudent } from '~/types'
 import ConfirmDialog from '~/components/planner/ConfirmDialog.vue'
 
@@ -35,6 +36,8 @@ const form = reactive({
   children_names: [] as string[],
   status: 'active' as 'active' | 'inactive'
 })
+type ParentFormKey = 'name' | 'email' | 'password' | 'phone' | 'children_names' | 'status'
+const formErrors = reactive<Partial<Record<ParentFormKey, string>>>({})
 const childrenNameOptions = ref<string[]>([])
 
 const deleteOpen = ref(false)
@@ -86,6 +89,7 @@ function resetForm() {
   form.phone = ''
   form.children_names = []
   form.status = 'active'
+  clearFormErrors()
 }
 
 function openAdd() {
@@ -109,13 +113,41 @@ function openEdit(row: ApiParent) {
 
 function closeForm() {
   formOpen.value = false
+  clearFormErrors()
 }
 
-function validateForm(): string | null {
-  if (!form.name.trim()) return t('pages.parents.validationName')
-  if (!form.email.trim()) return t('pages.parents.validationEmail')
-  if (editingId.value == null && form.password.trim().length < 8) return t('pages.parents.validationPassword')
-  return null
+function clearFormErrors() {
+  formErrors.name = undefined
+  formErrors.email = undefined
+  formErrors.password = undefined
+  formErrors.phone = undefined
+  formErrors.children_names = undefined
+  formErrors.status = undefined
+}
+
+function validateForm(): boolean {
+  clearFormErrors()
+  const schema = z.object({
+    name: z.string().trim().min(1, t('pages.parents.validationName')),
+    email: z.string().trim().min(1, t('pages.parents.validationEmail')).email(t('validation.email')),
+    password: editingId.value == null
+      ? z.string().trim().min(8, t('pages.parents.validationPassword'))
+      : z.string().optional(),
+    phone: z.string().optional(),
+    children_names: z.array(z.string()).optional(),
+    status: z.enum(['active', 'inactive'])
+  })
+
+  const parsed = schema.safeParse(form)
+  if (parsed.success) return true
+
+  for (const issue of parsed.error.issues) {
+    const field = issue.path[0]
+    if (typeof field === 'string' && field in formErrors) {
+      formErrors[field as ParentFormKey] = issue.message
+    }
+  }
+  return false
 }
 
 function payloadFromForm() {
@@ -136,11 +168,7 @@ async function loadChildrenOptions() {
 }
 
 async function submitForm() {
-  const err = validateForm()
-  if (err) {
-    toast.add({ title: err, color: 'error' })
-    return
-  }
+  if (!validateForm()) return
   saving.value = true
   try {
     const payload = payloadFromForm()
@@ -276,16 +304,17 @@ onMounted(async () => {
       <UButton class="sr-only" :label="t('pages.parents.add')" tabindex="-1" />
       <template #body>
         <div class="space-y-4">
-          <UFormField :label="t('pages.parents.fieldName')" name="name">
+          <UFormField :label="t('pages.parents.fieldName')" name="name" :error="formErrors.name">
             <UInput v-model="form.name" class="w-full" />
           </UFormField>
-          <UFormField :label="t('pages.parents.fieldEmail')" name="email">
+          <UFormField :label="t('pages.parents.fieldEmail')" name="email" :error="formErrors.email">
             <UInput v-model="form.email" type="email" class="w-full" />
           </UFormField>
           <UFormField
             v-if="editingId == null"
             :label="t('pages.parents.fieldPassword')"
             name="password"
+            :error="formErrors.password"
           >
             <UInput
               v-model="form.password"
@@ -295,13 +324,14 @@ onMounted(async () => {
               dir="ltr"
             />
           </UFormField>
-          <UFormField :label="t('pages.parents.fieldPhone')" name="phone">
+          <UFormField :label="t('pages.parents.fieldPhone')" name="phone" :error="formErrors.phone">
             <UInput v-model="form.phone" class="w-full" dir="ltr" />
           </UFormField>
           <UFormField
             :label="t('pages.parents.fieldChildrenNames')"
             name="children_names"
             :hint="t('pages.parents.fieldChildrenNamesHint')"
+            :error="formErrors.children_names"
           >
             <USelectMenu
               v-model="form.children_names"
@@ -310,7 +340,7 @@ onMounted(async () => {
               class="w-full"
             />
           </UFormField>
-          <UFormField :label="t('pages.parents.fieldStatus')" name="status">
+          <UFormField :label="t('pages.parents.fieldStatus')" name="status" :error="formErrors.status">
             <USelect
               v-model="form.status"
               :items="statusItems"

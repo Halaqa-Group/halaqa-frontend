@@ -71,6 +71,15 @@ export interface ApiStudent {
   attendance_rate?: number
 }
 
+/** Current school profile (principal dashboard / settings). */
+export interface ApiSchool {
+  id: number
+  name: string
+  address: string
+  phone: string | null
+  status: 'active' | 'inactive'
+}
+
 export interface ApiHalaqa {
   id: number
   name: string
@@ -78,6 +87,35 @@ export interface ApiHalaqa {
   school_id: number
   teacher_id: number
   schedules: { id: number, day_of_week: number }[]
+  /** Present on list responses when the API joins teacher info */
+  teacher_name?: string
+}
+
+export interface ApiTeacherOption {
+  id: number
+  name: string
+  email: string
+}
+
+/** Full teacher row for school management (list + forms). */
+export interface ApiTeacher extends ApiTeacherOption {
+  identity_number: string
+  phone: string | null
+  status: 'active' | 'inactive'
+  assigned_halaqat: string
+}
+
+/** Parent/guardian record for school management (list + forms). */
+export interface ApiParent {
+  id: number
+  school_id: number
+  name: string
+  email: string
+  phone: string | null
+  identity_number: string
+  children_count: number
+  children_names: string
+  status: 'active' | 'inactive'
 }
 
 export interface ApiAttendance {

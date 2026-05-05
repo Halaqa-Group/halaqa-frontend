@@ -7,7 +7,7 @@ definePageMeta({
 
 const { t, locale } = useI18n()
 const api = useApi()
-const { user } = useAuth()
+const { user, activeRole } = useAuth()
 const { selectedHalaqaId, halaqat, initializeHalaqa } = useGlobalHalaqa()
 const { students, fetchStudents } = useStudents()
 
@@ -18,10 +18,7 @@ const attendanceError = ref(false)
 const today = new Date().toISOString().split('T')[0]
 
 const userRoleLabel = computed(() => {
-  const roles = user.value?.roles ?? []
-  if (roles.includes('teacher')) return 'teacher'
-  if (roles.some(r => ['principal', 'vice_principal', 'supervisor', 'admin'].includes(r))) return 'admin'
-  return 'parent'
+  return activeRole.value ?? 'parent'
 })
 
 const presentToday = computed(() =>
@@ -204,6 +201,8 @@ onMounted(async () => {
         </span>
       </div>
     </div>
+
+    <SchoolSummaryCard />
 
     <!-- Loading -->
     <div v-if="isLoading" class="flex justify-center py-16">

@@ -2,6 +2,8 @@ import type {
   ApiAchievement,
   ApiAttendance,
   ApiHalaqa,
+  ApiParent,
+  ApiSchool,
   ApiStudent,
   ApiWeeklyPlan
 } from '~/types'
@@ -15,13 +17,17 @@ interface MockUser {
   id: number
   name: string
   email: string
-  role: 'teacher' | 'parent' | 'admin'
+  role: 'teacher' | 'parent' | 'admin' | 'principal'
   school_id: number
   school_name: string
+  identity_number: string
+  phone?: string | null
+  status: 'active' | 'inactive'
 }
 
 interface Sequences {
   student: number
+  parent: number
   attendance: number
   achievement: number
   plan: number
@@ -29,8 +35,9 @@ interface Sequences {
 }
 
 export interface MockDB {
-  schools: { id: number, name: string }[]
+  schools: ApiSchool[]
   users: MockUser[]
+  parents: ApiParent[]
   halaqat: ApiHalaqa[]
   students: ApiStudent[]
   enrollments: Enrollment[]
@@ -165,7 +172,13 @@ function buildSeed(): MockDB {
   }
 
   return {
-    schools: [{ id: 1, name: 'مدرسة الحلقة' }],
+    schools: [{
+      id: 1,
+      name: 'مدرسة الحلقة',
+      address: 'طريق الملك فهد، حي النرجس، الرياض',
+      phone: '+966112345678',
+      status: 'active'
+    }],
     users: [
       {
         id: 1,
@@ -173,7 +186,67 @@ function buildSeed(): MockDB {
         email: 'teacher@halaqa.app',
         role: 'teacher',
         school_id: 1,
-        school_name: 'مدرسة الحلقة'
+        school_name: 'مدرسة الحلقة',
+        identity_number: '1000000001',
+        phone: '+966501000001',
+        status: 'active'
+      },
+      {
+        id: 2,
+        name: 'الأستاذ خالد',
+        email: 'khaled@halaqa.app',
+        role: 'teacher',
+        school_id: 1,
+        school_name: 'مدرسة الحلقة',
+        identity_number: '1000000002',
+        phone: '+966501000002',
+        status: 'active'
+      },
+      {
+        id: 50,
+        name: 'مدير المدرسة',
+        email: 'principal@halaqa.app',
+        role: 'principal',
+        school_id: 1,
+        school_name: 'مدرسة الحلقة',
+        identity_number: '1000000050',
+        phone: '+966501000050',
+        status: 'active'
+      }
+    ],
+    parents: [
+      {
+        id: 1,
+        school_id: 1,
+        name: 'إبراهيم السعيد',
+        email: 'i.saeed@example.com',
+        phone: '+966501111222',
+        identity_number: '2000000001',
+        children_count: 2,
+        children_names: 'عبدالله إبراهيم، يوسف إبراهيم',
+        status: 'active'
+      },
+      {
+        id: 2,
+        school_id: 1,
+        name: 'فاطمة أحمد',
+        email: 'f.ahmad@example.com',
+        phone: null,
+        identity_number: '2000000002',
+        children_count: 1,
+        children_names: 'مريم أحمد',
+        status: 'active'
+      },
+      {
+        id: 3,
+        school_id: 1,
+        name: 'سعد الخالدي',
+        email: 's.khaledi@example.com',
+        phone: '+966509998877',
+        identity_number: '2000000003',
+        children_count: 0,
+        children_names: '—',
+        status: 'inactive'
       }
     ],
     halaqat,
@@ -184,6 +257,7 @@ function buildSeed(): MockDB {
     plans: [],
     seq: {
       student: students.length + 1,
+      parent: 4,
       attendance: attSeq,
       achievement: achSeq,
       plan: 1,

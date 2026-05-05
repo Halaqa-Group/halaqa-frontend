@@ -8,13 +8,23 @@ const isModalOpen = ref(false)
 export function useGlobalHalaqa() {
   const { halaqat, fetchHalaqat, isLoading } = useHalaqat()
 
-  // Auto-select first halaqa if none selected
+  /** Loads halaqat and keeps the selected halaqa in sync with the list (after CRUD or refresh). */
   async function initializeHalaqa() {
     await fetchHalaqat()
-    const firstHalaqa = halaqat.value[0]
-    if (!selectedHalaqa.value && firstHalaqa) {
-      selectedHalaqa.value = firstHalaqa
+    const list = halaqat.value
+    if (list.length === 0) {
+      selectedHalaqa.value = null
+      return
     }
+    const sid = selectedHalaqa.value?.id
+    if (sid != null) {
+      const found = list.find(h => h.id === sid)
+      if (found) {
+        selectedHalaqa.value = found
+        return
+      }
+    }
+    selectedHalaqa.value = list[0]!
   }
 
   function selectHalaqa(halaqa: ApiHalaqa) {

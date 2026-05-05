@@ -25,8 +25,7 @@ const links = computed<NavigationMenuItem[][]>(() => {
     mainLinks.push(
       { label: t('nav.halaqat'), icon: 'i-lucide-building-2', to: '/halaqat' },
       { label: t('nav.teachers'), icon: 'i-lucide-user-cog', to: '/teachers' },
-      { label: t('nav.parents'), icon: 'i-lucide-users-round', to: '/parents' },
-      { label: t('nav.users'), icon: 'i-lucide-contact', to: '/users' }
+      { label: t('nav.parents'), icon: 'i-lucide-users-round', to: '/parents' }
     )
   }
 
@@ -89,9 +88,6 @@ watch(activeRole, async (role) => {
     await navigateTo('/')
   }
 
-  if (route.path.startsWith('/users') && role !== 'principal') {
-    await navigateTo('/')
-  }
 })
 
 onMounted(async () => {

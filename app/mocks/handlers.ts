@@ -7,10 +7,8 @@ import type {
   ApiSchool,
   ApiStudent,
   ApiTeacher,
-  ApiUserDirectoryRow,
   ApiWeeklyPlan,
-  ApiWeeklyPlanItem,
-  UserDirectoryRole
+  ApiWeeklyPlanItem
 } from '~/types'
 import { db } from './db'
 import { MockError, register } from './router'
@@ -143,128 +141,6 @@ function emailTaken(email: string, excludeUserId?: number, excludeParentId?: num
   }
   return false
 }
-
-function userDirectoryRows(): ApiUserDirectoryRow[] {
-  const staff: ApiUserDirectoryRow[] = db.users.map((u) => {
-    const role: UserDirectoryRole =
-      u.role === 'principal' || u.role === 'admin' || u.role === 'teacher'
-        ? u.role
-        : 'teacher'
-    return {
-      kind: 'staff',
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      identity_number: u.identity_number,
-      phone: u.phone ?? null,
-      role,
-      status: u.status
-    }
-  })
-  const parents: ApiUserDirectoryRow[] = db.parents.map(p => ({
-    kind: 'parent',
-    id: p.id,
-    name: p.name,
-    email: p.email,
-    identity_number: p.identity_number,
-    phone: p.phone,
-    role: 'parent',
-    status: p.status
-  }))
-  return [...staff, ...parents]
-}
-
-register('GET', '/users', ({ query }) => {
-  let rows = userDirectoryRows()
-  const roleQ = (query.role ?? '').trim()
-  if (roleQ && roleQ !== 'all') {
-    rows = rows.filter(r => r.role === roleQ)
-  }
-  const rawQ = query.search ?? query.q ?? ''
-  const q = String(rawQ).trim().toLowerCase()
-  if (q) {
-    rows = rows.filter(r =>
-      r.name.toLowerCase().includes(q)
-      || r.email.toLowerCase().includes(q)
-      || r.identity_number.includes(q)
-      || (r.phone && r.phone.toLowerCase().includes(q))
-    )
-  }
-  return rows
-})
-
-register('POST', '/users', ({ body }) => {
-  const b = (body ?? {}) as Partial<{
-    name: string
-    email: string
-    identity_number: string
-    phone: string | null
-    role: UserDirectoryRole
-  }>
-  const name = (b.name ?? '').trim()
-  const email = (b.email ?? '').trim().toLowerCase()
-  const identity_number = (b.identity_number ?? '').trim()
-  const role = b.role
-  if (!name) throw new MockError(400, 'Name is required')
-  if (!email) throw new MockError(400, 'Email is required')
-  if (!identity_number) throw new MockError(400, 'Identity number is required')
-  if (!role || !['teacher', 'parent', 'principal', 'admin'].includes(role)) {
-    throw new MockError(400, 'Valid role is required')
-  }
-  if (identityTaken(identity_number)) throw new MockError(400, 'Identity number already exists')
-  if (emailTaken(email)) throw new MockError(400, 'Email already exists')
-
-  if (role === 'parent') {
-    const created: ApiParent = {
-      id: db.seq.parent++,
-      school_id: 1,
-      name,
-      email,
-      phone: b.phone ? String(b.phone).trim() : null,
-      identity_number,
-      children_count: 0,
-      children_names: '—',
-      status: 'active'
-    }
-    db.parents.push(created)
-    const row: ApiUserDirectoryRow = {
-      kind: 'parent',
-      id: created.id,
-      name: created.name,
-      email: created.email,
-      identity_number: created.identity_number,
-      phone: created.phone,
-      role: 'parent',
-      status: created.status
-    }
-    return row
-  }
-
-  const id = db.users.length ? Math.max(...db.users.map(u => u.id)) + 1 : 1
-  const created: (typeof db.users)[number] = {
-    id,
-    name,
-    email,
-    role: role as 'teacher' | 'principal' | 'admin',
-    school_id: 1,
-    school_name: currentSchool().name,
-    identity_number,
-    phone: b.phone ? String(b.phone).trim() : null,
-    status: 'active'
-  }
-  db.users.push(created)
-  const row: ApiUserDirectoryRow = {
-    kind: 'staff',
-    id: created.id,
-    name: created.name,
-    email: created.email,
-    identity_number: created.identity_number,
-    phone: created.phone ?? null,
-    role,
-    status: created.status
-  }
-  return row
-})
 
 register('GET', '/teachers', () => {
   return db.users

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { ApiWarnings } from '~/types'
 
-definePageMeta({ layout: 'dashboard' })
-
+const { t } = useI18n()
 const api = useApi()
 const { halaqat, fetchHalaqat } = useHalaqat()
 
@@ -26,14 +25,20 @@ async function loadWarnings() {
     warnings.value = await api<ApiWarnings>(
       `/analytics/warnings?halaqaId=${selectedHalaqaId.value}&weekStartDate=${selectedWeekStart.value}`
     )
-  }
-  catch (e: any) {
-    error.value = e?.data?.message || 'حدث خطأ أثناء تحميل التحليلات'
-  }
-  finally {
+  } catch (e: any) {
+    error.value = e?.data?.message || t('pages.analytics.errorFallback')
+  } finally {
     isLoading.value = false
   }
 }
+
+function trackKey(trackType: string) {
+  return trackType === 'Hifz' ? 'tracks.hifz' : trackType === 'Near' ? 'tracks.near' : 'tracks.far'
+}
+
+const halaqaItems = computed(() =>
+  halaqat.value.map(h => ({ label: h.name, value: h.id }))
+)
 
 onMounted(async () => {
   await fetchHalaqat()
@@ -51,44 +56,49 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
     <!-- Header + controls -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div class="space-y-1">
-        <span class="text-xs font-arabic font-bold uppercase tracking-widest" style="color: var(--color-primary);">
-          رصد الأداء
+        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+          {{ $t('pages.analytics.performanceLabel') }}
         </span>
-        <h2 class="display-lg font-arabic" style="color: var(--color-on-surface);">التحليلات</h2>
-        <p class="text-sm font-arabic" style="color: var(--color-on-surface-variant);">
-          تنبيهات الأسبوع وتقارير الأداء والإنجاز.
+        <h2 class="text-3xl font-bold leading-tight" style="color: var(--color-on-surface);">
+          {{ $t('pages.analytics.title') }}
+        </h2>
+        <p class="text-sm" style="color: var(--color-on-surface-variant);">
+          {{ $t('pages.analytics.subtitle') }}
         </p>
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
-        <div
-          class="flex items-center gap-2 px-3 py-2 rounded-xl"
-          style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
-        >
-          <UIcon name="i-lucide-users" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-          <select
-            v-model="selectedHalaqaId"
-            class="bg-transparent text-sm font-arabic outline-none cursor-pointer"
-            style="color: var(--color-on-surface);"
-          >
-            <option v-if="halaqat.length === 0" :value="null">لا توجد حلقات</option>
-            <option v-for="h in halaqat" :key="h.id" :value="h.id">{{ h.name }}</option>
-          </select>
-        </div>
+        <USelect
+          v-model="selectedHalaqaId"
+          :items="halaqaItems"
+          :placeholder="$t('pages.analytics.noHalaqat')"
+          :disabled="halaqat.length === 0"
+          icon="i-lucide-users"
+          variant="none"
+          class="px-3 py-2 rounded-xl bg-surface-container-lowest"
+          style="box-shadow: var(--shadow-card);"
+          :ui="{
+            base: 'bg-transparent text-sm cursor-pointer text-on-surface ps-7 pe-2',
+            leading: 'absolute inset-y-0 start-3 flex items-center',
+            leadingIcon: 'w-4 h-4 text-on-surface-variant',
+            trailing: 'pe-1'
+          }"
+        />
 
-        <div
-          class="flex items-center gap-2 px-3 py-2 rounded-xl"
-          style="background-color: var(--color-surface-container-lowest); box-shadow: var(--shadow-card);"
-        >
-          <UIcon name="i-lucide-calendar" class="w-4 h-4" style="color: var(--color-on-surface-variant);" />
-          <input
-            v-model="selectedWeekStart"
-            type="date"
-            dir="ltr"
-            class="bg-transparent text-sm font-arabic outline-none"
-            style="color: var(--color-on-surface);"
-          >
-        </div>
+        <UInput
+          v-model="selectedWeekStart"
+          type="date"
+          dir="ltr"
+          leading-icon="i-lucide-calendar"
+          variant="none"
+          class="px-3 py-2 rounded-xl bg-surface-container-lowest"
+          style="box-shadow: var(--shadow-card);"
+          :ui="{
+            base: 'bg-transparent text-sm text-on-surface ps-7 pe-2',
+            leading: 'absolute inset-y-0 start-3 flex items-center',
+            leadingIcon: 'w-4 h-4 text-on-surface-variant'
+          }"
+        />
       </div>
     </div>
 
@@ -104,7 +114,9 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       style="background-color: var(--color-surface-container-lowest);"
     >
       <UIcon name="i-lucide-bar-chart-3" class="w-12 h-12" style="color: var(--color-on-surface-variant);" />
-      <p class="font-arabic" style="color: var(--color-on-surface-variant);">اختر حلقة لعرض التحليلات</p>
+      <p style="color: var(--color-on-surface-variant);">
+        {{ $t('pages.analytics.selectHalaqaForAnalytics') }}
+      </p>
     </div>
 
     <template v-else-if="warnings">
@@ -113,31 +125,43 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         <!-- Unplanned -->
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-warning-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
-            <span class="label-md font-arabic" style="color: var(--color-status-warning);">إنجازات غير مخططة</span>
+            <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-status-warning);">{{ $t('pages.analytics.unplanned.label') }}</span>
             <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
           </div>
-          <p class="display-md" style="color: var(--color-status-warning);">{{ warnings.unplannedAchievements.length }}</p>
-          <p class="body-sm font-arabic mt-1" style="color: var(--color-status-warning);">هذا الأسبوع</p>
+          <p class="text-2xl font-bold leading-snug" style="color: var(--color-status-warning);">
+            {{ warnings.unplannedAchievements.length }}
+          </p>
+          <p class="body-sm mt-1" style="color: var(--color-status-warning);">
+            {{ $t('pages.analytics.unplanned.thisWeek') }}
+          </p>
         </div>
 
         <!-- Conflicts -->
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-conflict-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
-            <span class="label-md font-arabic" style="color: var(--color-status-conflict);">تعارضات مكتشفة</span>
+            <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-status-conflict);">{{ $t('pages.analytics.conflicts.label') }}</span>
             <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
           </div>
-          <p class="display-md" style="color: var(--color-status-conflict);">{{ warnings.flaggedConflicts.length }}</p>
-          <p class="body-sm font-arabic mt-1" style="color: var(--color-status-conflict);">يحتاج مراجعة</p>
+          <p class="text-2xl font-bold leading-snug" style="color: var(--color-status-conflict);">
+            {{ warnings.flaggedConflicts.length }}
+          </p>
+          <p class="body-sm mt-1" style="color: var(--color-status-conflict);">
+            {{ $t('pages.analytics.conflicts.needsReview') }}
+          </p>
         </div>
 
         <!-- Overdue -->
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-overdue-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
-            <span class="label-md font-arabic" style="color: var(--color-status-overdue);">بنود متأخرة</span>
+            <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-status-overdue);">{{ $t('pages.analytics.overdue.label') }}</span>
             <UIcon name="i-lucide-clock-alert" class="w-5 h-5" style="color: var(--color-status-overdue);" />
           </div>
-          <p class="display-md" style="color: var(--color-status-overdue);">{{ warnings.overdueItems.length }}</p>
-          <p class="body-sm font-arabic mt-1" style="color: var(--color-status-overdue);">من الخطة الأسبوعية</p>
+          <p class="text-2xl font-bold leading-snug" style="color: var(--color-status-overdue);">
+            {{ warnings.overdueItems.length }}
+          </p>
+          <p class="body-sm mt-1" style="color: var(--color-status-overdue);">
+            {{ $t('pages.analytics.overdue.fromWeeklyPlan') }}
+          </p>
         </div>
       </div>
 
@@ -149,7 +173,9 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       >
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
-          <h3 class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">الإنجازات غير المخططة</h3>
+          <h3 class="text-base font-medium leading-relaxed font-semibold" style="color: var(--color-on-surface);">
+            {{ $t('pages.analytics.unplanned.title') }}
+          </h3>
         </div>
         <div class="flex flex-col gap-3">
           <div
@@ -165,18 +191,18 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
                 :alt="a.student?.name"
               >
               <div>
-                <p class="body-md font-arabic font-semibold" style="color: var(--color-on-surface);">
-                  {{ a.student?.name || `طالب #${a.student_id}` }}
+                <p class="text-sm font-normal leading-relaxed font-semibold" style="color: var(--color-on-surface);">
+                  {{ a.student?.name || $t('pages.analytics.studentFallback', { id: a.student_id }) }}
                 </p>
-                <p class="label-sm font-arabic" style="color: var(--color-on-surface-variant);">
-                  {{ a.date }} — {{ a.track_type === 'Hifz' ? 'حفظ' : a.track_type === 'Near' ? 'مراجعة قريبة' : 'مراجعة بعيدة' }}
+                <p class="label-sm" style="color: var(--color-on-surface-variant);">
+                  {{ a.date }} — {{ $t(trackKey(a.track_type)) }}
                 </p>
               </div>
             </div>
             <span
-              class="px-3 py-1 rounded-full text-xs font-arabic"
+              class="px-3 py-1 rounded-full text-xs"
               style="background-color: var(--color-status-warning-light); color: var(--color-status-warning);"
-            >غير مخطط</span>
+            >{{ $t('pages.analytics.unplanned.badge') }}</span>
           </div>
         </div>
       </div>
@@ -189,7 +215,9 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       >
         <div class="flex items-center gap-2 mb-4">
           <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
-          <h3 class="body-lg font-arabic font-semibold" style="color: var(--color-on-surface);">التعارضات المكتشفة</h3>
+          <h3 class="text-base font-medium leading-relaxed font-semibold" style="color: var(--color-on-surface);">
+            {{ $t('pages.analytics.conflicts.title') }}
+          </h3>
         </div>
         <div class="flex flex-col gap-3">
           <div
@@ -205,16 +233,18 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
                 :alt="a.student?.name"
               >
               <div>
-                <p class="body-md font-arabic font-semibold" style="color: var(--color-on-surface);">
-                  {{ a.student?.name || `طالب #${a.student_id}` }}
+                <p class="text-sm font-normal leading-relaxed font-semibold" style="color: var(--color-on-surface);">
+                  {{ a.student?.name || $t('pages.analytics.studentFallback', { id: a.student_id }) }}
                 </p>
-                <p class="label-sm font-arabic" style="color: var(--color-on-surface-variant);">{{ a.date }}</p>
+                <p class="label-sm" style="color: var(--color-on-surface-variant);">
+                  {{ a.date }}
+                </p>
               </div>
             </div>
             <span
-              class="px-3 py-1 rounded-full text-xs font-arabic"
+              class="px-3 py-1 rounded-full text-xs"
               style="background-color: var(--color-status-conflict-bg); color: var(--color-status-conflict);"
-            >تعارض</span>
+            >{{ $t('pages.analytics.conflicts.badge') }}</span>
           </div>
         </div>
       </div>
@@ -226,14 +256,20 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         style="background-color: var(--color-status-ok-bg);"
       >
         <UIcon name="i-lucide-check-circle" class="w-12 h-12" style="color: var(--color-status-ok);" />
-        <p class="body-lg font-arabic font-semibold" style="color: var(--color-status-ok);">لا توجد تنبيهات هذا الأسبوع</p>
-        <p class="body-sm font-arabic" style="color: var(--color-status-ok);">الحلقة تسير بشكل ممتاز</p>
+        <p class="text-base font-medium leading-relaxed font-semibold" style="color: var(--color-status-ok);">
+          {{ $t('pages.analytics.allClear.title') }}
+        </p>
+        <p class="body-sm" style="color: var(--color-status-ok);">
+          {{ $t('pages.analytics.allClear.message') }}
+        </p>
       </div>
     </template>
 
     <!-- Error -->
     <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: var(--color-status-conflict-bg);">
-      <p class="font-arabic" style="color: var(--color-status-conflict);">{{ error }}</p>
+      <p style="color: var(--color-status-conflict);">
+        {{ error }}
+      </p>
     </div>
   </div>
 </template>

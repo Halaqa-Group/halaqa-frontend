@@ -1,0 +1,426 @@
+{
+  "language": "اللغة",
+  "dashboard": "لوحة التحكم",
+  "home": "الرئيسية",
+  "app": {
+    "name": "حلقة",
+    "tagline": "نظام إدارة الحلقات القرآنية"
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "add": "إضافة",
+    "close": "إغلاق",
+    "search": "بحث",
+    "searchPlaceholder": "بحث...",
+    "loading": "جاري التحميل...",
+    "noResults": "لا توجد نتائج",
+    "back": "رجوع",
+    "next": "التالي",
+    "previous": "السابق",
+    "confirm": "تأكيد",
+    "yes": "نعم",
+    "no": "لا",
+    "selectHalaqaPrompt": "استخدم أيقونة الحلقات في الشريط الجانبي لاختيار حلقة",
+    "selectStudent": "اختر طالباً"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "loginButton": "دخول",
+    "loggingIn": "جاري الدخول...",
+    "logout": "تسجيل الخروج",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "invalidCredentials": "بيانات الدخول غير صحيحة"
+  },
+  "validation": {
+    "select_image": "يرجى اختيار ملف صورة.",
+    "image_too_large": "الصورة كبيرة جدًا. يرجى اختيار صورة أصغر من {size}.",
+    "invalid_image_type": "يرجى رفع ملف صورة صالح (JPEG أو PNG أو WebP).",
+    "invalid_dimensions": "أبعاد الصورة غير صالحة. يرجى رفع صورة بين {min} و {max} بكسل.",
+    "required": "هذا الحقل مطلوب.",
+    "email": "يجب أن يكون هذا الحقل عنوان بريد إلكتروني صالح.",
+    "match": "تأكيد {name} لا يتطابق.",
+    "fill": "يرجى ملء جميع الحقول للمتابعة.",
+    "min": "يجب أن يحتوي هذا الحقل على {min} أحرف على الأقل.",
+    "max": "يجب ألا يزيد هذا الحقل عن {max} أحرف.",
+    "combination": "يجب أن تتضمن كلمة المرور مجموعة من الأحرف والرموز والأرقام.",
+    "mixed": "يجب أن تحتوي كلمة المرور على أحرف كبيرة وصغيرة.",
+    "contact_format": "يجب أن يكون هذا الحقل بالصيغة التالية: \u200E+970 59X XXX XXX",
+    "url": "الرابط غير صالح.",
+    "slug": "يجب أن يكون هذا الحقل رابطًا صالحًا (أحرف صغيرة وأرقام وشرطات فقط)."
+  },
+  "roles": {
+    "teacher": "معلم",
+    "admin": "مدير",
+    "parent": "ولي أمر"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "attendance": "الحضور",
+    "students": "الطلاب",
+    "achievements": "الإنجازات",
+    "analytics": "التحليلات",
+    "planner": "المخطط",
+    "tasks": "المهام"
+  },
+  "attendance": {
+    "status": {
+      "present": "حاضر",
+      "absent": "غائب",
+      "late": "متأخر",
+      "excused": "معذور"
+    }
+  },
+  "tracks": {
+    "hifz": "حفظ",
+    "near": "مراجعة قريبة",
+    "far": "مراجعة بعيدة",
+    "hifzNew": "الحفظ الجديد",
+    "nearReview": "المراجعة القريبة",
+    "farReview": "المراجعة البعيدة"
+  },
+  "pages": {
+    "login": {
+      "title": "تسجيل الدخول إلى حسابك",
+      "description": "أدخل بريدك الإلكتروني وكلمة المرور للوصول إلى حسابك."
+    },
+    "tasks": {
+      "title": "المهام",
+      "comingSoon": "قائمة المهام والمتابعة ستكون متاحة هنا قريباً"
+    },
+    "home": {
+      "greeting": "أهلاً، {name}",
+      "greetingFallback": "مرحباً بك",
+      "subtitle": "هذه نظرة عامة على نشاط حلقتك اليوم.",
+      "quickAccess": "الوصول السريع",
+      "stats": {
+        "totalStudents": "إجمالي الطلاب",
+        "activeHalaqat": "حلقات نشطة",
+        "loadFailed": "تعذّر التحميل",
+        "attendanceToday": "الحضور اليوم",
+        "attendanceCount": "{present} من {total}",
+        "currentDay": "اليوم الحالي",
+        "pendingReviews": "في انتظار المراجعة",
+        "vsLastWeek": "مقارنة بالأسبوع الماضي"
+      },
+      "quickActions": {
+        "attendance": "تسجيل الحضور اليومي",
+        "students": "إدارة المتعلمين",
+        "achievements": "متابعة التلاوة والحفظ",
+        "analytics": "تقارير الأداء والتنبيهات"
+      },
+      "welcome": {
+        "title": "مرحباً بك في حلقة",
+        "message": "لم يتم إعداد الحلقة بعد. تواصل مع المشرف لإضافة الطلاب."
+      },
+      "schedule": {
+        "title": "جدول اليوم",
+        "noSessions": "لا توجد جلسات مجدولة لهذا اليوم",
+        "students": "طالب"
+      },
+      "weeklyAttendance": {
+        "title": "الحضور الأسبوعي",
+        "present": "حاضر",
+        "absent": "غائب"
+      },
+      "topPerformers": {
+        "title": "المتميزون هذا الأسبوع",
+        "pages": "صفحات",
+        "noData": "لا توجد بيانات كافية"
+      },
+      "recentActivity": {
+        "title": "آخر الأنشطة",
+        "completedSurah": "أتمّ {student} سورة {surah}",
+        "attendanceRecorded": "تم تسجيل حضور حلقة {halaqa}",
+        "newStudent": "تم إضافة الطالب {student}",
+        "achievementLogged": "سجّل {student} إنجازاً في الحفظ",
+        "planApproved": "تم اعتماد خطة الأسبوع لحلقة {halaqa}",
+        "timeAgo": {
+          "minutes": "منذ {count} دقيقة",
+          "hours": "منذ {count} ساعة",
+          "days": "منذ {count} يوم"
+        }
+      },
+      "absenceAlerts": {
+        "title": "تنبيهات الغياب",
+        "missedSessions": "غاب {count} جلسات متتالية",
+        "contactParent": "تواصل مع ولي الأمر",
+        "noAlerts": "لا توجد تنبيهات غياب"
+      },
+      "days": {
+        "sat": "السبت",
+        "sun": "الأحد",
+        "mon": "الاثنين",
+        "tue": "الثلاثاء",
+        "wed": "الأربعاء",
+        "thu": "الخميس",
+        "fri": "الجمعة"
+      }
+    },
+    "attendance": {
+      "recordLabel": "السجل",
+      "title": "الحضور والغياب",
+      "subtitle": "قم بإدخال ومتابعة سجلات الحضور اليومي",
+      "searchPlaceholder": "بحث عن طالب...",
+      "saveAttendance": "حفظ الحضور",
+      "savedToastTitle": "تم حفظ الحضور بنجاح",
+      "saveErrorTitle": "خطأ في حفظ الحضور",
+      "saveErrorFallback": "حدث خطأ غير متوقع",
+      "successMessage": "تم حفظ الحضور بنجاح. يمكنك الآن الانتقال إلى صفحة الإنجازات لتسجيل إنجازات الطلاب.",
+      "goToAchievements": "الانتقال إلى الإنجازات",
+      "noStudentsInHalaqa": "لا يوجد طلاب في هذه الحلقة",
+      "sessionNotes": "ملاحظات الجلسة",
+      "smartAssistant": "مساعد ذكي",
+      "notesPlaceholder": "اكتب ملاحظاتك هنا...",
+      "quickAdd": "إضافة سريعة:",
+      "quickTags": {
+        "excellentEngagement": "تفاعل ممتاز",
+        "groupReview": "مراجعة جماعية",
+        "partCompleted": "تم الانتهاء من جزء"
+      },
+      "filters": {
+        "all": "كل الطلاب",
+        "present": "الحاضرون",
+        "absent": "الغائبون",
+        "late": "المتأخرون"
+      },
+      "markAllPresent": "تحديد الكل حاضر",
+      "markedAllPresent": "تم تحديد جميع الطلاب كحاضرين",
+      "undo": "تراجع",
+      "unsavedChanges": "لديك تغييرات غير محفوظة",
+      "discardChanges": "تجاهل",
+      "unsavedConfirmLeave": "لديك تغييرات غير محفوظة. هل تريد المغادرة؟",
+      "absentYesterday": "غائب بالأمس",
+      "gridView": "عرض البطاقات",
+      "listView": "عرض القائمة",
+      "addNote": "إضافة ملاحظة",
+      "noteFor": "ملاحظة عن {name}",
+      "noteEmpty": "لا توجد ملاحظة بعد",
+      "saveNote": "حفظ الملاحظة",
+      "viewFullCalendar": "عرض التقويم الكامل",
+      "calendarTitle": "التقويم الكامل",
+      "statsLabels": {
+        "attendanceRate": "نسبة الحضور",
+        "present": "الطلاب الحاضرون",
+        "absent": "الغائبون",
+        "late": "المتأخرون",
+        "studentUnit": "طالب",
+        "ofTotal": "{present} / {total} طالب"
+      },
+      "cycleStatusHint": "اضغط لتبديل الحالة"
+    },
+    "students": {
+      "communityRecord": "سجل المجتمع",
+      "title": "الطلاب",
+      "subtitle": "قم بإدارة المتعلمين النشطين ومتابعة تقدمهم في الوقت الفعلي.",
+      "addNew": "إضافة طالب جديد",
+      "searchByName": "ابحث بالاسم...",
+      "statusAll": "الكل",
+      "statusActive": "نشط",
+      "statusInactive": "غير نشط",
+      "noStudents": "لا يوجد طلاب",
+      "showingCount": "عرض {filtered} من {total} طالباً",
+      "stats": {
+        "totalStudents": "إجمالي الطلاب",
+        "activeStudents": "النشطون",
+        "inactiveStudents": "غير النشطين",
+        "avgMemorization": "متوسط نسبة الحفظ",
+        "weeklyAttendance": "نسبة الحضور هذا الأسبوع"
+      },
+      "sort": {
+        "label": "ترتيب",
+        "newest": "الأحدث إضافةً",
+        "topMemorizers": "الأكثر حفظاً",
+        "lowestAttendance": "الأقل حضوراً",
+        "nameAsc": "الاسم (أ-ي)"
+      },
+      "view": {
+        "grid": "عرض البطاقات",
+        "list": "عرض القائمة"
+      },
+      "statusBadge": {
+        "active": "نشط",
+        "frequentAbsent": "غائب متكرر",
+        "stopped": "متوقف",
+        "new": "جديد"
+      },
+      "card": {
+        "notStarted": "لم يبدأ بعد",
+        "awaitingFirst": "في انتظار أول إنجاز",
+        "lastSession": "آخر جلسة",
+        "noSessions": "لا توجد جلسات",
+        "today": "اليوم",
+        "yesterday": "أمس",
+        "daysAgo": "منذ {count} أيام",
+        "weeksAgo": "منذ {count} أسابيع",
+        "totalAyahs": "إجمالي الآيات المحفوظة",
+        "ayahUnit": "آية",
+        "attendanceRate": "نسبة الحضور",
+        "currentSurah": "السورة الحالية",
+        "viewProfile": "عرض الملف"
+      },
+      "actions": {
+        "logAchievement": "تسجيل إنجاز",
+        "recordAttendance": "تسجيل حضور",
+        "notifyParent": "إرسال تنبيه للولي",
+        "editStudent": "تعديل بيانات الطالب",
+        "notifyParentToast": "تم إرسال التنبيه لولي الأمر"
+      },
+      "empty": {
+        "noMatchTitle": "لا يوجد طلاب مطابقون للبحث",
+        "clearFilters": "مسح الفلتر",
+        "welcomeTitle": "ابدأ بإضافة أول طالب في حلقتك"
+      },
+      "loadMore": "تحميل المزيد"
+    },
+    "achievements": {
+      "recordLabel": "السجل",
+      "title": "الإنجازات",
+      "subtitle": "سجّل إنجازات الطلاب اليومية في الحفظ والمراجعة",
+      "todayCount": "{count} إنجاز اليوم",
+      "selectStudentToLog": "اختر طالباً لتسجيل إنجاز",
+      "todaysAchievements": "إنجازات اليوم",
+      "savedToast": "تم حفظ الإنجاز بنجاح",
+      "saveErrorTitle": "خطأ في حفظ الإنجاز",
+      "deletedToast": "تم حذف الإنجاز",
+      "deleteErrorTitle": "خطأ في حذف الإنجاز"
+    },
+    "analytics": {
+      "performanceLabel": "رصد الأداء",
+      "title": "التحليلات",
+      "subtitle": "تنبيهات الأسبوع وتقارير الأداء والإنجاز.",
+      "noHalaqat": "لا توجد حلقات",
+      "selectHalaqaForAnalytics": "اختر حلقة لعرض التحليلات",
+      "errorFallback": "حدث خطأ أثناء تحميل التحليلات",
+      "studentFallback": "طالب #{id}",
+      "unplanned": {
+        "label": "إنجازات غير مخططة",
+        "thisWeek": "هذا الأسبوع",
+        "title": "الإنجازات غير المخططة",
+        "badge": "غير مخطط"
+      },
+      "conflicts": {
+        "label": "تعارضات مكتشفة",
+        "needsReview": "يحتاج مراجعة",
+        "title": "التعارضات المكتشفة",
+        "badge": "تعارض"
+      },
+      "overdue": {
+        "label": "بنود متأخرة",
+        "fromWeeklyPlan": "من الخطة الأسبوعية"
+      },
+      "allClear": {
+        "title": "لا توجد تنبيهات هذا الأسبوع",
+        "message": "الحلقة تسير بشكل ممتاز"
+      }
+    },
+    "planner": {
+      "weeklyPlanning": "التخطيط الأسبوعي",
+      "title": "مخطط الأسبوع",
+      "subtitle": "خطط دروس الأسبوع لكل طالب وتتبع التقدم في الحفظ والمراجعة.",
+      "copyFromLastWeek": "نسخ من الأسبوع الماضي",
+      "saveAsDraft": "حفظ كمسودة",
+      "editPlan": "تعديل الخطة",
+      "approvePlan": "اعتماد الخطة",
+      "saveChanges": "حفظ التعديلات",
+      "approved": "معتمدة",
+      "savedDraftToast": "تم حفظ الخطة كمسودة",
+      "saveErrorTitle": "خطأ في حفظ الخطة",
+      "approvedToast": "تم اعتماد الخطة",
+      "approveErrorTitle": "خطأ في اعتماد الخطة",
+      "selectWeek": "اختر أسبوعًا",
+      "selectAll": "تحديد الكل",
+      "daysSelected": "{count} أيام محددة",
+      "copy": "نسخ",
+      "paste": "لصق ({count})",
+      "weekList": {
+        "title": "اختر الأسبوع",
+        "currentWeek": "هذا الأسبوع",
+        "past": "سابق",
+        "upcoming": "قادم",
+        "today": "اليوم",
+        "rangeButton": "نطاق التواريخ",
+        "noWeeks": "لا توجد أسابيع في هذا النطاق",
+        "presets": {
+          "pastMonth1": "آخر شهر",
+          "pastMonths3": "آخر ٣ أشهر",
+          "pastMonths6": "آخر ٦ أشهر",
+          "pastYear": "آخر سنة",
+          "month1": "الشهر القادم",
+          "months3": "٣ أشهر قادمة",
+          "months6": "٦ أشهر قادمة",
+          "year": "السنة القادمة"
+        }
+      },
+      "columns": {
+        "applyToAllDays": "تطبيق على كل الأيام",
+        "applyConfirmTitle": "تطبيق على كل الأيام",
+        "applyConfirmMessage": "نسخ أول خلية في هذا العمود إلى بقية أيام الأسبوع؟",
+        "appliedToast": "تم تطبيق الخلية على كل الأيام",
+        "noFilledCell": "لا توجد خلية مملوءة لتطبيقها"
+      },
+      "cell": {
+        "addLabel": "إضافة",
+        "edit": "تعديل",
+        "clear": "إزالة",
+        "fromAyahShort": "من الآية",
+        "toAyahShort": "إلى الآية",
+        "rangeShort": "من آية {from} إلى {to}",
+        "previewWithCount": "{surah}: من آية {from} إلى {to} ({count} آيات)",
+        "popoverTitle": "تعديل الخلية",
+        "popoverTitleNew": "إضافة درس جديد",
+        "surahLabel": "السورة",
+        "fromAyahLabel": "من الآية",
+        "toAyahLabel": "إلى الآية",
+        "errorOrder": "آية النهاية يجب أن تكون بعد آية البداية",
+        "confirm": "تأكيد",
+        "cancel": "إلغاء"
+      },
+      "row": {
+        "restDay": "يوم راحة",
+        "restDayActive": "يوم راحة",
+        "copyToAllDays": "نسخ لكل الأيام",
+        "copyConfirmTitle": "نسخ خطة هذا اليوم",
+        "copyConfirmMessage": "هل تريد نسخ خطة هذا اليوم لجميع الأيام؟",
+        "copiedToast": "تم نسخ خطة اليوم لجميع الأيام"
+      },
+      "summary": {
+        "title": "ملخص الأسبوع",
+        "totalMemAyahs": "إجمالي آيات الحفظ هذا الأسبوع",
+        "reviewSessions": "إجمالي جلسات المراجعة",
+        "restDays": "أيام الراحة",
+        "completedDays": "أيام مكتملة التخطيط",
+        "ayahUnit": "آية",
+        "sessionUnit": "جلسة",
+        "dayUnit": "أيام",
+        "outOfWeek": "{count} / 7"
+      },
+      "topActions": {
+        "clearAll": "مسح الأسبوع كله",
+        "preview": "معاينة الخطة",
+        "clearConfirmTitle": "مسح الأسبوع كله",
+        "clearConfirmMessage": "سيتم حذف جميع الدروس وأيام الراحة لهذا الأسبوع. لا يمكن التراجع.",
+        "clearedToast": "تم مسح الأسبوع",
+        "previewTitle": "معاينة الخطة",
+        "previewEmpty": "لا توجد دروس في هذا اليوم",
+        "previewRestDay": "يوم راحة"
+      }
+    }
+  },
+  "label": {
+    "email_address": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "remember_me": "تذكرني"
+  },
+  "placeholder": {
+    "password": "أدخل كلمة المرور"
+  },
+  "action": {
+    "sign_in": "تسجيل الدخول",
+    "show_password": "إظهار كلمة المرور",
+    "hide_password": "إخفاء كلمة المرور"
+  }
+}

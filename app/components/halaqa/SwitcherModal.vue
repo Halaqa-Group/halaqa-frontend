@@ -4,15 +4,15 @@ import type { ApiHalaqa } from '~/types'
 const { selectedHalaqa, halaqat, isModalOpen, selectHalaqa, closeModal } = useGlobalHalaqa()
 
 const TYPE_ICONS: Record<string, string> = {
-  'Memorization': 'i-lucide-book-open',
-  'Tajweed': 'i-lucide-mic',
-  'Aqeedah': 'i-lucide-book-text',
+  Memorization: 'i-lucide-book-open',
+  Tajweed: 'i-lucide-mic',
+  Aqeedah: 'i-lucide-book-text'
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  'Memorization': 'حفظ',
-  'Tajweed': 'تجويد',
-  'Aqeedah': 'عقيدة',
+  Memorization: 'حفظ',
+  Tajweed: 'تجويد',
+  Aqeedah: 'عقيدة'
 }
 
 // Each halaqa gets a distinct color by index, regardless of type
@@ -22,7 +22,7 @@ const PALETTE = [
   { bg: '#FFF3E0', text: '#C76400' },
   { bg: '#FCE4EC', text: '#B5174E' },
   { bg: '#E3F2FD', text: '#2196F3' },
-  { bg: '#F3EDE4', text: '#695d45' },
+  { bg: '#F3EDE4', text: '#695d45' }
 ]
 
 function getColor(index: number) {
@@ -46,7 +46,7 @@ function isSelected(halaqa: ApiHalaqa) {
   <UModal
     v-model:open="isModalOpen"
     :ui="{
-      content: 'sm:max-w-3xl max-h-[90vh] overflow-hidden rounded-[32px] p-0',
+      content: 'sm:max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl p-0',
       overlay: 'backdrop-blur-md'
     }"
     @close="closeModal"
@@ -55,10 +55,10 @@ function isSelected(halaqa: ApiHalaqa) {
       <div class="flex flex-col">
         <!-- Modal Header -->
         <div class="px-8 pt-10 pb-6 text-center">
-          <h2 class="text-2xl font-arabic font-bold mb-2" style="color: var(--color-on-surface);">
+          <h2 class="text-2xl font-bold mb-2" style="color: var(--color-on-surface);">
             اختر الحلقة للمتابعة
           </h2>
-          <p class="body-md font-arabic" style="color: var(--color-on-surface-variant);">
+          <p class="body-md" style="color: var(--color-on-surface-variant);">
             تبديل بين حلقات الدراسة والمجموعات النشطة
           </p>
         </div>
@@ -67,10 +67,12 @@ function isSelected(halaqa: ApiHalaqa) {
         <div class="px-8 py-6">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
             <!-- Halaqa Cards -->
-            <button
+            <UButton
               v-for="(halaqa, i) in halaqat"
               :key="halaqa.id"
-              class="relative rounded-3xl p-6 flex flex-col items-center text-center transition-all duration-300 cursor-pointer"
+              variant="ghost"
+              color="neutral"
+              class="relative rounded-2xl p-6 flex flex-col items-center text-center"
               :class="isSelected(halaqa) ? 'border-2 shadow-lg' : 'border border-gray-200 hover:shadow-lg'"
               :style="isSelected(halaqa)
                 ? `background-color: ${getColor(i).bg}; border-color: ${getColor(i).text};`
@@ -80,7 +82,7 @@ function isSelected(halaqa: ApiHalaqa) {
               <!-- Selected indicator -->
               <div
                 v-if="isSelected(halaqa)"
-                class="absolute top-3 left-3"
+                class="absolute top-3 end-3"
                 :style="`color: ${getColor(i).text};`"
               >
                 <UIcon name="i-lucide-check-circle" class="w-5 h-5" style="fill: currentColor;" />
@@ -102,21 +104,23 @@ function isSelected(halaqa: ApiHalaqa) {
 
               <!-- Name -->
               <h3
-                class="text-lg font-arabic font-bold mb-1"
+                class="text-lg font-bold mb-1"
                 :style="isSelected(halaqa) ? `color: ${getColor(i).text};` : 'color: var(--color-on-surface);'"
               >
                 {{ halaqa.name }}
               </h3>
 
               <!-- Type label -->
-              <span class="text-xs font-bold font-arabic" style="color: var(--color-on-surface-variant);">
+              <span class="text-xs font-bold" style="color: var(--color-on-surface-variant);">
                 {{ getLabel(halaqa.type) }}
               </span>
-            </button>
+            </UButton>
 
             <!-- Create New Placeholder (Optional - can be removed if not needed) -->
-            <button
-              class="border-2 border-dashed border-gray-200 rounded-3xl p-6 flex flex-col items-center justify-center text-center hover:border-primary/50 hover:bg-white transition-all duration-300"
+            <UButton
+              variant="ghost"
+              color="neutral"
+              class="border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center hover:border-primary/50 hover:bg-white"
               style="background-color: #f9f9f9;"
             >
               <div
@@ -125,10 +129,10 @@ function isSelected(halaqa: ApiHalaqa) {
               >
                 <UIcon name="i-lucide-plus" class="w-6 h-6" />
               </div>
-              <h3 class="text-sm font-arabic font-bold" style="color: var(--color-on-surface-variant);">
+              <h3 class="text-sm font-bold" style="color: var(--color-on-surface-variant);">
                 إضافة جديد
               </h3>
-            </button>
+            </UButton>
           </div>
         </div>
 
@@ -137,22 +141,25 @@ function isSelected(halaqa: ApiHalaqa) {
           class="mt-auto px-8 py-8 flex items-center justify-between"
           style="border-top: 1px solid var(--color-outline-variant);"
         >
-          <button
-            class="flex items-center gap-2 px-4 py-2 rounded-xl transition-colors font-arabic cursor-pointer"
+          <UButton
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-x"
+            label="إلغاء"
+            class="px-4 py-2 rounded-xl gap-2 font-normal"
             style="color: var(--color-on-surface-variant);"
+            :ui="{ leadingIcon: 'w-5 h-5' }"
             @click="closeModal"
-          >
-            <UIcon name="i-lucide-x" class="w-5 h-5" />
-            <span>إلغاء</span>
-          </button>
+          />
 
-          <button
-            class="font-arabic font-bold text-sm px-6 py-2.5 rounded-full text-white transition-opacity hover:opacity-90 cursor-pointer"
-            style="background-color: var(--color-primary);"
+          <UButton
+            variant="solid"
+            color="primary"
+            label="تأكيد الاختيار"
+            size="md"
+            class="text-sm px-6 py-2.5 rounded-full hover:opacity-90"
             @click="closeModal"
-          >
-            تأكيد الاختيار
-          </button>
+          />
         </div>
       </div>
     </template>

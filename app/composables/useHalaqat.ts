@@ -12,14 +12,13 @@ export function useHalaqat() {
     try {
       const params = new URLSearchParams()
       // Only send teacherId if user is a teacher
-      if (user.value?.role === 'teacher') {
+      if (user.value?.roles?.includes('teacher')) {
         params.set('teacherId', String(user.value.id))
       }
       // Backend gets school_id from authenticated user automatically
       const queryString = params.toString()
       halaqat.value = await api<ApiHalaqa[]>(`/halaqat${queryString ? `?${queryString}` : ''}`)
-    }
-    finally {
+    } finally {
       isLoading.value = false
     }
   }

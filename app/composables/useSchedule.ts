@@ -1,9 +1,10 @@
 import { ref, computed } from 'vue'
 import { STATUS_CYCLE, SURAH_NAMES } from '~/data/constants'
+import { totalVersesInRange } from '~/utils/quran'
 import type { DayData, LessonItem, LessonCategory, ApiWeeklyPlan } from '~/types'
 
-const ARABIC_MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
-const ARABIC_DAYS = ['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة']
+const ARABIC_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+const ARABIC_DAYS = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
 
 export type PlanStatus = 'new' | 'draft' | 'approved'
 
@@ -25,7 +26,7 @@ const TRACK_CAT_MAP: Record<string, LessonCategory> = {
 }
 
 function toAr(n: number): string {
-  return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[parseInt(d)])
+  return n.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[Number.parseInt(d)])
 }
 
 function lastSaturday(d: Date): Date {
@@ -60,6 +61,8 @@ const selectedWeekStart = ref<Date>(lastSaturday(new Date()))
 const currentPlanId = ref<number | null>(null)
 const isSaving = ref(false)
 const isLoading = ref(false)
+// Rest days are client-only for now (no backend field)
+const restDayIds = ref<Set<string>>(new Set())
 // Tracks saved items: lessonKey → backend item id (for diffing on re-save)
 const savedItemKeys = ref<Map<string, number>>(new Map())
 
@@ -99,6 +102,7 @@ export function useSchedule() {
     clipboard.value = []
     currentPlanId.value = null
     savedItemKeys.value = new Map()
+    restDayIds.value = new Set()
   }
 
   /**
@@ -147,8 +151,8 @@ export function useSchedule() {
 
       schedule.value = newSchedule
       savedItemKeys.value = newSavedKeys
-    } catch {
-      // On error keep fresh state
+    } catch (e) {
+      console.warn('[useSchedule] failed to load plan, keeping fresh state', e)
     } finally {
       isLoading.value = false
     }
@@ -181,7 +185,7 @@ export function useSchedule() {
       }
 
       // Build current lessons map
-      const currentLessons = new Map<string, { dayIndex: number; cat: LessonCategory; lesson: LessonItem }>()
+      const currentLessons = new Map<string, { dayIndex: number, cat: LessonCategory, lesson: LessonItem }>()
       for (let dayIndex = 0; dayIndex < schedule.value.length; dayIndex++) {
         for (const cat of (['mem', 'near', 'far'] as LessonCategory[])) {
           for (const lesson of schedule.value[dayIndex].lessons[cat]) {
@@ -218,7 +222,7 @@ export function useSchedule() {
                 end_surah: getSurahNumber(lesson.endSurah),
                 end_verse: lesson.endAyah
               }
-            }).then(created => { savedItemKeys.value.set(key, created.id) })
+            }).then((created) => { savedItemKeys.value.set(key, created.id) })
           )
         }
       }
@@ -341,6 +345,136 @@ export function useSchedule() {
     schedule.value.push(...pasted)
   }
 
+  function isRestDay(dayId: string) {
+    return restDayIds.value.has(dayId)
+  }
+
+  function toggleRestDay(dayId: string) {
+    const next = new Set(restDayIds.value)
+    if (next.has(dayId)) {
+      next.delete(dayId)
+    } else {
+      next.add(dayId)
+      const day = schedule.value.find(d => d.id === dayId)
+      if (day) day.lessons = { mem: [], near: [], far: [] }
+    }
+    restDayIds.value = next
+  }
+
+  function applyColumnToAllDays(category: LessonCategory): boolean {
+    const sourceDay = schedule.value.find(d =>
+      d.lessons[category].length > 0 && !restDayIds.value.has(d.id)
+    )
+    if (!sourceDay) return false
+    const sourceLessons = JSON.parse(JSON.stringify(sourceDay.lessons[category])) as LessonItem[]
+    for (const day of schedule.value) {
+      if (day.id === sourceDay.id) continue
+      if (restDayIds.value.has(day.id)) continue
+      day.lessons[category] = sourceLessons.map(l => ({
+        ...l,
+        id: `l-${Date.now()}-${Math.random().toString(36).slice(2)}`
+      }))
+    }
+    return true
+  }
+
+  function copyDayToAllDays(dayId: string): boolean {
+    const sourceDay = schedule.value.find(d => d.id === dayId)
+    if (!sourceDay) return false
+    for (const day of schedule.value) {
+      if (day.id === dayId) continue
+      if (restDayIds.value.has(day.id)) continue
+      day.lessons = {
+        mem: sourceDay.lessons.mem.map(l => ({ ...l, id: `l-${Date.now()}-${Math.random().toString(36).slice(2)}` })),
+        near: sourceDay.lessons.near.map(l => ({ ...l, id: `l-${Date.now()}-${Math.random().toString(36).slice(2)}` })),
+        far: sourceDay.lessons.far.map(l => ({ ...l, id: `l-${Date.now()}-${Math.random().toString(36).slice(2)}` }))
+      }
+    }
+    return true
+  }
+
+  function clearAllDays() {
+    for (const day of schedule.value) {
+      day.lessons = { mem: [], near: [], far: [] }
+    }
+    restDayIds.value = new Set()
+    selectedRowIds.value = new Set()
+  }
+
+  function setLesson(
+    dayId: string,
+    category: LessonCategory,
+    lessonId: string | null,
+    surah: string,
+    startAyah: number,
+    endAyah: number
+  ) {
+    const day = schedule.value.find(d => d.id === dayId)
+    if (!day) return
+    if (lessonId) {
+      const idx = day.lessons[category].findIndex(l => l.id === lessonId)
+      const existing = idx !== -1 ? day.lessons[category][idx] : undefined
+      if (existing) {
+        day.lessons[category][idx] = {
+          ...existing,
+          startSurah: surah,
+          endSurah: surah,
+          startAyah,
+          endAyah
+        }
+        return
+      }
+    }
+    day.lessons[category].push({
+      id: `l-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      startSurah: surah,
+      startAyah,
+      endSurah: surah,
+      endAyah
+    })
+  }
+
+  function clearLesson(dayId: string, category: LessonCategory, lessonId?: string) {
+    const day = schedule.value.find(d => d.id === dayId)
+    if (!day) return
+    if (lessonId) {
+      day.lessons[category] = day.lessons[category].filter(l => l.id !== lessonId)
+    } else {
+      day.lessons[category] = []
+    }
+  }
+
+  const weeklySummary = computed(() => {
+    let totalMemAyahs = 0
+    let reviewSessions = 0
+    let completedDays = 0
+
+    for (const day of schedule.value) {
+      if (restDayIds.value.has(day.id)) continue
+
+      for (const lesson of day.lessons.mem) {
+        totalMemAyahs += totalVersesInRange(
+          getSurahNumber(lesson.startSurah), lesson.startAyah,
+          getSurahNumber(lesson.endSurah), lesson.endAyah
+        )
+      }
+      reviewSessions += day.lessons.near.length + day.lessons.far.length
+
+      const filled =
+        (day.lessons.mem.length > 0 ? 1 : 0)
+        + (day.lessons.near.length > 0 ? 1 : 0)
+        + (day.lessons.far.length > 0 ? 1 : 0)
+      if (filled === 3) completedDays += 1
+    }
+
+    return {
+      totalMemAyahs,
+      reviewSessions,
+      restDays: restDayIds.value.size,
+      completedDays
+    }
+  })
+
   return {
     schedule,
     scheduleWithDates,
@@ -356,6 +490,8 @@ export function useSchedule() {
     selectedCount,
     hasSelection,
     allSelected,
+    restDayIds,
+    weeklySummary,
     loadPlan,
     resetState,
     changeWeek,
@@ -374,6 +510,13 @@ export function useSchedule() {
     addDay,
     deleteSelectedRows,
     copySelectedRows,
-    pasteRows
+    pasteRows,
+    isRestDay,
+    toggleRestDay,
+    applyColumnToAllDays,
+    copyDayToAllDays,
+    clearAllDays,
+    setLesson,
+    clearLesson
   }
 }

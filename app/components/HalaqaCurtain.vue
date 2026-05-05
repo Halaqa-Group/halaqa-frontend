@@ -8,13 +8,13 @@ const displayHalaqa = ref(selectedHalaqa.value)
 const TYPE_LABELS: Record<string, string> = {
   Memorization: 'حفظ',
   Tajweed: 'تجويد',
-  Aqeedah: 'عقيدة',
+  Aqeedah: 'عقيدة'
 }
 
 const TYPE_ICONS: Record<string, string> = {
   Memorization: 'i-lucide-book-open',
   Tajweed: 'i-lucide-mic',
-  Aqeedah: 'i-lucide-book-text',
+  Aqeedah: 'i-lucide-book-text'
 }
 
 const curtainStyle = computed(() => {
@@ -25,7 +25,7 @@ const curtainStyle = computed(() => {
     return {
       transform: 'scaleX(1)',
       transformOrigin: 'right center',
-      transition: 'transform 900ms cubic-bezier(0.22, 1, 0.36, 1)',
+      transition: 'transform 900ms cubic-bezier(0.22, 1, 0.36, 1)'
     }
   }
   if (phase.value === 'covered') {
@@ -35,7 +35,7 @@ const curtainStyle = computed(() => {
     return {
       transform: 'scaleX(0)',
       transformOrigin: 'left center',
-      transition: 'transform 900ms cubic-bezier(0.64, 0, 0.78, 0)',
+      transition: 'transform 900ms cubic-bezier(0.64, 0, 0.78, 0)'
     }
   }
   return {}
@@ -87,11 +87,11 @@ watch(selectedHalaqa, async (next, prev) => {
         <div
           v-if="phase === 'covered' && displayHalaqa"
           class="absolute inset-0 flex flex-col items-center justify-center gap-7"
-          style="z-index: 1; direction: rtl;"
+          style="z-index: 1;"
         >
           <!-- Icon -->
           <div
-            class="w-20 h-20 rounded-3xl flex items-center justify-center"
+            class="w-20 h-20 rounded-2xl flex items-center justify-center"
             style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.18);"
           >
             <UIcon
@@ -103,7 +103,7 @@ watch(selectedHalaqa, async (next, prev) => {
 
           <!-- Halaqa name -->
           <h2
-            class="font-arabic font-bold text-center"
+            class="font-bold text-center"
             style="color: white; font-size: 52px; line-height: 1.2;"
           >
             {{ displayHalaqa.name }}
@@ -113,7 +113,7 @@ watch(selectedHalaqa, async (next, prev) => {
           <div class="flex items-center gap-4" style="width: 260px;">
             <div class="flex-1 h-px" style="background: rgba(255,255,255,0.2);" />
             <span
-              class="font-arabic font-medium shrink-0"
+              class="font-medium shrink-0"
               style="color: rgba(255,255,255,0.5); font-size: 13px; letter-spacing: 0.1em;"
             >{{ TYPE_LABELS[displayHalaqa.type] }}</span>
             <div class="flex-1 h-px" style="background: rgba(255,255,255,0.2);" />

@@ -1,0 +1,426 @@
+{
+  "language": "Language",
+  "dashboard": "Dashboard",
+  "home": "Home",
+  "app": {
+    "name": "Halaqa",
+    "tagline": "Quran Halaqa Management System"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "close": "Close",
+    "search": "Search",
+    "searchPlaceholder": "Search...",
+    "loading": "Loading...",
+    "noResults": "No results",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "selectHalaqaPrompt": "Use the halaqa icon in the sidebar to select a halaqa",
+    "selectStudent": "Select a student"
+  },
+  "auth": {
+    "login": "Sign in",
+    "loginButton": "Sign in",
+    "loggingIn": "Signing in...",
+    "logout": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "invalidCredentials": "Invalid credentials"
+  },
+  "validation": {
+    "required": "This field is required.",
+    "min": "This field must be at least {min} characters.",
+    "max": "This field must not be greater than {max} characters.",
+    "email": "This field must be a valid email address.",
+    "match": "The confirm {name} does not match.",
+    "fill": "Please fill in all the fields to proceed.",
+    "combination": "Your password must include a combination of letters, symbols, and numbers.",
+    "mixed": "Your password needs to contain both uppercase and lowercase letters.",
+    "contact_format": "This field must follow this format: +970 59X XXX XXX",
+    "url": "The url is invalid.",
+    "slug": "This field must be a valid slug (only lowercase letters, numbers, and hyphens).",
+    "select_image": "Please select an image file.",
+    "image_too_large": "The image is too large. Please choose an image smaller than {size}.",
+    "invalid_image_type": "Please upload a valid image file (JPEG, PNG, or WebP).",
+    "invalid_dimensions": "The image dimensions are invalid. Please upload an image between {min} and {max} pixels."
+  },
+  "roles": {
+    "teacher": "Teacher",
+    "admin": "Admin",
+    "parent": "Parent"
+  },
+  "nav": {
+    "home": "Home",
+    "attendance": "Attendance",
+    "students": "Students",
+    "achievements": "Achievements",
+    "analytics": "Analytics",
+    "planner": "Planner",
+    "tasks": "Tasks"
+  },
+  "attendance": {
+    "status": {
+      "present": "Present",
+      "absent": "Absent",
+      "late": "Late",
+      "excused": "Excused"
+    }
+  },
+  "tracks": {
+    "hifz": "Memorization",
+    "near": "Near review",
+    "far": "Far review",
+    "hifzNew": "New memorization",
+    "nearReview": "Near review",
+    "farReview": "Far review"
+  },
+  "pages": {
+    "login": {
+      "title": "Sign in to your account",
+      "description": "Enter your email and password to access your account."
+    },
+    "tasks": {
+      "title": "Tasks",
+      "comingSoon": "Tasks and follow-up list coming soon"
+    },
+    "home": {
+      "greeting": "Hi, {name}",
+      "greetingFallback": "Welcome",
+      "subtitle": "Here's an overview of your halaqa's activity today.",
+      "quickAccess": "Quick access",
+      "stats": {
+        "totalStudents": "Total students",
+        "activeHalaqat": "Active halaqat",
+        "loadFailed": "Failed to load",
+        "attendanceToday": "Today's attendance",
+        "attendanceCount": "{present} of {total}",
+        "currentDay": "Today",
+        "pendingReviews": "Pending reviews",
+        "vsLastWeek": "vs last week"
+      },
+      "quickActions": {
+        "attendance": "Record daily attendance",
+        "students": "Manage learners",
+        "achievements": "Track recitation and memorization",
+        "analytics": "Performance reports and alerts"
+      },
+      "welcome": {
+        "title": "Welcome to Halaqa",
+        "message": "Halaqa not set up yet. Contact your admin to add students."
+      },
+      "schedule": {
+        "title": "Today's Schedule",
+        "noSessions": "No sessions scheduled for today",
+        "students": "students"
+      },
+      "weeklyAttendance": {
+        "title": "Weekly Attendance",
+        "present": "Present",
+        "absent": "Absent"
+      },
+      "topPerformers": {
+        "title": "Top Performers This Week",
+        "pages": "pages",
+        "noData": "Not enough data"
+      },
+      "recentActivity": {
+        "title": "Recent Activity",
+        "completedSurah": "{student} completed Surah {surah}",
+        "attendanceRecorded": "Attendance recorded for {halaqa}",
+        "newStudent": "New student {student} added",
+        "achievementLogged": "{student} logged a memorization achievement",
+        "planApproved": "Weekly plan approved for {halaqa}",
+        "timeAgo": {
+          "minutes": "{count} min ago",
+          "hours": "{count} hours ago",
+          "days": "{count} days ago"
+        }
+      },
+      "absenceAlerts": {
+        "title": "Absence Alerts",
+        "missedSessions": "Missed {count} consecutive sessions",
+        "contactParent": "Contact parent",
+        "noAlerts": "No absence alerts"
+      },
+      "days": {
+        "sat": "Sat",
+        "sun": "Sun",
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri"
+      }
+    },
+    "attendance": {
+      "recordLabel": "Record",
+      "title": "Attendance",
+      "subtitle": "Enter and track daily attendance records",
+      "searchPlaceholder": "Search for a student...",
+      "saveAttendance": "Save attendance",
+      "savedToastTitle": "Attendance saved successfully",
+      "saveErrorTitle": "Failed to save attendance",
+      "saveErrorFallback": "An unexpected error occurred",
+      "successMessage": "Attendance saved successfully. You can now go to the Achievements page to log student achievements.",
+      "goToAchievements": "Go to Achievements",
+      "noStudentsInHalaqa": "No students in this halaqa",
+      "sessionNotes": "Session notes",
+      "smartAssistant": "Smart assistant",
+      "notesPlaceholder": "Write your notes here...",
+      "quickAdd": "Quick add:",
+      "quickTags": {
+        "excellentEngagement": "Excellent engagement",
+        "groupReview": "Group review",
+        "partCompleted": "Part completed"
+      },
+      "filters": {
+        "all": "All students",
+        "present": "Present",
+        "absent": "Absent",
+        "late": "Late"
+      },
+      "markAllPresent": "Mark all present",
+      "markedAllPresent": "All students marked present",
+      "undo": "Undo",
+      "unsavedChanges": "You have unsaved changes",
+      "discardChanges": "Discard",
+      "unsavedConfirmLeave": "You have unsaved changes. Are you sure you want to leave?",
+      "absentYesterday": "Absent yesterday",
+      "gridView": "Grid view",
+      "listView": "List view",
+      "addNote": "Add note",
+      "noteFor": "Note for {name}",
+      "noteEmpty": "No note yet",
+      "saveNote": "Save note",
+      "viewFullCalendar": "View full calendar",
+      "calendarTitle": "Full calendar",
+      "statsLabels": {
+        "attendanceRate": "Attendance rate",
+        "present": "Present students",
+        "absent": "Absent",
+        "late": "Late",
+        "studentUnit": "students",
+        "ofTotal": "{present} / {total} students"
+      },
+      "cycleStatusHint": "Click to cycle status"
+    },
+    "students": {
+      "communityRecord": "Community record",
+      "title": "Students",
+      "subtitle": "Manage active learners and track their progress in real time.",
+      "addNew": "Add new student",
+      "searchByName": "Search by name...",
+      "statusAll": "All",
+      "statusActive": "Active",
+      "statusInactive": "Inactive",
+      "noStudents": "No students",
+      "showingCount": "Showing {filtered} of {total} students",
+      "stats": {
+        "totalStudents": "Total students",
+        "activeStudents": "Active",
+        "inactiveStudents": "Inactive",
+        "avgMemorization": "Avg memorization",
+        "weeklyAttendance": "Attendance this week"
+      },
+      "sort": {
+        "label": "Sort",
+        "newest": "Newest first",
+        "topMemorizers": "Top memorizers",
+        "lowestAttendance": "Lowest attendance",
+        "nameAsc": "Name (A-Z)"
+      },
+      "view": {
+        "grid": "Grid view",
+        "list": "List view"
+      },
+      "statusBadge": {
+        "active": "Active",
+        "frequentAbsent": "Frequently absent",
+        "stopped": "Stopped",
+        "new": "New"
+      },
+      "card": {
+        "notStarted": "Not started yet",
+        "awaitingFirst": "Awaiting first achievement",
+        "lastSession": "Last session",
+        "noSessions": "No sessions yet",
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "daysAgo": "{count} days ago",
+        "weeksAgo": "{count} weeks ago",
+        "totalAyahs": "Memorized ayahs",
+        "ayahUnit": "ayah",
+        "attendanceRate": "Attendance",
+        "currentSurah": "Current surah",
+        "viewProfile": "View profile"
+      },
+      "actions": {
+        "logAchievement": "Log achievement",
+        "recordAttendance": "Record attendance",
+        "notifyParent": "Notify parent",
+        "editStudent": "Edit student details",
+        "notifyParentToast": "Notification sent to parent"
+      },
+      "empty": {
+        "noMatchTitle": "No students match your search",
+        "clearFilters": "Clear filters",
+        "welcomeTitle": "Start by adding your first student"
+      },
+      "loadMore": "Load more"
+    },
+    "achievements": {
+      "recordLabel": "Record",
+      "title": "Achievements",
+      "subtitle": "Log students' daily achievements in memorization and review",
+      "todayCount": "{count} achievements today",
+      "selectStudentToLog": "Select a student to log an achievement",
+      "todaysAchievements": "Today's achievements",
+      "savedToast": "Achievement saved successfully",
+      "saveErrorTitle": "Failed to save achievement",
+      "deletedToast": "Achievement deleted",
+      "deleteErrorTitle": "Failed to delete achievement"
+    },
+    "analytics": {
+      "performanceLabel": "Performance",
+      "title": "Analytics",
+      "subtitle": "Weekly alerts and performance and achievement reports.",
+      "noHalaqat": "No halaqat",
+      "selectHalaqaForAnalytics": "Select a halaqa to view analytics",
+      "errorFallback": "An error occurred while loading analytics",
+      "studentFallback": "Student #{id}",
+      "unplanned": {
+        "label": "Unplanned achievements",
+        "thisWeek": "This week",
+        "title": "Unplanned achievements",
+        "badge": "Unplanned"
+      },
+      "conflicts": {
+        "label": "Conflicts detected",
+        "needsReview": "Needs review",
+        "title": "Detected conflicts",
+        "badge": "Conflict"
+      },
+      "overdue": {
+        "label": "Overdue items",
+        "fromWeeklyPlan": "From weekly plan"
+      },
+      "allClear": {
+        "title": "No alerts this week",
+        "message": "The halaqa is running smoothly"
+      }
+    },
+    "planner": {
+      "weeklyPlanning": "Weekly planning",
+      "title": "Weekly planner",
+      "subtitle": "Plan the week's lessons for each student and track memorization and review progress.",
+      "copyFromLastWeek": "Copy from last week",
+      "saveAsDraft": "Save as draft",
+      "editPlan": "Edit plan",
+      "approvePlan": "Approve plan",
+      "saveChanges": "Save changes",
+      "approved": "Approved",
+      "savedDraftToast": "Plan saved as draft",
+      "saveErrorTitle": "Failed to save plan",
+      "approvedToast": "Plan approved",
+      "approveErrorTitle": "Failed to approve plan",
+      "selectWeek": "Select a week",
+      "selectAll": "Select all",
+      "daysSelected": "{count} days selected",
+      "copy": "Copy",
+      "paste": "Paste ({count})",
+      "weekList": {
+        "title": "Pick a week",
+        "currentWeek": "This week",
+        "past": "Past",
+        "upcoming": "Upcoming",
+        "today": "Today",
+        "rangeButton": "Date range",
+        "noWeeks": "No weeks in this range",
+        "presets": {
+          "pastMonth1": "Last month",
+          "pastMonths3": "Last 3 months",
+          "pastMonths6": "Last 6 months",
+          "pastYear": "Last year",
+          "month1": "Next month",
+          "months3": "Next 3 months",
+          "months6": "Next 6 months",
+          "year": "Next year"
+        }
+      },
+      "columns": {
+        "applyToAllDays": "Apply to all days",
+        "applyConfirmTitle": "Apply to all days",
+        "applyConfirmMessage": "Copy the first filled cell in this column to the rest of the week?",
+        "appliedToast": "Applied to all days",
+        "noFilledCell": "No filled cell to apply"
+      },
+      "cell": {
+        "addLabel": "Add",
+        "edit": "Edit",
+        "clear": "Clear",
+        "fromAyahShort": "from",
+        "toAyahShort": "to",
+        "rangeShort": "ayah {from} to {to}",
+        "previewWithCount": "{surah}: ayah {from} to {to} ({count} ayahs)",
+        "popoverTitle": "Edit cell",
+        "popoverTitleNew": "Add lesson",
+        "surahLabel": "Surah",
+        "fromAyahLabel": "From ayah",
+        "toAyahLabel": "To ayah",
+        "errorOrder": "End ayah must be at or after start ayah",
+        "confirm": "Confirm",
+        "cancel": "Cancel"
+      },
+      "row": {
+        "restDay": "Rest day",
+        "restDayActive": "Rest day",
+        "copyToAllDays": "Copy to all days",
+        "copyConfirmTitle": "Copy this day's plan",
+        "copyConfirmMessage": "Copy this day's plan to all other days?",
+        "copiedToast": "Day plan copied to all days"
+      },
+      "summary": {
+        "title": "Weekly summary",
+        "totalMemAyahs": "Total memorization ayahs this week",
+        "reviewSessions": "Total review sessions",
+        "restDays": "Rest days",
+        "completedDays": "Days fully planned",
+        "ayahUnit": "ayahs",
+        "sessionUnit": "sessions",
+        "dayUnit": "days",
+        "outOfWeek": "{count} / 7"
+      },
+      "topActions": {
+        "clearAll": "Clear week",
+        "preview": "Preview plan",
+        "clearConfirmTitle": "Clear week",
+        "clearConfirmMessage": "All lessons and rest days for this week will be deleted. This cannot be undone.",
+        "clearedToast": "Week cleared",
+        "previewTitle": "Plan preview",
+        "previewEmpty": "No lessons this day",
+        "previewRestDay": "Rest day"
+      }
+    }
+  },
+  "label": {
+    "email_address": "Email address",
+    "password": "Password",
+    "remember_me": "Remember me"
+  },
+  "placeholder": {
+    "password": "Enter your password"
+  },
+  "action": {
+    "sign_in": "Sign in",
+    "show_password": "Show password",
+    "hide_password": "Hide password"
+  }
+}

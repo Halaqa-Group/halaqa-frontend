@@ -1,3 +1,9 @@
+import type { FetchOptions } from 'ofetch'
+
+// ── API client ──────────────────────────────────────────────────────────────
+
+export type ApiClient = <T = unknown>(url: string, opts?: FetchOptions) => Promise<T>
+
 // ── UI types (used by existing components) ──────────────────────────────────
 
 export interface LessonItem {
@@ -57,6 +63,12 @@ export interface ApiStudent {
   daily_far_pages_capacity: number
   notes: string | null
   photo_url: string | null
+  // Summary fields populated by list/detail endpoints. Optional so the entity
+  // shape stays usable for create/update payloads where these are absent.
+  progress_percent?: number
+  current_surah?: string
+  halaqa_name?: string
+  attendance_rate?: number
 }
 
 export interface ApiHalaqa {
@@ -65,7 +77,7 @@ export interface ApiHalaqa {
   type: 'Memorization' | 'Tajweed' | 'Aqeedah'
   school_id: number
   teacher_id: number
-  schedules: { id: number; day_of_week: number }[]
+  schedules: { id: number, day_of_week: number }[]
 }
 
 export interface ApiAttendance {

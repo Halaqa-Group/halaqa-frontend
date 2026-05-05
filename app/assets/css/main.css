@@ -1,16 +1,102 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+@import "./fonts.css";
 
-@theme static {
-  --font-sans: 'Plus Jakarta Sans', sans-serif;
-  --font-arabic: 'Tajawal', sans-serif;
+:root {
+  /* Font family */
+  --font-sans: 'Thmanyah Sans', system-ui, sans-serif;
 
-  --color-primary: #804c7d;
+  /* Primary color scale */
+  --color-primary-50: #e8f5ef;
+  --color-primary-100: #c5e5d5;
+  --color-primary-200: #9ed4b9;
+  --color-primary-300: #72c29b;
+  --color-primary-400: #4db482;
+  --color-primary-500: #2aa56b;
+  --color-primary-600: #22915c;
+  --color-primary-700: #1a6b4a;
+  --color-primary-800: #124d35;
+  --color-primary-900: #0a2f20;
+  --color-primary-950: #051810;
+
+  /* Secondary color scale */
+  --color-secondary-50: #fdf8ec;
+  --color-secondary-100: #f9edcc;
+  --color-secondary-200: #f4e0a8;
+  --color-secondary-300: #edd280;
+  --color-secondary-400: #e5c45c;
+  --color-secondary-500: #d9b340;
+  --color-secondary-600: #c9a84c;
+  --color-secondary-700: #a8872a;
+  --color-secondary-800: #7a621e;
+  --color-secondary-900: #4d3d12;
+  --color-secondary-950: #281f09;
+
+  /* Error scale — anchored on design system #ba1a1a (600) */
+  --color-error-50: #fef2f2;
+  --color-error-100: #fee2e2;
+  --color-error-200: #fecaca;
+  --color-error-300: #f99393;
+  --color-error-400: #ec5e5e;
+  --color-error-500: #db2929;
+  --color-error-600: #ba1a1a;
+  --color-error-700: #971515;
+  --color-error-800: #7a1212;
+  --color-error-900: #631111;
+  --color-error-950: #350606;
+
+  /* Warning scale — anchored on design system #F57C00 (500) */
+  --color-warning-50: #fff8eb;
+  --color-warning-100: #ffeec7;
+  --color-warning-200: #ffd98a;
+  --color-warning-300: #ffbd4d;
+  --color-warning-400: #ffa024;
+  --color-warning-500: #f57c00;
+  --color-warning-600: #c25e00;
+  --color-warning-700: #9c4700;
+  --color-warning-800: #7e3805;
+  --color-warning-900: #672e0a;
+  --color-warning-950: #3e1505;
+
+  /* Success scale — anchored on design system #4A8E85 (500) */
+  --color-success-50: #f0faf8;
+  --color-success-100: #d6f1ec;
+  --color-success-200: #b1e2da;
+  --color-success-300: #82cbc1;
+  --color-success-400: #5fafa4;
+  --color-success-500: #4a8e85;
+  --color-success-600: #3a7470;
+  --color-success-700: #305d5a;
+  --color-success-800: #2a4b48;
+  --color-success-900: #243f3d;
+  --color-success-950: #122220;
+
+  /* Info scale — anchored on design system #2196F3 (500) */
+  --color-info-50: #ebf6fe;
+  --color-info-100: #d6ecfd;
+  --color-info-200: #aedafc;
+  --color-info-300: #7dc4f9;
+  --color-info-400: #4dadf6;
+  --color-info-500: #2196f3;
+  --color-info-600: #0e7ed8;
+  --color-info-700: #0c66ad;
+  --color-info-800: #0d568f;
+  --color-info-900: #114873;
+  --color-info-950: #082c4a;
+}
+
+@theme {
+  --font-sans: 'Thmanyah Sans', system-ui, sans-serif;
+
+  /* Core semantic colors */
+  --color-primary: #1a6b4a;
   --color-on-primary: #ffffff;
   --color-primary-container: #f3e8f2;
-  --color-secondary: #356668;
+  --color-secondary: #c9a84c;
   --color-on-secondary: #ffffff;
   --color-tertiary: #695d45;
+
+  /* Surface system */
   --color-surface: #f9f9f9;
   --color-surface-container-lowest: #ffffff;
   --color-surface-container-low: #f3f3f3;
@@ -21,7 +107,7 @@
   --color-outline: #80737c;
   --color-outline-variant: #d1c2cc;
   --color-background: #f9f9f9;
-  --color-error: #ba1a1a;
+  --color-error: var(--color-error-600);
 
   /* Track type semantic colors */
   --color-track-hifz: #2A6B64;
@@ -30,6 +116,8 @@
   --color-track-near-bg: #FCE4EC;
   --color-track-far: #C76400;
   --color-track-far-bg: #FFF3E0;
+  --color-track-all: #804c7d;
+  --color-track-all-bg: #F0E8EF;
 
   /* Status / analytics semantic colors */
   --color-status-warning: #F57C00;
@@ -44,15 +132,84 @@
   --color-status-ok-bg: #E0F0EE;
   --color-status-info: #2196F3;
   --color-status-info-bg: #E3F2FD;
-  --color-card-border: #F0F0F0;
+  --color-card-border: #e0dfe0;
+
+  /* Leaderboard rank colors */
+  --color-rank-gold: #F9A825;
+  --color-rank-gold-bg: #FFF8E1;
+  --color-rank-silver: #9E9E9E;
+  --color-rank-silver-bg: #F5F5F5;
+  --color-rank-bronze: #E65100;
+  --color-rank-bronze-bg: #FFF3E0;
+
+  /* Sidebar */
+  --color-sidebar-bg: #f4f0f3;
+  --color-sidebar-active-bg: #ffffff;
+  --color-sidebar-hover-bg: #ece7eb;
+  --color-sidebar-border: #e6e0e5;
+  --color-sidebar-icon-bg: #ece7eb;
 
   --shadow-ambient: 0 4px 20px rgba(128, 76, 125, 0.05);
   --shadow-card: 0 1px 4px rgba(128, 76, 125, 0.08);
 }
 
-/* Scrollbar on the left for RTL */
-html, body {
-  direction: rtl;
+/* Dark mode overrides */
+.dark {
+  /* Surface system */
+  --color-surface: #111113;
+  --color-surface-container-lowest: #19191b;
+  --color-surface-container-low: #212123;
+  --color-surface-container: #2a2a2c;
+  --color-surface-container-high: #333335;
+  --color-on-surface: #e4e2e4;
+  --color-on-surface-variant: #b0a8ae;
+  --color-outline: #9a8f96;
+  --color-outline-variant: #4a3f46;
+  --color-background: #111113;
+  --color-error: #f2726b;
+
+  /* Track type semantic colors */
+  --color-track-hifz: #5ab8ad;
+  --color-track-hifz-bg: #162c2a;
+  --color-track-near: #e85a8a;
+  --color-track-near-bg: #301520;
+  --color-track-far: #e8923a;
+  --color-track-far-bg: #302215;
+  --color-track-all: #b890b3;
+  --color-track-all-bg: #2d1f2c;
+
+  /* Status / analytics semantic colors */
+  --color-status-warning: #ffa040;
+  --color-status-warning-bg: #302215;
+  --color-status-warning-light: #3d2c1a;
+  --color-status-conflict: #f06292;
+  --color-status-conflict-bg: #301520;
+  --color-status-conflict-light: #2d1520;
+  --color-status-overdue: #7986CB;
+  --color-status-overdue-bg: #1a1d30;
+  --color-status-ok: #6db8ad;
+  --color-status-ok-bg: #162c2a;
+  --color-status-info: #64B5F6;
+  --color-status-info-bg: #152030;
+  --color-card-border: #2e2e30;
+
+  /* Leaderboard rank colors */
+  --color-rank-gold: #FFD54F;
+  --color-rank-gold-bg: #3a3015;
+  --color-rank-silver: #B0BEC5;
+  --color-rank-silver-bg: #2a2e30;
+  --color-rank-bronze: #FF8A65;
+  --color-rank-bronze-bg: #302215;
+
+  /* Sidebar */
+  --color-sidebar-bg: #1e1e20;
+  --color-sidebar-active-bg: #2a2a2c;
+  --color-sidebar-hover-bg: #252527;
+  --color-sidebar-border: #2e2e30;
+  --color-sidebar-icon-bg: #2a2a2c;
+
+  --shadow-ambient: 0 4px 20px rgba(0, 0, 0, 0.2);
+  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* Hide scrollbar while keeping scroll functionality */
@@ -63,13 +220,7 @@ html, body {
   display: none;
 }
 
-.font-arabic {
-  font-family: var(--font-arabic);
-  line-height: 1.8;
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
 }
-
-.display-lg { font-size: 32px; font-weight: 700; line-height: 1.2; }
-.display-md { font-size: 24px; font-weight: 700; line-height: 1.3; }
-.body-lg { font-size: 16px; font-weight: 500; line-height: 1.6; }
-.body-md { font-size: 14px; font-weight: 400; line-height: 1.6; }
-.label-md { font-size: 12px; font-weight: 600; line-height: 1.2; letter-spacing: 0.02em; }

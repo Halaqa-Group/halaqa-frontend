@@ -12,22 +12,21 @@ const searchQuery = ref('')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 
-function apiToStudent(s: any): Student {
+function apiToStudent(s: ApiStudent): Student {
   return {
     id: String(s.id),
     name: s.name,
-    status: s.status as 'active' | 'inactive',
-    currentSurah: '—',
-    progress: 0,
-    halaqa: '—',
-    attendance: 0,
+    status: s.status,
+    currentSurah: s.current_surah ?? '—',
+    progress: s.progress_percent ?? 0,
+    halaqa: s.halaqa_name ?? '—',
+    attendance: s.attendance_rate ?? 0,
     avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`
   }
 }
 
 export function useStudents() {
   const api = useApi()
-  const { user } = useAuth()
 
   async function fetchStudents(halaqaId?: number) {
     isLoading.value = true
@@ -35,32 +34,21 @@ export function useStudents() {
     try {
       const params = new URLSearchParams()
       if (halaqaId) params.set('halaqaId', String(halaqaId))
-      const data = await api<any[]>(`/students${params.toString() ? `?${params}` : ''}`)
+      const data = await api<ApiStudent[]>(`/students${params.toString() ? `?${params}` : ''}`)
       students.value = data.map(apiToStudent)
-    }
-    catch (e: any) {
+    } catch (e: any) {
       error.value = e?.data?.message || 'حدث خطأ أثناء تحميل الطلاب'
-    }
-    finally {
+    } finally {
       isLoading.value = false
     }
   }
 
   async function createStudent(dto: Record<string, any>) {
-    if (!user.value?.school_id) {
-      throw new Error('User school_id is required to create a student')
-    }
-
-    const requestBody = {
-      ...dto,
-      school_id: Number(user.value.school_id)
-    }
-
-    const data = await api<any>('/students', {
+    // Backend forces school_id from the authenticated user; we don't send it.
+    const data = await api<ApiStudent>('/students', {
       method: 'POST',
-      body: requestBody
+      body: dto
     })
-
     students.value.unshift(apiToStudent(data))
     return data
   }
@@ -90,12 +78,10 @@ export function useStudents() {
     try {
       const data = await api<ApiStudent>(`/students/${student.id}`)
       editingApiStudent.value = data
-    }
-    catch {
+    } catch {
       isEditModalOpen.value = false
       toast.add({ title: 'فشل تحميل بيانات الطالب', color: 'error' })
-    }
-    finally {
+    } finally {
       isEditLoading.value = false
     }
   }
@@ -106,7 +92,7 @@ export function useStudents() {
   }
 
   async function updateStudent(id: number, dto: Record<string, any>) {
-    const data = await api<any>(`/students/${id}`, {
+    const data = await api<ApiStudent>(`/students/${id}`, {
       method: 'PATCH',
       body: dto
     })

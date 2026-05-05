@@ -41,12 +41,10 @@ function toAr(n: number) {
 const monthLabel = computed(() => `${ARABIC_MONTHS[viewMonth.value]} ${toAr(viewYear.value)}`)
 
 function prevMonth() {
-  if (viewMonth.value === 0) { viewMonth.value = 11; viewYear.value-- }
-  else viewMonth.value--
+  if (viewMonth.value === 0) { viewMonth.value = 11; viewYear.value-- } else viewMonth.value--
 }
 function nextMonth() {
-  if (viewMonth.value === 11) { viewMonth.value = 0; viewYear.value++ }
-  else viewMonth.value++
+  if (viewMonth.value === 11) { viewMonth.value = 0; viewYear.value++ } else viewMonth.value++
 }
 
 type CalDay = {
@@ -102,28 +100,43 @@ function onDayClick(cell: CalDay) {
 </script>
 
 <template>
-  <div class="bg-white border border-primary/10 rounded-[40px] p-7 shadow-xl shadow-primary/[0.03] relative overflow-hidden group">
-    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
+  <div class="bg-white border border-primary/10 rounded-2xl p-7 shadow-xl shadow-primary/[0.03] relative overflow-hidden group">
+    <div class="absolute top-0 end-0 w-32 h-32 bg-primary/5 rounded-full -me-16 -mt-16 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
     <div class="relative z-10">
       <!-- Month header -->
       <div class="flex items-center justify-between mb-6">
-        <button class="p-2.5 hover:bg-primary/5 text-primary/40 hover:text-primary rounded-2xl transition-all cursor-pointer" @click="prevMonth">
-          <UIcon name="i-lucide-chevron-right" class="w-5 h-5" />
-        </button>
-        <h4 class="font-arabic font-bold text-lg" style="color: var(--color-on-surface);">{{ monthLabel }}</h4>
-        <button class="p-2.5 hover:bg-primary/5 text-primary/40 hover:text-primary rounded-2xl transition-all cursor-pointer" @click="nextMonth">
-          <UIcon name="i-lucide-chevron-left" class="w-5 h-5" />
-        </button>
+        <UButton
+          variant="ghost"
+          color="primary"
+          icon="i-lucide-chevron-right"
+          size="lg"
+          class="text-primary/40 hover:text-primary rounded-2xl"
+          @click="prevMonth"
+        />
+        <h4 class="font-bold text-lg" style="color: var(--color-on-surface);">
+          {{ monthLabel }}
+        </h4>
+        <UButton
+          variant="ghost"
+          color="primary"
+          icon="i-lucide-chevron-left"
+          size="lg"
+          class="text-primary/40 hover:text-primary rounded-2xl"
+          @click="nextMonth"
+        />
       </div>
 
       <!-- Weekday headers -->
       <div class="grid grid-cols-7 gap-1 mb-3">
         <div
-          v-for="wd in WEEKDAYS" :key="wd"
-          class="h-9 flex items-center justify-center text-[11px] font-bold font-arabic tracking-tighter"
+          v-for="wd in WEEKDAYS"
+          :key="wd"
+          class="h-9 flex items-center justify-center text-[11px] font-bold tracking-tighter"
           style="color: color-mix(in srgb, var(--color-on-surface-variant) 35%, transparent);"
-        >{{ wd }}</div>
+        >
+          {{ wd }}
+        </div>
       </div>
 
       <!-- Day cells -->
@@ -149,7 +162,7 @@ function onDayClick(cell: CalDay) {
 
           <!-- Day number -->
           <span
-            class="relative z-10 text-sm font-arabic transition-colors select-none font-bold"
+            class="relative z-10 text-sm transition-colors select-none font-bold"
             :class="[
               !cell.isCurrentMonth && 'opacity-25',
               cell.isSelected

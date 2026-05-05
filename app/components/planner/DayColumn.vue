@@ -1,21 +1,62 @@
 <script setup lang="ts">
-import { STATUS_MAP } from '~/data/constants'
 import type { LessonItem, LessonCategory } from '~/types'
 
 const props = defineProps<{
   items: LessonItem[]
-  statusColor: string
   dayId: string
   category: LessonCategory
   isEditMode: boolean
+  isRestDay: boolean
 }>()
 
-const { addLesson, moveLesson, cycleStatus } = useSchedule()
-const isDragOver = ref(false)
+const { moveLesson, clearLesson } = useSchedule()
+const { t } = useI18n()
 
-const status = computed(() => STATUS_MAP[props.statusColor] || STATUS_MAP['bg-[#86A3B8]'])
+const isDragOver = ref(false)
+const popoverOpen = ref(false)
+// Edit target: undefined = closed; null = adding new; LessonItem = editing
+const editTarget = ref<LessonItem | null>(null)
+
+const tintClasses = computed(() => {
+  switch (props.category) {
+    case 'mem': return 'bg-track-hifz-bg/40 hover:bg-track-hifz-bg/70 border-track-hifz/15'
+    case 'near': return 'bg-track-near-bg/40 hover:bg-track-near-bg/70 border-track-near/15'
+    case 'far': return 'bg-track-far-bg/40 hover:bg-track-far-bg/70 border-track-far/15'
+  }
+  return ''
+})
+
+const trackTextClass = computed(() => {
+  switch (props.category) {
+    case 'mem': return 'text-track-hifz'
+    case 'near': return 'text-track-near'
+    case 'far': return 'text-track-far'
+  }
+  return ''
+})
+
+function openForAdd() {
+  if (!props.isEditMode || props.isRestDay) return
+  editTarget.value = null
+  popoverOpen.value = true
+}
+
+function openForEdit(lesson: LessonItem) {
+  if (!props.isEditMode || props.isRestDay) return
+  editTarget.value = lesson
+  popoverOpen.value = true
+}
+
+function clearItem(lessonId: string) {
+  clearLesson(props.dayId, props.category, lessonId)
+}
+
+function rangeText(item: LessonItem) {
+  return t('pages.planner.cell.rangeShort', { from: item.startAyah, to: item.endAyah })
+}
 
 function onDragOver(e: DragEvent) {
+  if (!props.isEditMode || props.isRestDay) return
   e.preventDefault()
   isDragOver.value = true
 }
@@ -25,6 +66,7 @@ function onDragLeave() {
 }
 
 function onDrop(e: DragEvent) {
+  if (!props.isEditMode || props.isRestDay) return
   e.preventDefault()
   isDragOver.value = false
   try {
@@ -32,49 +74,94 @@ function onDrop(e: DragEvent) {
     if (data.sourceDayId && data.sourceCategory && data.lessonId) {
       moveLesson(data.sourceDayId, data.sourceCategory, data.lessonId, props.dayId, props.category)
     }
-  }
-  catch {}
+  } catch {}
 }
 </script>
 
 <template>
-  <div class="flex-[4] relative group/column">
-    <!-- Status indicator -->
-    <button
-      class="absolute -start-2.5 -top-2.5 w-7 h-7 rounded-full flex items-center justify-center z-20 shadow-lg border-2 border-white transition-all duration-300 hover:scale-110 active:scale-95 group/status"
-      :style="`background-color: ${status.bgHex};`"
-      @click="cycleStatus(dayId, category)"
+  <div class="flex-[4] relative">
+    <UPopover
+      v-model:open="popoverOpen"
+      :ui="{ content: 'rounded-2xl' }"
     >
-      <UIcon :name="status.icon" class="w-3.5 h-3.5 group-hover/status:scale-110" :style="`color: ${status.iconHex};`" />
-    </button>
-
-    <!-- Cell -->
-    <div
-      class="w-full bg-white border rounded-[22px] shadow-sm relative overflow-hidden flex flex-col justify-center h-[60px] transition-all group/cell border-b-2 border-outline-variant/10 py-1.5"
-      :class="isDragOver ? 'ring-2 ring-primary/30 shadow-md' : ''"
-      @dragover="onDragOver"
-      @dragleave="onDragLeave"
-      @drop="onDrop"
-    >
-      <div v-if="items.length > 0" class="flex flex-col">
-        <PlannerRangeInput
-          v-for="item in items"
+      <!-- Trigger: filled card OR empty + button -->
+      <div
+        v-if="items.length > 0"
+        class="w-full rounded-xl border transition-all flex flex-col"
+        :class="[tintClasses, isDragOver ? 'ring-2 ring-primary/30 shadow-md' : '', isRestDay ? 'opacity-50' : '']"
+        @dragover="onDragOver"
+        @dragleave="onDragLeave"
+        @drop="onDrop"
+      >
+        <button
+          v-for="(item, idx) in items"
           :key="item.id"
-          :item="item"
-          :day-id="dayId"
-          :category="category"
-          :is-edit-mode="isEditMode"
-        />
+          type="button"
+          class="w-full text-start group/cell relative px-3 py-2.5 transition-colors hover:bg-white/40 first:rounded-t-xl last:rounded-b-xl disabled:cursor-default disabled:hover:bg-transparent"
+          :class="idx > 0 ? 'border-t border-white/40' : ''"
+          :disabled="!isEditMode || isRestDay"
+          @click="openForEdit(item)"
+        >
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="font-bold text-sm" :class="trackTextClass">{{ item.startSurah }}</span>
+            <span
+              v-if="isEditMode && !isRestDay"
+              class="flex items-center gap-1 opacity-0 group-hover/cell:opacity-100 transition-opacity"
+            >
+              <UIcon name="i-lucide-pencil" class="w-3.5 h-3.5" :class="trackTextClass" />
+              <span
+                role="button"
+                :aria-label="$t('pages.planner.cell.clear')"
+                class="w-5 h-5 rounded-full bg-on-surface/10 hover:bg-status-conflict hover:text-white text-on-surface-variant flex items-center justify-center"
+                @click.stop="clearItem(item.id)"
+              >
+                <UIcon name="i-lucide-x" class="w-3 h-3" />
+              </span>
+            </span>
+          </div>
+          <div class="text-xs text-on-surface-variant mt-0.5">
+            {{ rangeText(item) }}
+          </div>
+        </button>
       </div>
 
       <button
-        v-else-if="isEditMode"
-        class="w-full h-full absolute inset-0 flex items-center justify-center gap-1 text-xs font-arabic transition-colors hover:bg-muted text-muted"
-        @click="addLesson(dayId, category)"
+        v-else
+        type="button"
+        class="w-full h-[60px] rounded-xl border border-dashed transition-all flex items-center justify-center gap-1.5 group/empty"
+        :class="[
+          tintClasses,
+          isDragOver ? 'ring-2 ring-primary/30 shadow-md' : '',
+          isRestDay ? 'opacity-50 cursor-not-allowed' : (isEditMode ? 'hover:border-solid hover:shadow-sm cursor-pointer' : 'cursor-default')
+        ]"
+        :disabled="!isEditMode || isRestDay"
+        @click="openForAdd"
+        @dragover="onDragOver"
+        @dragleave="onDragLeave"
+        @drop="onDrop"
       >
-        <UIcon name="i-lucide-plus" class="w-3 h-3" />
-        إضافة
+        <UIcon
+          name="i-lucide-plus"
+          class="w-4 h-4 group-hover/empty:scale-110 transition-transform"
+          :class="isEditMode ? trackTextClass : 'text-on-surface-variant'"
+        />
+        <span
+          v-if="isEditMode && !isRestDay"
+          class="text-xs font-medium opacity-0 group-hover/empty:opacity-100 transition-opacity"
+          :class="trackTextClass"
+        >
+          {{ $t('pages.planner.cell.addLabel') }}
+        </span>
       </button>
-    </div>
+
+      <template #content>
+        <PlannerCellPopover
+          :day-id="dayId"
+          :category="category"
+          :lesson="editTarget"
+          @close="popoverOpen = false"
+        />
+      </template>
+    </UPopover>
   </div>
 </template>

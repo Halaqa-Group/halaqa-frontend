@@ -134,8 +134,16 @@ export default defineAppConfig({
 
     modal: {
       slots: {
+        overlay: 'fixed inset-0',
         title: 'text-xl',
         description: 'mt-0'
+      },
+      variants: {
+        overlay: {
+          true: {
+            overlay: 'bg-gray-950/60'
+          }
+        }
       }
     }
   }

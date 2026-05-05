@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { TableColumn } from '@nuxt/ui'
-import type { ApiParent } from '~/types'
+import type { ApiParent, ApiStudent } from '~/types'
 import ConfirmDialog from '~/components/planner/ConfirmDialog.vue'
 
 definePageMeta({
@@ -13,6 +13,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const toast = useToast()
+const api = useApi()
 const {
   parents,
   isLoading,
@@ -31,10 +32,10 @@ const form = reactive({
   email: '',
   identity_number: '',
   phone: '',
-  children_count: 0,
-  children_names: '',
+  children_names: [] as string[],
   status: 'active' as 'active' | 'inactive'
 })
+const childrenNameOptions = ref<string[]>([])
 
 const deleteOpen = ref(false)
 const deleteTarget = ref<ApiParent | null>(null)
@@ -83,8 +84,7 @@ function resetForm() {
   form.email = ''
   form.identity_number = ''
   form.phone = ''
-  form.children_count = 0
-  form.children_names = ''
+  form.children_names = []
   form.status = 'active'
 }
 
@@ -100,8 +100,9 @@ function openEdit(row: ApiParent) {
   form.email = row.email
   form.identity_number = row.identity_number
   form.phone = row.phone ?? ''
-  form.children_count = row.children_count
-  form.children_names = row.children_names === '—' ? '' : row.children_names
+  form.children_names = row.children_names === '—'
+    ? []
+    : row.children_names.split('،').map(v => v.trim()).filter(Boolean)
   form.status = row.status
   formOpen.value = true
 }
@@ -119,16 +120,24 @@ function validateForm(): string | null {
 
 function payloadFromForm() {
   const phone = form.phone.trim()
-  const names = form.children_names.trim()
+  const names = form.children_names
+    .map(v => v.trim())
+    .filter(Boolean)
   return {
     name: form.name.trim(),
     email: form.email.trim(),
     identity_number: form.identity_number.trim(),
     phone: phone.length ? phone : null,
-    children_count: Math.max(0, Number(form.children_count) || 0),
-    children_names: names.length ? names : '—',
+    children_count: names.length,
+    children_names: names.length ? names.join('، ') : '—',
     status: form.status
   }
+}
+
+async function loadChildrenOptions() {
+  const rows = await api<ApiStudent[]>('/students')
+  const uniqueNames = [...new Set(rows.map(s => s.name).filter(Boolean))]
+  childrenNameOptions.value = uniqueNames.sort((a, b) => a.localeCompare(b, 'ar'))
 }
 
 async function submitForm() {
@@ -173,8 +182,11 @@ async function onDeleteConfirm() {
   }
 }
 
-onMounted(() => {
-  fetchParents()
+onMounted(async () => {
+  await Promise.all([
+    fetchParents(),
+    loadChildrenOptions()
+  ])
 })
 </script>
 
@@ -286,15 +298,17 @@ onMounted(() => {
           <UFormField :label="t('pages.parents.fieldPhone')" name="phone">
             <UInput v-model="form.phone" class="w-full" dir="ltr" />
           </UFormField>
-          <UFormField :label="t('pages.parents.fieldChildrenCount')" name="children_count">
-            <UInput v-model.number="form.children_count" type="number" min="0" class="w-full" dir="ltr" />
-          </UFormField>
           <UFormField
             :label="t('pages.parents.fieldChildrenNames')"
             name="children_names"
             :hint="t('pages.parents.fieldChildrenNamesHint')"
           >
-            <UInput v-model="form.children_names" class="w-full" />
+            <USelectMenu
+              v-model="form.children_names"
+              multiple
+              :items="childrenNameOptions"
+              class="w-full"
+            />
           </UFormField>
           <UFormField :label="t('pages.parents.fieldStatus')" name="status">
             <USelect

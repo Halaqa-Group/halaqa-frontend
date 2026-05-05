@@ -30,7 +30,7 @@ const editingId = ref<number | null>(null)
 const form = reactive({
   name: '',
   email: '',
-  identity_number: '',
+  password: '',
   phone: '',
   children_names: [] as string[],
   status: 'active' as 'active' | 'inactive'
@@ -82,7 +82,7 @@ const columns = computed<TableColumn<ApiParent>[]>(() => [
 function resetForm() {
   form.name = ''
   form.email = ''
-  form.identity_number = ''
+  form.password = ''
   form.phone = ''
   form.children_names = []
   form.status = 'active'
@@ -98,7 +98,7 @@ function openEdit(row: ApiParent) {
   editingId.value = row.id
   form.name = row.name
   form.email = row.email
-  form.identity_number = row.identity_number
+  form.password = ''
   form.phone = row.phone ?? ''
   form.children_names = row.children_names === '—'
     ? []
@@ -114,22 +114,17 @@ function closeForm() {
 function validateForm(): string | null {
   if (!form.name.trim()) return t('pages.parents.validationName')
   if (!form.email.trim()) return t('pages.parents.validationEmail')
-  if (!form.identity_number.trim()) return t('pages.parents.validationIdentity')
+  if (editingId.value == null && form.password.trim().length < 8) return t('pages.parents.validationPassword')
   return null
 }
 
 function payloadFromForm() {
   const phone = form.phone.trim()
-  const names = form.children_names
-    .map(v => v.trim())
-    .filter(Boolean)
   return {
     name: form.name.trim(),
     email: form.email.trim(),
-    identity_number: form.identity_number.trim(),
+    password: form.password.trim() || undefined,
     phone: phone.length ? phone : null,
-    children_count: names.length,
-    children_names: names.length ? names.join('، ') : '—',
     status: form.status
   }
 }
@@ -287,10 +282,15 @@ onMounted(async () => {
           <UFormField :label="t('pages.parents.fieldEmail')" name="email">
             <UInput v-model="form.email" type="email" class="w-full" />
           </UFormField>
-          <UFormField :label="t('pages.parents.fieldIdentity')" name="identity_number">
+          <UFormField
+            v-if="editingId == null"
+            :label="t('pages.parents.fieldPassword')"
+            name="password"
+          >
             <UInput
-              v-model="form.identity_number"
-              :placeholder="t('pages.parents.fieldIdentityPlaceholder')"
+              v-model="form.password"
+              type="password"
+              :placeholder="t('pages.parents.fieldPasswordPlaceholder')"
               class="w-full"
               dir="ltr"
             />

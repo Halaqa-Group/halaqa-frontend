@@ -166,15 +166,6 @@ const statusOptions = computed<{ label: string, value: UserStatus }[]>(() => [
   { value: 'suspended', label: t('pages.users.status.suspended') }
 ])
 
-const avatar = computed(() => {
-  if (props.mode !== 'edit' || !props.user) return null
-  return {
-    src: props.user.photoUrl ?? undefined,
-    alt: props.user.name,
-    text: props.user.name.slice(0, 1).toUpperCase()
-  }
-})
-
 const titleText = computed(() =>
   props.mode === 'add' ? t('pages.users.addModal.title') : props.user?.name ?? ''
 )
@@ -189,23 +180,19 @@ const saveLabel = computed(() =>
 <template>
   <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-2xl' }">
     <template #header>
-      <div class="flex items-start gap-4">
-        <UAvatar v-if="mode === 'edit' && avatar" v-bind="avatar" size="xl" />
-        <div v-else class="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-          <UIcon name="i-lucide-user-plus" class="w-5 h-5 text-primary" />
-        </div>
-
-        <div class="flex-1 min-w-0">
-          <h3 class="text-lg font-bold text-highlighted truncate">
-            {{ titleText }}
-          </h3>
-          <p v-if="mode === 'add'" class="text-sm text-muted mt-1">
-            {{ $t('pages.users.addModal.description') }}
-          </p>
-          <p v-else-if="user" class="text-sm text-muted truncate" dir="ltr">
-            {{ user.email }}
-          </p>
-        </div>
+      <div class="flex items-center justify-between gap-3 w-full">
+        <h3 class="text-lg font-bold text-highlighted truncate">
+          {{ titleText }}
+        </h3>
+        <UButton
+          icon="i-lucide-x"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          square
+          :ui="{ base: 'rounded-full' }"
+          @click="isOpen = false"
+        />
       </div>
     </template>
 

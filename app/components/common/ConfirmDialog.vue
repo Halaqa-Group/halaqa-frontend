@@ -26,10 +26,6 @@ const isOpen = computed({
   set: v => emit('update:open', v)
 })
 
-const resolvedIcon = computed(() =>
-  props.icon || (props.destructive ? 'i-lucide-triangle-alert' : 'i-lucide-circle-help')
-)
-
 function onConfirm() {
   emit('confirm')
   // Caller closes the dialog explicitly when its async work resolves; closing
@@ -48,31 +44,32 @@ function onCancel() {
     :ui="{
       content: 'sm:max-w-md shadow-2xl',
       header: 'px-6 pt-6 pb-4 border-b-0',
-      body: 'hidden',
+      body: 'px-6 pb-2 pt-0',
       footer: 'px-6 pb-6 pt-0 border-t-0'
     }"
   >
     <template #header>
-      <div class="flex items-start gap-4">
-        <div
-          class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-          :class="destructive ? 'bg-error/10' : 'bg-primary/10'"
-        >
-          <UIcon
-            :name="resolvedIcon"
-            class="w-5 h-5"
-            :class="destructive ? 'text-error' : 'text-primary'"
-          />
-        </div>
-        <div class="flex-1 min-w-0">
-          <h3 class="text-lg font-bold text-highlighted leading-tight">
-            {{ title }}
-          </h3>
-          <p class="text-sm text-muted mt-1.5 leading-relaxed">
-            {{ message }}
-          </p>
-        </div>
+      <div class="flex items-center justify-between gap-3 w-full">
+        <h3 class="text-lg font-bold text-highlighted leading-tight">
+          {{ title }}
+        </h3>
+        <UButton
+          icon="i-lucide-x"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          square
+          :ui="{ base: 'rounded-full' }"
+          :disabled="loading"
+          @click="onCancel"
+        />
       </div>
+    </template>
+
+    <template #body>
+      <p class="text-sm text-muted leading-relaxed">
+        {{ message }}
+      </p>
     </template>
 
     <template #footer>

@@ -14,7 +14,7 @@ const isOpen = computed({
   set: (v) => emit('update:open', v)
 })
 
-const { scheduleWithDates, isRestDay, selectedStudent } = useSchedule()
+const { scheduleWithDates, isRestDay } = useSchedule()
 const { t } = useI18n()
 
 const CATEGORIES: { key: LessonCategory, label: string, classes: string }[] = [
@@ -35,7 +35,6 @@ function formatRange(item: LessonItem) {
   <UModal
     v-model:open="isOpen"
     :title="$t('pages.planner.topActions.previewTitle')"
-    :description="selectedStudent || ''"
     :ui="{
       content: 'sm:max-w-3xl max-h-[90vh] overflow-hidden rounded-2xl',
       header: 'px-5 pt-5 pb-2',

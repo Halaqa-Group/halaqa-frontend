@@ -142,19 +142,9 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       <div class="flex flex-col" style="max-height: 90vh;">
         <!-- Header (fixed) -->
         <div class="flex justify-between items-center px-8 py-6 shrink-0 border-b border-default">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
-              <UIcon name="i-lucide-user-plus" class="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h3 class="text-xl font-bold text-primary">
-                إضافة طالب جديد
-              </h3>
-              <p class="text-xs text-muted">
-                أدخل بيانات الطالب للبدء في تتبع التقدم التعليمي
-              </p>
-            </div>
-          </div>
+          <h3 class="text-xl font-bold text-primary">
+            إضافة طالب جديد
+          </h3>
           <UButton
             icon="i-lucide-x"
             color="neutral"

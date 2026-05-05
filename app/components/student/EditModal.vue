@@ -90,19 +90,9 @@ const statusOptions = [
       <div class="flex flex-col" style="max-height: 90vh;">
         <!-- Header -->
         <div class="flex justify-between items-center px-8 py-6 shrink-0 border-b border-default">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-secondary/10">
-              <UIcon name="i-lucide-file-edit" class="w-5 h-5 text-secondary" />
-            </div>
-            <div>
-              <h3 class="text-xl font-bold text-primary">
-                تعديل بيانات الطالب
-              </h3>
-              <p class="text-xs text-muted">
-                {{ editingApiStudent?.name ?? '...' }}
-              </p>
-            </div>
-          </div>
+          <h3 class="text-xl font-bold text-primary">
+            تعديل بيانات الطالب
+          </h3>
           <UButton
             icon="i-lucide-x"
             color="neutral"

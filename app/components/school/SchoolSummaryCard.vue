@@ -160,7 +160,6 @@ async function submitForm() {
     <UModal
       v-model:open="editOpen"
       :title="t('pages.home.schoolCard.formTitle')"
-      :description="t('pages.home.schoolCard.formHint')"
       :ui="{ content: 'sm:max-w-lg rounded-2xl', footer: 'justify-end' }"
     >
       <template #body>

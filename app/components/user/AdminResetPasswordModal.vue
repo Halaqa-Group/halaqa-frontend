@@ -61,18 +61,19 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     :ui="{ content: 'sm:max-w-md' }"
   >
     <template #header>
-      <div class="flex items-start gap-4">
-        <div class="w-11 h-11 rounded-2xl bg-error/10 flex items-center justify-center shrink-0">
-          <UIcon name="i-lucide-key-round" class="w-5 h-5 text-error" />
-        </div>
-        <div class="flex-1 min-w-0">
-          <h3 class="text-lg font-bold text-highlighted">
-            {{ $t('pages.users.adminReset.title', { name: user.name }) }}
-          </h3>
-          <p class="text-sm text-muted mt-1">
-            {{ $t('pages.users.adminReset.description') }}
-          </p>
-        </div>
+      <div class="flex items-center justify-between gap-3 w-full">
+        <h3 class="text-lg font-bold text-highlighted">
+          {{ $t('pages.users.adminReset.title', { name: user.name }) }}
+        </h3>
+        <UButton
+          icon="i-lucide-x"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          square
+          :ui="{ base: 'rounded-full' }"
+          @click="isOpen = false"
+        />
       </div>
     </template>
 

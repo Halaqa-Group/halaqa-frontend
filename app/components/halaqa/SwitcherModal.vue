@@ -54,13 +54,19 @@ function isSelected(halaqa: ApiHalaqa) {
     <template #content>
       <div class="flex flex-col">
         <!-- Modal Header -->
-        <div class="px-8 pt-10 pb-6 text-center">
-          <h2 class="text-2xl font-bold mb-2" style="color: var(--color-on-surface);">
+        <div class="px-8 pt-6 pb-4 flex items-center justify-between border-b border-outline-variant">
+          <h2 class="text-2xl font-bold" style="color: var(--color-on-surface);">
             اختر الحلقة للمتابعة
           </h2>
-          <p class="body-md" style="color: var(--color-on-surface-variant);">
-            تبديل بين حلقات الدراسة والمجموعات النشطة
-          </p>
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            square
+            :ui="{ base: 'rounded-full' }"
+            @click="closeModal"
+          />
         </div>
 
         <!-- Halaqa Grid -->

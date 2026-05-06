@@ -295,7 +295,6 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
           size="sm"
           square
           :disabled="isLoading"
-          :ui="{ base: 'rounded-full' }"
           @click="requestClose"
         />
       </div>
@@ -321,7 +320,7 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
             <div
               v-for="i in 3"
               :key="i"
-              class="h-10 rounded-xl bg-elevated/50 animate-pulse"
+              class="h-10 rounded-md bg-elevated/50 animate-pulse"
             />
           </div>
 
@@ -329,7 +328,7 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
             <label
               v-for="r in rolesCatalog"
               :key="r.id"
-              class="flex items-center gap-3 px-3 py-2 rounded-xl bg-elevated/50 transition"
+              class="flex items-center gap-3 px-3 py-2 rounded-md bg-elevated/50 transition"
               :class="isRoleLocked(r.slug)
                 ? 'opacity-60 cursor-not-allowed'
                 : 'cursor-pointer hover:bg-elevated'"
@@ -411,8 +410,6 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
         <UButton
           variant="ghost"
           color="neutral"
-          size="lg"
-          class="rounded-full"
           :disabled="isLoading"
           @click="requestClose"
         >
@@ -421,8 +418,6 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
         <UButton
           type="submit"
           form="user-form"
-          size="lg"
-          class="rounded-full font-semibold"
           :loading="isLoading"
           :disabled="!canSubmit"
         >

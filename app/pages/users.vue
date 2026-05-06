@@ -308,7 +308,7 @@ function statusColor(s: UserStatus) {
           {{ t('pages.users.noResults') }}
         </div>
 
-        <div v-if="total > 0" class="mt-0 flex items-center justify-between gap-3 border-t border-default pt-4">
+        <div v-if="total > 0" class="mt-0 flex items-center justify-between gap-3 border-t border-default">
           <UButton
             variant="ghost"
             color="neutral"

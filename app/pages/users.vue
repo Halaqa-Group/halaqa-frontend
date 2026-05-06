@@ -308,11 +308,11 @@ function statusColor(s: UserStatus) {
           {{ t('pages.users.noResults') }}
         </div>
 
-        <div v-if="total > 0" class="mt-4 flex items-center justify-between gap-3">
+        <div v-if="total > 0" class="mt-0 flex items-center justify-between gap-3 border-t border-default pt-4">
           <UButton
             variant="ghost"
             color="neutral"
-            icon="i-lucide-chevron-left"
+            :icon="locale === 'ar' ? 'i-lucide-chevron-right' : 'i-lucide-chevron-left'"
             :disabled="page <= 1 || isLoading"
             @click="page = Math.max(1, page - 1)"
           >
@@ -326,7 +326,7 @@ function statusColor(s: UserStatus) {
           <UButton
             variant="ghost"
             color="neutral"
-            trailing-icon="i-lucide-chevron-right"
+            :trailing-icon="locale === 'ar' ? 'i-lucide-chevron-left' : 'i-lucide-chevron-right'"
             :disabled="page * limit >= total || isLoading"
             @click="page = page + 1"
           >

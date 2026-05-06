@@ -562,7 +562,17 @@
       },
       "view": {
         "grid": "Grid view",
-        "list": "List view"
+        "table": "Table view"
+      },
+      "table": {
+        "student": "Student",
+        "halaqa": "Halaqa",
+        "status": "Status",
+        "dailyHifz": "Hifz",
+        "dailyNear": "Near revision",
+        "dailyFar": "Far revision",
+        "guardians": "Guardians",
+        "actions": "Actions"
       },
       "statusBadge": {
         "active": "Active",
@@ -596,6 +606,67 @@
         "notifyParent": "Notify parent",
         "editStudent": "Edit student details",
         "notifyParentToast": "Notification sent to parent"
+      },
+      "notifyParent": {
+        "title": "Notify parent",
+        "subtitle": "Write a message to {name}'s parent",
+        "messageLabel": "Message",
+        "placeholder": "Type your message here...",
+        "submit": "Send notification",
+        "cancel": "Cancel",
+        "successToast": "Notification sent successfully",
+        "validationRequired": "A message is required"
+      },
+      "notesList": {
+        "title": "Parent notification log",
+        "addNew": "New notification",
+        "empty": "No notifications yet for this student.",
+        "byAuthor": "by {name}"
+      },
+      "viewModal": {
+        "overviewTitle": "Memorization overview",
+        "guardiansCount": "Number of guardians",
+        "dailyCapacityTitle": "Daily capacity",
+        "guardiansInfoTitle": "Guardian information",
+        "noGuardians": "No guardians linked",
+        "editProfile": "Edit profile",
+        "notifyParent": "Notify parent",
+        "close": "Close",
+        "gender": "Gender",
+        "male": "Male",
+        "female": "Female",
+        "age": "Age",
+        "ageYears": "{count} years",
+        "joinDate": "Join date",
+        "attendanceRate": "Attendance rate",
+        "progress": "Progress",
+        "generalNotesTitle": "General notes",
+        "guardianPrimary": "Primary",
+        "guardianCanPickup": "Can pick up",
+        "tabs": {
+          "overview": "Overview",
+          "activity": "Activity",
+          "guardians": "Guardians",
+          "notifications": "Notifications"
+        },
+        "activity": {
+          "recentAchievementsTitle": "Recent achievements",
+          "noAchievements": "No achievements recorded yet.",
+          "recentAttendanceTitle": "Attendance — last two weeks",
+          "weeklyPlanTitle": "This week's plan",
+          "weeklyPlanCoverage": "{achieved} of {planned} verses ({percent}%)",
+          "weekStarting": "Week starting: {date}",
+          "trackHifz": "Memorization",
+          "trackNear": "Near revision",
+          "trackFar": "Far revision",
+          "scoreLabel": "Score",
+          "approved": "Approved",
+          "unapproved": "Pending",
+          "attendancePresent": "Present",
+          "attendanceLate": "Late",
+          "attendanceAbsent": "Absent",
+          "attendanceExcused": "Excused"
+        }
       },
       "empty": {
         "noMatchTitle": "No students match your search",

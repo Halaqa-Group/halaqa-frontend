@@ -43,6 +43,40 @@ export interface Student {
   avatar: string
 }
 
+export interface StudentNote {
+  id: string
+  studentId: string
+  authorId: number
+  authorName: string
+  message: string
+  createdAt: string
+}
+
+export interface StudentAchievementSummary {
+  id: string
+  date: string
+  trackType: 'Hifz' | 'Near' | 'Far'
+  startSurah: string
+  startVerse: number
+  endSurah: string
+  endVerse: number
+  score: number
+  status: 'approved' | 'unapproved'
+}
+
+export interface StudentAttendanceEntry {
+  id: string
+  date: string
+  status: 'Present' | 'Late' | 'Absent' | 'Excused'
+}
+
+export interface StudentWeeklyPlanSummary {
+  weekStartDate: string
+  totalPlanned: number
+  totalAchieved: number
+  coveragePercent: number
+}
+
 export type AttendanceStatus = 'present' | 'late' | 'absent'
 
 export interface AttendanceEntry {

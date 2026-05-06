@@ -4,8 +4,7 @@ import type { Student } from '~/types'
 
 const props = defineProps<{ student: Student }>()
 const { t } = useI18n()
-const { openView, openEdit } = useStudents()
-const toast = useToast()
+const { openView, openEdit, openNotifyParent } = useStudents()
 const statusLabel = computed(() => {
   if (props.student.status === 'active') return t('pages.students.statusActive')
   if (props.student.status === 'inactive') return t('pages.students.statusInactive')
@@ -26,13 +25,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
   {
     label: t('pages.students.actions.notifyParent'),
     icon: 'i-lucide-bell',
-    onSelect: () => {
-      toast.add({
-        title: t('pages.students.actions.notifyParentToast'),
-        icon: 'i-lucide-bell',
-        color: 'primary'
-      })
-    }
+    onSelect: () => openNotifyParent(props.student)
   },
   {
     label: t('pages.students.actions.editStudent'),
@@ -44,7 +37,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
 
 <template>
   <div
-    class="bg-white border border-outline-variant rounded-2xl p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-lg hover:border-primary/20"
+    class="bg-surface-container-lowest border border-outline-variant rounded-2xl p-6 flex flex-col gap-5 transition-all duration-200 hover:shadow-lg hover:border-primary/20"
   >
     <!-- Header: avatar + name + status badge + kebab -->
     <div class="flex items-start justify-between gap-3">
@@ -56,8 +49,8 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
             class="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
           >
           <span
-            class="absolute bottom-0 end-0 w-4 h-4 rounded-full border-2 border-white"
-            :class="student.status === 'active' ? 'bg-green-500' : student.status === 'inactive' ? 'bg-yellow-500' : 'bg-blue-500'"
+            class="absolute bottom-0 end-0 w-4 h-4 rounded-full border-2 border-surface-container-lowest"
+            :class="student.status === 'active' ? 'bg-status-ok' : student.status === 'inactive' ? 'bg-status-warning' : 'bg-status-info'"
           />
         </div>
         <h3 class="text-xl font-bold leading-tight truncate text-on-surface">
@@ -70,7 +63,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
           class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
           :class="student.status === 'active' ? 'bg-track-hifz-bg text-track-hifz' : student.status === 'inactive' ? 'bg-status-warning-bg text-status-warning' : 'bg-status-info-bg text-status-info'"
         >
-          <span class="w-1.5 h-1.5 rounded-full" :class="student.status === 'active' ? 'bg-green-500' : student.status === 'inactive' ? 'bg-yellow-500' : 'bg-blue-500'" />
+          <span class="w-1.5 h-1.5 rounded-full" :class="student.status === 'active' ? 'bg-status-ok' : student.status === 'inactive' ? 'bg-status-warning' : 'bg-status-info'" />
           {{ statusLabel }}
         </span>
 
@@ -142,7 +135,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => [[
       block
       size="md"
       :label="$t('pages.students.card.viewProfile')"
-      class="py-2.5 px-4 text-sm hover:opacity-80 active:scale-95 bg-primary-container text-primary"
+      class="py-2.5 px-4 text-sm hover:opacity-80 active:scale-95"
       @click="openView(student)"
     />
   </div>

@@ -1,13 +1,18 @@
 <script setup lang="ts">
+import { DateFormatter, getLocalTimeZone, parseDate } from '@internationalized/date'
+import type { CalendarDate } from '@internationalized/date'
 import type { FormSubmitEvent } from '#ui/types'
 
 const { isEditModalOpen, isEditLoading, editingApiStudent, closeEdit, updateStudent } = useStudents()
+const { locale } = useI18n()
 const toast = useToast()
+
+const df = computed(() => new DateFormatter(locale.value, { dateStyle: 'medium' }))
 
 type EditForm = {
   name: string
-  dob: string
-  joinDate: string
+  dob: CalendarDate | null
+  joinDate: CalendarDate | null
   status: 'active' | 'inactive' | 'graduated'
   memPages: number
   nearPages: number
@@ -17,8 +22,8 @@ type EditForm = {
 
 const state = reactive<EditForm>({
   name: '',
-  dob: '',
-  joinDate: '',
+  dob: null,
+  joinDate: null,
   status: 'active',
   memPages: 0,
   nearPages: 0,
@@ -28,11 +33,24 @@ const state = reactive<EditForm>({
 
 const submitting = ref(false)
 
+function toCalendarDate(value: string | null | undefined): CalendarDate | null {
+  if (!value) return null
+  try {
+    return parseDate(value.slice(0, 10))
+  } catch {
+    return null
+  }
+}
+
+function formatDate(date: CalendarDate | null) {
+  return date ? df.value.format(date.toDate(getLocalTimeZone())) : ''
+}
+
 watch(editingApiStudent, (student) => {
   if (student) {
     state.name = student.name
-    state.dob = student.dob ?? ''
-    state.joinDate = student.join_date
+    state.dob = toCalendarDate(student.dob)
+    state.joinDate = toCalendarDate(student.join_date)
     state.status = student.status
     state.memPages = Number(student.daily_hifz_pages_capacity) || 0
     state.nearPages = Number(student.daily_near_pages_capacity) || 0
@@ -49,13 +67,13 @@ function validate(s: EditForm) {
 }
 
 async function handleSubmit(_event: FormSubmitEvent<EditForm>) {
-  if (submitting.value || !editingApiStudent.value) return
+  if (submitting.value || !editingApiStudent.value || !state.joinDate) return
   submitting.value = true
   try {
     await updateStudent(editingApiStudent.value.id, {
       name: state.name.trim(),
-      dob: state.dob || null,
-      join_date: state.joinDate,
+      dob: state.dob ? state.dob.toString() : null,
+      join_date: state.joinDate.toString(),
       status: state.status,
       daily_hifz_pages_capacity: state.memPages,
       daily_near_pages_capacity: state.nearPages,
@@ -77,6 +95,14 @@ const statusOptions = [
   { label: 'نشط', value: 'active' },
   { label: 'غير نشط', value: 'inactive' },
   { label: 'متخرج', value: 'graduated' }
+]
+
+type NumericField = 'memPages' | 'nearPages' | 'farPages'
+
+const metrics: Array<{ key: NumericField, icon: string, label: string }> = [
+  { key: 'memPages', icon: 'i-lucide-book-open', label: 'صفحات الحفظ الجديد' },
+  { key: 'nearPages', icon: 'i-lucide-history', label: 'صفحات المراجعة القريبة' },
+  { key: 'farPages', icon: 'i-lucide-repeat', label: 'صفحات المراجعة البعيدة' }
 ]
 </script>
 
@@ -141,10 +167,36 @@ const statusOptions = [
                 <UInput v-model="state.name" placeholder="اسم الطالب الرباعي" class="w-full" />
               </UFormField>
               <UFormField label="تاريخ الميلاد" name="dob">
-                <UInput v-model="state.dob" type="date" class="w-full" />
+                <UPopover :ui="{ content: 'w-auto' }">
+                  <UButton
+                    color="neutral"
+                    variant="subtle"
+                    icon="i-lucide-calendar"
+                    block
+                    class="justify-start"
+                  >
+                    {{ state.dob ? formatDate(state.dob) : 'اختر تاريخ' }}
+                  </UButton>
+                  <template #content>
+                    <UCalendar v-model="state.dob" class="p-2" />
+                  </template>
+                </UPopover>
               </UFormField>
               <UFormField label="تاريخ الانضمام" name="joinDate">
-                <UInput v-model="state.joinDate" type="date" class="w-full" />
+                <UPopover :ui="{ content: 'w-auto' }">
+                  <UButton
+                    color="neutral"
+                    variant="subtle"
+                    icon="i-lucide-calendar"
+                    block
+                    class="justify-start"
+                  >
+                    {{ state.joinDate ? formatDate(state.joinDate) : 'اختر تاريخ' }}
+                  </UButton>
+                  <template #content>
+                    <UCalendar v-model="state.joinDate" class="p-2" />
+                  </template>
+                </UPopover>
               </UFormField>
               <UFormField label="الحالة" name="status">
                 <USelect v-model="state.status" :items="statusOptions" class="w-full" />
@@ -161,11 +213,7 @@ const statusOptions = [
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <UCard
-                v-for="metric in [
-                  { key: 'memPages', icon: 'i-lucide-book-open', label: 'صفحات الحفظ الجديد' },
-                  { key: 'nearPages', icon: 'i-lucide-history', label: 'صفحات المراجعة القريبة' },
-                  { key: 'farPages', icon: 'i-lucide-repeat', label: 'صفحات المراجعة البعيدة' }
-                ]"
+                v-for="metric in metrics"
                 :key="metric.key"
                 :ui="{ root: 'rounded-2xl', body: 'p-5' }"
               >
@@ -173,14 +221,19 @@ const statusOptions = [
                   <UIcon :name="metric.icon" class="w-4 h-4 shrink-0 text-secondary" />
                   {{ metric.label }}
                 </label>
-                <UInput
-                  v-model.number="state[metric.key as keyof EditForm] as number"
-                  type="number"
+                <UInputNumber
+                  v-model="state[metric.key]"
                   :min="0"
-                  placeholder="0"
+                  :step="1"
                   size="xl"
+                  color="primary"
+                  variant="outline"
                   class="w-full"
-                  :ui="{ base: 'text-lg font-bold text-center text-primary' }"
+                  :ui="{
+                    base: 'rounded-xl text-lg font-bold text-center text-primary bg-primary/5',
+                    increment: 'pe-2',
+                    decrement: 'ps-2'
+                  }"
                 />
               </UCard>
             </div>

@@ -562,7 +562,17 @@
       },
       "view": {
         "grid": "عرض البطاقات",
-        "list": "عرض القائمة"
+        "table": "عرض الجدول"
+      },
+      "table": {
+        "student": "الطالب",
+        "halaqa": "الحلقة",
+        "status": "الحالة",
+        "dailyHifz": "حفظ",
+        "dailyNear": "مراجعة قريبة",
+        "dailyFar": "مراجعة بعيدة",
+        "guardians": "أولياء الأمور",
+        "actions": "إجراءات"
       },
       "statusBadge": {
         "active": "نشط",
@@ -596,6 +606,67 @@
         "notifyParent": "إرسال تنبيه للولي",
         "editStudent": "تعديل بيانات الطالب",
         "notifyParentToast": "تم إرسال التنبيه لولي الأمر"
+      },
+      "notifyParent": {
+        "title": "إرسال تنبيه لولي الأمر",
+        "subtitle": "اكتب رسالة لولي أمر الطالب {name}",
+        "messageLabel": "نص الرسالة",
+        "placeholder": "اكتب رسالتك هنا...",
+        "submit": "إرسال التنبيه",
+        "cancel": "إلغاء",
+        "successToast": "تم إرسال التنبيه بنجاح",
+        "validationRequired": "نص الرسالة مطلوب"
+      },
+      "notesList": {
+        "title": "سجل التنبيهات لولي الأمر",
+        "addNew": "تنبيه جديد",
+        "empty": "لا توجد تنبيهات سابقة لهذا الطالب.",
+        "byAuthor": "بواسطة {name}"
+      },
+      "viewModal": {
+        "overviewTitle": "نظرة عامة على الحفظ",
+        "guardiansCount": "عدد أولياء الأمور",
+        "dailyCapacityTitle": "الاستيعاب اليومي",
+        "guardiansInfoTitle": "معلومات أولياء الأمور",
+        "noGuardians": "لا يوجد أولياء أمور مرتبطون",
+        "editProfile": "تعديل الملف",
+        "notifyParent": "إرسال تنبيه",
+        "close": "إغلاق",
+        "gender": "الجنس",
+        "male": "ذكر",
+        "female": "أنثى",
+        "age": "العمر",
+        "ageYears": "{count} سنة",
+        "joinDate": "تاريخ الانضمام",
+        "attendanceRate": "نسبة الحضور",
+        "progress": "نسبة التقدم",
+        "generalNotesTitle": "ملاحظات عامة",
+        "guardianPrimary": "أساسي",
+        "guardianCanPickup": "مخوّل بالاستلام",
+        "tabs": {
+          "overview": "نظرة عامة",
+          "activity": "النشاط",
+          "guardians": "أولياء الأمور",
+          "notifications": "التنبيهات"
+        },
+        "activity": {
+          "recentAchievementsTitle": "أحدث الإنجازات",
+          "noAchievements": "لا توجد إنجازات مسجلة بعد.",
+          "recentAttendanceTitle": "الحضور خلال آخر أسبوعين",
+          "weeklyPlanTitle": "الخطة الأسبوعية",
+          "weeklyPlanCoverage": "{achieved} من {planned} آية ({percent}%)",
+          "weekStarting": "بداية الأسبوع: {date}",
+          "trackHifz": "حفظ",
+          "trackNear": "مراجعة قريبة",
+          "trackFar": "مراجعة بعيدة",
+          "scoreLabel": "النتيجة",
+          "approved": "معتمد",
+          "unapproved": "غير معتمد",
+          "attendancePresent": "حاضر",
+          "attendanceLate": "متأخر",
+          "attendanceAbsent": "غائب",
+          "attendanceExcused": "مستأذن"
+        }
       },
       "empty": {
         "noMatchTitle": "لا يوجد طلاب مطابقون للبحث",

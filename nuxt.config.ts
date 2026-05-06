@@ -8,6 +8,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/images/logo/hala_icon.svg' },
         {
           rel: 'preload',
           as: 'font',
@@ -45,7 +46,7 @@ export default defineNuxtConfig({
   nitro: {
     devProxy: {
       '/api': {
-        target: `http://127.0.0.1:${process.env.NUXT_BACKEND_PORT}/api`,
+        target: `http://127.0.0.1:${import.meta.env.NUXT_BACKEND_PORT}/api`,
         changeOrigin: true
       }
     }

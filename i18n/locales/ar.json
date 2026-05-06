@@ -68,8 +68,7 @@
   "nav": {
     "home": "الرئيسية",
     "halaqat": "حلقات",
-    "teachers": "المعلمون",
-    "parents": "أولياء الأمور",
+    "users": "المستخدمون",
     "parentOverview": "أبنائي",
     "attendance": "الحضور",
     "students": "الطلاب",
@@ -163,6 +162,18 @@
         "dangerZone": "إجراءات الحساب",
         "resetPasswordTrigger": "إعادة تعيين كلمة المرور",
         "deleteTrigger": "إيقاف الحساب"
+      },
+      "form": {
+        "roleDrivenHint": "اختر دورًا واحدًا أو أكثر أولًا، ثم ستظهر الحقول المناسبة حسب الأدوار المختارة.",
+        "selectRoleFirst": "اختر دورًا واحدًا على الأقل للمتابعة.",
+        "rolesRequired": "يرجى اختيار دور واحد على الأقل قبل الحفظ.",
+        "teacherPhone": "هاتف المعلم",
+        "parentPhone": "هاتف ولي الأمر",
+        "cannotRemoveOwnPrincipal": "لا يمكنك إزالة دور المدير من حسابك.",
+        "cannotChangeOwnStatus": "لا يمكنك تغيير حالة حسابك.",
+        "discardTitle": "هل تريد تجاهل التغييرات؟",
+        "discardMessage": "ستفقد كل التغييرات غير المحفوظة.",
+        "discardConfirm": "تجاهل التغييرات"
       },
       "deleteConfirm": {
         "title": "إيقاف هذا المستخدم؟",

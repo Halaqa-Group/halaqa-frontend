@@ -68,8 +68,7 @@
   "nav": {
     "home": "Home",
     "halaqat": "Halaqat",
-    "teachers": "Teachers",
-    "parents": "Parents",
+    "users": "Users",
     "parentOverview": "My Children",
     "attendance": "Attendance",
     "students": "Students",
@@ -163,6 +162,18 @@
         "dangerZone": "Account actions",
         "resetPasswordTrigger": "Reset password",
         "deleteTrigger": "Deactivate user"
+      },
+      "form": {
+        "roleDrivenHint": "Select one or more roles first. Form inputs then appear based on your selection.",
+        "selectRoleFirst": "Select at least one role to continue.",
+        "rolesRequired": "Please choose at least one role before saving.",
+        "teacherPhone": "Teacher phone",
+        "parentPhone": "Parent phone",
+        "cannotRemoveOwnPrincipal": "You can't remove your own principal role.",
+        "cannotChangeOwnStatus": "You can't change your own account status.",
+        "discardTitle": "Discard your changes?",
+        "discardMessage": "Any unsaved changes will be lost.",
+        "discardConfirm": "Discard changes"
       },
       "deleteConfirm": {
         "title": "Deactivate this user?",

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
 import type { ManagedUser, UserStatus } from '~/composables/useUsers'
+import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 
 type Mode = 'add' | 'edit'
 
@@ -23,6 +23,7 @@ const toast = useToast()
 const usersApi = useUsers()
 const { roles: rolesCatalog, ensureLoaded: ensureRolesLoaded } = useRoles()
 const apiError = useApiError()
+const { user: authUser } = useAuth()
 
 const isOpen = computed({
   get: () => props.open,
@@ -33,10 +34,9 @@ watch(isOpen, (v) => {
   if (v) ensureRolesLoaded()
 })
 
-// ── Form state ──────────────────────────────────────────────────────────────
-//
-// One reactive object that's a superset of both modes; each field is only used
-// where the schema/template lets it. Avoids forking two near-duplicate states.
+// Permissive international phone: leading +, 7-15 digits total, optional spaces/dashes
+// between digits. Empty string is allowed (phone is optional).
+const PHONE_PATTERN = /^\+\d{1,3}[\d\s-]{6,18}$/
 
 interface FormState {
   name: string
@@ -52,16 +52,42 @@ function emptyState(): FormState {
 
 const state = reactive<FormState>(emptyState())
 
-// Roles live outside the form schema in both modes — they're driven by the
-// shared checkbox picker. `originalRoles` is the snapshot taken when the modal
-// opens so edit-mode submit can diff and call assign/remove for each delta.
+// Roles live outside the form schema in both modes — driven by the checkbox
+// picker. `originalRoles` is the snapshot taken when the modal opens so
+// edit-mode submit can diff and call assign/remove for each delta.
 const selectedRoles = ref<string[]>([])
 const originalRoles = ref<string[]>([])
+const hasTeacherRole = computed(() => selectedRoles.value.includes('teacher'))
+const hasParentRole = computed(() => selectedRoles.value.includes('parent'))
+
+// Self-edit guards: a principal editing their own row must not be able to
+// strip their own principal access or set themselves inactive/suspended.
+// Without this, one mis-click locks them out of the management UI entirely.
+const isSelf = computed(() =>
+  props.mode === 'edit' && !!props.user && !!authUser.value && props.user.id === authUser.value.id
+)
+const lockPrincipalRole = computed(() =>
+  isSelf.value && originalRoles.value.includes('principal')
+)
+const lockStatus = computed(() => isSelf.value)
+
+const phoneLabel = computed(() => {
+  if (hasTeacherRole.value && hasParentRole.value) return t('label.phone')
+  if (hasTeacherRole.value) return t('pages.users.form.teacherPhone')
+  if (hasParentRole.value) return t('pages.users.form.parentPhone')
+  return t('label.phone')
+})
 
 const schema = computed(() => {
+  const phone = z.string()
+    .max(20)
+    .refine(v => v === '' || PHONE_PATTERN.test(v.trim()), { message: t('validation.contact_format') })
+    .optional()
+    .or(z.literal(''))
+
   const base = {
     name: z.string({ error: () => t('validation.required') }).min(1, t('validation.required')).max(100),
-    phone: z.string().max(20).optional().or(z.literal('')),
+    phone,
     status: z.enum(['active', 'inactive', 'suspended'] as const)
   }
   if (props.mode === 'add') {
@@ -100,39 +126,92 @@ watch(
   { immediate: true }
 )
 
-async function onSubmit(_event: FormSubmitEvent<FormState>) {
+// Dirty tracking — used to gate accidental close.
+const isDirty = computed(() => {
+  if (props.mode === 'add') {
+    return !!state.name || !!state.email || !!state.password || !!state.phone
+      || selectedRoles.value.length > 0
+  }
+  if (!props.user) return false
+  const baseChanged = state.name !== props.user.name
+    || state.phone !== (props.user.phone ?? '')
+    || state.status !== props.user.status
+  const rolesChanged = selectedRoles.value.length !== originalRoles.value.length
+    || selectedRoles.value.some(s => !originalRoles.value.includes(s))
+  return baseChanged || rolesChanged
+})
+
+const canSubmit = computed(() => selectedRoles.value.length > 0 && !isLoading.value)
+const showProfileFields = computed(() => props.mode === 'edit' || selectedRoles.value.length > 0)
+
+async function onSubmit() {
   error.value = ''
+  if (selectedRoles.value.length === 0) {
+    error.value = t('pages.users.form.rolesRequired')
+    return
+  }
+
+  // Self-lock backstops — UI disables the controls, but a stale binding could
+  // theoretically still produce a forbidden value. Guard at submit too.
+  if (isSelf.value) {
+    if (originalRoles.value.includes('principal') && !selectedRoles.value.includes('principal')) {
+      error.value = t('pages.users.form.cannotRemoveOwnPrincipal')
+      return
+    }
+    if (props.user && state.status !== props.user.status) {
+      error.value = t('pages.users.form.cannotChangeOwnStatus')
+      return
+    }
+  }
+
   isLoading.value = true
   try {
     if (props.mode === 'add') {
       await usersApi.create({
-        name: state.name,
-        email: state.email,
+        name: state.name.trim(),
+        // Normalize email to avoid trivial duplicate-account collisions
+        // (whitespace + casing).
+        email: state.email.trim().toLowerCase(),
         password: state.password,
-        phone: state.phone || null,
+        phone: state.phone.trim() || null,
         status: state.status,
         roles: selectedRoles.value
       })
       toast.add({ title: t('pages.users.addModal.savedToast'), color: 'success' })
     } else if (props.user) {
       await usersApi.update(props.user.id, {
-        name: state.name,
-        phone: state.phone || null,
+        name: state.name.trim(),
+        phone: state.phone.trim() || null,
         status: state.status
       })
-      // Roles can't ride the PATCH payload — diff against the snapshot and fire
-      // assign/remove for each delta. Order: remove first, then add (cheap
-      // insurance against any future "max roles" rule rejecting the add before
-      // the remove lands).
+      // Roles can't ride the PATCH payload — diff against the snapshot and
+      // fire assign/remove sequentially. If a single call fails, update the
+      // snapshot to reflect what was actually applied so the user can retry
+      // and only the remaining deltas re-run (no double-removes).
+      // Order: remove first, then add (cheap insurance against any future
+      // "max roles" rule rejecting the add before the remove lands).
       const toRemove = originalRoles.value.filter(s => !selectedRoles.value.includes(s))
       const toAdd = selectedRoles.value.filter(s => !originalRoles.value.includes(s))
-      for (const slug of toRemove) {
-        const entry = rolesCatalog.value.find(r => r.slug === slug)
-        if (entry) await usersApi.removeRole(props.user.id, entry.id)
-      }
-      for (const slug of toAdd) {
-        const entry = rolesCatalog.value.find(r => r.slug === slug)
-        if (entry) await usersApi.assignRole(props.user.id, entry.id)
+      const appliedRemove: string[] = []
+      const appliedAdd: string[] = []
+      try {
+        for (const slug of toRemove) {
+          const entry = rolesCatalog.value.find(r => r.slug === slug)
+          if (!entry) continue
+          await usersApi.removeRole(props.user.id, entry.id)
+          appliedRemove.push(slug)
+        }
+        for (const slug of toAdd) {
+          const entry = rolesCatalog.value.find(r => r.slug === slug)
+          if (!entry) continue
+          await usersApi.assignRole(props.user.id, entry.id)
+          appliedAdd.push(slug)
+        }
+      } catch (e) {
+        originalRoles.value = originalRoles.value
+          .filter(s => !appliedRemove.includes(s))
+          .concat(appliedAdd)
+        throw e
       }
       originalRoles.value = [...selectedRoles.value]
       toast.add({ title: t('pages.users.editModal.savedToast'), color: 'success' })
@@ -145,17 +224,36 @@ async function onSubmit(_event: FormSubmitEvent<FormState>) {
   }
 }
 
-// ── Roles ───────────────────────────────────────────────────────────────────
-// Add mode: USelectMenu binds directly to state.roles and rides the create payload.
-// Edit mode: checkboxes mutate `selectedRoles` only; submit diffs against the
-// `originalRoles` snapshot and fires the dedicated assign/remove endpoints.
-
 function toggleSelectedRole(slug: string, checked: boolean) {
   if (checked) {
     if (!selectedRoles.value.includes(slug)) selectedRoles.value = [...selectedRoles.value, slug]
   } else {
     selectedRoles.value = selectedRoles.value.filter(s => s !== slug)
   }
+}
+
+function isRoleLocked(slug: string): boolean {
+  return slug === 'principal' && lockPrincipalRole.value
+}
+
+// ── Discard-changes flow ────────────────────────────────────────────────────
+// UModal closes on backdrop/Escape by default. Disable that and route every
+// close request through requestClose so the dirty check can intervene.
+
+const discardOpen = ref(false)
+
+function requestClose() {
+  if (isLoading.value) return
+  if (isDirty.value) {
+    discardOpen.value = true
+    return
+  }
+  isOpen.value = false
+}
+
+function confirmDiscard() {
+  discardOpen.value = false
+  isOpen.value = false
 }
 
 // ── Display helpers ─────────────────────────────────────────────────────────
@@ -175,10 +273,16 @@ const saveLabel = computed(() =>
     ? t('pages.users.addModal.saveButton')
     : t('pages.users.editModal.saveButton')
 )
+
+const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
 </script>
 
 <template>
-  <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-2xl' }">
+  <UModal
+    v-model:open="isOpen"
+    :dismissible="false"
+    :ui="{ content: 'sm:max-w-2xl' }"
+  >
     <template #header>
       <div class="flex items-center justify-between gap-3 w-full">
         <h3 class="text-lg font-bold text-highlighted truncate">
@@ -190,8 +294,9 @@ const saveLabel = computed(() =>
           variant="ghost"
           size="sm"
           square
+          :disabled="isLoading"
           :ui="{ base: 'rounded-full' }"
-          @click="isOpen = false"
+          @click="requestClose"
         />
       </div>
     </template>
@@ -204,7 +309,61 @@ const saveLabel = computed(() =>
         class="space-y-4"
         @submit="onSubmit"
       >
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h4 class="font-semibold text-sm mb-3">
+            {{ $t('pages.users.editModal.rolesSection') }}
+          </h4>
+          <p class="text-xs text-muted mb-3">
+            {{ $t('pages.users.form.roleDrivenHint') }}
+          </p>
+
+          <div v-if="isCatalogLoading" class="space-y-2">
+            <div
+              v-for="i in 3"
+              :key="i"
+              class="h-10 rounded-xl bg-elevated/50 animate-pulse"
+            />
+          </div>
+
+          <div v-else class="space-y-2">
+            <label
+              v-for="r in rolesCatalog"
+              :key="r.id"
+              class="flex items-center gap-3 px-3 py-2 rounded-xl bg-elevated/50 transition"
+              :class="isRoleLocked(r.slug)
+                ? 'opacity-60 cursor-not-allowed'
+                : 'cursor-pointer hover:bg-elevated'"
+            >
+              <UCheckbox
+                :model-value="selectedRoles.includes(r.slug)"
+                :disabled="isRoleLocked(r.slug)"
+                @update:model-value="(v: boolean | 'indeterminate') => toggleSelectedRole(r.slug, v === true)"
+              />
+              <div class="flex-1 font-medium text-sm">
+                {{ locale === 'ar' ? r.nameAr : r.nameEn }}
+              </div>
+              <UIcon
+                v-if="isRoleLocked(r.slug)"
+                name="i-lucide-lock"
+                class="size-4 text-muted"
+                :aria-label="$t('pages.users.form.cannotRemoveOwnPrincipal')"
+              />
+            </label>
+          </div>
+
+          <p v-if="lockPrincipalRole" class="text-xs text-muted mt-2">
+            {{ $t('pages.users.form.cannotRemoveOwnPrincipal') }}
+          </p>
+        </div>
+
+        <UAlert
+          v-if="!showProfileFields"
+          color="warning"
+          variant="soft"
+          :title="$t('pages.users.form.selectRoleFirst')"
+        />
+
+        <div v-if="showProfileFields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <UFormField :label="$t('label.full_name')" name="name" required>
             <UInput v-model="state.name" />
           </UFormField>
@@ -225,44 +384,26 @@ const saveLabel = computed(() =>
             />
           </UFormField>
 
-          <UFormField :label="$t('label.phone')" name="phone">
+          <UFormField :label="phoneLabel" name="phone">
             <UInput v-model="state.phone" dir="ltr" placeholder="+970599123456" />
           </UFormField>
 
-          <UFormField :label="$t('pages.users.columns.status')" name="status">
+          <UFormField
+            :label="$t('pages.users.columns.status')"
+            name="status"
+            :hint="lockStatus ? $t('pages.users.form.cannotChangeOwnStatus') : undefined"
+          >
             <USelectMenu
               v-model="state.status"
               :items="statusOptions"
               value-key="value"
+              :disabled="lockStatus"
             />
           </UFormField>
         </div>
 
         <UAlert v-if="error" color="error" variant="soft" :title="error" />
       </UForm>
-
-      <!-- Roles: same picker in both modes. Add mode rides them in the create
-           payload; edit mode diffs them on submit and fires assign/remove. -->
-      <div class="mt-6">
-        <h4 class="font-semibold text-sm mb-3">
-          {{ $t('pages.users.editModal.rolesSection') }}
-        </h4>
-        <div class="space-y-2">
-          <label
-            v-for="r in rolesCatalog"
-            :key="r.id"
-            class="flex items-center gap-3 px-3 py-2 rounded-xl bg-elevated/50 cursor-pointer hover:bg-elevated transition"
-          >
-            <UCheckbox
-              :model-value="selectedRoles.includes(r.slug)"
-              @update:model-value="(v: boolean) => toggleSelectedRole(r.slug, v)"
-            />
-            <div class="flex-1 font-medium text-sm">
-              {{ locale === 'ar' ? r.nameAr : r.nameEn }}
-            </div>
-          </label>
-        </div>
-      </div>
     </template>
 
     <template #footer>
@@ -272,7 +413,8 @@ const saveLabel = computed(() =>
           color="neutral"
           size="lg"
           class="rounded-full"
-          @click="isOpen = false"
+          :disabled="isLoading"
+          @click="requestClose"
         >
           {{ $t('common.cancel') }}
         </UButton>
@@ -282,10 +424,20 @@ const saveLabel = computed(() =>
           size="lg"
           class="rounded-full font-semibold"
           :loading="isLoading"
+          :disabled="!canSubmit"
         >
           {{ saveLabel }}
         </UButton>
       </div>
     </template>
   </UModal>
+
+  <ConfirmDialog
+    v-model:open="discardOpen"
+    :title="$t('pages.users.form.discardTitle')"
+    :message="$t('pages.users.form.discardMessage')"
+    :confirm-label="$t('pages.users.form.discardConfirm')"
+    destructive
+    @confirm="confirmDiscard"
+  />
 </template>

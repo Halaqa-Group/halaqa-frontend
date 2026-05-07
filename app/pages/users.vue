@@ -184,7 +184,7 @@ function statusColor(s: UserStatus) {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div class="flex flex-col items-center gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div class="space-y-1">
         <h1 class="text-2xl font-bold">
           {{ t('pages.users.title') }}

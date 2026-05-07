@@ -142,7 +142,6 @@ const isDirty = computed(() => {
 })
 
 const canSubmit = computed(() => selectedRoles.value.length > 0 && !isLoading.value)
-const showProfileFields = computed(() => props.mode === 'edit' || selectedRoles.value.length > 0)
 
 async function onSubmit() {
   error.value = ''
@@ -305,16 +304,54 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
         id="user-form"
         :schema="schema"
         :state="state"
-        class="space-y-4"
+        class="space-y-5"
         @submit="onSubmit"
       >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <UFormField :label="$t('label.full_name')" name="name" required>
+            <UInput v-model="state.name" />
+          </UFormField>
+
+          <UFormField :label="$t('label.email_address')" name="email" :required="mode === 'add'">
+            <UInput
+              v-model="state.email"
+              type="email"
+              dir="ltr"
+              :disabled="mode === 'edit'"
+            />
+          </UFormField>
+
+          <UFormField v-if="mode === 'add'" :label="$t('label.password')" name="password" required>
+            <CommonPasswordToggle
+              v-model:password="state.password"
+              :placeholder="$t('placeholder.new_password')"
+            />
+          </UFormField>
+
+          <UFormField :label="phoneLabel" name="phone">
+            <UInput v-model="state.phone" dir="ltr" placeholder="+970599123456" />
+          </UFormField>
+
+          <UFormField
+            v-if="mode === 'edit'"
+            :label="$t('pages.users.columns.status')"
+            name="status"
+            :hint="lockStatus ? $t('pages.users.form.cannotChangeOwnStatus') : undefined"
+          >
+            <USelectMenu
+              v-model="state.status"
+              :items="statusOptions"
+              value-key="value"
+              :disabled="lockStatus"
+            />
+          </UFormField>
+        </div>
+
         <div>
           <h4 class="font-semibold text-sm mb-3">
             {{ $t('pages.users.editModal.rolesSection') }}
+            <span class="text-error">*</span>
           </h4>
-          <p class="text-xs text-muted mb-3">
-            {{ $t('pages.users.form.roleDrivenHint') }}
-          </p>
 
           <div v-if="isCatalogLoading" class="space-y-2">
             <div
@@ -353,52 +390,6 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
           <p v-if="lockPrincipalRole" class="text-xs text-muted mt-2">
             {{ $t('pages.users.form.cannotRemoveOwnPrincipal') }}
           </p>
-        </div>
-
-        <UAlert
-          v-if="!showProfileFields"
-          color="warning"
-          variant="soft"
-          :title="$t('pages.users.form.selectRoleFirst')"
-        />
-
-        <div v-if="showProfileFields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <UFormField :label="$t('label.full_name')" name="name" required>
-            <UInput v-model="state.name" />
-          </UFormField>
-
-          <UFormField :label="$t('label.email_address')" name="email" :required="mode === 'add'">
-            <UInput
-              v-model="state.email"
-              type="email"
-              dir="ltr"
-              :disabled="mode === 'edit'"
-            />
-          </UFormField>
-
-          <UFormField v-if="mode === 'add'" :label="$t('label.password')" name="password" required>
-            <CommonPasswordToggle
-              v-model:password="state.password"
-              :placeholder="$t('placeholder.new_password')"
-            />
-          </UFormField>
-
-          <UFormField :label="phoneLabel" name="phone">
-            <UInput v-model="state.phone" dir="ltr" placeholder="+970599123456" />
-          </UFormField>
-
-          <UFormField
-            :label="$t('pages.users.columns.status')"
-            name="status"
-            :hint="lockStatus ? $t('pages.users.form.cannotChangeOwnStatus') : undefined"
-          >
-            <USelectMenu
-              v-model="state.status"
-              :items="statusOptions"
-              value-key="value"
-              :disabled="lockStatus"
-            />
-          </UFormField>
         </div>
 
         <UAlert v-if="error" color="error" variant="soft" :title="error" />

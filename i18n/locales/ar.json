@@ -262,7 +262,7 @@
       "fieldTeacher": "المعلم",
       "fieldTeacherPlaceholder": "اختر معلماً",
       "fieldDays": "أيام الأسبوع",
-      "fieldDaysHint": "اضغط الأيام التي تعقد فيها الحلقة.",
+      "fieldDaysHint": "حدد الأيام التي تعقد فيها الحلقة.",
       "save": "حفظ",
       "cancel": "إلغاء",
       "deleteConfirmTitle": "حذف الحلقة؟",

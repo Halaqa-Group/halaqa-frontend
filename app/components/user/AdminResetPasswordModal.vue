@@ -71,7 +71,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           variant="ghost"
           size="sm"
           square
-          :ui="{ base: 'rounded-full' }"
+          :disabled="isLoading"
           @click="isOpen = false"
         />
       </div>
@@ -111,13 +111,11 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     </template>
 
     <template #footer>
-      <div class="flex items-center gap-2 w-full">
+      <div class="flex items-center justify-end gap-2 w-full">
         <UButton
           variant="ghost"
           color="neutral"
-          size="lg"
-          block
-          class="flex-1 rounded-full"
+          :disabled="isLoading"
           @click="isOpen = false"
         >
           {{ $t('common.cancel') }}
@@ -125,10 +123,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         <UButton
           type="submit"
           form="user-reset-form"
-          color="error"
-          size="lg"
-          block
-          class="flex-1 rounded-full font-semibold"
           :loading="isLoading"
         >
           {{ $t('pages.users.adminReset.saveButton') }}

@@ -106,7 +106,20 @@ onMounted(async () => {
       }"
     >
       <template #header="{ collapsed }">
-        <HalaqaMenu :collapsed="collapsed" />
+        <NuxtLink :to="localePath('/')" class="flex items-center justify-center w-full py-2">
+          <img
+            v-if="collapsed"
+            src="/images/logo/halqa_icon.svg"
+            alt="Halaqa"
+            class="h-8 w-auto"
+          >
+          <img
+            v-else
+            src="/images/logo/halaqa_logo.png"
+            alt="Halaqa Logo"
+            class="h-10 w-auto"
+          >
+        </NuxtLink>
       </template>
 
       <template #default="{ collapsed }">
@@ -159,6 +172,7 @@ onMounted(async () => {
               class="w-40"
               size="sm"
             />
+            <HalaqaMenu class="w-56" />
           </template>
         </UDashboardNavbar>
       </template>
@@ -169,6 +183,5 @@ onMounted(async () => {
     </UDashboardPanel>
 
     <HalaqaSwitcherModal />
-    <HalaqaCurtain />
   </UDashboardGroup>
 </template>

@@ -546,6 +546,7 @@
       "statusActive": "نشط",
       "statusInactive": "غير نشط",
       "statusGraduated": "متخرج",
+      "statusDeleted": "محذوف",
       "noStudents": "لا يوجد طلاب",
       "showingCount": "عرض {filtered} من {total} طالباً",
       "stats": {
@@ -636,6 +637,7 @@
       "addModal": {
         "title": "إضافة طالب جديد",
         "editTitle": "تعديل بيانات الطالب",
+        "teacherEditHint": "كمعلم، يمكنك تعديل المقاييس اليومية والملاحظات فقط.",
         "editSubmit": "حفظ التعديلات",
         "editSuccess": "تم تحديث بيانات الطالب بنجاح",
         "editError": "حدث خطأ أثناء تحديث البيانات",
@@ -719,6 +721,8 @@
           "recentAchievementsTitle": "أحدث الإنجازات",
           "noAchievements": "لا توجد إنجازات مسجلة بعد.",
           "recentAttendanceTitle": "الحضور خلال آخر أسبوعين",
+          "noAttendance": "لا يوجد سجل حضور بعد.",
+          "noWeeklyPlan": "لا توجد خطة أسبوعية بعد.",
           "weeklyPlanTitle": "الخطة الأسبوعية",
           "weeklyPlanCoverage": "{achieved} من {planned} آية ({percent}%)",
           "weekStarting": "بداية الأسبوع: {date}",

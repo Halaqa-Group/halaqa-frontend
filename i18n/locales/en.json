@@ -546,6 +546,7 @@
       "statusActive": "Active",
       "statusInactive": "Inactive",
       "statusGraduated": "Graduated",
+      "statusDeleted": "Deleted",
       "noStudents": "No students",
       "showingCount": "Showing {filtered} of {total} students",
       "stats": {
@@ -636,6 +637,7 @@
       "addModal": {
         "title": "Add new student",
         "editTitle": "Edit student",
+        "teacherEditHint": "As a teacher, you can edit daily metrics and notes only.",
         "editSubmit": "Save changes",
         "editSuccess": "Student updated successfully",
         "editError": "Something went wrong while updating",
@@ -719,6 +721,8 @@
           "recentAchievementsTitle": "Recent achievements",
           "noAchievements": "No achievements recorded yet.",
           "recentAttendanceTitle": "Attendance — last two weeks",
+          "noAttendance": "No attendance recorded yet.",
+          "noWeeklyPlan": "No weekly plan yet.",
           "weeklyPlanTitle": "This week's plan",
           "weeklyPlanCoverage": "{achieved} of {planned} verses ({percent}%)",
           "weekStarting": "Week starting: {date}",

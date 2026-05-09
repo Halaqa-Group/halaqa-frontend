@@ -106,7 +106,13 @@ function clampPercent(n: number) {
         <UIcon name="i-lucide-calendar-check" class="w-5 h-5 text-secondary" />
         {{ $t('pages.students.viewModal.activity.recentAttendanceTitle') }}
       </h4>
-      <div class="flex flex-wrap gap-1.5">
+      <div
+        v-if="recentAttendance.length === 0"
+        class="text-center py-6 body-md text-on-surface-variant"
+      >
+        {{ $t('pages.students.viewModal.activity.noAttendance') }}
+      </div>
+      <div v-else class="flex flex-wrap gap-1.5">
         <div
           v-for="entry in recentAttendance"
           :key="entry.id"
@@ -117,7 +123,7 @@ function clampPercent(n: number) {
           {{ dayNumber(entry.date) }}
         </div>
       </div>
-      <div class="flex flex-wrap gap-x-4 gap-y-1 mt-4 label-md text-on-surface-variant">
+      <div v-if="recentAttendance.length > 0" class="flex flex-wrap gap-x-4 gap-y-1 mt-4 label-md text-on-surface-variant">
         <div class="flex items-center gap-1.5">
           <span class="w-3 h-3 rounded bg-status-ok" />
           {{ $t('pages.students.viewModal.activity.attendancePresent') }}
@@ -138,30 +144,38 @@ function clampPercent(n: number) {
     </div>
 
     <!-- Weekly plan progress -->
-    <div v-if="weeklyPlan" class="rounded-xl p-5 border border-outline-variant">
-      <h4 class="body-lg font-bold mb-2 flex items-center gap-2 text-on-surface">
+    <div class="rounded-xl p-5 border border-outline-variant">
+      <h4 class="body-lg font-bold mb-4 flex items-center gap-2 text-on-surface">
         <UIcon name="i-lucide-list-checks" class="w-5 h-5 text-secondary" />
         {{ $t('pages.students.viewModal.activity.weeklyPlanTitle') }}
       </h4>
-      <p class="label-md text-on-surface-variant mb-4">
-        {{ $t('pages.students.viewModal.activity.weekStarting', { date: formatDateOnly(weeklyPlan.weekStartDate) }) }}
-      </p>
-      <div class="flex justify-between items-center mb-2">
-        <span class="body-md text-on-surface">
-          {{ $t('pages.students.viewModal.activity.weeklyPlanCoverage', {
-            achieved: weeklyPlan.totalAchieved,
-            planned: weeklyPlan.totalPlanned,
-            percent: weeklyPlan.coveragePercent
-          }) }}
-        </span>
-        <span class="text-2xl font-bold text-primary">{{ weeklyPlan.coveragePercent }}%</span>
+      <div
+        v-if="!weeklyPlan"
+        class="text-center py-6 body-md text-on-surface-variant"
+      >
+        {{ $t('pages.students.viewModal.activity.noWeeklyPlan') }}
       </div>
-      <div class="w-full h-2.5 rounded-full overflow-hidden bg-primary-container">
-        <div
-          class="h-full bg-primary transition-all duration-300"
-          :style="{ width: `${clampPercent(weeklyPlan.coveragePercent)}%` }"
-        />
-      </div>
+      <template v-else>
+        <p class="label-md text-on-surface-variant mb-4">
+          {{ $t('pages.students.viewModal.activity.weekStarting', { date: formatDateOnly(weeklyPlan.weekStartDate) }) }}
+        </p>
+        <div class="flex justify-between items-center mb-2">
+          <span class="body-md text-on-surface">
+            {{ $t('pages.students.viewModal.activity.weeklyPlanCoverage', {
+              achieved: weeklyPlan.totalAchieved,
+              planned: weeklyPlan.totalPlanned,
+              percent: weeklyPlan.coveragePercent
+            }) }}
+          </span>
+          <span class="text-2xl font-bold text-primary">{{ weeklyPlan.coveragePercent }}%</span>
+        </div>
+        <div class="w-full h-2.5 rounded-full overflow-hidden bg-primary-container">
+          <div
+            class="h-full bg-primary transition-all duration-300"
+            :style="{ width: `${clampPercent(weeklyPlan.coveragePercent)}%` }"
+          />
+        </div>
+      </template>
     </div>
   </div>
 </template>

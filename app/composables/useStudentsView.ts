@@ -1,38 +1,37 @@
-import { effectScope } from 'vue'
-import type { EffectScope } from 'vue'
 import type { Student } from '~/types'
 
 type SortKey = 'newest' | 'nameAsc' | 'joinDateDesc'
 type ViewMode = 'grid' | 'table'
-type StatusFilter = Student['status'] | null
-
-const PAGE_SIZE = 12
+// "deleted" is a frontend-only filter value: backend has no status='deleted'
+// enum, just an `include_deleted=true` flag. We translate it at the request
+// layer and filter client-side.
+type StatusFilter = Student['status'] | 'deleted' | null
 
 const filterStatus = ref<StatusFilter>(null)
-const filterHalaqaId = ref<number | null>(null)
 const sortKey = ref<SortKey>('newest')
 const viewMode = ref<ViewMode>('grid')
-const visibleCount = ref(PAGE_SIZE)
-
-let watchScope: EffectScope | null = null
 
 export function useStudentsView() {
-  const { students, searchQuery, studentsStats } = useStudents()
+  const {
+    students,
+    searchQuery,
+    studentsStats,
+    summarySnapshot,
+    totalStudents,
+    hasMoreStudents,
+    isLoadingMore,
+    loadMoreStudents
+  } = useStudents()
+  const { selectedHalaqaId } = useGlobalHalaqa()
 
-  const searchFiltered = computed(() =>
-    students.value.filter(student =>
-      !searchQuery.value || student.name.includes(searchQuery.value)
-    )
-  )
-
-  const filteredStudents = computed(() =>
-    searchFiltered.value.filter(student =>
-      filterStatus.value === null || student.status === filterStatus.value
-    )
-  )
-
+  // Search, status, and halaqa filters are applied server-side. The "deleted"
+  // pseudo-status is the exception — we ask the server for include_deleted and
+  // filter to soft-deleted rows here so the rest of the loaded page is hidden.
+  // Sort stays client-side (only re-orders the loaded page).
   const sortedStudents = computed(() => {
-    const arr = [...filteredStudents.value]
+    const arr = filterStatus.value === 'deleted'
+      ? students.value.filter(s => !!s.deletedAt)
+      : [...students.value]
     switch (sortKey.value) {
       case 'joinDateDesc':
         return arr.sort((a, b) => b.joinDate.localeCompare(a.joinDate))
@@ -44,18 +43,10 @@ export function useStudentsView() {
     }
   })
 
-  const visibleStudents = computed(() => sortedStudents.value.slice(0, visibleCount.value))
-
-  const filterCounts = computed(() => ({
-    all: searchFiltered.value.length,
-    active: searchFiltered.value.filter(s => s.status === 'active').length,
-    inactive: searchFiltered.value.filter(s => s.status === 'inactive').length,
-    graduated: searchFiltered.value.filter(s => s.status === 'graduated').length
-  }))
-
-  // Stats reflect the entire school (or selected halaqa), independent of paging.
-  // While the stats request is in-flight or has failed, fall back to client-side
-  // counts of the currently-loaded page so the cards aren't blank.
+  // Stats are intentionally decoupled from active filters. Source preference:
+  // 1. real /students/stats endpoint when wired,
+  // 2. snapshot from the most recent unfiltered fetch,
+  // 3. live counts of the loaded set (only meaningful when no filter is active).
   const summary = computed(() => {
     const stats = studentsStats.value
     if (stats) {
@@ -66,6 +57,7 @@ export function useStudentsView() {
         graduated: stats.graduated
       }
     }
+    if (summarySnapshot.value) return summarySnapshot.value
     return {
       total: students.value.length,
       active: students.value.filter(s => s.status === 'active').length,
@@ -74,11 +66,11 @@ export function useStudentsView() {
     }
   })
 
-  const loadProgress = computed(() =>
-    Math.round((sortedStudents.value.length / Math.max(students.value.length, 1)) * 100)
-  )
-
-  const hasMore = computed(() => sortedStudents.value.length > visibleCount.value)
+  // How much of the server-side total we've loaded — drives the footer bar.
+  const loadProgress = computed(() => {
+    const denom = Math.max(totalStudents.value, 1)
+    return Math.round((students.value.length / denom) * 100)
+  })
 
   function clearFilters() {
     searchQuery.value = ''
@@ -86,32 +78,24 @@ export function useStudentsView() {
   }
 
   function loadMore() {
-    visibleCount.value += PAGE_SIZE
-  }
-
-  if (!watchScope) {
-    watchScope = effectScope(true)
-    watchScope.run(() => {
-      watch([searchQuery, filterStatus, sortKey], () => {
-        visibleCount.value = PAGE_SIZE
-      })
+    const isDeleted = filterStatus.value === 'deleted'
+    return loadMoreStudents({
+      halaqaId: selectedHalaqaId.value ?? undefined,
+      q: searchQuery.value || undefined,
+      status: isDeleted ? undefined : (filterStatus.value ?? undefined),
+      includeDeleted: isDeleted || undefined
     })
   }
 
   return {
     filterStatus,
-    filterHalaqaId,
     sortKey,
     viewMode,
-    visibleCount,
-    searchFiltered,
-    filteredStudents,
     sortedStudents,
-    visibleStudents,
-    filterCounts,
     summary,
     loadProgress,
-    hasMore,
+    hasMore: hasMoreStudents,
+    isLoadingMore,
     clearFilters,
     loadMore
   }

@@ -45,9 +45,8 @@ function onCancel() {
       content: 'sm:max-w-md shadow-2xl',
       header: 'px-6 pt-6 pb-4 border-b-0',
       body: 'px-6 pb-2 pt-0',
-      footer: 'px-6 pb-6 pt-0 border-t-0'
-    }"
-  >
+      footer: 'border-t-0'
+    }">
     <template #header>
       <div class="flex items-center justify-between gap-3 w-full">
         <h3 class="text-lg font-bold text-highlighted leading-tight">
@@ -61,8 +60,7 @@ function onCancel() {
           square
           :ui="{ base: 'rounded-full' }"
           :disabled="loading"
-          @click="onCancel"
-        />
+          @click="onCancel" />
       </div>
     </template>
 
@@ -75,14 +73,13 @@ function onCancel() {
     <template #footer>
       <div class="flex items-center gap-3 w-full">
         <UButton
-          variant="ghost"
+          variant="soft"
           color="neutral"
           size="lg"
           block
           class="flex-1 rounded-full justify-center"
           :disabled="loading"
-          @click="onCancel"
-        >
+          @click="onCancel">
           {{ cancelLabel || t('common.cancel') }}
         </UButton>
         <UButton
@@ -91,8 +88,7 @@ function onCancel() {
           block
           class="flex-1 rounded-full font-semibold justify-center"
           :loading="loading"
-          @click="onConfirm"
-        >
+          @click="onConfirm">
           {{ confirmLabel || t('common.confirm') }}
         </UButton>
       </div>

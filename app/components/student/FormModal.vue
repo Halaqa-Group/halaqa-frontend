@@ -18,11 +18,22 @@ const emit = defineEmits<{ close: [boolean] }>()
 const { createStudent, updateStudent } = useStudents()
 const { halaqat, fetchHalaqat, isLoading: halaqatLoading } = useHalaqat()
 const { email, phone, palestinianId } = useValidation()
+const { user } = useAuth()
 
 const isEditMode = computed(() => props.mode === 'edit')
 const api = useApi()
 const toast = useToast()
 const { t, locale } = useI18n()
+
+// Backend rejects bio edits from teachers (UpdateStudentByTeacherDto restricts
+// to capacity + notes). Lock the inputs in edit mode so the UX matches.
+const isTeacherOnly = computed(() => {
+  const roles = user.value?.roles ?? []
+  return roles.includes('teacher')
+    && !roles.includes('principal')
+    && !roles.includes('vice_principal')
+})
+const lockBio = computed(() => isTeacherOnly.value && isEditMode.value)
 
 const df = computed(() => new DateFormatter(locale.value, { dateStyle: 'medium' }))
 
@@ -147,29 +158,34 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
   submitting.value = true
   try {
     if (isEditMode.value && props.student) {
-      const originalId = props.student.id_number ?? ''
-      const currentId = normalizeDigits(state.idNumber)
-      const idChanged = currentId !== originalId
-      const idPatch: Record<string, any> = {}
-      if (idChanged) {
-        if (currentId) {
-          idPatch.id_number = currentId
-          if (originalId) idPatch.force_id_number_change = true
-        } else {
-          idPatch.id_number = null
-          idPatch.force_id_number_change = true
+      // Teachers can only patch capacity + notes; backend rejects bio fields
+      // with 400. Skip building the bio patch entirely when locked.
+      const bioPatch: Record<string, any> = {}
+      if (!lockBio.value) {
+        const originalId = props.student.id_number ?? ''
+        const currentId = normalizeDigits(state.idNumber)
+        const idChanged = currentId !== originalId
+        if (idChanged) {
+          if (currentId) {
+            bioPatch.id_number = currentId
+            if (originalId) bioPatch.force_id_number_change = true
+          } else {
+            bioPatch.id_number = null
+            bioPatch.force_id_number_change = true
+          }
         }
+        bioPatch.name = state.name.trim()
+        bioPatch.gender = state.gender
+        bioPatch.status = state.status
+        bioPatch.dob = state.dob || null
+        bioPatch.join_date = state.joinDate
+        if (state.email.trim()) bioPatch.email = state.email.trim()
+        else bioPatch.email = null
+        if (state.phone.trim()) bioPatch.phone = state.phone.trim()
       }
 
       await updateStudent(props.student.id, {
-        name: state.name.trim(),
-        gender: state.gender,
-        status: state.status,
-        dob: state.dob || null,
-        join_date: state.joinDate,
-        ...idPatch,
-        ...(state.email.trim() ? { email: state.email.trim() } : { email: null }),
-        ...(state.phone.trim() ? { phone: state.phone.trim() } : {}),
+        ...bioPatch,
         daily_hifz_pages_capacity: state.memPages,
         daily_near_pages_capacity: state.nearPages,
         daily_far_pages_capacity: state.farPages,
@@ -243,11 +259,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       const count = state.halaqaIds.length
       toast.add({
         title: t('pages.students.addModal.successTitle'),
-        description: count > 0
-          ? (count === 1
-            ? t('pages.students.addModal.enrolledInOne')
-            : t('pages.students.addModal.enrolledInMany', { count }))
-          : undefined,
+        description: count > 0 ? (count === 1 ? t('pages.students.addModal.enrolledInOne') : t('pages.students.addModal.enrolledInMany', { count })) : undefined,
         color: 'success'
       })
     }
@@ -297,6 +309,13 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
           :schema="schema"
           class="flex-1 overflow-y-auto px-8 py-8 space-y-10"
           @submit="handleSubmit">
+          <UAlert
+            v-if="lockBio"
+            color="info"
+            variant="soft"
+            icon="i-lucide-info"
+            :title="$t('pages.students.addModal.teacherEditHint')" />
+
           <!-- Section: Halaqa enrollment (multi-select, add mode only) -->
           <UFormField
             v-if="!isEditMode"
@@ -339,12 +358,14 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
                 <UInput
                   v-model="state.name"
                   :placeholder="$t('pages.students.addModal.fullNamePlaceholder')"
+                  :disabled="lockBio"
                   class="w-full" />
               </UFormField>
               <UFormField :label="$t('pages.students.addModal.gender')" name="gender">
                 <USelect
                   v-model="state.gender"
                   :items="genderItems"
+                  :disabled="lockBio"
                   class="w-full" />
               </UFormField>
               <UFormField :label="$t('pages.students.addModal.idNumber')" name="idNumber">
@@ -353,14 +374,16 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
                   :placeholder="$t('pages.students.addModal.idNumberPlaceholder')"
                   inputmode="numeric"
                   dir="ltr"
+                  :disabled="lockBio"
                   class="w-full" />
               </UFormField>
               <UFormField :label="$t('pages.students.addModal.dob')" name="dob">
-                <UPopover>
+                <UPopover :disabled="lockBio">
                   <UButton
                     color="neutral"
                     variant="outline"
                     icon="i-lucide-calendar"
+                    :disabled="lockBio"
                     class="w-full justify-start font-normal">
                     {{ state.dob ? formatDate(state.dob) : $t('pages.students.addModal.pickDate') }}
                   </UButton>
@@ -370,11 +393,12 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
                 </UPopover>
               </UFormField>
               <UFormField :label="$t('pages.students.addModal.joinDate')" name="joinDate">
-                <UPopover>
+                <UPopover :disabled="lockBio">
                   <UButton
                     color="neutral"
                     variant="outline"
                     icon="i-lucide-calendar"
+                    :disabled="lockBio"
                     class="w-full justify-start font-normal">
                     {{ state.joinDate ? formatDate(state.joinDate) : $t('pages.students.addModal.pickDate') }}
                   </UButton>
@@ -384,17 +408,17 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
                 </UPopover>
               </UFormField>
               <UFormField :label="$t('pages.students.addModal.phone')" name="phone">
-                <UInput v-model="state.phone" type="tel" dir="ltr" placeholder="+970599123456" class="w-full" />
+                <UInput v-model="state.phone" type="tel" dir="ltr" placeholder="+970599123456" :disabled="lockBio" class="w-full" />
               </UFormField>
               <UFormField :label="$t('pages.students.addModal.email')" name="email">
-                <UInput v-model="state.email" type="email" dir="ltr" class="w-full" />
+                <UInput v-model="state.email" type="email" dir="ltr" :disabled="lockBio" class="w-full" />
               </UFormField>
               <UFormField
                 v-if="isEditMode"
                 :label="$t('pages.students.addModal.status')"
                 name="status"
                 class="sm:col-span-2">
-                <USelect v-model="state.status" :items="statusItems" class="w-full" />
+                <USelect v-model="state.status" :items="statusItems" :disabled="lockBio" class="w-full" />
               </UFormField>
             </div>
           </div>

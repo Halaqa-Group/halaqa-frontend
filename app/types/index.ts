@@ -31,6 +31,7 @@ export interface Student {
   status: 'active' | 'inactive' | 'graduated'
   dob: string | null
   joinDate: string
+  deletedAt: string | null
   notes: string | null
   currentSurah: string | null
   progress: number | null
@@ -103,6 +104,7 @@ export interface ApiStudent {
   dob: string | null
   join_date: string
   status: 'active' | 'inactive' | 'graduated'
+  deleted_at?: string | null
   daily_hifz_pages_capacity: number | string
   daily_near_pages_capacity: number | string
   daily_far_pages_capacity: number | string

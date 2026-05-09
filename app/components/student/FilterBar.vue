@@ -2,28 +2,34 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { Student } from '~/types'
 
-type StatusFilter = Student['status'] | null
+type StatusFilter = Student['status'] | 'deleted' | null
 
 const { t } = useI18n()
+const { user } = useAuth()
 const { searchQuery, openAdd } = useStudents()
-const { filterStatus, filterHalaqaId, sortKey, filterCounts, viewMode } = useStudentsView()
-const { halaqat, fetchHalaqat, isLoading: halaqatLoading } = useHalaqat()
+const { filterStatus, sortKey, viewMode } = useStudentsView()
 
-onMounted(() => {
-  if (halaqat.value.length === 0) fetchHalaqat()
+// Backend silently ignores include_deleted for non-principal/VP roles, so the
+// "Deleted" status option is only useful for principal/VP. POST /students is
+// principal/VP only too — same gate hides Add.
+const canManageDeleted = computed(() => {
+  const roles = user.value?.roles ?? []
+  return roles.includes('principal') || roles.includes('vice_principal')
 })
+const canCreateStudent = canManageDeleted
 
-const statusFilters = computed<{ label: string, value: StatusFilter, count: number }[]>(() => [
-  { label: t('pages.students.statusAll'), value: null, count: filterCounts.value.all },
-  { label: t('pages.students.statusActive'), value: 'active', count: filterCounts.value.active },
-  { label: t('pages.students.statusInactive'), value: 'inactive', count: filterCounts.value.inactive },
-  { label: t('pages.students.statusGraduated'), value: 'graduated', count: filterCounts.value.graduated }
-])
-
-const halaqaFilters = computed<{ label: string, value: number | null }[]>(() => [
-  { label: 'كل الحلقات', value: null },
-  ...halaqat.value.map(h => ({ label: h.name, value: h.id }))
-])
+const statusFilters = computed<{ label: string, value: StatusFilter }[]>(() => {
+  const base: { label: string, value: StatusFilter }[] = [
+    { label: t('pages.students.statusAll'), value: null },
+    { label: t('pages.students.statusActive'), value: 'active' },
+    { label: t('pages.students.statusInactive'), value: 'inactive' },
+    { label: t('pages.students.statusGraduated'), value: 'graduated' }
+  ]
+  if (canManageDeleted.value) {
+    base.push({ label: t('pages.students.statusDeleted'), value: 'deleted' })
+  }
+  return base
+})
 
 const sortItems = computed<DropdownMenuItem[][]>(() => [[
   { label: t('pages.students.sort.newest'), icon: 'i-lucide-clock', onSelect: () => { sortKey.value = 'newest' } },
@@ -56,33 +62,6 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
         <template #default="{ modelValue }">
           <span class="flex-1 text-start">
             {{statusFilters.find(f => f.value === modelValue)?.label ?? $t('pages.students.statusAll')}}
-          </span>
-          <span
-            class="ms-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-bold bg-primary text-white">
-            {{statusFilters.find(f => f.value === modelValue)?.count ?? 0}}
-          </span>
-        </template>
-        <template #item="{ item }">
-          <span class="flex-1">{{ item.label }}</span>
-          <span
-            class="ms-2 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs font-bold bg-on-surface/5 text-on-surface-variant">
-            {{ item.count }}
-          </span>
-        </template>
-      </USelectMenu>
-    </div>
-
-    <div>
-      <USelectMenu
-        v-model="filterHalaqaId"
-        :items="halaqaFilters"
-        value-key="value"
-        :loading="halaqatLoading"
-        icon="i-lucide-layers"
-        :ui="{ base: 'rounded-full px-4 min-w-48' }">
-        <template #default="{ modelValue }">
-          <span class="flex-1 text-start">
-            {{ halaqaFilters.find(f => f.value === modelValue)?.label ?? 'كل الحلقات' }}
           </span>
         </template>
       </USelectMenu>
@@ -126,6 +105,7 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
       </div>
 
       <UButton
+        v-if="canCreateStudent"
         icon="i-lucide-plus"
         size="lg"
         class="font-bold rounded-full shrink-0 px-6"

@@ -9,9 +9,12 @@ const {
   openEdit,
   openNotifyParent,
   requestDelete,
-  requestGraduate
+  requestGraduate,
+  requestRestore
 } = useStudents()
+const isDeleted = computed(() => !!props.student.deletedAt)
 const statusLabel = computed(() => {
+  if (isDeleted.value) return t('pages.students.statusDeleted')
   if (props.student.status === 'active') return t('pages.students.statusActive')
   if (props.student.status === 'inactive') return t('pages.students.statusInactive')
   return t('pages.students.statusGraduated')
@@ -48,19 +51,28 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     }
   ]
   const lifecycle: DropdownMenuItem[] = []
-  if (props.student.status !== 'graduated') {
+  if (isDeleted.value) {
     lifecycle.push({
-      label: t('pages.students.actions.graduate'),
-      icon: 'i-lucide-graduation-cap',
-      onSelect: () => requestGraduate(props.student)
+      label: t('pages.students.actions.restore'),
+      icon: 'i-lucide-rotate-ccw',
+      color: 'success',
+      onSelect: () => requestRestore(props.student)
+    })
+  } else {
+    if (props.student.status !== 'graduated') {
+      lifecycle.push({
+        label: t('pages.students.actions.graduate'),
+        icon: 'i-lucide-graduation-cap',
+        onSelect: () => requestGraduate(props.student)
+      })
+    }
+    lifecycle.push({
+      label: t('pages.students.actions.delete'),
+      icon: 'i-lucide-trash-2',
+      color: 'error',
+      onSelect: () => requestDelete(props.student)
     })
   }
-  lifecycle.push({
-    label: t('pages.students.actions.delete'),
-    icon: 'i-lucide-trash-2',
-    color: 'error',
-    onSelect: () => requestDelete(props.student)
-  })
   return [primary, lifecycle]
 })
 </script>

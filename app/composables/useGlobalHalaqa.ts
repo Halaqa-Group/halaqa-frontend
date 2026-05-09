@@ -3,6 +3,7 @@ import type { ApiHalaqa } from '~/types'
 
 // Global state for selected halaqa (persists across all pages)
 const selectedHalaqa = ref<ApiHalaqa | null>(null)
+const viewAllHalaqat = ref(false)
 const isModalOpen = ref(false)
 
 export function useGlobalHalaqa() {
@@ -16,6 +17,7 @@ export function useGlobalHalaqa() {
       selectedHalaqa.value = null
       return
     }
+    if (viewAllHalaqat.value) return
     const sid = selectedHalaqa.value?.id
     if (sid != null) {
       const found = list.find(h => h.id === sid)
@@ -29,6 +31,13 @@ export function useGlobalHalaqa() {
 
   function selectHalaqa(halaqa: ApiHalaqa) {
     selectedHalaqa.value = halaqa
+    viewAllHalaqat.value = false
+    closeModal()
+  }
+
+  function selectAllHalaqat() {
+    viewAllHalaqat.value = true
+    selectedHalaqa.value = null
     closeModal()
   }
 
@@ -40,15 +49,19 @@ export function useGlobalHalaqa() {
     isModalOpen.value = false
   }
 
-  const hasHalaqa = computed(() => selectedHalaqa.value !== null)
+  const hasHalaqa = computed(() => selectedHalaqa.value !== null || viewAllHalaqat.value)
   const selectedHalaqaId = computed(() => selectedHalaqa.value?.id ?? null)
-  const selectedHalaqaName = computed(() => selectedHalaqa.value?.name ?? 'اختر الحلقة')
+  const selectedHalaqaName = computed(() => {
+    if (viewAllHalaqat.value) return 'كل الحلقات'
+    return selectedHalaqa.value?.name ?? 'اختر الحلقة'
+  })
 
   return {
     // State
     selectedHalaqa,
     selectedHalaqaId,
     selectedHalaqaName,
+    viewAllHalaqat,
     hasHalaqa,
     halaqat,
     isLoading,
@@ -57,6 +70,7 @@ export function useGlobalHalaqa() {
     // Methods
     initializeHalaqa,
     selectHalaqa,
+    selectAllHalaqat,
     openModal,
     closeModal
   }

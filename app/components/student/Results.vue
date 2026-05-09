@@ -3,6 +3,7 @@ import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
 import type { Student } from '~/types'
 
 const { t } = useI18n()
+const { user } = useAuth()
 const {
   students,
   isLoading,
@@ -12,9 +13,14 @@ const {
   openEdit,
   openNotifyParent,
   requestDelete,
-  requestGraduate
+  requestGraduate,
+  requestRestore
 } = useStudents()
-const { viewMode, sortedStudents, visibleStudents, hasMore, loadMore, clearFilters } = useStudentsView()
+const canCreateStudent = computed(() => {
+  const roles = user.value?.roles ?? []
+  return roles.includes('principal') || roles.includes('vice_principal')
+})
+const { viewMode, sortedStudents, hasMore, isLoadingMore, loadMore, clearFilters } = useStudentsView()
 
 const columns = computed<TableColumn<Student>[]>(() => [
   { accessorKey: 'name', header: t('pages.students.table.student') },
@@ -26,15 +32,17 @@ const columns = computed<TableColumn<Student>[]>(() => [
   { id: 'actions', header: t('pages.students.table.actions') }
 ])
 
-function statusLabel(status: Student['status']) {
-  if (status === 'active') return t('pages.students.statusActive')
-  if (status === 'inactive') return t('pages.students.statusInactive')
+function statusLabel(student: Student) {
+  if (student.deletedAt) return t('pages.students.statusDeleted')
+  if (student.status === 'active') return t('pages.students.statusActive')
+  if (student.status === 'inactive') return t('pages.students.statusInactive')
   return t('pages.students.statusGraduated')
 }
 
-function statusColor(status: Student['status']): 'success' | 'warning' | 'info' {
-  if (status === 'active') return 'success'
-  if (status === 'inactive') return 'warning'
+function statusColor(student: Student): 'success' | 'warning' | 'info' | 'error' {
+  if (student.deletedAt) return 'error'
+  if (student.status === 'active') return 'success'
+  if (student.status === 'inactive') return 'warning'
   return 'info'
 }
 
@@ -62,25 +70,34 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
     }
   ]
   const lifecycle: DropdownMenuItem[] = []
-  if (student.status !== 'graduated') {
+  if (student.deletedAt) {
     lifecycle.push({
-      label: t('pages.students.actions.graduate'),
-      icon: 'i-lucide-graduation-cap',
-      onSelect: () => requestGraduate(student)
+      label: t('pages.students.actions.restore'),
+      icon: 'i-lucide-rotate-ccw',
+      color: 'success',
+      onSelect: () => requestRestore(student)
+    })
+  } else {
+    if (student.status !== 'graduated') {
+      lifecycle.push({
+        label: t('pages.students.actions.graduate'),
+        icon: 'i-lucide-graduation-cap',
+        onSelect: () => requestGraduate(student)
+      })
+    }
+    lifecycle.push({
+      label: t('pages.students.actions.delete'),
+      icon: 'i-lucide-trash-2',
+      color: 'error',
+      onSelect: () => requestDelete(student)
     })
   }
-  lifecycle.push({
-    label: t('pages.students.actions.delete'),
-    icon: 'i-lucide-trash-2',
-    color: 'error',
-    onSelect: () => requestDelete(student)
-  })
   return [primary, lifecycle]
 }
 </script>
 
 <template>
-  <div v-if="isLoading" class="flex justify-center py-16">
+  <div v-if="isLoading && students.length === 0" class="flex justify-center py-16">
     <UIcon name="i-lucide-loader-circle" class="w-10 h-10 animate-spin text-primary" />
   </div>
 
@@ -102,6 +119,7 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
       {{ $t('pages.students.empty.welcomeTitle') }}
     </p>
     <UButton
+      v-if="canCreateStudent"
       icon="i-lucide-plus"
       size="lg"
       class="font-bold rounded-full px-6"
@@ -135,12 +153,12 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
 
   <template v-else>
     <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <StudentCard v-for="student in visibleStudents" :key="student.id" :student="student" />
+      <StudentCard v-for="student in sortedStudents" :key="student.id" :student="student" />
     </div>
 
     <div v-else class="rounded-2xl border border-outline-variant bg-surface-container-lowest overflow-x-auto">
       <UTable
-        :data="visibleStudents"
+        :data="sortedStudents"
         :columns="columns"
         class="min-w-[900px]"
       >
@@ -182,8 +200,8 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
         <template #status-cell="{ row }">
           <UBadge
             variant="subtle"
-            :color="statusColor(row.original.status)"
-            :label="statusLabel(row.original.status)"
+            :color="statusColor(row.original)"
+            :label="statusLabel(row.original)"
           />
         </template>
 
@@ -229,6 +247,8 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
         color="primary"
         size="md"
         class="rounded-full px-6"
+        :loading="isLoadingMore"
+        :disabled="isLoadingMore"
         @click="loadMore"
       >
         {{ $t('pages.students.loadMore') }}

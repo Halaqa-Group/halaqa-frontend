@@ -41,8 +41,12 @@ function onCancel() {
 <template>
   <UModal
     v-model:open="isOpen"
-    :ui="{ content: 'sm:max-w-md' }"
-  >
+    :ui="{
+      content: 'sm:max-w-md shadow-2xl',
+      header: 'px-6 pt-6 pb-4 border-b-0',
+      body: 'px-6 pb-2 pt-0',
+      footer: 'border-t-0'
+    }">
     <template #header>
       <div class="flex items-center justify-between gap-3 w-full">
         <h3 class="text-lg font-bold text-highlighted">
@@ -55,8 +59,7 @@ function onCancel() {
           size="sm"
           square
           :disabled="loading"
-          @click="onCancel"
-        />
+          @click="onCancel" />
       </div>
     </template>
 
@@ -69,18 +72,16 @@ function onCancel() {
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton
-          variant="ghost"
+          variant="soft"
           color="neutral"
           :disabled="loading"
-          @click="onCancel"
-        >
+          @click="onCancel">
           {{ cancelLabel || t('common.cancel') }}
         </UButton>
         <UButton
           :color="destructive ? 'error' : 'primary'"
           :loading="loading"
-          @click="onConfirm"
-        >
+          @click="onConfirm">
           {{ confirmLabel || t('common.confirm') }}
         </UButton>
       </div>

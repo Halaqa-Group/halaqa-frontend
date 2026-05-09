@@ -5,7 +5,8 @@ defineProps<{
   collapsed?: boolean
 }>()
 
-const { selectedHalaqa, halaqat, selectHalaqa, openModal } = useGlobalHalaqa()
+const { selectedHalaqa, viewAllHalaqat, halaqat, selectHalaqa, selectAllHalaqat, openModal } = useGlobalHalaqa()
+const { activeRole } = useAuth()
 
 const TYPE_ICONS: Record<string, string> = {
   Memorization: 'i-lucide-book-open',
@@ -13,30 +14,57 @@ const TYPE_ICONS: Record<string, string> = {
   Aqeedah: 'i-lucide-book-text'
 }
 
+const ALL_HALAQAT_ICON = 'i-lucide-layers-3'
+
 function iconFor(type: string | undefined) {
   return (type && TYPE_ICONS[type]) || 'i-lucide-layers'
 }
 
-const triggerLabel = computed(() => selectedHalaqa.value?.name ?? 'اختر الحلقة')
-const triggerIcon = computed(() => iconFor(selectedHalaqa.value?.type))
+const canViewAllHalaqat = computed(() => activeRole.value === 'principal')
 
-const items = computed<DropdownMenuItem[][]>(() => [
-  halaqat.value.map(h => ({
+const triggerLabel = computed(() => {
+  if (viewAllHalaqat.value) return 'كل الحلقات'
+  return selectedHalaqa.value?.name ?? 'اختر الحلقة'
+})
+const triggerIcon = computed(() => {
+  if (viewAllHalaqat.value) return ALL_HALAQAT_ICON
+  return iconFor(selectedHalaqa.value?.type)
+})
+
+const items = computed<DropdownMenuItem[][]>(() => {
+  const halaqaItems: DropdownMenuItem[] = halaqat.value.map(h => ({
     label: h.name,
     icon: iconFor(h.type),
-    checked: selectedHalaqa.value?.id === h.id,
+    checked: !viewAllHalaqat.value && selectedHalaqa.value?.id === h.id,
     type: 'checkbox' as const,
     onSelect: (e: Event) => {
       e.preventDefault()
       selectHalaqa(h)
     }
-  })),
-  [{
-    label: 'إدارة الحلقات',
-    icon: 'i-lucide-cog',
-    onSelect: () => openModal()
-  }]
-])
+  }))
+
+  if (canViewAllHalaqat.value) {
+    halaqaItems.unshift({
+      label: 'كل الحلقات',
+      icon: ALL_HALAQAT_ICON,
+      checked: viewAllHalaqat.value,
+      type: 'checkbox' as const,
+      onSelect: (e: Event) => {
+        e.preventDefault()
+        selectAllHalaqat()
+      }
+    })
+  }
+
+  return [
+    halaqaItems,
+    [{
+      label: 'إدارة الحلقات',
+      icon: 'i-lucide-cog',
+      onSelect: () => openModal()
+    }]
+  ]
+})
 </script>
 
 <template>

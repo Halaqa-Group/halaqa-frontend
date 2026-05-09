@@ -8,7 +8,7 @@ export default defineNuxtConfig({
   app: {
     head: {
       link: [
-        { rel: 'icon', type: 'image/x-icon', href: '/images/logo/hala_icon.svg' },
+        { rel: 'icon', type: 'image/x-icon', href: '/images/logo/halqa_icon.svg' },
         {
           rel: 'preload',
           as: 'font',

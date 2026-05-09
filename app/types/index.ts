@@ -31,16 +31,52 @@ export interface Student {
   status: 'active' | 'inactive' | 'graduated'
   dob: string | null
   joinDate: string
+  deletedAt: string | null
   notes: string | null
-  currentSurah: string
-  progress: number
-  halaqa: string
-  attendance: number
+  currentSurah: string | null
+  progress: number | null
+  weekProgress: number | null
+  halaqat: string[]
+  attendance: number | null
   dailyHifzPagesCapacity: number
   dailyNearPagesCapacity: number
   dailyFarPagesCapacity: number
   guardians: ApiGuardian[]
   avatar: string
+}
+
+export interface StudentNote {
+  id: string
+  studentId: string
+  authorId: number
+  authorName: string
+  message: string
+  createdAt: string
+}
+
+export interface StudentAchievementSummary {
+  id: string
+  date: string
+  trackType: 'Hifz' | 'Near' | 'Far'
+  startSurah: string
+  startVerse: number
+  endSurah: string
+  endVerse: number
+  score: number
+  status: 'approved' | 'unapproved'
+}
+
+export interface StudentAttendanceEntry {
+  id: string
+  date: string
+  status: 'Present' | 'Late' | 'Absent' | 'Excused'
+}
+
+export interface StudentWeeklyPlanSummary {
+  weekStartDate: string
+  totalPlanned: number
+  totalAchieved: number
+  coveragePercent: number
 }
 
 export type AttendanceStatus = 'present' | 'late' | 'absent'
@@ -64,17 +100,21 @@ export interface ApiStudent {
   email?: string | null
   name: string
   gender?: 'male' | 'female'
+  id_number?: string | null
   dob: string | null
   join_date: string
   status: 'active' | 'inactive' | 'graduated'
+  deleted_at?: string | null
   daily_hifz_pages_capacity: number | string
   daily_near_pages_capacity: number | string
   daily_far_pages_capacity: number | string
   notes: string | null
   photo_url: string | null
   progress_percent?: number
+  week_progress_percent?: number
   current_surah?: string
-  halaqa_name?: string
+  halaqa_name?: string | null
+  halaqat?: string[]
   attendance_rate?: number
   guardians?: ApiGuardian[]
 }
@@ -84,6 +124,13 @@ export interface ApiStudentListResult {
   total: number
   page: number
   limit: number
+}
+
+export interface ApiStudentsStats {
+  total: number
+  active: number
+  inactive: number
+  graduated: number
 }
 
 export interface ApiGuardian {

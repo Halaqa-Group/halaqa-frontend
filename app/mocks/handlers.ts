@@ -1,44 +1,15 @@
-import { SURAH_NAMES } from '~/data/constants'
 import type {
   ApiAchievement,
   ApiAttendance,
   ApiHalaqa,
   ApiParent,
   ApiSchool,
-  ApiStudent,
   ApiTeacher,
   ApiWeeklyPlan,
   ApiWeeklyPlanItem
 } from '~/types'
 import { db } from './db'
 import { MockError, register } from './router'
-
-function withSummary(s: ApiStudent): ApiStudent {
-  const achievements = db.achievements.filter(a => a.student_id === s.id)
-  const records = db.attendance.filter(a => a.student_id === s.id)
-  const enrollment = db.enrollments.find(e => e.studentId === s.id)
-  const halaqa = enrollment ? db.halaqat.find(h => h.id === enrollment.halaqaId) : undefined
-
-  const latest = achievements[achievements.length - 1]
-  const current_surah = latest ? SURAH_NAMES[latest.end_surah] : undefined
-
-  const present = records.filter(a => a.status === 'Present').length
-  const attendance_rate = records.length > 0
-    ? Math.round((present / records.length) * 100)
-    : undefined
-
-  // Deterministic per-student progress so demos look varied without leaking
-  // hash-based fakery into UI code.
-  const progress_percent = ((s.id * 17 + 23) % 80) + 10
-
-  return {
-    ...s,
-    progress_percent,
-    current_surah,
-    halaqa_name: halaqa?.name,
-    attendance_rate
-  }
-}
 
 // Auth endpoints are real (POST /auth/login, GET /auth/me, POST /auth/logout, …);
 // the absence of mock handlers here makes them fall through to $fetch in useApi.
@@ -401,61 +372,6 @@ register('DELETE', '/halaqat/:id', ({ params }) => {
   db.plans = db.plans.filter(p => p.halaqa_id !== id)
   db.halaqat.splice(idx, 1)
   return { success: true }
-})
-
-// ── Students ────────────────────────────────────────────────────────────────
-
-register('GET', '/students', ({ query }) => {
-  let list = db.students
-  if (query.halaqaId) {
-    const hid = Number(query.halaqaId)
-    const enrolledIds = new Set(
-      db.enrollments.filter(e => e.halaqaId === hid).map(e => e.studentId)
-    )
-    list = list.filter(s => enrolledIds.has(s.id))
-  }
-  return list.map(withSummary)
-})
-
-register('GET', '/students/:id', ({ params }) => {
-  const id = Number(params.id)
-  const student = db.students.find(s => s.id === id)
-  if (!student) throw new MockError(404, 'Student not found')
-  return withSummary(student)
-})
-
-register('POST', '/students', ({ body }) => {
-  const b = (body ?? {}) as Partial<ApiStudent> & { halaqa_id?: number | string }
-  const id = db.seq.student++
-  const created: ApiStudent = {
-    id,
-    school_id: b.school_id ?? 1,
-    father_id: b.father_id ?? null,
-    mother_id: b.mother_id ?? null,
-    name: b.name ?? 'طالب جديد',
-    email: b.email ?? null,
-    dob: b.dob ?? null,
-    join_date: b.join_date ?? new Date().toISOString().split('T')[0]!,
-    status: b.status ?? 'active',
-    daily_hifz_pages_capacity: b.daily_hifz_pages_capacity ?? 1,
-    daily_near_pages_capacity: b.daily_near_pages_capacity ?? 2,
-    daily_far_pages_capacity: b.daily_far_pages_capacity ?? 5,
-    notes: b.notes ?? null,
-    photo_url: b.photo_url ?? null
-  }
-  db.students.push(created)
-  if (b.halaqa_id !== undefined && b.halaqa_id !== null) {
-    db.enrollments.push({ studentId: id, halaqaId: Number(b.halaqa_id) })
-  }
-  return created
-})
-
-register('PATCH', '/students/:id', ({ params, body }) => {
-  const id = Number(params.id)
-  const idx = db.students.findIndex(s => s.id === id)
-  if (idx === -1) throw new MockError(404, 'Student not found')
-  db.students[idx] = { ...db.students[idx]!, ...(body as Partial<ApiStudent>), id }
-  return db.students[idx]
 })
 
 // ── Attendance ──────────────────────────────────────────────────────────────

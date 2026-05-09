@@ -27,11 +27,11 @@ export function getStudentMockMeta(student: Student): StudentMockMeta {
   const h = hashId(student.id)
   const realProgress = student.progress
   const realSurah = student.currentSurah
-  const hasReal = realProgress > 0 && realSurah !== '' && realSurah !== '—'
+  const hasReal = (realProgress ?? 0) > 0 && !!realSurah && realSurah !== '—'
 
   const mockProgress = h % 100
-  const progress = hasReal ? realProgress : mockProgress
-  const currentSurah = hasReal ? realSurah : SAMPLE_SURAHS[(h >> 3) % SAMPLE_SURAHS.length]!
+  const progress = hasReal && realProgress !== null ? realProgress : mockProgress
+  const currentSurah = hasReal && realSurah ? realSurah : SAMPLE_SURAHS[(h >> 3) % SAMPLE_SURAHS.length]!
 
   let statusVariant: StudentStatusVariant
   if (student.status === 'inactive') {

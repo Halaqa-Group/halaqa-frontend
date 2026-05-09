@@ -1,60 +1,172 @@
 import { ref } from 'vue'
-import type { Student, ApiGuardian, ApiStudent, ApiStudentListResult } from '~/types'
+import {
+  LazyStudentFormModal,
+  LazyStudentViewModal,
+  LazyStudentNotifyParentModal,
+  LazyCommonConfirmDialog
+} from '#components'
+import type {
+  Student,
+  StudentNote,
+  StudentAchievementSummary,
+  StudentAttendanceEntry,
+  StudentWeeklyPlanSummary,
+  ApiGuardian,
+  ApiStudent,
+  ApiStudentListResult,
+  ApiStudentsStats
+} from '~/types'
 
 const students = ref<Student[]>([])
-const isAddModalOpen = ref(false)
-const isViewModalOpen = ref(false)
-const isEditModalOpen = ref(false)
-const viewingStudent = ref<Student | null>(null)
-const editingApiStudent = ref<ApiStudent | null>(null)
-const isEditLoading = ref(false)
 const searchQuery = ref('')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const totalStudents = ref(0)
+const studentNotes = ref<Record<string, StudentNote[]>>({})
+const studentAchievements = ref<Record<string, StudentAchievementSummary[]>>({})
+const studentAttendance = ref<Record<string, StudentAttendanceEntry[]>>({})
+const studentWeeklyPlan = ref<Record<string, StudentWeeklyPlanSummary>>({})
+const studentsStats = ref<ApiStudentsStats | null>(null)
+const isStatsLoading = ref(false)
+// Snapshot of the unfiltered list summary. Captured on the most recent
+// no-filter fetch so the SummaryStats cards don't shift when the user filters.
+// Used as a fallback while the real /students/stats endpoint isn't wired.
+const summarySnapshot = ref<{ total: number, active: number, inactive: number, graduated: number } | null>(null)
+const PAGE_LIMIT = 20
+const currentPage = ref(1)
+const isLoadingMore = ref(false)
 
 function apiToStudent(s: ApiStudent): Student {
   const hifz = Number(s.daily_hifz_pages_capacity) || 0
   const near = Number(s.daily_near_pages_capacity) || 0
   const far = Number(s.daily_far_pages_capacity) || 0
+  const id = String(s.id)
+  const guardians = s.guardians ?? []
 
   return {
-    id: String(s.id),
+    id,
     name: s.name,
     gender: s.gender ?? 'male',
     status: s.status,
     dob: s.dob,
     joinDate: s.join_date,
+    deletedAt: s.deleted_at ?? null,
     notes: s.notes,
-    currentSurah: s.current_surah ?? '—',
-    progress: s.progress_percent ?? 0,
-    halaqa: s.halaqa_name ?? '—',
-    attendance: s.attendance_rate ?? 0,
+    currentSurah: s.current_surah ?? null,
+    progress: s.progress_percent ?? null,
+    weekProgress: s.week_progress_percent ?? null,
+    halaqat: s.halaqat ?? (s.halaqa_name ? [s.halaqa_name] : []),
+    attendance: s.attendance_rate ?? null,
     dailyHifzPagesCapacity: hifz,
     dailyNearPagesCapacity: near,
     dailyFarPagesCapacity: far,
-    guardians: s.guardians ?? [],
+    guardians,
     avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`
   }
 }
 
 export function useStudents() {
   const api = useApi()
+  const toast = useToast()
+  const { t } = useI18n()
+  const overlay = useOverlay()
 
-  async function fetchStudents(halaqaId?: number) {
+  interface ListFilters {
+    halaqaId?: number
+    q?: string
+    status?: 'active' | 'inactive' | 'graduated'
+    includeDeleted?: boolean
+  }
+
+  function buildListUrl(page: number, filters: ListFilters = {}) {
+    const params = new URLSearchParams()
+    params.set('page', String(page))
+    params.set('limit', String(PAGE_LIMIT))
+    if (filters.halaqaId) params.set('halaqa_id', String(filters.halaqaId))
+    if (filters.q && filters.q.trim()) params.set('q', filters.q.trim())
+    if (filters.status) params.set('status', filters.status)
+    if (filters.includeDeleted) params.set('include_deleted', 'true')
+    return `/students?${params}`
+  }
+
+  async function fetchStudents(filters: ListFilters = {}) {
     isLoading.value = true
     error.value = null
+    currentPage.value = 1
     try {
-      const params = new URLSearchParams()
-      if (halaqaId) params.set('halaqa_id', String(halaqaId))
-      const data = await api<ApiStudentListResult | ApiStudent[]>(`/students${params.toString() ? `?${params}` : ''}`)
+      const data = await api<ApiStudentListResult | ApiStudent[]>(buildListUrl(1, filters))
       const items = Array.isArray(data) ? data : data.items
-      students.value = items.map(apiToStudent)
+      const mapped = items.map(apiToStudent)
+      students.value = mapped
       totalStudents.value = Array.isArray(data) ? items.length : data.total
     } catch (e: any) {
       error.value = e?.data?.message || 'حدث خطأ أثناء تحميل الطلاب'
     } finally {
       isLoading.value = false
+    }
+  }
+
+  // Capture the summary cards' values once per session from a dedicated
+  // unfiltered request. Stats stay frozen for the rest of the session
+  // regardless of filters or CRUD actions. No-op if the snapshot already
+  // exists (survives across page navigations since the ref is module-level).
+  async function fetchSummarySnapshot() {
+    if (summarySnapshot.value) return
+    try {
+      const data = await api<ApiStudentListResult | ApiStudent[]>(buildListUrl(1, {}))
+      const items = Array.isArray(data) ? data : data.items
+      const mapped = items.map(apiToStudent)
+      const total = Array.isArray(data) ? items.length : data.total
+      summarySnapshot.value = {
+        total,
+        active: mapped.filter(s => s.status === 'active').length,
+        inactive: mapped.filter(s => s.status === 'inactive').length,
+        graduated: mapped.filter(s => s.status === 'graduated').length
+      }
+    } catch {
+      // Non-fatal: summary cards just stay blank/fall back to loaded counts.
+    }
+  }
+
+  async function loadMoreStudents(filters: ListFilters = {}) {
+    if (isLoadingMore.value || isLoading.value) return
+    if (students.value.length >= totalStudents.value) return
+    isLoadingMore.value = true
+    try {
+      const nextPage = currentPage.value + 1
+      const data = await api<ApiStudentListResult | ApiStudent[]>(buildListUrl(nextPage, filters))
+      const items = Array.isArray(data) ? data : data.items
+      const seen = new Set(students.value.map(s => s.id))
+      const incoming = items.map(apiToStudent).filter(s => !seen.has(s.id))
+      students.value = [...students.value, ...incoming]
+      totalStudents.value = Array.isArray(data) ? students.value.length : data.total
+      currentPage.value = nextPage
+    } catch (e: any) {
+      const raw = e?.data?.message
+      const msg = Array.isArray(raw) ? raw.join('، ') : (raw || 'حدث خطأ أثناء تحميل المزيد')
+      toast.add({ title: msg, color: 'error' })
+    } finally {
+      isLoadingMore.value = false
+    }
+  }
+
+  const hasMoreStudents = computed(() => students.value.length < totalStudents.value)
+
+  async function fetchStudentsStats(halaqaId?: number) {
+    isStatsLoading.value = true
+    try {
+      const params = new URLSearchParams()
+      if (halaqaId) params.set('halaqa_id', String(halaqaId))
+      studentsStats.value = await api<ApiStudentsStats>(
+        `/students/stats${params.toString() ? `?${params}` : ''}`
+      )
+    } catch (e) {
+      // Non-fatal: list still works without stats; cards fall back to client-side
+      // counts of the loaded page until a retry succeeds.
+      studentsStats.value = null
+      if (import.meta.dev) console.warn('[students/stats] fetch failed', e)
+    } finally {
+      isStatsLoading.value = false
     }
   }
 
@@ -70,47 +182,39 @@ export function useStudents() {
   }
 
   async function openView(student: Student) {
-    viewingStudent.value = student
-    isViewModalOpen.value = true
+    const modal = overlay.create(LazyStudentViewModal, {
+      destroyOnClose: true,
+      props: { student }
+    })
+    modal.open()
     try {
       const fresh = await fetchStudent(student.id)
-      viewingStudent.value = fresh
+      modal.patch({ student: fresh })
     } catch {
       // Keep the already available list payload if detail fetch fails.
     }
   }
 
-  function closeView() {
-    isViewModalOpen.value = false
-    viewingStudent.value = null
-  }
-
   function openAdd() {
-    isAddModalOpen.value = true
-  }
-
-  function closeAdd() {
-    isAddModalOpen.value = false
+    overlay.create(LazyStudentFormModal, {
+      destroyOnClose: true,
+      props: { mode: 'add', student: null, loading: false }
+    }).open()
   }
 
   async function openEdit(student: Student) {
-    const toast = useToast()
-    isEditLoading.value = true
-    isEditModalOpen.value = true
+    const modal = overlay.create(LazyStudentFormModal, {
+      destroyOnClose: true,
+      props: { mode: 'edit', student: null, loading: true }
+    })
+    modal.open()
     try {
       const data = await api<ApiStudent>(`/students/${student.id}`)
-      editingApiStudent.value = data
+      modal.patch({ student: data, loading: false })
     } catch {
-      isEditModalOpen.value = false
-      toast.add({ title: 'فشل تحميل بيانات الطالب', color: 'error' })
-    } finally {
-      isEditLoading.value = false
+      modal.close()
+      toast.add({ title: t('pages.students.addModal.loadFailed'), color: 'error' })
     }
-  }
-
-  function closeEdit() {
-    isEditModalOpen.value = false
-    editingApiStudent.value = null
   }
 
   async function updateStudent(id: number, dto: Record<string, any>) {
@@ -128,6 +232,36 @@ export function useStudents() {
   async function fetchStudent(id: number | string) {
     const data = await api<ApiStudent>(`/students/${id}`)
     return apiToStudent(data)
+  }
+
+  function getStudentNotes(studentId: string): StudentNote[] {
+    return studentNotes.value[studentId] ?? []
+  }
+
+  function openNotifyParent(student: Student) {
+    overlay.create(LazyStudentNotifyParentModal, {
+      destroyOnClose: true,
+      props: { student }
+    }).open()
+  }
+
+  async function submitParentNote(studentId: string, message: string): Promise<StudentNote | null> {
+    const trimmed = message.trim()
+    if (!studentId || !trimmed) return null
+    // Frontend-only dummy: persist in module state. Replace with real API call later.
+    const { user } = useAuth()
+    const author = user.value
+    const note: StudentNote = {
+      id: `${studentId}-${Date.now()}`,
+      studentId,
+      authorId: author?.id ?? 0,
+      authorName: author?.name ?? 'أنا',
+      message: trimmed,
+      createdAt: new Date().toISOString()
+    }
+    const existing = studentNotes.value[studentId] ?? []
+    studentNotes.value[studentId] = [note, ...existing]
+    return note
   }
 
   async function deleteStudent(id: number | string) {
@@ -156,6 +290,81 @@ export function useStudents() {
     return data
   }
 
+  async function requestRestore(student: Student) {
+    try {
+      await restoreStudent(student.id)
+      toast.add({ title: t('pages.students.actions.restoreSuccess'), color: 'success' })
+    } catch (e: any) {
+      const raw = e?.data?.message
+      const message = Array.isArray(raw) ? raw.join('، ') : (raw || t('pages.students.actions.restoreError'))
+      toast.add({ title: message, color: 'error' })
+    }
+  }
+
+  function requestDelete(student: Student) {
+    const modal = overlay.create(LazyCommonConfirmDialog, {
+      destroyOnClose: true,
+      props: {
+        'open': true,
+        'title': t('pages.students.actions.deleteConfirmTitle'),
+        'message': t('pages.students.actions.deleteConfirmMessage', { name: student.name }),
+        'confirmLabel': t('pages.students.actions.deleteConfirm'),
+        'destructive': true,
+        'loading': false,
+        'onUpdate:open': (val: boolean) => {
+          if (!val) modal.close()
+        },
+        async onConfirm() {
+          try {
+            modal.patch({ loading: true })
+            await deleteStudent(student.id)
+            toast.add({ title: t('pages.students.actions.deleteSuccess'), color: 'success' })
+            modal.patch({ open: false })
+            modal.close()
+          } catch (e: any) {
+            modal.patch({ loading: false })
+            const raw = e?.data?.message
+            const message = Array.isArray(raw) ? raw.join('، ') : (raw || t('pages.students.actions.deleteError'))
+            toast.add({ title: message, color: 'error' })
+          }
+        }
+      }
+    })
+    modal.open()
+  }
+
+  function requestGraduate(student: Student) {
+    const modal = overlay.create(LazyCommonConfirmDialog, {
+      destroyOnClose: true,
+      props: {
+        'open': true,
+        'title': t('pages.students.actions.graduateConfirmTitle'),
+        'message': t('pages.students.actions.graduateConfirmMessage', { name: student.name }),
+        'confirmLabel': t('pages.students.actions.graduateConfirm'),
+        'icon': 'i-lucide-graduation-cap',
+        'loading': false,
+        'onUpdate:open': (val: boolean) => {
+          if (!val) modal.close()
+        },
+        async onConfirm() {
+          try {
+            modal.patch({ loading: true })
+            await graduateStudent(student.id)
+            toast.add({ title: t('pages.students.actions.graduateSuccess'), color: 'success' })
+            modal.patch({ open: false })
+            modal.close()
+          } catch (e: any) {
+            modal.patch({ loading: false })
+            const raw = e?.data?.message
+            const message = Array.isArray(raw) ? raw.join('، ') : (raw || t('pages.students.actions.graduateError'))
+            toast.add({ title: message, color: 'error' })
+          }
+        }
+      }
+    })
+    modal.open()
+  }
+
   async function fetchGuardians(studentId: number | string): Promise<ApiGuardian[]> {
     return api<ApiGuardian[]>(`/students/${studentId}/guardians`)
   }
@@ -178,31 +387,41 @@ export function useStudents() {
   return {
     students,
     isLoading,
+    isLoadingMore,
     error,
     totalStudents,
-    isAddModalOpen,
-    isViewModalOpen,
-    isEditModalOpen,
-    isEditLoading,
-    viewingStudent,
-    editingApiStudent,
+    hasMoreStudents,
+    currentPage,
+    studentNotes,
+    studentAchievements,
+    studentAttendance,
+    studentWeeklyPlan,
+    studentsStats,
+    summarySnapshot,
+    isStatsLoading,
     searchQuery,
     fetchStudents,
+    loadMoreStudents,
+    fetchSummarySnapshot,
+    fetchStudentsStats,
     fetchStudent,
     createStudent,
     updateStudent,
     deleteStudent,
     restoreStudent,
     graduateStudent,
+    requestDelete,
+    requestGraduate,
+    requestRestore,
     fetchGuardians,
     linkGuardian,
     updateGuardian,
     unlinkGuardian,
     openView,
-    closeView,
     openAdd,
-    closeAdd,
     openEdit,
-    closeEdit
+    openNotifyParent,
+    submitParentNote,
+    getStudentNotes
   }
 }

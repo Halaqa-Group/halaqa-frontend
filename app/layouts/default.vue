@@ -29,8 +29,8 @@ const links = computed<NavigationMenuItem[][]>(() => {
   }
 
   mainLinks.push(
-    { label: t('nav.attendance'), icon: 'i-lucide-user-check', to: '/attendance' },
     { label: t('nav.students'), icon: 'i-lucide-users', to: '/students' },
+    { label: t('nav.attendance'), icon: 'i-lucide-user-check', to: '/attendance' },
     { label: t('nav.achievements'), icon: 'i-lucide-award', to: '/achievements' },
     { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' }
   )
@@ -106,7 +106,20 @@ onMounted(async () => {
       }"
     >
       <template #header="{ collapsed }">
-        <HalaqaMenu :collapsed="collapsed" />
+        <NuxtLink :to="localePath('/')" class="flex items-center justify-center w-full py-2">
+          <img
+            v-if="collapsed"
+            src="/images/logo/halqa_icon.svg"
+            alt="Halaqa"
+            class="h-8 w-auto"
+          >
+          <img
+            v-else
+            src="/images/logo/halaqa_logo.png"
+            alt="Halaqa Logo"
+            class="h-10 w-auto"
+          >
+        </NuxtLink>
       </template>
 
       <template #default="{ collapsed }">
@@ -159,6 +172,7 @@ onMounted(async () => {
               class="w-40"
               size="sm"
             />
+            <HalaqaMenu class="w-56" />
           </template>
         </UDashboardNavbar>
       </template>
@@ -169,6 +183,5 @@ onMounted(async () => {
     </UDashboardPanel>
 
     <HalaqaSwitcherModal />
-    <HalaqaCurtain />
   </UDashboardGroup>
 </template>

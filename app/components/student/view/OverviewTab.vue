@@ -13,6 +13,10 @@ const dailyTracks = computed(() => [
 function clampPercent(n: number) {
   return Math.min(Math.max(n, 0), 100)
 }
+
+const hasPerformance = computed(() =>
+  props.student.attendance !== null || props.student.progress !== null
+)
 </script>
 
 <template>
@@ -22,12 +26,12 @@ function clampPercent(n: number) {
       <span class="label-md block mb-1 text-on-surface-variant">
         {{ $t('pages.students.card.currentSurah') }}
       </span>
-      <span class="display-md text-on-surface">{{ student.currentSurah }}</span>
+      <span class="display-md text-on-surface">{{ student.currentSurah ?? '—' }}</span>
     </div>
 
     <!-- Performance stat tiles -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div class="rounded-xl p-5 border border-outline-variant">
+    <div v-if="hasPerformance" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div v-if="student.attendance !== null" class="rounded-xl p-5 border border-outline-variant">
         <div class="flex items-center justify-between gap-3 mb-3">
           <span class="label-md text-on-surface-variant flex items-center gap-2">
             <UIcon name="i-lucide-calendar-check" class="w-4 h-4 text-secondary" />
@@ -42,7 +46,7 @@ function clampPercent(n: number) {
           />
         </div>
       </div>
-      <div class="rounded-xl p-5 border border-outline-variant">
+      <div v-if="student.progress !== null" class="rounded-xl p-5 border border-outline-variant">
         <div class="flex items-center justify-between gap-3 mb-3">
           <span class="label-md text-on-surface-variant flex items-center gap-2">
             <UIcon name="i-lucide-target" class="w-4 h-4 text-secondary" />

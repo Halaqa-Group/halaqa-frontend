@@ -1,4 +1,11 @@
 import { ref } from 'vue'
+import {
+  LazyStudentFormModal,
+  LazyStudentViewModal,
+  LazyStudentNotifyParentModal,
+  LazyStudentDeleteConfirmModal,
+  LazyStudentGraduateConfirmModal
+} from '#components'
 import type {
   Student,
   StudentNote,
@@ -7,19 +14,11 @@ import type {
   StudentWeeklyPlanSummary,
   ApiGuardian,
   ApiStudent,
-  ApiStudentListResult
+  ApiStudentListResult,
+  ApiStudentsStats
 } from '~/types'
 
 const students = ref<Student[]>([])
-const isAddModalOpen = ref(false)
-const isViewModalOpen = ref(false)
-const isEditModalOpen = ref(false)
-const isNotifyParentOpen = ref(false)
-const viewingStudent = ref<Student | null>(null)
-const editingApiStudent = ref<ApiStudent | null>(null)
-const notifyingStudent = ref<Student | null>(null)
-const isEditLoading = ref(false)
-const isNotifySubmitting = ref(false)
 const searchQuery = ref('')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -28,6 +27,8 @@ const studentNotes = ref<Record<string, StudentNote[]>>({})
 const studentAchievements = ref<Record<string, StudentAchievementSummary[]>>({})
 const studentAttendance = ref<Record<string, StudentAttendanceEntry[]>>({})
 const studentWeeklyPlan = ref<Record<string, StudentWeeklyPlanSummary>>({})
+const studentsStats = ref<ApiStudentsStats | null>(null)
+const isStatsLoading = ref(false)
 
 // ── Dummy parent-notification seeding (frontend-only until backend ships) ──
 const DUMMY_AUTHORS = [
@@ -140,94 +141,12 @@ function seedActivityFor(student: Student) {
   }
 }
 
-// ── Dummy guardian seeding (frontend-only — used when the API returns no guardians) ──
-const DUMMY_FATHER_NAMES = [
-  'عبدالله الزهراني',
-  'محمد العتيبي',
-  'خالد الحربي',
-  'سعد القحطاني',
-  'فهد الشمري',
-  'أحمد الغامدي'
-]
-const DUMMY_MOTHER_NAMES = [
-  'نورة الشهري',
-  'فاطمة الغامدي',
-  'منى الدوسري',
-  'ريم العنزي',
-  'سارة المالكي',
-  'هدى البقمي'
-]
-const DUMMY_GRANDPARENT_NAMES = [
-  'صالح آل سعد',
-  'إبراهيم الجهني',
-  'حمد الرشيد'
-]
-
-function dummyPhone(idHash: number, salt: number): string {
-  const tail = String(10000000 + Math.abs((idHash * salt + 7919) % 90000000)).slice(-8)
-  return `05${tail}`
-}
-
-function generateDummyGuardians(studentId: string): ApiGuardian[] {
-  const idHash = Number.parseInt(studentId, 10) || 0
-  const guardianCount = (idHash % 3) + 1
-  const motherIsPrimary = (idHash % 4) === 0
-  const includeMother = guardianCount >= 2
-  const includeGrandparent = guardianCount === 3
-
-  const father: ApiGuardian = {
-    user: {
-      id: idHash * 100 + 1,
-      name: DUMMY_FATHER_NAMES[idHash % DUMMY_FATHER_NAMES.length]!,
-      email: `father.${studentId}@halaqa.example`,
-      phone: dummyPhone(idHash, 7)
-    },
-    relation: 'الأب',
-    is_primary: !includeMother || !motherIsPrimary,
-    can_pickup: true
-  }
-
-  const guardians: ApiGuardian[] = [father]
-
-  if (includeMother) {
-    guardians.push({
-      user: {
-        id: idHash * 100 + 2,
-        name: DUMMY_MOTHER_NAMES[idHash % DUMMY_MOTHER_NAMES.length]!,
-        email: `mother.${studentId}@halaqa.example`,
-        phone: dummyPhone(idHash, 11)
-      },
-      relation: 'الأم',
-      is_primary: motherIsPrimary,
-      can_pickup: true
-    })
-  }
-
-  if (includeGrandparent) {
-    guardians.push({
-      user: {
-        id: idHash * 100 + 3,
-        name: DUMMY_GRANDPARENT_NAMES[idHash % DUMMY_GRANDPARENT_NAMES.length]!,
-        email: `family.${studentId}@halaqa.example`,
-        phone: dummyPhone(idHash, 13)
-      },
-      relation: 'الجد',
-      is_primary: false,
-      can_pickup: false
-    })
-  }
-
-  return guardians
-}
-
 function apiToStudent(s: ApiStudent): Student {
   const hifz = Number(s.daily_hifz_pages_capacity) || 0
   const near = Number(s.daily_near_pages_capacity) || 0
   const far = Number(s.daily_far_pages_capacity) || 0
   const id = String(s.id)
-  const guardians = (s.guardians && s.guardians.length > 0)
-    ? s.guardians
-    : generateDummyGuardians(id)
+  const guardians = s.guardians ?? []
 
   return {
     id,
@@ -237,10 +156,11 @@ function apiToStudent(s: ApiStudent): Student {
     dob: s.dob,
     joinDate: s.join_date,
     notes: s.notes,
-    currentSurah: s.current_surah ?? '—',
-    progress: s.progress_percent ?? 0,
-    halaqa: s.halaqa_name ?? '—',
-    attendance: s.attendance_rate ?? 0,
+    currentSurah: s.current_surah ?? null,
+    progress: s.progress_percent ?? null,
+    weekProgress: s.week_progress_percent ?? null,
+    halaqat: s.halaqat ?? (s.halaqa_name ? [s.halaqa_name] : []),
+    attendance: s.attendance_rate ?? null,
     dailyHifzPagesCapacity: hifz,
     dailyNearPagesCapacity: near,
     dailyFarPagesCapacity: far,
@@ -251,6 +171,9 @@ function apiToStudent(s: ApiStudent): Student {
 
 export function useStudents() {
   const api = useApi()
+  const toast = useToast()
+  const { t } = useI18n()
+  const overlay = useOverlay()
 
   async function fetchStudents(halaqaId?: number) {
     isLoading.value = true
@@ -273,6 +196,24 @@ export function useStudents() {
     }
   }
 
+  async function fetchStudentsStats(halaqaId?: number) {
+    isStatsLoading.value = true
+    try {
+      const params = new URLSearchParams()
+      if (halaqaId) params.set('halaqa_id', String(halaqaId))
+      studentsStats.value = await api<ApiStudentsStats>(
+        `/students/stats${params.toString() ? `?${params}` : ''}`
+      )
+    } catch (e) {
+      // Non-fatal: list still works without stats; cards fall back to client-side
+      // counts of the loaded page until a retry succeeds.
+      studentsStats.value = null
+      if (import.meta.dev) console.warn('[students/stats] fetch failed', e)
+    } finally {
+      isStatsLoading.value = false
+    }
+  }
+
   async function createStudent(dto: Record<string, any>) {
     // Backend forces school_id from the authenticated user; we don't send it.
     const data = await api<ApiStudent>('/students', {
@@ -285,47 +226,39 @@ export function useStudents() {
   }
 
   async function openView(student: Student) {
-    viewingStudent.value = student
-    isViewModalOpen.value = true
+    const modal = overlay.create(LazyStudentViewModal, {
+      destroyOnClose: true,
+      props: { student }
+    })
+    modal.open()
     try {
       const fresh = await fetchStudent(student.id)
-      viewingStudent.value = fresh
+      modal.patch({ student: fresh })
     } catch {
       // Keep the already available list payload if detail fetch fails.
     }
   }
 
-  function closeView() {
-    isViewModalOpen.value = false
-    viewingStudent.value = null
-  }
-
   function openAdd() {
-    isAddModalOpen.value = true
-  }
-
-  function closeAdd() {
-    isAddModalOpen.value = false
+    overlay.create(LazyStudentFormModal, {
+      destroyOnClose: true,
+      props: { mode: 'add', student: null, loading: false }
+    }).open()
   }
 
   async function openEdit(student: Student) {
-    const toast = useToast()
-    isEditLoading.value = true
-    isEditModalOpen.value = true
+    const modal = overlay.create(LazyStudentFormModal, {
+      destroyOnClose: true,
+      props: { mode: 'edit', student: null, loading: true }
+    })
+    modal.open()
     try {
       const data = await api<ApiStudent>(`/students/${student.id}`)
-      editingApiStudent.value = data
+      modal.patch({ student: data, loading: false })
     } catch {
-      isEditModalOpen.value = false
-      toast.add({ title: 'فشل تحميل بيانات الطالب', color: 'error' })
-    } finally {
-      isEditLoading.value = false
+      modal.close()
+      toast.add({ title: t('pages.students.addModal.loadFailed'), color: 'error' })
     }
-  }
-
-  function closeEdit() {
-    isEditModalOpen.value = false
-    editingApiStudent.value = null
   }
 
   async function updateStudent(id: number, dto: Record<string, any>) {
@@ -353,38 +286,29 @@ export function useStudents() {
   }
 
   function openNotifyParent(student: Student) {
-    notifyingStudent.value = student
-    isNotifyParentOpen.value = true
+    overlay.create(LazyStudentNotifyParentModal, {
+      destroyOnClose: true,
+      props: { student }
+    }).open()
   }
 
-  function closeNotifyParent() {
-    isNotifyParentOpen.value = false
-    notifyingStudent.value = null
-  }
-
-  async function submitParentNote(message: string): Promise<StudentNote | null> {
-    const student = notifyingStudent.value
+  async function submitParentNote(studentId: string, message: string): Promise<StudentNote | null> {
     const trimmed = message.trim()
-    if (!student || !trimmed) return null
-    isNotifySubmitting.value = true
-    try {
-      // Frontend-only dummy: persist in module state. Replace with real API call later.
-      const { user } = useAuth()
-      const author = user.value
-      const note: StudentNote = {
-        id: `${student.id}-${Date.now()}`,
-        studentId: student.id,
-        authorId: author?.id ?? 0,
-        authorName: author?.name ?? 'أنا',
-        message: trimmed,
-        createdAt: new Date().toISOString()
-      }
-      const existing = studentNotes.value[student.id] ?? []
-      studentNotes.value[student.id] = [note, ...existing]
-      return note
-    } finally {
-      isNotifySubmitting.value = false
+    if (!studentId || !trimmed) return null
+    // Frontend-only dummy: persist in module state. Replace with real API call later.
+    const { user } = useAuth()
+    const author = user.value
+    const note: StudentNote = {
+      id: `${studentId}-${Date.now()}`,
+      studentId,
+      authorId: author?.id ?? 0,
+      authorName: author?.name ?? 'أنا',
+      message: trimmed,
+      createdAt: new Date().toISOString()
     }
+    const existing = studentNotes.value[studentId] ?? []
+    studentNotes.value[studentId] = [note, ...existing]
+    return note
   }
 
   async function deleteStudent(id: number | string) {
@@ -413,6 +337,20 @@ export function useStudents() {
     return data
   }
 
+  function requestDelete(student: Student) {
+    overlay.create(LazyStudentDeleteConfirmModal, {
+      destroyOnClose: true,
+      props: { student }
+    }).open()
+  }
+
+  function requestGraduate(student: Student) {
+    overlay.create(LazyStudentGraduateConfirmModal, {
+      destroyOnClose: true,
+      props: { student }
+    }).open()
+  }
+
   async function fetchGuardians(studentId: number | string): Promise<ApiGuardian[]> {
     return api<ApiGuardian[]>(`/students/${studentId}/guardians`)
   }
@@ -437,39 +375,31 @@ export function useStudents() {
     isLoading,
     error,
     totalStudents,
-    isAddModalOpen,
-    isViewModalOpen,
-    isEditModalOpen,
-    isNotifyParentOpen,
-    isEditLoading,
-    isNotifySubmitting,
-    viewingStudent,
-    editingApiStudent,
-    notifyingStudent,
     studentNotes,
     studentAchievements,
     studentAttendance,
     studentWeeklyPlan,
+    studentsStats,
+    isStatsLoading,
     searchQuery,
     fetchStudents,
+    fetchStudentsStats,
     fetchStudent,
     createStudent,
     updateStudent,
     deleteStudent,
     restoreStudent,
     graduateStudent,
+    requestDelete,
+    requestGraduate,
     fetchGuardians,
     linkGuardian,
     updateGuardian,
     unlinkGuardian,
     openView,
-    closeView,
     openAdd,
-    closeAdd,
     openEdit,
-    closeEdit,
     openNotifyParent,
-    closeNotifyParent,
     submitParentNote,
     getStudentNotes
   }

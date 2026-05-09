@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
+import type { Student } from '~/types'
+
+defineProps<{ student: Student }>()
+const emit = defineEmits<{ close: [] }>()
 
 const { t } = useI18n()
-const { isViewModalOpen, viewingStudent, closeView } = useStudents()
-
 const activeTab = ref<'overview' | 'activity' | 'guardians' | 'notifications'>('overview')
-
-watch(isViewModalOpen, (open) => {
-  if (open) activeTab.value = 'overview'
-})
 
 const tabs = computed<TabsItem[]>(() => [
   { value: 'overview', label: t('pages.students.viewModal.tabs.overview'), icon: 'i-lucide-layout-dashboard' },
@@ -19,14 +17,10 @@ const tabs = computed<TabsItem[]>(() => [
 </script>
 
 <template>
-  <UModal
-    v-model:open="isViewModalOpen"
-    :ui="{ content: 'sm:max-w-6xl max-h-[90vh] overflow-hidden p-0 rounded-2xl' }"
-    @close="closeView"
-  >
+  <UModal :ui="{ content: 'sm:max-w-6xl max-h-[90vh] overflow-hidden p-0 rounded-2xl' }">
     <template #content>
-      <div v-if="viewingStudent" class="flex flex-col lg:flex-row min-h-[560px] max-h-[90vh]">
-        <StudentViewProfilePanel :student="viewingStudent" />
+      <div class="flex flex-col lg:flex-row min-h-[560px] max-h-[90vh]">
+        <StudentViewProfilePanel :student="student" @close="emit('close')" />
 
         <div class="flex-1 overflow-y-auto p-6 lg:p-8 bg-surface-container-lowest">
           <UTabs
@@ -34,13 +28,12 @@ const tabs = computed<TabsItem[]>(() => [
             :items="tabs"
             variant="link"
             class="w-full"
-            :ui="{ list: 'border-b border-outline-variant', trigger: 'px-4 py-3' }"
-          >
+            :ui="{ list: 'border-b border-outline-variant', trigger: 'px-4 py-3' }">
             <template #content="{ item }">
-              <StudentViewOverviewTab v-if="item.value === 'overview'" :student="viewingStudent" />
-              <StudentViewActivityTab v-else-if="item.value === 'activity'" :student="viewingStudent" />
-              <StudentViewGuardiansTab v-else-if="item.value === 'guardians'" :student="viewingStudent" />
-              <StudentViewNotificationsTab v-else-if="item.value === 'notifications'" :student="viewingStudent" />
+              <StudentViewOverviewTab v-if="item.value === 'overview'" :student="student" />
+              <StudentViewActivityTab v-else-if="item.value === 'activity'" :student="student" />
+              <StudentViewGuardiansTab v-else-if="item.value === 'guardians'" :student="student" />
+              <StudentViewNotificationsTab v-else-if="item.value === 'notifications'" :student="student" />
             </template>
           </UTabs>
         </div>

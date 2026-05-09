@@ -32,10 +32,11 @@ export interface Student {
   dob: string | null
   joinDate: string
   notes: string | null
-  currentSurah: string
-  progress: number
-  halaqa: string
-  attendance: number
+  currentSurah: string | null
+  progress: number | null
+  weekProgress: number | null
+  halaqat: string[]
+  attendance: number | null
   dailyHifzPagesCapacity: number
   dailyNearPagesCapacity: number
   dailyFarPagesCapacity: number
@@ -98,6 +99,7 @@ export interface ApiStudent {
   email?: string | null
   name: string
   gender?: 'male' | 'female'
+  id_number?: string | null
   dob: string | null
   join_date: string
   status: 'active' | 'inactive' | 'graduated'
@@ -107,8 +109,10 @@ export interface ApiStudent {
   notes: string | null
   photo_url: string | null
   progress_percent?: number
+  week_progress_percent?: number
   current_surah?: string
-  halaqa_name?: string
+  halaqa_name?: string | null
+  halaqat?: string[]
   attendance_rate?: number
   guardians?: ApiGuardian[]
 }
@@ -118,6 +122,13 @@ export interface ApiStudentListResult {
   total: number
   page: number
   limit: number
+}
+
+export interface ApiStudentsStats {
+  total: number
+  active: number
+  inactive: number
+  graduated: number
 }
 
 export interface ApiGuardian {

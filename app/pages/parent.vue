@@ -114,7 +114,7 @@ onMounted(async () => {
                 </p>
               </div>
               <UBadge color="primary" variant="soft">
-                {{ student.progress }}%
+                {{ student.progress ?? 0 }}%
               </UBadge>
             </div>
 

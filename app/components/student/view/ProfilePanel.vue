@@ -2,8 +2,9 @@
 import type { Student } from '~/types'
 
 const props = defineProps<{ student: Student }>()
+const emit = defineEmits<{ close: [] }>()
 const { t, locale } = useI18n()
-const { closeView, openEdit, openNotifyParent } = useStudents()
+const { openEdit, openNotifyParent } = useStudents()
 
 const dateFormatter = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
@@ -53,7 +54,7 @@ const joinDateLabel = computed(() => {
 })
 
 function handleEditClick() {
-  closeView()
+  emit('close')
   openEdit(props.student)
 }
 
@@ -63,13 +64,13 @@ function handleNotifyClick() {
 
 async function handleLogAchievement() {
   const id = props.student.id
-  closeView()
+  emit('close')
   await navigateTo(`/achievements?studentId=${id}`)
 }
 
 async function handleRecordAttendance() {
   const id = props.student.id
-  closeView()
+  emit('close')
   await navigateTo(`/attendance?studentId=${id}`)
 }
 </script>
@@ -94,7 +95,7 @@ async function handleRecordAttendance() {
         {{ student.name }}
       </h2>
       <p class="body-md text-on-surface-variant">
-        {{ student.halaqa }}
+        {{ student.halaqat.length > 0 ? student.halaqat.join('، ') : '—' }}
       </p>
     </div>
 
@@ -171,7 +172,7 @@ async function handleRecordAttendance() {
         block
         :label="$t('pages.students.viewModal.close')"
         class="w-full py-2 body-md hover:opacity-70 font-normal text-muted"
-        @click="closeView"
+        @click="emit('close')"
       />
     </div>
   </div>

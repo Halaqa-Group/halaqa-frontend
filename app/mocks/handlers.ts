@@ -404,7 +404,8 @@ register('DELETE', '/halaqat/:id', ({ params }) => {
 })
 
 // ── Students ────────────────────────────────────────────────────────────────
-
+// Mocks disabled — all /students* requests fall through to the real API.
+/*
 register('GET', '/students', ({ query }) => {
   let list = db.students
   if (query.halaqaId) {
@@ -415,6 +416,29 @@ register('GET', '/students', ({ query }) => {
     list = list.filter(s => enrolledIds.has(s.id))
   }
   return list.map(withSummary)
+})
+
+// IMPORTANT: must come before `/students/:id` so the literal "stats" segment
+// matches before the parameterized route would catch it.
+register('GET', '/students/stats', ({ query }) => {
+  let list = db.students
+  if (query.halaqa_id) {
+    const hid = Number(query.halaqa_id)
+    const enrolledIds = new Set(
+      db.enrollments.filter(e => e.halaqaId === hid).map(e => e.studentId)
+    )
+    list = list.filter(s => enrolledIds.has(s.id))
+  }
+  const total = list.length
+  const active = list.filter(s => s.status === 'active').length
+  const inactive = list.filter(s => s.status === 'inactive').length
+  const graduated = list.filter(s => s.status === 'graduated').length
+  const avg_hifz_capacity = total
+    ? Math.round(
+        list.reduce((sum, s) => sum + Number(s.daily_hifz_pages_capacity ?? 0), 0) / total
+      )
+    : 0
+  return { total, active, inactive, graduated, avg_hifz_capacity }
 })
 
 register('GET', '/students/:id', ({ params }) => {
@@ -457,6 +481,7 @@ register('PATCH', '/students/:id', ({ params, body }) => {
   db.students[idx] = { ...db.students[idx]!, ...(body as Partial<ApiStudent>), id }
   return db.students[idx]
 })
+*/
 
 // ── Attendance ──────────────────────────────────────────────────────────────
 

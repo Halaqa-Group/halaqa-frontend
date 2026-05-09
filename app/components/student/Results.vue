@@ -3,17 +3,26 @@ import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
 import type { Student } from '~/types'
 
 const { t } = useI18n()
-const { students, isLoading, error, openAdd, openView, openEdit, openNotifyParent } = useStudents()
+const {
+  students,
+  isLoading,
+  error,
+  openAdd,
+  openView,
+  openEdit,
+  openNotifyParent,
+  requestDelete,
+  requestGraduate
+} = useStudents()
 const { viewMode, sortedStudents, visibleStudents, hasMore, loadMore, clearFilters } = useStudentsView()
 
 const columns = computed<TableColumn<Student>[]>(() => [
   { accessorKey: 'name', header: t('pages.students.table.student') },
-  { accessorKey: 'halaqa', header: t('pages.students.table.halaqa') },
+  { accessorKey: 'halaqat', header: t('pages.students.table.halaqat') },
   { accessorKey: 'status', header: t('pages.students.table.status') },
   { accessorKey: 'dailyHifzPagesCapacity', header: t('pages.students.table.dailyHifz') },
   { accessorKey: 'dailyNearPagesCapacity', header: t('pages.students.table.dailyNear') },
   { accessorKey: 'dailyFarPagesCapacity', header: t('pages.students.table.dailyFar') },
-  { accessorKey: 'guardians', header: t('pages.students.table.guardians') },
   { id: 'actions', header: t('pages.students.table.actions') }
 ])
 
@@ -30,7 +39,7 @@ function statusColor(status: Student['status']): 'success' | 'warning' | 'info' 
 }
 
 function rowMenuItems(student: Student): DropdownMenuItem[][] {
-  return [[
+  const primary: DropdownMenuItem[] = [
     {
       label: t('pages.students.actions.logAchievement'),
       icon: 'i-lucide-book-open',
@@ -51,7 +60,22 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
       icon: 'i-lucide-pencil',
       onSelect: () => openEdit(student)
     }
-  ]]
+  ]
+  const lifecycle: DropdownMenuItem[] = []
+  if (student.status !== 'graduated') {
+    lifecycle.push({
+      label: t('pages.students.actions.graduate'),
+      icon: 'i-lucide-graduation-cap',
+      onSelect: () => requestGraduate(student)
+    })
+  }
+  lifecycle.push({
+    label: t('pages.students.actions.delete'),
+    icon: 'i-lucide-trash-2',
+    color: 'error',
+    onSelect: () => requestDelete(student)
+  })
+  return [primary, lifecycle]
 }
 </script>
 
@@ -134,14 +158,25 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
             <div class="flex flex-col min-w-0">
               <span class="font-semibold text-on-surface truncate">{{ row.original.name }}</span>
               <span class="text-xs text-on-surface-variant truncate">
-                {{ $t('pages.students.card.currentSurah') }}: {{ row.original.currentSurah }}
+                {{ $t('pages.students.card.currentSurah') }}: {{ row.original.currentSurah ?? '—' }}
               </span>
             </div>
           </button>
         </template>
 
-        <template #halaqa-cell="{ row }">
-          <span class="text-on-surface">{{ row.original.halaqa }}</span>
+        <template #halaqat-cell="{ row }">
+          <div v-if="row.original.halaqat.length === 0" class="text-on-surface-variant">
+            —
+          </div>
+          <div v-else class="flex flex-wrap gap-1">
+            <UBadge
+              v-for="(name, i) in row.original.halaqat"
+              :key="i"
+              variant="subtle"
+              color="primary"
+              :label="name"
+            />
+          </div>
         </template>
 
         <template #status-cell="{ row }">
@@ -167,12 +202,6 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
         <template #dailyFarPagesCapacity-cell="{ row }">
           <span class="tabular-nums text-on-surface">
             {{ row.original.dailyFarPagesCapacity }}
-          </span>
-        </template>
-
-        <template #guardians-cell="{ row }">
-          <span class="tabular-nums text-on-surface">
-            {{ row.original.guardians.length }}
           </span>
         </template>
 

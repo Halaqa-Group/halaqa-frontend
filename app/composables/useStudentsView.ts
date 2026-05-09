@@ -9,6 +9,7 @@ type StatusFilter = Student['status'] | null
 const PAGE_SIZE = 12
 
 const filterStatus = ref<StatusFilter>(null)
+const filterHalaqaId = ref<number | null>(null)
 const sortKey = ref<SortKey>('newest')
 const viewMode = ref<ViewMode>('grid')
 const visibleCount = ref(PAGE_SIZE)
@@ -16,7 +17,7 @@ const visibleCount = ref(PAGE_SIZE)
 let watchScope: EffectScope | null = null
 
 export function useStudentsView() {
-  const { students, searchQuery } = useStudents()
+  const { students, searchQuery, studentsStats } = useStudents()
 
   const searchFiltered = computed(() =>
     students.value.filter(student =>
@@ -52,15 +53,25 @@ export function useStudentsView() {
     graduated: searchFiltered.value.filter(s => s.status === 'graduated').length
   }))
 
+  // Stats reflect the entire school (or selected halaqa), independent of paging.
+  // While the stats request is in-flight or has failed, fall back to client-side
+  // counts of the currently-loaded page so the cards aren't blank.
   const summary = computed(() => {
-    const total = students.value.length
-    const active = students.value.filter(s => s.status === 'active').length
-    const inactive = students.value.filter(s => s.status === 'inactive').length
-    const graduated = students.value.filter(s => s.status === 'graduated').length
-    const avgHifzCapacity = total
-      ? Math.round(students.value.reduce((sum, s) => sum + s.dailyHifzPagesCapacity, 0) / total)
-      : 0
-    return { total, active, inactive, graduated, avgHifzCapacity }
+    const stats = studentsStats.value
+    if (stats) {
+      return {
+        total: stats.total,
+        active: stats.active,
+        inactive: stats.inactive,
+        graduated: stats.graduated
+      }
+    }
+    return {
+      total: students.value.length,
+      active: students.value.filter(s => s.status === 'active').length,
+      inactive: students.value.filter(s => s.status === 'inactive').length,
+      graduated: students.value.filter(s => s.status === 'graduated').length
+    }
   })
 
   const loadProgress = computed(() =>
@@ -89,6 +100,7 @@ export function useStudentsView() {
 
   return {
     filterStatus,
+    filterHalaqaId,
     sortKey,
     viewMode,
     visibleCount,

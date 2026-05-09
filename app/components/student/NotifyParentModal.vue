@@ -1,21 +1,16 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '#ui/types'
+import type { Student } from '~/types'
+
+const props = defineProps<{ student: Student }>()
+const emit = defineEmits<{ close: [] }>()
 
 const { t } = useI18n()
 const toast = useToast()
-const {
-  isNotifyParentOpen,
-  isNotifySubmitting,
-  notifyingStudent,
-  closeNotifyParent,
-  submitParentNote
-} = useStudents()
+const { submitParentNote } = useStudents()
 
+const submitting = ref(false)
 const state = reactive({ message: '' })
-
-watch(isNotifyParentOpen, (open) => {
-  if (open) state.message = ''
-})
 
 function validate(s: { message: string }) {
   const errors: Array<{ name: 'message', message: string }> = []
@@ -26,24 +21,26 @@ function validate(s: { message: string }) {
 }
 
 async function onSubmit(_event: FormSubmitEvent<{ message: string }>) {
-  const note = await submitParentNote(state.message)
-  if (note) {
-    toast.add({
-      title: t('pages.students.notifyParent.successToast'),
-      icon: 'i-lucide-bell',
-      color: 'primary'
-    })
-    closeNotifyParent()
+  if (submitting.value) return
+  submitting.value = true
+  try {
+    const note = await submitParentNote(props.student.id, state.message)
+    if (note) {
+      toast.add({
+        title: t('pages.students.notifyParent.successToast'),
+        icon: 'i-lucide-bell',
+        color: 'primary'
+      })
+      emit('close')
+    }
+  } finally {
+    submitting.value = false
   }
 }
 </script>
 
 <template>
-  <UModal
-    v-model:open="isNotifyParentOpen"
-    :ui="{ content: 'sm:max-w-lg rounded-2xl' }"
-    @close="closeNotifyParent"
-  >
+  <UModal :ui="{ content: 'sm:max-w-lg rounded-2xl' }">
     <template #content>
       <div class="flex flex-col">
         <div class="flex justify-between items-start gap-4 px-6 py-5 border-b border-default">
@@ -55,8 +52,8 @@ async function onSubmit(_event: FormSubmitEvent<{ message: string }>) {
               <h3 class="text-lg font-bold text-on-surface">
                 {{ $t('pages.students.notifyParent.title') }}
               </h3>
-              <p v-if="notifyingStudent" class="text-sm text-on-surface-variant mt-0.5">
-                {{ $t('pages.students.notifyParent.subtitle', { name: notifyingStudent.name }) }}
+              <p class="text-sm text-on-surface-variant mt-0.5">
+                {{ $t('pages.students.notifyParent.subtitle', { name: student.name }) }}
               </p>
             </div>
           </div>
@@ -67,7 +64,7 @@ async function onSubmit(_event: FormSubmitEvent<{ message: string }>) {
             size="sm"
             square
             :ui="{ base: 'rounded-full' }"
-            @click="closeNotifyParent"
+            @click="emit('close')"
           />
         </div>
 
@@ -98,8 +95,8 @@ async function onSubmit(_event: FormSubmitEvent<{ message: string }>) {
               variant="ghost"
               size="lg"
               class="rounded-full px-6"
-              :disabled="isNotifySubmitting"
-              @click="closeNotifyParent"
+              :disabled="submitting"
+              @click="emit('close')"
             >
               {{ $t('pages.students.notifyParent.cancel') }}
             </UButton>
@@ -108,8 +105,8 @@ async function onSubmit(_event: FormSubmitEvent<{ message: string }>) {
               icon="i-lucide-send"
               size="lg"
               class="rounded-full px-6 font-bold"
-              :loading="isNotifySubmitting"
-              :disabled="isNotifySubmitting"
+              :loading="submitting"
+              :disabled="submitting"
             >
               {{ $t('pages.students.notifyParent.submit') }}
             </UButton>

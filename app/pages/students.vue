@@ -1,21 +1,23 @@
 <script setup lang="ts">
 const { students, isLoading, fetchStudents } = useStudents()
-const { sortedStudents } = useStudentsView()
-const { selectedHalaqaId } = useGlobalHalaqa()
+const { sortedStudents, filterHalaqaId } = useStudentsView()
 
 const showSummary = computed(() => !isLoading.value && students.value.length > 0)
 const showProgress = computed(() =>
   !isLoading.value && students.value.length > 0 && sortedStudents.value.length > 0
 )
 
-watch(selectedHalaqaId, (newId) => {
-  if (newId) fetchStudents(newId)
-  else fetchStudents()
+function loadAll(halaqaId?: number) {
+  fetchStudents(halaqaId)
+  // fetchStudentsStats(halaqaId) — backend endpoint not ready
+}
+
+watch(filterHalaqaId, (newId) => {
+  loadAll(newId ?? undefined)
 })
 
 onMounted(() => {
-  if (selectedHalaqaId.value) fetchStudents(selectedHalaqaId.value)
-  else fetchStudents()
+  loadAll(filterHalaqaId.value ?? undefined)
 })
 </script>
 
@@ -26,10 +28,5 @@ onMounted(() => {
     <StudentFilterBar />
     <StudentResults />
     <StudentProgressFooter v-if="showProgress" />
-
-    <StudentViewModal />
-    <StudentAddModal />
-    <StudentEditModal />
-    <StudentNotifyParentModal />
   </div>
 </template>

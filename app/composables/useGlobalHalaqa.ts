@@ -1,8 +1,8 @@
 import { ref, computed } from 'vue'
-import type { ApiHalaqa } from '~/types'
+import type { ApiHalaqaListItem } from '~/types'
 
 // Global state for selected halaqa (persists across all pages)
-const selectedHalaqa = ref<ApiHalaqa | null>(null)
+const selectedHalaqa = ref<ApiHalaqaListItem | null>(null)
 const viewAllHalaqat = ref(false)
 const isModalOpen = ref(false)
 
@@ -11,7 +11,7 @@ export function useGlobalHalaqa() {
 
   /** Loads halaqat and keeps the selected halaqa in sync with the list (after CRUD or refresh). */
   async function initializeHalaqa() {
-    await fetchHalaqat()
+    await fetchHalaqat({ status: 'active', limit: 100 })
     const list = halaqat.value
     if (list.length === 0) {
       selectedHalaqa.value = null
@@ -29,7 +29,7 @@ export function useGlobalHalaqa() {
     selectedHalaqa.value = list[0]!
   }
 
-  function selectHalaqa(halaqa: ApiHalaqa) {
+  function selectHalaqa(halaqa: ApiHalaqaListItem) {
     selectedHalaqa.value = halaqa
     viewAllHalaqat.value = false
     closeModal()

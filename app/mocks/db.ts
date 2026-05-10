@@ -1,7 +1,6 @@
 import type {
   ApiAchievement,
   ApiAttendance,
-  ApiHalaqa,
   ApiParent,
   ApiSchool,
   ApiStudent,
@@ -38,7 +37,6 @@ export interface MockDB {
   schools: ApiSchool[]
   users: MockUser[]
   parents: ApiParent[]
-  halaqat: ApiHalaqa[]
   students: ApiStudent[]
   enrollments: Enrollment[]
   attendance: ApiAttendance[]
@@ -87,32 +85,7 @@ function buildSeed(): MockDB {
     photo_url: null
   }))
 
-  const halaqat: ApiHalaqa[] = [
-    {
-      id: 1,
-      name: 'حلقة الفجر',
-      type: 'Memorization',
-      school_id: 1,
-      teacher_id: 1,
-      schedules: [0, 1, 2, 3, 4].map((d, i) => ({ id: 100 + i, day_of_week: d }))
-    },
-    {
-      id: 2,
-      name: 'حلقة العصر',
-      type: 'Memorization',
-      school_id: 1,
-      teacher_id: 1,
-      schedules: [1, 3, 5].map((d, i) => ({ id: 200 + i, day_of_week: d }))
-    },
-    {
-      id: 3,
-      name: 'حلقة المغرب',
-      type: 'Tajweed',
-      school_id: 1,
-      teacher_id: 1,
-      schedules: [2, 4].map((d, i) => ({ id: 300 + i, day_of_week: d }))
-    }
-  ]
+  // Halaqat are owned by the real backend — see /halaqat endpoints.
 
   const enrollments: Enrollment[] = []
   for (let id = 1; id <= 4; id++) enrollments.push({ studentId: id, halaqaId: 1 })
@@ -249,7 +222,6 @@ function buildSeed(): MockDB {
         status: 'inactive'
       }
     ],
-    halaqat,
     students,
     enrollments,
     attendance,

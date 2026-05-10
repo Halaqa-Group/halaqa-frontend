@@ -1,80 +1,133 @@
-import type { ApiHalaqa, ApiTeacher, ApiTeacherOption } from '~/types'
+import type {
+  ApiHalaqaCreated,
+  ApiHalaqaDetail,
+  ApiHalaqaListItem,
+  ApiHalaqaListResult,
+  ApiTeacherOption,
+  ApiTeacher,
+  HalaqaStatus,
+  HalaqaType,
+  PrayerSlot
+} from '~/types'
 
-const halaqat = ref<ApiHalaqa[]>([])
-const isLoading = ref(false)
-
-export interface SaveHalaqaPayload {
-  name: string
-  type: ApiHalaqa['type']
-  teacher_id: number
-  days: number[]
+export interface ListHalaqatQuery {
+  page?: number
+  limit?: number
+  type?: HalaqaType
+  status?: HalaqaStatus
+  supervisor_user_id?: number
+  teacher_user_id?: number
+  search?: string
 }
+
+export interface ScheduleEntryPayload {
+  day_of_week: number
+  prayer_slot?: PrayerSlot | null
+  start_time?: string | null
+  end_time?: string | null
+}
+
+export interface CreateHalaqaPayload {
+  name: string
+  type: HalaqaType
+  evaluation_settings?: Record<string, unknown> | null
+  primary_teacher_user_id?: number
+  schedule?: ScheduleEntryPayload[]
+}
+
+export interface UpdateHalaqaPayload {
+  name?: string
+  type?: HalaqaType
+  evaluation_settings?: Record<string, unknown> | null
+}
+
+const halaqat = ref<ApiHalaqaListItem[]>([])
+const total = ref(0)
+const page = ref(1)
+const limit = ref(20)
+const isLoading = ref(false)
 
 export function useHalaqat() {
   const api = useApi()
-  const { user } = useAuth()
 
   interface UsersListResponse<T> {
     items: T[]
   }
 
-  async function fetchHalaqat() {
+  function buildQuery(query: ListHalaqatQuery) {
+    const params = new URLSearchParams()
+    if (query.page) params.set('page', String(query.page))
+    if (query.limit) params.set('limit', String(query.limit))
+    if (query.type) params.set('type', query.type)
+    if (query.status) params.set('status', query.status)
+    if (query.supervisor_user_id) params.set('supervisor_user_id', String(query.supervisor_user_id))
+    if (query.teacher_user_id) params.set('teacher_user_id', String(query.teacher_user_id))
+    if (query.search) params.set('search', query.search)
+    const qs = params.toString()
+    return qs ? `?${qs}` : ''
+  }
+
+  async function fetchHalaqat(query: ListHalaqatQuery = {}) {
     isLoading.value = true
     try {
-      const params = new URLSearchParams()
-      // Only send teacherId if user is a teacher
-      if (user.value?.roles?.includes('teacher')) {
-        params.set('teacherId', String(user.value.id))
-      }
-      // Backend gets school_id from authenticated user automatically
-      const queryString = params.toString()
-      halaqat.value = await api<ApiHalaqa[]>(`/halaqat${queryString ? `?${queryString}` : ''}`)
+      const result = await api<ApiHalaqaListResult>(`/halaqat${buildQuery(query)}`)
+      halaqat.value = result.items
+      total.value = result.total
+      page.value = result.page
+      limit.value = result.limit
+      return result
     } finally {
       isLoading.value = false
     }
   }
 
+  async function getHalaqa(id: number) {
+    return api<ApiHalaqaDetail>(`/halaqat/${id}`)
+  }
+
+  async function createHalaqa(payload: CreateHalaqaPayload) {
+    return api<ApiHalaqaCreated>('/halaqat', { method: 'POST', body: payload })
+  }
+
+  async function updateHalaqa(id: number, payload: UpdateHalaqaPayload) {
+    return api<ApiHalaqaDetail>(`/halaqat/${id}`, { method: 'PATCH', body: payload })
+  }
+
+  async function archiveHalaqa(id: number) {
+    return api<{ message: string }>(`/halaqat/${id}/archive`, { method: 'POST' })
+  }
+
+  async function completeHalaqa(id: number) {
+    return api<{ message: string }>(`/halaqat/${id}/complete`, { method: 'POST' })
+  }
+
+  async function restoreHalaqa(id: number) {
+    return api<{ message: string }>(`/halaqat/${id}/restore`, { method: 'POST' })
+  }
+
   async function fetchTeachers(): Promise<ApiTeacherOption[]> {
-    const response = await api<UsersListResponse<ApiTeacher>>('/users?role=teacher&limit=100')
-    const list = response.items
-    return list.map(({ id, name, email }) => ({ id, name, email }))
-  }
-
-  async function createHalaqa(payload: SaveHalaqaPayload) {
-    return api<ApiHalaqa>('/halaqat', {
-      method: 'POST',
-      body: {
-        name: payload.name,
-        type: payload.type,
-        teacher_id: payload.teacher_id,
-        days: payload.days
-      }
-    })
-  }
-
-  async function updateHalaqa(id: number, payload: SaveHalaqaPayload) {
-    return api<ApiHalaqa>(`/halaqat/${id}`, {
-      method: 'PATCH',
-      body: {
-        name: payload.name,
-        type: payload.type,
-        teacher_id: payload.teacher_id,
-        days: payload.days
-      }
-    })
-  }
-
-  async function deleteHalaqa(id: number) {
-    await api(`/halaqat/${id}`, { method: 'DELETE' })
+    // Only active users with the `teacher` role slug — same school is implicit
+    // from the bearer token. Backend caps page size at 100; pull in batches if
+    // a school ever exceeds that.
+    const response = await api<UsersListResponse<ApiTeacher>>(
+      '/users?role=teacher&status=active&limit=100'
+    )
+    return response.items.map(({ id, name, email }) => ({ id, name, email }))
   }
 
   return {
     halaqat,
+    total,
+    page,
+    limit,
     isLoading,
     fetchHalaqat,
-    fetchTeachers,
+    getHalaqa,
     createHalaqa,
     updateHalaqa,
-    deleteHalaqa
+    archiveHalaqa,
+    completeHalaqa,
+    restoreHalaqa,
+    fetchTeachers
   }
 }

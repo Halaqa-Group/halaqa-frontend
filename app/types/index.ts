@@ -154,16 +154,165 @@ export interface ApiSchool {
   status: 'active' | 'inactive'
 }
 
-export interface ApiHalaqa {
-  id: number
+// ── Halaqat domain types (mirror halaqa-backend dto/halaqa.responses.ts) ────
+
+export type HalaqaType = 'Memorization' | 'Tajweed' | 'Aqeedah'
+export type HalaqaStatus = 'active' | 'archived' | 'completed'
+export type TeacherRole = 'main' | 'assistant' | 'substitute'
+export type EndReason = 'reassigned' | 'left_school' | 'vacation' | 'retired' | 'other'
+export type PrayerSlot = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'
+export type StudentHalaqaStatus = 'active' | 'transferred' | 'completed' | 'archived'
+
+export type HalaqaActivityAction =
+  | 'halaqa_created' | 'halaqa_updated' | 'halaqa_archived'
+  | 'halaqa_completed' | 'halaqa_restored'
+  | 'teacher_assigned' | 'teacher_unassigned' | 'teacher_role_changed'
+  | 'acting_started' | 'acting_extended' | 'acting_ended'
+  | 'student_enrolled' | 'student_re_enrolled' | 'student_unenrolled'
+  | 'student_transferred_in' | 'student_transferred_out' | 'student_completed'
+  | 'supervisor_assigned' | 'supervisor_unassigned'
+  | 'schedule_updated'
+
+export interface ApiPrimaryTeacher {
+  user_id: number
   name: string
-  type: 'Memorization' | 'Tajweed' | 'Aqeedah'
-  school_id: number
-  teacher_id: number
-  schedules: { id: number, day_of_week: number }[]
-  /** Present on list responses when the API joins teacher info */
-  teacher_name?: string
+  is_acting: boolean
 }
+
+export interface ApiScheduleEntry {
+  id: number
+  day_of_week: number
+  prayer_slot: PrayerSlot | null
+  start_time: string | null
+  end_time: string | null
+}
+
+export interface ApiTeacherAssignment {
+  id: number
+  teacher_user_id: number
+  teacher_name: string
+  role: TeacherRole
+  acting_as_primary: boolean
+  acting_starts_at: string | null
+  acting_ends_at: string | null
+  start_date: string
+  end_date: string | null
+  end_reason: EndReason | null
+}
+
+export interface ApiSupervisorSummary {
+  user_id: number
+  name: string
+  assigned_at: string
+}
+
+export interface ApiHalaqaListItem {
+  id: number
+  school_id: number
+  name: string
+  type: HalaqaType
+  status: HalaqaStatus
+  primary_teacher: ApiPrimaryTeacher | null
+  students_count: number
+  created_at: string
+}
+
+export interface ApiHalaqaListResult {
+  items: ApiHalaqaListItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface ApiHalaqaDetail {
+  id: number
+  school_id: number
+  name: string
+  type: HalaqaType
+  evaluation_settings: Record<string, unknown> | null
+  status: HalaqaStatus
+  schedule: ApiScheduleEntry[]
+  teachers: ApiTeacherAssignment[]
+  supervisors: ApiSupervisorSummary[]
+  students_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ApiHalaqaCreated {
+  id: number
+  school_id: number
+  name: string
+  type: HalaqaType
+  evaluation_settings: Record<string, unknown> | null
+  status: HalaqaStatus
+  created_at: string
+}
+
+export interface ApiStudentEnrollment {
+  student_id: number
+  student_name: string
+  enrollment_date: string
+  status: StudentHalaqaStatus
+}
+
+export interface ApiSetScheduleResult {
+  schedule: ApiScheduleEntry[]
+  warnings: string[]
+}
+
+export interface ApiActivityLogItem {
+  id: string
+  action: HalaqaActivityAction
+  actor_user_id: number | null
+  actor_name: string | null
+  target_user_id: number | null
+  target_user_name: string | null
+  target_student_id: number | null
+  target_student_name: string | null
+  from_halaqa_id: number | null
+  to_halaqa_id: number | null
+  metadata: Record<string, unknown> | null
+  notes: string | null
+  created_at: string
+}
+
+export interface ApiActivityLogResult {
+  items: ApiActivityLogItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface ApiTeacherHalaqaItem {
+  halaqa_id: number
+  halaqa_name: string
+  halaqa_status: HalaqaStatus
+  halaqa_type: HalaqaType
+  role: TeacherRole
+  start_date: string
+}
+
+export interface ApiSupervisorHalaqaItem {
+  halaqa_id: number
+  halaqa_name: string
+  halaqa_status: HalaqaStatus
+  halaqa_type: HalaqaType
+  assigned_at: string
+}
+
+export interface ApiStudentHalaqaItem {
+  halaqa_id: number
+  halaqa_name: string
+  halaqa_status: HalaqaStatus
+  halaqa_type: HalaqaType
+  enrollment_date: string
+  enrollment_status: StudentHalaqaStatus
+}
+
+// Backwards-compatible alias used by existing code paths (selector, etc.).
+// New code should import ApiHalaqaListItem or ApiHalaqaDetail directly.
+export type ApiHalaqa = ApiHalaqaListItem
 
 export interface ApiTeacherOption {
   id: number

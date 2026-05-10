@@ -85,6 +85,12 @@ function clearFilters() {
   filters.search = ''
 }
 
+const hasActiveFilters = computed(() =>
+  filters.type !== null
+  || filters.status !== 'active'
+  || filters.search.trim() !== ''
+)
+
 // ── Form modal (create / edit) ────────────────────────────────────────────
 const formOpen = ref(false)
 const editing = ref<ApiHalaqaListItem | null>(null)
@@ -248,29 +254,32 @@ onMounted(() => loadList(1))
 
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
       <template #header>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
           <UInput
             v-model="filters.search"
             icon="i-lucide-search"
             :placeholder="t('pages.halaqat.filters.searchPlaceholder')"
-            class="w-56"
+            class="w-full sm:w-64"
           />
           <USelect
             v-model="filters.type"
             :items="typeFilterItems"
             value-key="value"
-            class="w-40"
+            class="w-full sm:w-40"
           />
           <USelect
             v-model="filters.status"
             :items="statusFilterItems"
             value-key="value"
-            class="w-40"
+            class="w-full sm:w-40"
           />
           <UButton
-            variant="ghost"
+            v-if="hasActiveFilters"
+            variant="link"
             color="neutral"
             icon="i-lucide-x"
+            size="sm"
+            class="sm:ms-auto px-0"
             @click="clearFilters"
           >
             {{ t('pages.halaqat.filters.clear') }}

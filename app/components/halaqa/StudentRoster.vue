@@ -76,10 +76,9 @@ async function openEnroll() {
   enrollOpen.value = true
 }
 
-const studentSelectItems = computed(() => [
-  { label: t('common.selectStudent'), value: null },
-  ...studentOptions.value.map(s => ({ label: s.name, value: s.id }))
-])
+const studentSelectItems = computed(() =>
+  studentOptions.value.map(s => ({ label: s.name, value: s.id }))
+)
 
 async function submitEnroll(event: FormSubmitEvent<EnrollSchema>) {
   enrollSaving.value = true
@@ -305,6 +304,7 @@ function rowActions(e: ApiStudentEnrollment) {
             v-model="enrollState.student_id"
             :items="studentSelectItems"
             value-key="value"
+            :placeholder="t('common.selectStudent')"
             class="w-full"
           />
         </UFormField>

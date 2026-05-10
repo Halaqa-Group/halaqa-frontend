@@ -19,8 +19,12 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
+
+const dateFormatter = computed(() =>
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' })
+)
 const { activeRole } = useAuth()
 const { getHalaqa, archiveHalaqa, completeHalaqa, restoreHalaqa } = useHalaqat()
 
@@ -140,7 +144,8 @@ const headerActions = computed(() => {
 })
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString()
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
 }
 </script>
 

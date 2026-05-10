@@ -25,6 +25,10 @@ const toast = useToast()
 const dateFormatter = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' })
 )
+
+const backIcon = computed(() =>
+  locale.value === 'ar' ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left'
+)
 const { activeRole } = useAuth()
 const { getHalaqa, archiveHalaqa, completeHalaqa, restoreHalaqa } = useHalaqat()
 
@@ -151,44 +155,47 @@ function formatDate(iso: string) {
 
 <template>
   <div class="flex flex-col gap-6">
-    <UButton
-      to="/halaqat"
-      variant="ghost"
-      color="neutral"
-      icon="i-lucide-arrow-left"
-      class="self-start"
-    >
-      {{ t('pages.halaqat.details.back') }}
-    </UButton>
-
     <div v-if="loading && !halaqa" class="text-sm text-muted">
       {{ t('common.loading') }}
     </div>
 
     <template v-else-if="halaqa">
-      <!-- Header -->
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div class="flex items-start gap-3">
-          <div class="rounded-lg bg-elevated p-3">
-            <UIcon :name="HALAQA_TYPE_ICON[halaqa.type]" class="text-primary size-6" />
-          </div>
-          <div class="space-y-1">
-            <h1 class="text-2xl font-bold">{{ halaqa.name }}</h1>
-            <div class="flex items-center gap-2">
-              <UBadge variant="subtle" color="neutral">
-                {{ t(`pages.halaqat.types.${halaqa.type}`) }}
-              </UBadge>
-              <UBadge variant="subtle" :color="HALAQA_STATUS_COLOR[halaqa.status]">
-                {{ t(`pages.halaqat.status.${halaqa.status}`) }}
-              </UBadge>
+      <!-- Page header -->
+      <div class="flex flex-col gap-2">
+        <UButton
+          to="/halaqat"
+          variant="link"
+          color="neutral"
+          :icon="backIcon"
+          size="sm"
+          class="self-start px-0 h-auto"
+        >
+          {{ t('pages.halaqat.details.back') }}
+        </UButton>
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="rounded-lg bg-primary/10 size-10 flex items-center justify-center shrink-0">
+              <UIcon :name="HALAQA_TYPE_ICON[halaqa.type]" class="text-primary size-5" />
+            </div>
+            <div class="space-y-1.5 min-w-0">
+              <h1 class="text-xl sm:text-2xl font-bold truncate">{{ halaqa.name }}</h1>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <UBadge variant="subtle" color="neutral" size="sm">
+                  {{ t(`pages.halaqat.types.${halaqa.type}`) }}
+                </UBadge>
+                <UBadge variant="subtle" :color="HALAQA_STATUS_COLOR[halaqa.status]" size="sm">
+                  {{ t(`pages.halaqat.status.${halaqa.status}`) }}
+                </UBadge>
+              </div>
             </div>
           </div>
+          <UDropdownMenu v-if="canManage && headerActions[0]?.length" :items="headerActions">
+            <UButton variant="soft" color="neutral" trailing-icon="i-lucide-chevron-down" size="sm" class="shrink-0">
+              {{ t('pages.halaqat.actions') }}
+            </UButton>
+          </UDropdownMenu>
         </div>
-        <UDropdownMenu v-if="canManage && headerActions[0]?.length" :items="headerActions">
-          <UButton variant="soft" color="neutral" trailing-icon="i-lucide-chevron-down">
-            {{ t('pages.halaqat.actions') }}
-          </UButton>
-        </UDropdownMenu>
       </div>
 
       <!-- Tabs -->

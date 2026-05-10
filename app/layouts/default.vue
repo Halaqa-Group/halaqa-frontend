@@ -23,7 +23,12 @@ const links = computed<NavigationMenuItem[][]>(() => {
 
   if (activeRole.value === 'principal') {
     mainLinks.push(
-      { label: t('nav.halaqat'), icon: 'i-lucide-building-2', to: '/halaqat' },
+      {
+        label: t('nav.halaqat'),
+        icon: 'i-lucide-building-2',
+        to: '/halaqat',
+        active: route.path === '/halaqat' || route.path.startsWith('/halaqat/')
+      },
       { label: t('nav.users'), icon: 'i-lucide-users-round', to: '/users' }
     )
   }

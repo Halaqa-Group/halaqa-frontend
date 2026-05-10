@@ -43,7 +43,7 @@ function onCancel() {
     v-model:open="isOpen"
     :ui="{
       content: 'sm:max-w-md shadow-2xl',
-      header: 'px-6 pt-6 pb-4 border-b-0',
+      header: 'px-6 pt-6 pb-4 border-b border-default',
       body: 'px-6 pb-2 pt-0',
       footer: 'border-t-0'
     }">

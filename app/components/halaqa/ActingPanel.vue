@@ -13,8 +13,18 @@ const emit = defineEmits<{
   changed: []
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
+
+const dateFormatter = computed(() =>
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
+)
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return '—'
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+}
 const { substitute, extend, endActing } = useHalaqaActing()
 const { fetchTeachers } = useHalaqat()
 
@@ -188,9 +198,9 @@ async function endNow() {
           </UBadge>
         </div>
         <p class="text-xs text-muted">
-          {{ t('pages.halaqat.acting.actingFrom') }}: {{ acting.acting_starts_at ?? '—' }}
+          {{ t('pages.halaqat.acting.actingFrom') }}: {{ formatDate(acting.acting_starts_at) }}
           <span v-if="acting.acting_ends_at" class="ms-2">
-            · {{ t('pages.halaqat.acting.actingTo') }}: {{ acting.acting_ends_at }}
+            · {{ t('pages.halaqat.acting.actingTo') }}: {{ formatDate(acting.acting_ends_at) }}
           </span>
         </p>
       </div>

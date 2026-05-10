@@ -18,8 +18,18 @@ const emit = defineEmits<{
   changed: []
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
+
+const dateFormatter = computed(() =>
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
+)
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return '—'
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+}
 const {
   listTeachers,
   assignTeacher,
@@ -347,9 +357,9 @@ function roleColor(role: TeacherRole) {
             </UBadge>
           </div>
           <p class="text-xs text-muted">
-            {{ t('pages.halaqat.teachers.startDate') }}: {{ a.start_date }}
+            {{ t('pages.halaqat.teachers.startDate') }}: {{ formatDate(a.start_date) }}
             <span v-if="a.acting_as_primary && a.acting_ends_at" class="ms-2">
-              · {{ t('pages.halaqat.acting.actingTo') }}: {{ a.acting_ends_at }}
+              · {{ t('pages.halaqat.acting.actingTo') }}: {{ formatDate(a.acting_ends_at) }}
             </span>
           </p>
         </div>

@@ -63,6 +63,50 @@ function dayLabel(day: number) {
   const key = HALAQA_DAY_KEYS[day]
   return key ? t(`pages.halaqat.dayLong.${key}`) : ''
 }
+
+// ── Quick fill: set common prayer/time values once, push to all selected days
+const quickFill = reactive<{
+  prayer_slot: PrayerSlot | null
+  start_time: string
+  end_time: string
+}>({
+  prayer_slot: null,
+  start_time: '',
+  end_time: ''
+})
+
+const hasQuickFillValues = computed(() =>
+  quickFill.prayer_slot !== null
+  || quickFill.start_time !== ''
+  || quickFill.end_time !== ''
+)
+
+function applyQuickFill() {
+  if (props.readOnly || !hasQuickFillValues.value) return
+  model.value = model.value.map(r => ({
+    day_of_week: r.day_of_week,
+    prayer_slot: quickFill.prayer_slot,
+    start_time: quickFill.start_time,
+    end_time: quickFill.end_time
+  }))
+}
+
+// ── Quick day-set presets (Arab school week is Sat → Wed)
+const SCHOOL_DAYS = [0, 1, 2, 3, 4] // Sat, Sun, Mon, Tue, Wed
+
+function selectSchoolDays() {
+  if (props.readOnly) return
+  const existing = new Map(model.value.map(r => [r.day_of_week, r]))
+  model.value = SCHOOL_DAYS.map(day =>
+    existing.get(day)
+    ?? { day_of_week: day, prayer_slot: null, start_time: '', end_time: '' }
+  )
+}
+
+function clearAllDays() {
+  if (props.readOnly) return
+  model.value = []
+}
 </script>
 
 <template>
@@ -81,6 +125,71 @@ function dayLabel(day: number) {
       >
         {{ t(`pages.halaqat.dayLong.${HALAQA_DAY_KEYS[d]}`) }}
       </UButton>
+    </div>
+
+    <!-- Quick actions: presets + bulk-fill, only visible when editing -->
+    <div
+      v-if="!readOnly"
+      class="rounded-lg border border-dashed border-default bg-elevated/40 p-3 space-y-3"
+    >
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-1.5 text-xs font-medium text-muted">
+          <UIcon name="i-lucide-zap" class="size-3.5" />
+          {{ t('pages.halaqat.scheduleQuickActions') }}
+        </div>
+        <div class="flex items-center gap-1">
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-calendar-check"
+            @click="selectSchoolDays"
+          >
+            {{ t('pages.halaqat.scheduleSelectSchoolDays') }}
+          </UButton>
+          <UButton
+            v-if="orderedRows.length > 0"
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-eraser"
+            @click="clearAllDays"
+          >
+            {{ t('pages.halaqat.scheduleClearDays') }}
+          </UButton>
+        </div>
+      </div>
+
+      <div
+        v-if="orderedRows.length > 1"
+        class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end"
+      >
+        <USelect
+          v-model="quickFill.prayer_slot"
+          :items="prayerItems"
+          value-key="value"
+          :placeholder="t('pages.halaqat.schedulePrayerSlot')"
+        />
+        <UInput
+          v-model="quickFill.start_time"
+          type="time"
+          :placeholder="t('pages.halaqat.scheduleStartTime')"
+        />
+        <UInput
+          v-model="quickFill.end_time"
+          type="time"
+          :placeholder="t('pages.halaqat.scheduleEndTime')"
+        />
+        <UButton
+          variant="soft"
+          color="primary"
+          icon="i-lucide-wand-sparkles"
+          :disabled="!hasQuickFillValues"
+          @click="applyQuickFill"
+        >
+          {{ t('pages.halaqat.scheduleApplyToAll') }}
+        </UButton>
+      </div>
     </div>
 
     <!-- Per-day cards -->

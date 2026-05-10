@@ -354,6 +354,10 @@
       "scheduleStartTime": "Start",
       "scheduleEndTime": "End",
       "scheduleNoEntries": "No schedule entries",
+      "scheduleApplyToAll": "Apply to all",
+      "scheduleQuickActions": "Quick actions",
+      "scheduleSelectSchoolDays": "School days",
+      "scheduleClearDays": "Clear all",
       "scheduleConflictWarnings": "Conflict warnings",
       "prayer": {
         "fajr": "Fajr",

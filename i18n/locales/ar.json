@@ -354,6 +354,10 @@
       "scheduleStartTime": "البداية",
       "scheduleEndTime": "النهاية",
       "scheduleNoEntries": "لا توجد أوقات محددة",
+      "scheduleApplyToAll": "تطبيق على الكل",
+      "scheduleQuickActions": "إجراءات سريعة",
+      "scheduleSelectSchoolDays": "أيام الدراسة",
+      "scheduleClearDays": "مسح الكل",
       "scheduleConflictWarnings": "تنبيهات التعارض",
       "prayer": {
         "fajr": "الفجر",

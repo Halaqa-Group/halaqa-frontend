@@ -99,10 +99,10 @@ onMounted(async () => {
       collapsible
       resizable
       :ui="{
-        root: 'bg-sidebar-bg border-e border-sidebar-border min-w-18',
-        header: 'border-b border-sidebar-border px-3',
+        root: 'bg-sidebar-bg min-w-18',
+        header: 'px-3',
         body: 'px-3 py-4',
-        footer: 'lg:border-t lg:border-sidebar-border px-3 py-3'
+        footer: 'px-3 py-3'
       }"
     >
       <template #header="{ collapsed }">
@@ -129,6 +129,7 @@ onMounted(async () => {
           orientation="vertical"
           tooltip
           popover
+          class="my-auto"
           :ui="{ link: collapsed ? 'justify-center py-3' : ' py-3' }"
         />
 

@@ -166,6 +166,5 @@ onMounted(async () => {
       </template>
     </UDashboardPanel>
 
-    <HalaqaSwitcherModal />
   </UDashboardGroup>
 </template>

@@ -5,8 +5,7 @@ defineProps<{
   collapsed?: boolean
 }>()
 
-const { selectedHalaqa, viewAllHalaqat, halaqat, selectHalaqa, selectAllHalaqat, openModal } = useGlobalHalaqa()
-const { activeRole } = useAuth()
+const { selectedHalaqa, halaqat, selectHalaqa } = useGlobalHalaqa()
 
 const TYPE_ICONS: Record<string, string> = {
   Memorization: 'i-lucide-book-open',
@@ -14,28 +13,20 @@ const TYPE_ICONS: Record<string, string> = {
   Aqeedah: 'i-lucide-book-text'
 }
 
-const ALL_HALAQAT_ICON = 'i-lucide-layers-3'
-
 function iconFor(type: string | undefined) {
   return (type && TYPE_ICONS[type]) || 'i-lucide-layers'
 }
 
-const canViewAllHalaqat = computed(() => activeRole.value === 'principal')
+const hasMultipleHalaqat = computed(() => halaqat.value.length > 1)
 
-const triggerLabel = computed(() => {
-  if (viewAllHalaqat.value) return 'كل الحلقات'
-  return selectedHalaqa.value?.name ?? 'اختر الحلقة'
-})
-const triggerIcon = computed(() => {
-  if (viewAllHalaqat.value) return ALL_HALAQAT_ICON
-  return iconFor(selectedHalaqa.value?.type)
-})
+const triggerName = computed(() => selectedHalaqa.value?.name ?? 'اختر الحلقة')
+const triggerIcon = computed(() => iconFor(selectedHalaqa.value?.type))
 
 const items = computed<DropdownMenuItem[][]>(() => {
   const halaqaItems: DropdownMenuItem[] = halaqat.value.map(h => ({
     label: h.name,
     icon: iconFor(h.type),
-    checked: !viewAllHalaqat.value && selectedHalaqa.value?.id === h.id,
+    checked: selectedHalaqa.value?.id === h.id,
     type: 'checkbox' as const,
     onSelect: (e: Event) => {
       e.preventDefault()
@@ -43,27 +34,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
     }
   }))
 
-  if (canViewAllHalaqat.value) {
-    halaqaItems.unshift({
-      label: 'كل الحلقات',
-      icon: ALL_HALAQAT_ICON,
-      checked: viewAllHalaqat.value,
-      type: 'checkbox' as const,
-      onSelect: (e: Event) => {
-        e.preventDefault()
-        selectAllHalaqat()
-      }
-    })
-  }
-
-  return [
-    halaqaItems,
-    [{
-      label: 'إدارة الحلقات',
-      icon: 'i-lucide-cog',
-      onSelect: () => openModal()
-    }]
-  ]
+  return [halaqaItems]
 })
 </script>
 
@@ -75,15 +46,22 @@ const items = computed<DropdownMenuItem[][]>(() => {
   >
     <UButton
       :icon="triggerIcon"
-      :label="collapsed ? undefined : triggerLabel"
-      :trailing-icon="collapsed ? undefined : 'i-lucide-chevrons-up-down'"
+      :trailing-icon="(!collapsed && hasMultipleHalaqat) ? 'i-lucide-chevrons-up-down' : undefined"
       color="neutral"
       variant="ghost"
       block
       :square="collapsed"
       class="data-[state=open]:bg-elevated"
-      :class="collapsed && 'aspect-square mx-auto'"
+      :class="[
+        collapsed ? 'aspect-square mx-auto' : 'h-auto py-1.5',
+        !hasMultipleHalaqat && 'pointer-events-none'
+      ]"
       :ui="{ trailingIcon: 'text-dimmed' }"
-    />
+    >
+      <span v-if="!collapsed" class="flex flex-col items-start text-start min-w-0 flex-1 leading-tight">
+        <span class="text-[11px] text-dimmed">حلقة</span>
+        <span class="text-sm font-semibold truncate w-full">{{ triggerName }}</span>
+      </span>
+    </UButton>
   </UDropdownMenu>
 </template>

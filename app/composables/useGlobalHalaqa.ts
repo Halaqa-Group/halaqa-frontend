@@ -4,7 +4,6 @@ import type { ApiHalaqaListItem } from '~/types'
 // Global state for selected halaqa (persists across all pages)
 const selectedHalaqa = ref<ApiHalaqaListItem | null>(null)
 const viewAllHalaqat = ref(false)
-const isModalOpen = ref(false)
 
 export function useGlobalHalaqa() {
   const { halaqat, fetchHalaqat, isLoading } = useHalaqat()
@@ -32,21 +31,11 @@ export function useGlobalHalaqa() {
   function selectHalaqa(halaqa: ApiHalaqaListItem) {
     selectedHalaqa.value = halaqa
     viewAllHalaqat.value = false
-    closeModal()
   }
 
   function selectAllHalaqat() {
     viewAllHalaqat.value = true
     selectedHalaqa.value = null
-    closeModal()
-  }
-
-  function openModal() {
-    isModalOpen.value = true
-  }
-
-  function closeModal() {
-    isModalOpen.value = false
   }
 
   const hasHalaqa = computed(() => selectedHalaqa.value !== null || viewAllHalaqat.value)
@@ -65,13 +54,10 @@ export function useGlobalHalaqa() {
     hasHalaqa,
     halaqat,
     isLoading,
-    isModalOpen,
 
     // Methods
     initializeHalaqa,
     selectHalaqa,
-    selectAllHalaqat,
-    openModal,
-    closeModal
+    selectAllHalaqat
   }
 }

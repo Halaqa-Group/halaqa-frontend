@@ -95,7 +95,9 @@ export default defineAppConfig({
         active: true,
         highlight: false,
         class: {
-          link: 'before:bg-primary/10 font-bold'
+          link: 'before:bg-primary hover:before:bg-primary text-white hover:text-white font-medium',
+          linkLeadingIcon: 'text-white group-hover:text-white',
+          linkLabel: 'text-white'
         }
       }]
     },

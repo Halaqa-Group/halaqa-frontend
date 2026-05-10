@@ -143,11 +143,11 @@
   --color-rank-bronze-bg: #FFF3E0;
 
   /* Sidebar */
-  --color-sidebar-bg: #f4f0f3;
-  --color-sidebar-active-bg: #ffffff;
-  --color-sidebar-hover-bg: #ece7eb;
-  --color-sidebar-border: #e6e0e5;
-  --color-sidebar-icon-bg: #ece7eb;
+  --color-sidebar-bg: #ffffff;
+  --color-sidebar-active-bg: var(--color-primary);
+  --color-sidebar-hover-bg: #f5f5f7;
+  --color-sidebar-border: #ececef;
+  --color-sidebar-icon-bg: #f5f5f7;
 
   --shadow-ambient: 0 4px 20px rgba(128, 76, 125, 0.05);
   --shadow-card: 0 1px 4px rgba(128, 76, 125, 0.08);

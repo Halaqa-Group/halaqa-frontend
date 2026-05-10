@@ -99,7 +99,7 @@ onMounted(async () => {
       collapsible
       resizable
       :ui="{
-        root: 'bg-sidebar-bg border-e-0 min-w-18',
+        root: 'bg-sidebar-bg border-e border-sidebar-border min-w-18',
         header: 'border-b border-sidebar-border px-3',
         body: 'px-3 py-4',
         footer: 'lg:border-t lg:border-sidebar-border px-3 py-3'

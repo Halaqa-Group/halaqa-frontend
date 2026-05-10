@@ -18,7 +18,7 @@ const links = computed<NavigationMenuItem[][]>(() => {
   }
 
   const mainLinks: NavigationMenuItem[] = [
-    { label: t('nav.home'), icon: 'i-lucide-layout-grid', to: '/' }
+    { label: t('nav.home'), icon: 'i-lucide-home', to: '/' }
   ]
 
   if (activeRole.value === 'principal') {

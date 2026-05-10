@@ -607,7 +607,7 @@
       }
     },
     "home": {
-      "greeting": "أهلاً، {name}",
+      "greeting": "السلام عليكم، {name}",
       "greetingFallback": "مرحباً بك",
       "subtitle": "هذه نظرة عامة على نشاط حلقتك اليوم.",
       "quickAccess": "الوصول السريع",

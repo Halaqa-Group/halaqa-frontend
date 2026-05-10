@@ -276,6 +276,10 @@
       "validationName": "الاسم مطلوب",
       "validationTeacher": "يرجى اختيار معلم",
       "validationDays": "اختر يوماً واحداً على الأقل",
+      "validationSupervisor": "يرجى اختيار مشرف",
+      "validationToHalaqa": "يرجى اختيار الحلقة الهدف",
+      "validationReason": "يرجى إدخال سبب النقل",
+      "validationActingRange": "يجب أن يكون تاريخ النهاية في أو بعد تاريخ البداية",
       "types": {
         "Memorization": "حفظ",
         "Tajweed": "تجويد",

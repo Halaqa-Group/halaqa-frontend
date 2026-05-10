@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
 import type {
   ApiTeacherAssignment,
   ApiTeacherOption,
@@ -65,10 +67,27 @@ function toIsoDate(d: Date) {
 }
 
 // ── Assign modal ──────────────────────────────────────────────────────────
+const assignSchema = computed(() => z.object({
+  teacher_user_id: z.number({ error: () => t('pages.halaqat.validationTeacher') })
+    .int()
+    .positive(t('pages.halaqat.validationTeacher')),
+  role: z.enum(['main', 'assistant']),
+  start_date: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required')),
+  notes: z.string().optional()
+}))
+
+type AssignSchema = z.output<typeof assignSchema.value>
+
 const assignOpen = ref(false)
-const assignForm = reactive({
-  teacher_user_id: null as number | null,
-  role: 'main' as 'main' | 'assistant',
+const assignState = reactive<{
+  teacher_user_id: number | null
+  role: 'main' | 'assistant'
+  start_date: string
+  notes: string
+}>({
+  teacher_user_id: null,
+  role: 'main',
   start_date: toIsoDate(new Date()),
   notes: ''
 })
@@ -85,26 +104,22 @@ const roleSelectItems = computed(() => [
 ])
 
 async function openAssign() {
-  assignForm.teacher_user_id = null
-  assignForm.role = 'main'
-  assignForm.start_date = toIsoDate(new Date())
-  assignForm.notes = ''
+  assignState.teacher_user_id = null
+  assignState.role = 'main'
+  assignState.start_date = toIsoDate(new Date())
+  assignState.notes = ''
   assignOpen.value = true
   await loadTeacherOptions()
 }
 
-async function submitAssign() {
-  if (!assignForm.teacher_user_id) {
-    toast.add({ title: t('pages.halaqat.validationTeacher'), color: 'error' })
-    return
-  }
+async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
   assignSaving.value = true
   try {
     await assignTeacher(props.halaqaId, {
-      teacher_user_id: assignForm.teacher_user_id,
-      role: assignForm.role,
-      start_date: assignForm.start_date,
-      notes: assignForm.notes || undefined
+      teacher_user_id: event.data.teacher_user_id,
+      role: event.data.role,
+      start_date: event.data.start_date,
+      notes: event.data.notes || undefined
     })
     toast.add({ title: t('pages.halaqat.teachers.toastAssigned'), color: 'success' })
     assignOpen.value = false
@@ -119,16 +134,30 @@ async function submitAssign() {
 }
 
 // ── End assignment modal ──────────────────────────────────────────────────
+const END_REASONS: EndReason[] = ['reassigned', 'left_school', 'vacation', 'retired', 'other']
+
+const endSchema = computed(() => z.object({
+  end_date: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required')),
+  end_reason: z.enum(END_REASONS as unknown as [EndReason, ...EndReason[]]),
+  notes: z.string().optional()
+}))
+
+type EndSchema = z.output<typeof endSchema.value>
+
 const endOpen = ref(false)
 const endTarget = ref<ApiTeacherAssignment | null>(null)
-const endForm = reactive({
+const endState = reactive<{
+  end_date: string
+  end_reason: EndReason
+  notes: string
+}>({
   end_date: toIsoDate(new Date()),
-  end_reason: 'other' as EndReason,
+  end_reason: 'other',
   notes: ''
 })
 const endSaving = ref(false)
 
-const END_REASONS: EndReason[] = ['reassigned', 'left_school', 'vacation', 'retired', 'other']
 const endReasonItems = computed(() =>
   END_REASONS.map(value => ({
     label: t(`pages.halaqat.teachers.endReason.${value}`),
@@ -138,20 +167,20 @@ const endReasonItems = computed(() =>
 
 function openEnd(assignment: ApiTeacherAssignment) {
   endTarget.value = assignment
-  endForm.end_date = toIsoDate(new Date())
-  endForm.end_reason = 'other'
-  endForm.notes = ''
+  endState.end_date = toIsoDate(new Date())
+  endState.end_reason = 'other'
+  endState.notes = ''
   endOpen.value = true
 }
 
-async function submitEnd() {
+async function submitEnd(event: FormSubmitEvent<EndSchema>) {
   if (!endTarget.value) return
   endSaving.value = true
   try {
     await endAssignment(props.halaqaId, endTarget.value.id, {
-      end_date: endForm.end_date,
-      end_reason: endForm.end_reason,
-      notes: endForm.notes || undefined
+      end_date: event.data.end_date,
+      end_reason: event.data.end_reason,
+      notes: event.data.notes || undefined
     })
     toast.add({ title: t('pages.halaqat.teachers.toastEnded'), color: 'success' })
     endOpen.value = false
@@ -167,9 +196,26 @@ async function submitEnd() {
 }
 
 // ── Set acting modal (Workflow A) ─────────────────────────────────────────
+const actingSchema = computed(() => z.object({
+  acting_starts_at: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required')),
+  acting_ends_at: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required')),
+  notes: z.string().optional()
+}).refine(d => d.acting_ends_at >= d.acting_starts_at, {
+  message: t('pages.halaqat.validationActingRange'),
+  path: ['acting_ends_at']
+}))
+
+type ActingSchema = z.output<typeof actingSchema.value>
+
 const actingOpen = ref(false)
 const actingTarget = ref<ApiTeacherAssignment | null>(null)
-const actingForm = reactive({
+const actingState = reactive<{
+  acting_starts_at: string
+  acting_ends_at: string
+  notes: string
+}>({
   acting_starts_at: toIsoDate(new Date()),
   acting_ends_at: '',
   notes: ''
@@ -178,22 +224,22 @@ const actingSaving = ref(false)
 
 function openSetActing(assignment: ApiTeacherAssignment) {
   actingTarget.value = assignment
-  actingForm.acting_starts_at = toIsoDate(new Date())
+  actingState.acting_starts_at = toIsoDate(new Date())
   const endDate = new Date()
   endDate.setDate(endDate.getDate() + 7)
-  actingForm.acting_ends_at = toIsoDate(endDate)
-  actingForm.notes = ''
+  actingState.acting_ends_at = toIsoDate(endDate)
+  actingState.notes = ''
   actingOpen.value = true
 }
 
-async function submitActing() {
+async function submitActing(event: FormSubmitEvent<ActingSchema>) {
   if (!actingTarget.value) return
   actingSaving.value = true
   try {
     await setActing(props.halaqaId, actingTarget.value.id, {
-      acting_starts_at: actingForm.acting_starts_at,
-      acting_ends_at: actingForm.acting_ends_at,
-      notes: actingForm.notes || undefined
+      acting_starts_at: event.data.acting_starts_at,
+      acting_ends_at: event.data.acting_ends_at,
+      notes: event.data.notes || undefined
     })
     toast.add({ title: t('pages.halaqat.teachers.toastActingSet'), color: 'success' })
     actingOpen.value = false
@@ -328,14 +374,21 @@ function roleColor(role: TeacherRole) {
   >
     <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <div class="space-y-4">
+      <UForm
+        id="teacher-assign-form"
+        :schema="assignSchema"
+        :state="assignState"
+        class="space-y-4"
+        @submit="submitAssign"
+      >
         <UFormField
           :label="t('pages.halaqat.teachers.fieldTeacher')"
+          name="teacher_user_id"
           required
           :error="teachersError ?? undefined"
         >
           <USelect
-            v-model="assignForm.teacher_user_id"
+            v-model="assignState.teacher_user_id"
             :items="teacherSelectItems"
             value-key="value"
             :loading="teachersLoading"
@@ -354,28 +407,28 @@ function roleColor(role: TeacherRole) {
             </UButton>
           </template>
         </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldRole')" required>
+        <UFormField :label="t('pages.halaqat.teachers.fieldRole')" name="role" required>
           <USelect
-            v-model="assignForm.role"
+            v-model="assignState.role"
             :items="roleSelectItems"
             value-key="value"
             class="w-full"
           />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldStartDate')" required>
-          <UInput v-model="assignForm.start_date" type="date" class="w-full" />
+        <UFormField :label="t('pages.halaqat.teachers.fieldStartDate')" name="start_date" required>
+          <UInput v-model="assignState.start_date" type="date" class="w-full" />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')">
-          <UTextarea v-model="assignForm.notes" class="w-full" />
+        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
+          <UTextarea v-model="assignState.notes" class="w-full" />
         </UFormField>
-      </div>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="assignSaving" @click="assignOpen = false">
           {{ t('pages.halaqat.cancel') }}
         </UButton>
-        <UButton :loading="assignSaving" @click="submitAssign">
+        <UButton type="submit" form="teacher-assign-form" :loading="assignSaving">
           {{ t('pages.halaqat.save') }}
         </UButton>
       </div>
@@ -390,29 +443,35 @@ function roleColor(role: TeacherRole) {
   >
     <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <div class="space-y-4">
-        <UFormField :label="t('pages.halaqat.teachers.fieldEndDate')" required>
-          <UInput v-model="endForm.end_date" type="date" class="w-full" />
+      <UForm
+        id="teacher-end-form"
+        :schema="endSchema"
+        :state="endState"
+        class="space-y-4"
+        @submit="submitEnd"
+      >
+        <UFormField :label="t('pages.halaqat.teachers.fieldEndDate')" name="end_date" required>
+          <UInput v-model="endState.end_date" type="date" class="w-full" />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldEndReason')" required>
+        <UFormField :label="t('pages.halaqat.teachers.fieldEndReason')" name="end_reason" required>
           <USelect
-            v-model="endForm.end_reason"
+            v-model="endState.end_reason"
             :items="endReasonItems"
             value-key="value"
             class="w-full"
           />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')">
-          <UTextarea v-model="endForm.notes" class="w-full" />
+        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
+          <UTextarea v-model="endState.notes" class="w-full" />
         </UFormField>
-      </div>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="endSaving" @click="endOpen = false">
           {{ t('pages.halaqat.cancel') }}
         </UButton>
-        <UButton color="error" :loading="endSaving" @click="submitEnd">
+        <UButton type="submit" form="teacher-end-form" color="error" :loading="endSaving">
           {{ t('pages.halaqat.teachers.endAssignment') }}
         </UButton>
       </div>
@@ -427,24 +486,30 @@ function roleColor(role: TeacherRole) {
   >
     <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <div class="space-y-4">
-        <UFormField :label="t('pages.halaqat.acting.fieldStartsAt')" required>
-          <UInput v-model="actingForm.acting_starts_at" type="date" class="w-full" />
+      <UForm
+        id="teacher-acting-form"
+        :schema="actingSchema"
+        :state="actingState"
+        class="space-y-4"
+        @submit="submitActing"
+      >
+        <UFormField :label="t('pages.halaqat.acting.fieldStartsAt')" name="acting_starts_at" required>
+          <UInput v-model="actingState.acting_starts_at" type="date" class="w-full" />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" required>
-          <UInput v-model="actingForm.acting_ends_at" type="date" class="w-full" />
+        <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" name="acting_ends_at" required>
+          <UInput v-model="actingState.acting_ends_at" type="date" class="w-full" />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')">
-          <UTextarea v-model="actingForm.notes" class="w-full" />
+        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
+          <UTextarea v-model="actingState.notes" class="w-full" />
         </UFormField>
-      </div>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="actingSaving" @click="actingOpen = false">
           {{ t('pages.halaqat.cancel') }}
         </UButton>
-        <UButton :loading="actingSaving" @click="submitActing">
+        <UButton type="submit" form="teacher-acting-form" :loading="actingSaving">
           {{ t('pages.halaqat.save') }}
         </UButton>
       </div>

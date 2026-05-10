@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
 import type { ApiStudent, ApiStudentEnrollment } from '~/types'
 
 const props = defineProps<{
@@ -47,17 +49,30 @@ function toIsoDate(d: Date) {
 }
 
 // ── Enroll modal ──────────────────────────────────────────────────────────
+const enrollSchema = computed(() => z.object({
+  student_id: z.number({ error: () => t('common.selectStudent') })
+    .int()
+    .positive(t('common.selectStudent')),
+  enrollment_date: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required'))
+}))
+
+type EnrollSchema = z.output<typeof enrollSchema.value>
+
 const enrollOpen = ref(false)
-const enrollForm = reactive({
-  student_id: null as number | null,
+const enrollState = reactive<{
+  student_id: number | null
+  enrollment_date: string
+}>({
+  student_id: null,
   enrollment_date: toIsoDate(new Date())
 })
 const enrollSaving = ref(false)
 
 async function openEnroll() {
   await loadStudentOptions()
-  enrollForm.student_id = null
-  enrollForm.enrollment_date = toIsoDate(new Date())
+  enrollState.student_id = null
+  enrollState.enrollment_date = toIsoDate(new Date())
   enrollOpen.value = true
 }
 
@@ -66,16 +81,12 @@ const studentSelectItems = computed(() => [
   ...studentOptions.value.map(s => ({ label: s.name, value: s.id }))
 ])
 
-async function submitEnroll() {
-  if (!enrollForm.student_id) {
-    toast.add({ title: t('common.selectStudent'), color: 'error' })
-    return
-  }
+async function submitEnroll(event: FormSubmitEvent<EnrollSchema>) {
   enrollSaving.value = true
   try {
     await enrollStudent(props.halaqaId, {
-      student_id: enrollForm.student_id,
-      enrollment_date: enrollForm.enrollment_date
+      student_id: event.data.student_id,
+      enrollment_date: event.data.enrollment_date
     })
     toast.add({ title: t('pages.halaqat.students.toastEnrolled'), color: 'success' })
     enrollOpen.value = false
@@ -90,10 +101,20 @@ async function submitEnroll() {
 }
 
 // ── Remove modal ──────────────────────────────────────────────────────────
+const removeSchema = computed(() => z.object({
+  outcome: z.enum(['completed', 'unenrolled']),
+  notes: z.string().optional()
+}))
+
+type RemoveSchema = z.output<typeof removeSchema.value>
+
 const removeOpen = ref(false)
 const removeTarget = ref<ApiStudentEnrollment | null>(null)
-const removeForm = reactive({
-  outcome: 'completed' as 'completed' | 'unenrolled',
+const removeState = reactive<{
+  outcome: 'completed' | 'unenrolled'
+  notes: string
+}>({
+  outcome: 'completed',
   notes: ''
 })
 const removeSaving = ref(false)
@@ -105,18 +126,18 @@ const outcomeItems = computed(() => [
 
 function openRemove(e: ApiStudentEnrollment) {
   removeTarget.value = e
-  removeForm.outcome = 'completed'
-  removeForm.notes = ''
+  removeState.outcome = 'completed'
+  removeState.notes = ''
   removeOpen.value = true
 }
 
-async function submitRemove() {
+async function submitRemove(event: FormSubmitEvent<RemoveSchema>) {
   if (!removeTarget.value) return
   removeSaving.value = true
   try {
     await removeStudent(props.halaqaId, removeTarget.value.student_id, {
-      outcome: removeForm.outcome,
-      notes: removeForm.notes || undefined
+      outcome: event.data.outcome,
+      notes: event.data.notes || undefined
     })
     toast.add({ title: t('pages.halaqat.students.toastRemoved'), color: 'success' })
     removeOpen.value = false
@@ -132,10 +153,27 @@ async function submitRemove() {
 }
 
 // ── Transfer modal ────────────────────────────────────────────────────────
+const transferSchema = computed(() => z.object({
+  to_halaqa_id: z.number({ error: () => t('pages.halaqat.validationToHalaqa') })
+    .int()
+    .positive(t('pages.halaqat.validationToHalaqa')),
+  reason: z.string({ error: () => t('pages.halaqat.validationReason') })
+    .trim()
+    .min(1, t('pages.halaqat.validationReason')),
+  transfer_date: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required'))
+}))
+
+type TransferSchema = z.output<typeof transferSchema.value>
+
 const transferOpen = ref(false)
 const transferTarget = ref<ApiStudentEnrollment | null>(null)
-const transferForm = reactive({
-  to_halaqa_id: null as number | null,
+const transferState = reactive<{
+  to_halaqa_id: number | null
+  reason: string
+  transfer_date: string
+}>({
+  to_halaqa_id: null,
   reason: '',
   transfer_date: toIsoDate(new Date())
 })
@@ -150,25 +188,22 @@ const transferTargetItems = computed(() => [
 
 function openTransfer(e: ApiStudentEnrollment) {
   transferTarget.value = e
-  transferForm.to_halaqa_id = null
-  transferForm.reason = ''
-  transferForm.transfer_date = toIsoDate(new Date())
+  transferState.to_halaqa_id = null
+  transferState.reason = ''
+  transferState.transfer_date = toIsoDate(new Date())
   transferOpen.value = true
 }
 
-async function submitTransfer() {
-  if (!transferTarget.value || !transferForm.to_halaqa_id || !transferForm.reason.trim()) {
-    toast.add({ title: t('pages.halaqat.toastError'), color: 'error' })
-    return
-  }
+async function submitTransfer(event: FormSubmitEvent<TransferSchema>) {
+  if (!transferTarget.value) return
   transferSaving.value = true
   try {
     await transferStudent({
       student_id: transferTarget.value.student_id,
       from_halaqa_id: props.halaqaId,
-      to_halaqa_id: transferForm.to_halaqa_id,
-      reason: transferForm.reason.trim(),
-      transfer_date: transferForm.transfer_date
+      to_halaqa_id: event.data.to_halaqa_id,
+      reason: event.data.reason,
+      transfer_date: event.data.transfer_date
     })
     toast.add({ title: t('pages.halaqat.students.toastTransferred'), color: 'success' })
     transferOpen.value = false
@@ -258,26 +293,32 @@ function rowActions(e: ApiStudentEnrollment) {
   >
     <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <div class="space-y-4">
-        <UFormField :label="t('pages.halaqat.students.fieldStudent')" required>
+      <UForm
+        id="student-enroll-form"
+        :schema="enrollSchema"
+        :state="enrollState"
+        class="space-y-4"
+        @submit="submitEnroll"
+      >
+        <UFormField :label="t('pages.halaqat.students.fieldStudent')" name="student_id" required>
           <USelect
-            v-model="enrollForm.student_id"
+            v-model="enrollState.student_id"
             :items="studentSelectItems"
             value-key="value"
             class="w-full"
           />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.students.fieldEnrollmentDate')">
-          <UInput v-model="enrollForm.enrollment_date" type="date" class="w-full" />
+        <UFormField :label="t('pages.halaqat.students.fieldEnrollmentDate')" name="enrollment_date">
+          <UInput v-model="enrollState.enrollment_date" type="date" class="w-full" />
         </UFormField>
-      </div>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="enrollSaving" @click="enrollOpen = false">
           {{ t('pages.halaqat.cancel') }}
         </UButton>
-        <UButton :loading="enrollSaving" @click="submitEnroll">
+        <UButton type="submit" form="student-enroll-form" :loading="enrollSaving">
           {{ t('pages.halaqat.save') }}
         </UButton>
       </div>
@@ -292,26 +333,32 @@ function rowActions(e: ApiStudentEnrollment) {
   >
     <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <div class="space-y-4">
-        <UFormField :label="t('pages.halaqat.students.fieldOutcome')" required>
+      <UForm
+        id="student-remove-form"
+        :schema="removeSchema"
+        :state="removeState"
+        class="space-y-4"
+        @submit="submitRemove"
+      >
+        <UFormField :label="t('pages.halaqat.students.fieldOutcome')" name="outcome" required>
           <USelect
-            v-model="removeForm.outcome"
+            v-model="removeState.outcome"
             :items="outcomeItems"
             value-key="value"
             class="w-full"
           />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.students.fieldNotes')">
-          <UTextarea v-model="removeForm.notes" class="w-full" />
+        <UFormField :label="t('pages.halaqat.students.fieldNotes')" name="notes">
+          <UTextarea v-model="removeState.notes" class="w-full" />
         </UFormField>
-      </div>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="removeSaving" @click="removeOpen = false">
           {{ t('pages.halaqat.cancel') }}
         </UButton>
-        <UButton color="error" :loading="removeSaving" @click="submitRemove">
+        <UButton type="submit" form="student-remove-form" color="error" :loading="removeSaving">
           {{ t('pages.halaqat.students.remove') }}
         </UButton>
       </div>
@@ -326,29 +373,35 @@ function rowActions(e: ApiStudentEnrollment) {
   >
     <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <div class="space-y-4">
-        <UFormField :label="t('pages.halaqat.students.fieldToHalaqa')" required>
+      <UForm
+        id="student-transfer-form"
+        :schema="transferSchema"
+        :state="transferState"
+        class="space-y-4"
+        @submit="submitTransfer"
+      >
+        <UFormField :label="t('pages.halaqat.students.fieldToHalaqa')" name="to_halaqa_id" required>
           <USelect
-            v-model="transferForm.to_halaqa_id"
+            v-model="transferState.to_halaqa_id"
             :items="transferTargetItems"
             value-key="value"
             class="w-full"
           />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.students.fieldTransferDate')">
-          <UInput v-model="transferForm.transfer_date" type="date" class="w-full" />
+        <UFormField :label="t('pages.halaqat.students.fieldTransferDate')" name="transfer_date">
+          <UInput v-model="transferState.transfer_date" type="date" class="w-full" />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.students.fieldReason')" required>
-          <UTextarea v-model="transferForm.reason" class="w-full" />
+        <UFormField :label="t('pages.halaqat.students.fieldReason')" name="reason" required>
+          <UTextarea v-model="transferState.reason" class="w-full" />
         </UFormField>
-      </div>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="transferSaving" @click="transferOpen = false">
           {{ t('pages.halaqat.cancel') }}
         </UButton>
-        <UButton :loading="transferSaving" @click="submitTransfer">
+        <UButton type="submit" form="student-transfer-form" :loading="transferSaving">
           {{ t('pages.halaqat.students.transfer') }}
         </UButton>
       </div>

@@ -276,6 +276,10 @@
       "validationName": "Name is required",
       "validationTeacher": "Please select a teacher",
       "validationDays": "Select at least one weekday",
+      "validationSupervisor": "Please select a supervisor",
+      "validationToHalaqa": "Please select a destination halaqa",
+      "validationReason": "Please provide a transfer reason",
+      "validationActingRange": "End date must be on or after the start date",
       "types": {
         "Memorization": "Memorization",
         "Tajweed": "Tajweed",

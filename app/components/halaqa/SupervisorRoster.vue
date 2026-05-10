@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
 import type { ApiSupervisorSummary } from '~/types'
 
 interface ApiUser { id: number, name: string, email: string, status: string }
@@ -42,13 +44,23 @@ async function loadOptions() {
   }
 }
 
+const assignSchema = computed(() => z.object({
+  supervisor_user_id: z.number({ error: () => t('pages.halaqat.validationSupervisor') })
+    .int()
+    .positive(t('pages.halaqat.validationSupervisor'))
+}))
+
+type AssignSchema = z.output<typeof assignSchema.value>
+
 const assignOpen = ref(false)
-const assignSelected = ref<number | null>(null)
+const assignState = reactive<{ supervisor_user_id: number | null }>({
+  supervisor_user_id: null
+})
 const assignSaving = ref(false)
 
 async function openAssign() {
   await loadOptions()
-  assignSelected.value = null
+  assignState.supervisor_user_id = null
   assignOpen.value = true
 }
 
@@ -57,11 +69,10 @@ const supervisorSelectItems = computed(() => [
   ...supervisorOptions.value.map(u => ({ label: u.name, value: u.id }))
 ])
 
-async function submitAssign() {
-  if (!assignSelected.value) return
+async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
   assignSaving.value = true
   try {
-    await assignSupervisor(props.halaqaId, { supervisor_user_id: assignSelected.value })
+    await assignSupervisor(props.halaqaId, { supervisor_user_id: event.data.supervisor_user_id })
     toast.add({ title: t('pages.halaqat.supervisors.toastAssigned'), color: 'success' })
     assignOpen.value = false
     await load()
@@ -145,21 +156,33 @@ async function remove(s: ApiSupervisorSummary) {
   >
     <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <UFormField :label="t('pages.halaqat.supervisors.fieldSupervisor')" required>
-        <USelect
-          v-model="assignSelected"
-          :items="supervisorSelectItems"
-          value-key="value"
-          class="w-full"
-        />
-      </UFormField>
+      <UForm
+        id="supervisor-assign-form"
+        :schema="assignSchema"
+        :state="assignState"
+        class="space-y-4"
+        @submit="submitAssign"
+      >
+        <UFormField
+          :label="t('pages.halaqat.supervisors.fieldSupervisor')"
+          name="supervisor_user_id"
+          required
+        >
+          <USelect
+            v-model="assignState.supervisor_user_id"
+            :items="supervisorSelectItems"
+            value-key="value"
+            class="w-full"
+          />
+        </UFormField>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="assignSaving" @click="assignOpen = false">
           {{ t('pages.halaqat.cancel') }}
         </UButton>
-        <UButton :loading="assignSaving" @click="submitAssign">
+        <UButton type="submit" form="supervisor-assign-form" :loading="assignSaving">
           {{ t('pages.halaqat.save') }}
         </UButton>
       </div>

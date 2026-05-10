@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
 import type { ApiTeacherAssignment, ApiTeacherOption } from '~/types'
 
 const props = defineProps<{
@@ -43,9 +45,30 @@ function toIsoDate(d: Date) {
 }
 
 // ── Substitute (Workflow B) ──────────────────────────────────────────────
+const subSchema = computed(() => z.object({
+  teacher_user_id: z.number({ error: () => t('pages.halaqat.validationTeacher') })
+    .int()
+    .positive(t('pages.halaqat.validationTeacher')),
+  acting_starts_at: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required')),
+  acting_ends_at: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required')),
+  notes: z.string().optional()
+}).refine(d => d.acting_ends_at >= d.acting_starts_at, {
+  message: t('pages.halaqat.validationActingRange'),
+  path: ['acting_ends_at']
+}))
+
+type SubSchema = z.output<typeof subSchema.value>
+
 const subOpen = ref(false)
-const subForm = reactive({
-  teacher_user_id: null as number | null,
+const subState = reactive<{
+  teacher_user_id: number | null
+  acting_starts_at: string
+  acting_ends_at: string
+  notes: string
+}>({
+  teacher_user_id: null,
   acting_starts_at: toIsoDate(new Date()),
   acting_ends_at: '',
   notes: ''
@@ -53,12 +76,12 @@ const subForm = reactive({
 const subSaving = ref(false)
 
 async function openSub() {
-  subForm.teacher_user_id = null
-  subForm.acting_starts_at = toIsoDate(new Date())
+  subState.teacher_user_id = null
+  subState.acting_starts_at = toIsoDate(new Date())
   const endDate = new Date()
   endDate.setDate(endDate.getDate() + 7)
-  subForm.acting_ends_at = toIsoDate(endDate)
-  subForm.notes = ''
+  subState.acting_ends_at = toIsoDate(endDate)
+  subState.notes = ''
   subOpen.value = true
   await loadTeacherOptions()
 }
@@ -68,18 +91,14 @@ const teacherSelectItems = computed(() => [
   ...teacherOptions.value.map(o => ({ label: o.name, value: o.id }))
 ])
 
-async function submitSub() {
-  if (!subForm.teacher_user_id) {
-    toast.add({ title: t('pages.halaqat.validationTeacher'), color: 'error' })
-    return
-  }
+async function submitSub(event: FormSubmitEvent<SubSchema>) {
   subSaving.value = true
   try {
     await substitute(props.halaqaId, {
-      teacher_user_id: subForm.teacher_user_id,
-      acting_starts_at: subForm.acting_starts_at,
-      acting_ends_at: subForm.acting_ends_at,
-      notes: subForm.notes || undefined
+      teacher_user_id: event.data.teacher_user_id,
+      acting_starts_at: event.data.acting_starts_at,
+      acting_ends_at: event.data.acting_ends_at,
+      notes: event.data.notes || undefined
     })
     toast.add({ title: t('pages.halaqat.acting.toastSubstituted'), color: 'success' })
     subOpen.value = false
@@ -93,19 +112,26 @@ async function submitSub() {
 }
 
 // ── Extend ────────────────────────────────────────────────────────────────
+const extSchema = computed(() => z.object({
+  acting_ends_at: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required'))
+}))
+
+type ExtSchema = z.output<typeof extSchema.value>
+
 const extOpen = ref(false)
-const extForm = reactive({ acting_ends_at: '' })
+const extState = reactive<{ acting_ends_at: string }>({ acting_ends_at: '' })
 const extSaving = ref(false)
 
 function openExt() {
-  extForm.acting_ends_at = acting.value?.acting_ends_at ?? toIsoDate(new Date())
+  extState.acting_ends_at = acting.value?.acting_ends_at ?? toIsoDate(new Date())
   extOpen.value = true
 }
 
-async function submitExt() {
+async function submitExt(event: FormSubmitEvent<ExtSchema>) {
   extSaving.value = true
   try {
-    await extend(props.halaqaId, { acting_ends_at: extForm.acting_ends_at })
+    await extend(props.halaqaId, { acting_ends_at: event.data.acting_ends_at })
     toast.add({ title: t('pages.halaqat.acting.toastExtended'), color: 'success' })
     extOpen.value = false
     emit('changed')
@@ -187,14 +213,21 @@ async function endNow() {
   >
     <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <div class="space-y-4">
+      <UForm
+        id="acting-sub-form"
+        :schema="subSchema"
+        :state="subState"
+        class="space-y-4"
+        @submit="submitSub"
+      >
         <UFormField
           :label="t('pages.halaqat.teachers.fieldTeacher')"
+          name="teacher_user_id"
           required
           :error="teachersError ?? undefined"
         >
           <USelect
-            v-model="subForm.teacher_user_id"
+            v-model="subState.teacher_user_id"
             :items="teacherSelectItems"
             value-key="value"
             :loading="teachersLoading"
@@ -213,23 +246,23 @@ async function endNow() {
             </UButton>
           </template>
         </UFormField>
-        <UFormField :label="t('pages.halaqat.acting.fieldStartsAt')" required>
-          <UInput v-model="subForm.acting_starts_at" type="date" class="w-full" />
+        <UFormField :label="t('pages.halaqat.acting.fieldStartsAt')" name="acting_starts_at" required>
+          <UInput v-model="subState.acting_starts_at" type="date" class="w-full" />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" required>
-          <UInput v-model="subForm.acting_ends_at" type="date" class="w-full" />
+        <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" name="acting_ends_at" required>
+          <UInput v-model="subState.acting_ends_at" type="date" class="w-full" />
         </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')">
-          <UTextarea v-model="subForm.notes" class="w-full" />
+        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
+          <UTextarea v-model="subState.notes" class="w-full" />
         </UFormField>
-      </div>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="subSaving" @click="subOpen = false">
           {{ t('pages.halaqat.cancel') }}
         </UButton>
-        <UButton :loading="subSaving" @click="submitSub">
+        <UButton type="submit" form="acting-sub-form" :loading="subSaving">
           {{ t('pages.halaqat.save') }}
         </UButton>
       </div>
@@ -244,16 +277,24 @@ async function endNow() {
   >
     <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" required>
-        <UInput v-model="extForm.acting_ends_at" type="date" class="w-full" />
-      </UFormField>
+      <UForm
+        id="acting-ext-form"
+        :schema="extSchema"
+        :state="extState"
+        class="space-y-4"
+        @submit="submitExt"
+      >
+        <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" name="acting_ends_at" required>
+          <UInput v-model="extState.acting_ends_at" type="date" class="w-full" />
+        </UFormField>
+      </UForm>
     </template>
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="extSaving" @click="extOpen = false">
           {{ t('pages.halaqat.cancel') }}
         </UButton>
-        <UButton :loading="extSaving" @click="submitExt">
+        <UButton type="submit" form="acting-ext-form" :loading="extSaving">
           {{ t('pages.halaqat.save') }}
         </UButton>
       </div>

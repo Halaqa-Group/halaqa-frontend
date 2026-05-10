@@ -2,15 +2,11 @@
 import type {
   ApiHalaqaListItem,
   ApiTeacherOption,
-  HalaqaType,
-  PrayerSlot
+  HalaqaType
 } from '~/types'
-import {
-  HALAQA_DAY_KEYS,
-  HALAQA_DAY_ORDER,
-  HALAQA_TYPES
-} from '~/utils/halaqa'
+import { HALAQA_TYPES } from '~/utils/halaqa'
 import type { ScheduleEntryPayload } from '~/composables/useHalaqat'
+import HalaqaScheduleDays, { type ScheduleDayRow } from '~/components/halaqa/ScheduleDays.vue'
 
 const props = defineProps<{
   editing: ApiHalaqaListItem | null
@@ -51,18 +47,11 @@ async function loadTeachers() {
 
 onMounted(loadTeachers)
 
-interface ScheduleRow {
-  day_of_week: number
-  prayer_slot: PrayerSlot | null
-  start_time: string
-  end_time: string
-}
-
 const form = reactive<{
   name: string
   type: HalaqaType
   primary_teacher_user_id: number | null
-  schedule: ScheduleRow[]
+  schedule: ScheduleDayRow[]
 }>({
   name: '',
   type: 'Memorization',
@@ -96,48 +85,6 @@ const teacherItems = computed(() => [
   ...teachers.value.map(u => ({ label: u.name, value: u.id }))
 ])
 
-const dayItems = computed(() =>
-  HALAQA_DAY_ORDER.map(d => ({
-    label: t(`pages.halaqat.dayLong.${HALAQA_DAY_KEYS[d]}`),
-    value: d as number
-  }))
-)
-
-const PRAYER_SLOTS: PrayerSlot[] = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha']
-const prayerItems = computed(() => [
-  { label: t('pages.halaqat.filters.all'), value: null },
-  ...PRAYER_SLOTS.map(value => ({ label: t(`pages.halaqat.prayer.${value}`), value }))
-])
-
-const canAddScheduleRow = computed(() => form.schedule.length < HALAQA_DAY_ORDER.length)
-
-function addScheduleRow() {
-  const used = new Set(form.schedule.map(r => r.day_of_week))
-  const next = HALAQA_DAY_ORDER.find(d => !used.has(d))
-  if (next === undefined) return
-  form.schedule.push({
-    day_of_week: next,
-    prayer_slot: null,
-    start_time: '',
-    end_time: ''
-  })
-}
-
-function removeScheduleRow(index: number) {
-  form.schedule.splice(index, 1)
-}
-
-function validateForm(): string | null {
-  if (!form.name.trim()) return t('pages.halaqat.validationName')
-  if (!isEdit.value) {
-    const days = form.schedule.map(r => r.day_of_week)
-    if (new Set(days).size !== days.length) {
-      return t('pages.halaqat.validationDays')
-    }
-  }
-  return null
-}
-
 function buildSchedulePayload(): ScheduleEntryPayload[] | undefined {
   if (form.schedule.length === 0) return undefined
   return form.schedule.map(r => ({
@@ -149,9 +96,8 @@ function buildSchedulePayload(): ScheduleEntryPayload[] | undefined {
 }
 
 async function submit() {
-  const err = validateForm()
-  if (err) {
-    toast.add({ title: err, color: 'error' })
+  if (!form.name.trim()) {
+    toast.add({ title: t('pages.halaqat.validationName'), color: 'error' })
     return
   }
   saving.value = true
@@ -235,56 +181,7 @@ async function submit() {
         :hint="t('pages.halaqat.fieldScheduleHint')"
         name="schedule"
       >
-        <div class="space-y-2">
-          <div
-            v-for="(row, i) in form.schedule"
-            :key="i"
-            class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-2 items-end"
-          >
-            <USelect
-              v-model="row.day_of_week"
-              :items="dayItems"
-              value-key="value"
-              :label="i === 0 ? t('pages.halaqat.scheduleDay') : undefined"
-            />
-            <USelect
-              v-model="row.prayer_slot"
-              :items="prayerItems"
-              value-key="value"
-              :label="i === 0 ? t('pages.halaqat.schedulePrayerSlot') : undefined"
-            />
-            <UInput
-              v-model="row.start_time"
-              type="time"
-              :placeholder="t('pages.halaqat.scheduleStartTime')"
-            />
-            <UInput
-              v-model="row.end_time"
-              type="time"
-              :placeholder="t('pages.halaqat.scheduleEndTime')"
-            />
-            <UButton
-              icon="i-lucide-trash-2"
-              color="error"
-              variant="ghost"
-              square
-              :aria-label="t('common.delete')"
-              @click="removeScheduleRow(i)"
-            />
-          </div>
-          <p v-if="form.schedule.length === 0" class="text-sm text-muted">
-            {{ t('pages.halaqat.scheduleNoEntries') }}
-          </p>
-          <UButton
-            v-if="canAddScheduleRow"
-            variant="soft"
-            color="neutral"
-            icon="i-lucide-plus"
-            @click="addScheduleRow"
-          >
-            {{ t('pages.halaqat.scheduleAddDay') }}
-          </UButton>
-        </div>
+        <HalaqaScheduleDays v-model="form.schedule" />
       </UFormField>
     </template>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NavigationMenuItem, BreadcrumbItem } from '@nuxt/ui'
+import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { t } = useI18n()
 const { user, activeRole } = useAuth()
@@ -40,17 +40,6 @@ const links = computed<NavigationMenuItem[][]>(() => {
   }
 
   return [mainLinks]
-})
-
-const breadcrumb = computed<BreadcrumbItem[]>(() => {
-  const items = route.meta?.breadcrumb as { label: string, to?: string }[] | undefined
-
-  if (!items) return []
-
-  return items.map(item => ({
-    label: $t(item.label),
-    ...(item?.to ? { to: localePath(item.to) } : {})
-  }))
 })
 
 const roleOptions = computed(() => user.value?.roles?.map(role => ({
@@ -155,12 +144,7 @@ onMounted(async () => {
           <template #left>
             <div class="flex items-center gap-3">
               <UDashboardSidebarCollapse :icon="isCollapsed ? 'i-lucide-panel-left-close' : 'i-lucide-panel-left-open'" />
-              <div>
-                <h2 v-if="user?.name" class="font-bold text-base mb-1">
-                  {{ user.name }}
-                </h2>
-                <UBreadcrumb :items="breadcrumb" :ui="{ linkLabel: 'text-xs' }" />
-              </div>
+              <HalaqaMenu class="w-56" />
             </div>
           </template>
 
@@ -173,7 +157,6 @@ onMounted(async () => {
               class="w-40"
               size="sm"
             />
-            <HalaqaMenu class="w-56" />
           </template>
         </UDashboardNavbar>
       </template>

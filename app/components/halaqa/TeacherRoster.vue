@@ -11,6 +11,7 @@ import { TEACHER_ROLE_COLOR } from '~/utils/halaqa'
 
 const props = defineProps<{
   halaqaId: number
+  teachers: ApiTeacherAssignment[]
   canManage: boolean
 }>()
 
@@ -30,8 +31,8 @@ function formatDate(value: string | null | undefined) {
   const d = new Date(value)
   return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
 }
+
 const {
-  listTeachers,
   assignTeacher,
   updateAssignment,
   endAssignment,
@@ -39,20 +40,9 @@ const {
 } = useHalaqaTeachers()
 const { fetchTeachers } = useHalaqat()
 
-const teachers = ref<ApiTeacherAssignment[]>([])
 const teacherOptions = ref<ApiTeacherOption[]>([])
-const loading = ref(false)
 const teachersLoading = ref(false)
 const teachersError = ref<string | null>(null)
-
-async function load() {
-  loading.value = true
-  try {
-    teachers.value = await listTeachers(props.halaqaId)
-  } finally {
-    loading.value = false
-  }
-}
 
 // Lazy-load real teachers from the backend each time the assign modal opens —
 // keeps the dropdown current after teacher CRUD on the users page.
@@ -69,8 +59,6 @@ async function loadTeacherOptions() {
     teachersLoading.value = false
   }
 }
-
-onMounted(load)
 
 function toIsoDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -133,7 +121,6 @@ async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
     })
     toast.add({ title: t('pages.halaqat.teachers.toastAssigned'), color: 'success' })
     assignOpen.value = false
-    await load()
     emit('changed')
   } catch (e: unknown) {
     const msg = (e as { data?: { message?: string } })?.data?.message
@@ -195,7 +182,6 @@ async function submitEnd(event: FormSubmitEvent<EndSchema>) {
     toast.add({ title: t('pages.halaqat.teachers.toastEnded'), color: 'success' })
     endOpen.value = false
     endTarget.value = null
-    await load()
     emit('changed')
   } catch (e: unknown) {
     const msg = (e as { data?: { message?: string } })?.data?.message
@@ -254,7 +240,6 @@ async function submitActing(event: FormSubmitEvent<ActingSchema>) {
     toast.add({ title: t('pages.halaqat.teachers.toastActingSet'), color: 'success' })
     actingOpen.value = false
     actingTarget.value = null
-    await load()
     emit('changed')
   } catch (e: unknown) {
     const msg = (e as { data?: { message?: string } })?.data?.message
@@ -269,15 +254,12 @@ async function changeRole(assignment: ApiTeacherAssignment, role: 'main' | 'assi
   try {
     await updateAssignment(props.halaqaId, assignment.id, { role })
     toast.add({ title: t('pages.halaqat.teachers.toastUpdated'), color: 'success' })
-    await load()
     emit('changed')
   } catch (e: unknown) {
     const msg = (e as { data?: { message?: string } })?.data?.message
     toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
   }
 }
-
-defineExpose({ load })
 
 function rowActions(assignment: ApiTeacherAssignment) {
   if (!props.canManage) return [[]]
@@ -334,10 +316,7 @@ function roleColor(role: TeacherRole) {
       </div>
     </template>
 
-    <div v-if="loading" class="p-6 text-sm text-muted">
-      {{ t('common.loading') }}
-    </div>
-    <div v-else-if="!teachers.length" class="p-6 text-sm text-muted text-center">
+    <div v-if="!teachers.length" class="p-6 text-sm text-muted text-center">
       {{ t('pages.halaqat.teachers.noActive') }}
     </div>
     <ul v-else class="divide-y divide-default">

@@ -7,6 +7,7 @@ interface ApiUser { id: number, name: string, email: string, status: string }
 
 const props = defineProps<{
   halaqaId: number
+  supervisors: ApiSupervisorSummary[]
   canManage: boolean
 }>()
 
@@ -16,23 +17,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const toast = useToast()
-const { listSupervisors, assignSupervisor, unassignSupervisor } = useHalaqaSupervisors()
+const { assignSupervisor, unassignSupervisor } = useHalaqaSupervisors()
 const api = useApi()
 
-const supervisors = ref<ApiSupervisorSummary[]>([])
 const supervisorOptions = ref<{ id: number, name: string }[]>([])
-const loading = ref(false)
-
-async function load() {
-  loading.value = true
-  try {
-    supervisors.value = await listSupervisors(props.halaqaId)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(load)
 
 async function loadOptions() {
   if (supervisorOptions.value.length) return
@@ -75,7 +63,6 @@ async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
     await assignSupervisor(props.halaqaId, { supervisor_user_id: event.data.supervisor_user_id })
     toast.add({ title: t('pages.halaqat.supervisors.toastAssigned'), color: 'success' })
     assignOpen.value = false
-    await load()
     emit('changed')
   } catch (e: unknown) {
     const msg = (e as { data?: { message?: string } })?.data?.message
@@ -89,7 +76,6 @@ async function remove(s: ApiSupervisorSummary) {
   try {
     await unassignSupervisor(props.halaqaId, s.user_id)
     toast.add({ title: t('pages.halaqat.supervisors.toastRemoved'), color: 'success' })
-    await load()
     emit('changed')
   } catch (e: unknown) {
     const msg = (e as { data?: { message?: string } })?.data?.message
@@ -116,10 +102,7 @@ async function remove(s: ApiSupervisorSummary) {
       </div>
     </template>
 
-    <div v-if="loading" class="p-6 text-sm text-muted">
-      {{ t('common.loading') }}
-    </div>
-    <div v-else-if="!supervisors.length" class="p-6 text-sm text-muted text-center">
+    <div v-if="!supervisors.length" class="p-6 text-sm text-muted text-center">
       {{ t('pages.halaqat.supervisors.noActive') }}
     </div>
     <ul v-else class="divide-y divide-default">

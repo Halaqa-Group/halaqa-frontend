@@ -251,6 +251,7 @@ function formatDate(iso: string) {
             />
             <HalaqaTeacherRoster
               :halaqa-id="halaqa.id"
+              :teachers="halaqa.teachers"
               :can-manage="canManage && halaqa.status === 'active'"
               @changed="loadDetail"
             />
@@ -269,6 +270,7 @@ function formatDate(iso: string) {
           <div v-else-if="item.value === 'supervisors'" class="mt-4">
             <HalaqaSupervisorRoster
               :halaqa-id="halaqa.id"
+              :supervisors="halaqa.supervisors"
               :can-manage="canManage"
               @changed="loadDetail"
             />

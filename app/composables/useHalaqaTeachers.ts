@@ -27,10 +27,6 @@ export interface SetActingPayload {
 export function useHalaqaTeachers() {
   const api = useApi()
 
-  async function listTeachers(halaqaId: number) {
-    return api<ApiTeacherAssignment[]>(`/halaqat/${halaqaId}/teachers`)
-  }
-
   async function assignTeacher(halaqaId: number, payload: AssignTeacherPayload) {
     return api<ApiTeacherAssignment>(`/halaqat/${halaqaId}/teachers`, {
       method: 'POST',
@@ -60,7 +56,6 @@ export function useHalaqaTeachers() {
   }
 
   return {
-    listTeachers,
     assignTeacher,
     updateAssignment,
     endAssignment,

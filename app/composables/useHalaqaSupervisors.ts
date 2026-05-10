@@ -7,10 +7,6 @@ export interface AssignSupervisorPayload {
 export function useHalaqaSupervisors() {
   const api = useApi()
 
-  async function listSupervisors(halaqaId: number) {
-    return api<ApiSupervisorSummary[]>(`/halaqat/${halaqaId}/supervisors`)
-  }
-
   async function assignSupervisor(halaqaId: number, payload: AssignSupervisorPayload) {
     return api<ApiSupervisorSummary>(`/halaqat/${halaqaId}/supervisors`, {
       method: 'POST',
@@ -24,5 +20,5 @@ export function useHalaqaSupervisors() {
     })
   }
 
-  return { listSupervisors, assignSupervisor, unassignSupervisor }
+  return { assignSupervisor, unassignSupervisor }
 }

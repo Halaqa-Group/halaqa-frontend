@@ -23,7 +23,7 @@ function statusClasses(status: StudentWithAttendance['attendanceStatus']): strin
   <div class="rounded-2xl p-6 ring ring-card-border bg-surface-container-lowest">
     <div class="flex items-center gap-3 mb-5">
       <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary-container">
-        <UIcon name="i-lucide-user-check" class="w-5 h-5 text-primary" />
+        <LucideUserCheck class="w-5 h-5 text-primary" />
       </div>
       <div>
         <p class="text-base font-bold leading-tight text-on-surface">
@@ -39,7 +39,7 @@ function statusClasses(status: StudentWithAttendance['attendanceStatus']): strin
       v-if="students.length === 0"
       class="flex flex-col items-center gap-2 py-8"
     >
-      <UIcon name="i-lucide-users" class="w-8 h-8 text-on-surface-variant" />
+      <LucideUsers class="w-8 h-8 text-on-surface-variant" />
       <p class="text-sm text-on-surface-variant">
         لا يوجد طلاب في هذه الحلقة
       </p>

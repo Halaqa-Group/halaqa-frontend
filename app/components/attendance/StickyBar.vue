@@ -50,7 +50,7 @@ const { isDirty } = useAttendance()
             @click="$emit('discard')"
           >
             <span class="hidden sm:inline">{{ $t('pages.attendance.discardChanges') }}</span>
-            <UIcon name="i-lucide-x" class="sm:hidden w-4 h-4" />
+            <LucideX class="sm:hidden w-4 h-4" />
           </UButton>
           <UButton
             color="primary"

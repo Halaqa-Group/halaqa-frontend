@@ -100,7 +100,7 @@ function deviceLabel(s: Session) {
     </template>
 
     <div v-if="isLoading" class="text-center text-muted py-8">
-      <UIcon name="i-lucide-loader-circle" class="animate-spin w-5 h-5" />
+      <LucideLoaderCircle class="animate-spin w-5 h-5" />
     </div>
 
     <UAlert

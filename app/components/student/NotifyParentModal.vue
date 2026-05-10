@@ -46,7 +46,7 @@ async function onSubmit(_event: FormSubmitEvent<{ message: string }>) {
         <div class="flex justify-between items-start gap-4 px-6 py-5 border-b border-default">
           <div class="flex items-start gap-3 min-w-0">
             <div class="w-10 h-10 rounded-full flex items-center justify-center bg-primary-container shrink-0">
-              <UIcon name="i-lucide-bell" class="w-5 h-5 text-primary" />
+              <LucideBell class="w-5 h-5 text-primary" />
             </div>
             <div class="min-w-0">
               <h3 class="text-lg font-bold text-on-surface">

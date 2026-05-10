@@ -156,7 +156,7 @@ onBeforeUnmount(() => {
 
     <!-- Loading state -->
     <div v-if="isLoading" class="flex justify-center py-8">
-      <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
+      <LucideLoaderCircle class="w-8 h-8 animate-spin text-primary" />
     </div>
 
     <!-- Empty: no halaqa selected -->
@@ -164,7 +164,7 @@ onBeforeUnmount(() => {
       v-else-if="!hasHalaqa"
       class="flex flex-col items-center gap-3 py-12 rounded-2xl bg-surface-container-lowest"
     >
-      <UIcon name="i-lucide-layers" class="w-10 h-10 text-on-surface-variant" />
+      <LucideLayers class="w-10 h-10 text-on-surface-variant" />
       <p class="text-sm font-normal leading-relaxed text-on-surface-variant">
         {{ $t('common.selectHalaqaPrompt') }}
       </p>
@@ -256,7 +256,7 @@ onBeforeUnmount(() => {
         v-else
         class="flex flex-col items-center gap-3 py-12 rounded-2xl bg-surface-container-lowest"
       >
-        <UIcon name="i-lucide-user-x" class="w-10 h-10 text-on-surface-variant" />
+        <LucideUserX class="w-10 h-10 text-on-surface-variant" />
         <p class="text-sm font-normal leading-relaxed text-on-surface-variant">
           {{ attendanceRows.length === 0 ? $t('pages.attendance.noStudentsInHalaqa') : $t('common.noResults') }}
         </p>

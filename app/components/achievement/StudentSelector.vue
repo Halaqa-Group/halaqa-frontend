@@ -78,12 +78,11 @@ watch(() => props.selectedStudent, () => {
           :alt="selectedStudent.name"
           class="w-7 h-7 rounded-full object-cover shrink-0"
         >
-        <UIcon v-else name="i-lucide-user" class="w-4 h-4" />
+        <LucideUser v-else class="w-4 h-4" />
         <span class="font-semibold text-sm">
           {{ selectedStudent?.name || $t('common.selectStudent') }}
         </span>
-        <UIcon
-          name="i-lucide-chevron-down"
+        <LucideChevronDown
           class="w-4 h-4 transition-transform"
           :class="{ 'rotate-180': isOpen }"
         />
@@ -134,9 +133,8 @@ watch(() => props.selectedStudent, () => {
                   :class="selectedStudent?.id === student.id ? 'text-white/75' : 'text-on-surface-variant'"
                 >{{ $t(`attendance.status.${student.attendanceStatus.toLowerCase()}`) }}</span>
               </div>
-              <UIcon
-                v-if="selectedStudent?.id === student.id"
-                name="i-lucide-check"
+              <LucideCheck
+                v-if="selectedStudent?.id === student.id"
                 class="w-4 h-4 shrink-0"
               />
             </UButton>

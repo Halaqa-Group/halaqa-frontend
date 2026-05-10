@@ -12,7 +12,7 @@ const sortedGuardians = computed(() =>
   <div class="flex flex-col gap-6 pt-6">
     <div class="rounded-xl p-5 border border-outline-variant">
       <h4 class="body-lg font-bold mb-4 flex items-center gap-2 text-on-surface">
-        <UIcon name="i-lucide-users" class="w-5 h-5 text-secondary" />
+        <LucideUsers class="w-5 h-5 text-secondary" />
         {{ $t('pages.students.viewModal.guardiansInfoTitle') }}
       </h4>
       <div
@@ -29,7 +29,7 @@ const sortedGuardians = computed(() =>
         >
           <div class="flex items-start justify-between gap-2 flex-wrap">
             <div class="flex items-center gap-2 min-w-0">
-              <UIcon name="i-lucide-user" class="w-4 h-4 shrink-0 text-muted" />
+              <LucideUser class="w-4 h-4 shrink-0 text-muted" />
               <span class="body-md font-medium text-on-surface truncate">
                 {{ g.user.name }}
               </span>
@@ -53,7 +53,7 @@ const sortedGuardians = computed(() =>
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <UIcon name="i-lucide-phone" class="w-4 h-4 shrink-0 text-muted" />
+            <LucidePhone class="w-4 h-4 shrink-0 text-muted" />
             <a
               v-if="g.user.phone"
               :href="`tel:${g.user.phone}`"
@@ -63,7 +63,7 @@ const sortedGuardians = computed(() =>
             <span v-else class="body-md text-on-surface-variant" dir="ltr">—</span>
           </div>
           <div class="flex items-center gap-2 min-w-0">
-            <UIcon name="i-lucide-mail" class="w-4 h-4 shrink-0 text-muted" />
+            <LucideMail class="w-4 h-4 shrink-0 text-muted" />
             <a
               :href="`mailto:${g.user.email}`"
               class="body-md text-on-surface hover:text-primary truncate"

@@ -34,7 +34,7 @@ const hasPerformance = computed(() =>
       <div v-if="student.attendance !== null" class="rounded-xl p-5 border border-outline-variant">
         <div class="flex items-center justify-between gap-3 mb-3">
           <span class="label-md text-on-surface-variant flex items-center gap-2">
-            <UIcon name="i-lucide-calendar-check" class="w-4 h-4 text-secondary" />
+            <LucideCalendarCheck class="w-4 h-4 text-secondary" />
             {{ $t('pages.students.viewModal.attendanceRate') }}
           </span>
           <span class="text-2xl font-bold text-on-surface">{{ student.attendance }}%</span>
@@ -49,7 +49,7 @@ const hasPerformance = computed(() =>
       <div v-if="student.progress !== null" class="rounded-xl p-5 border border-outline-variant">
         <div class="flex items-center justify-between gap-3 mb-3">
           <span class="label-md text-on-surface-variant flex items-center gap-2">
-            <UIcon name="i-lucide-target" class="w-4 h-4 text-secondary" />
+            <LucideTarget class="w-4 h-4 text-secondary" />
             {{ $t('pages.students.viewModal.progress') }}
           </span>
           <span class="text-2xl font-bold text-on-surface">{{ student.progress }}%</span>
@@ -69,7 +69,7 @@ const hasPerformance = computed(() =>
       class="rounded-xl p-5 border border-outline-variant bg-surface-container-low"
     >
       <h4 class="body-lg font-bold mb-3 flex items-center gap-2 text-on-surface">
-        <UIcon name="i-lucide-sticky-note" class="w-5 h-5 text-secondary" />
+        <LucideStickyNote class="w-5 h-5 text-secondary" />
         {{ $t('pages.students.viewModal.generalNotesTitle') }}
       </h4>
       <p class="body-md text-on-surface whitespace-pre-line">
@@ -80,7 +80,7 @@ const hasPerformance = computed(() =>
     <!-- Daily capacity -->
     <div class="rounded-xl p-5 border border-outline-variant">
       <h4 class="body-lg font-bold mb-4 flex items-center gap-2 text-on-surface">
-        <UIcon name="i-lucide-bar-chart-2" class="w-5 h-5 text-secondary" />
+        <LucideBarChart2 class="w-5 h-5 text-secondary" />
         {{ $t('pages.students.viewModal.dailyCapacityTitle') }}
       </h4>
       <div class="grid grid-cols-3 gap-3">

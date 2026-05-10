@@ -25,7 +25,7 @@ function handleNotifyClick() {
     <div class="rounded-xl p-5 border border-outline-variant">
       <div class="flex items-center justify-between gap-3 mb-4">
         <h4 class="body-lg font-bold flex items-center gap-2 text-on-surface">
-          <UIcon name="i-lucide-bell" class="w-5 h-5 text-secondary" />
+          <LucideBell class="w-5 h-5 text-secondary" />
           {{ $t('pages.students.notesList.title') }}
         </h4>
         <UButton
@@ -53,7 +53,7 @@ function handleNotifyClick() {
         >
           <div class="flex items-center justify-between gap-3 mb-2">
             <div class="flex items-center gap-2 min-w-0">
-              <UIcon name="i-lucide-user" class="w-4 h-4 shrink-0 text-muted" />
+              <LucideUser class="w-4 h-4 shrink-0 text-muted" />
               <span class="body-md font-medium truncate text-on-surface">
                 {{ note.authorName }}
               </span>

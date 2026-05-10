@@ -72,7 +72,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 <template>
   <div class="flex flex-col">
     <div v-if="verifying" class="text-muted text-center py-8">
-      <UIcon name="i-lucide-loader-circle" class="animate-spin w-6 h-6 mb-3" />
+      <LucideLoaderCircle class="animate-spin w-6 h-6 mb-3" />
       <p>{{ $t('pages.resetPassword.verifying') }}</p>
     </div>
 
@@ -114,7 +114,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     </template>
 
     <NuxtLink to="/auth/login" class="text-sm text-primary hover:underline mt-6 inline-flex items-center gap-1">
-      <UIcon name="i-lucide-arrow-right" class="rtl:rotate-180" />
+      <LucideArrowRight class="rtl:rotate-180" />
       {{ $t('pages.forgotPassword.backToLogin') }}
     </NuxtLink>
   </div>

@@ -101,7 +101,7 @@ function onCycle() {
           class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
           :style="{ backgroundColor: 'var(--color-track-near-bg)', color: 'var(--color-track-near)' }"
         >
-          <UIcon name="i-lucide-alert-triangle" class="w-3 h-3" />
+          <LucideAlertTriangle class="w-3 h-3" />
           {{ $t('pages.attendance.absentYesterday') }}
         </span>
       </div>

@@ -249,7 +249,7 @@ const labelUi = {
             />
           </UFormField>
           <div class="pb-2.5 px-0.5">
-            <UIcon name="i-lucide-arrow-left-right" class="w-3.5 h-3.5 text-outline" />
+            <LucideArrowLeftRight class="w-3.5 h-3.5 text-outline" />
           </div>
           <UFormField label="إلى — السورة" class="flex-[3]" :ui="labelUi">
             <USelect
@@ -278,7 +278,7 @@ const labelUi = {
           v-if="rangeSummary"
           class="px-3 py-2 rounded-lg flex items-center gap-2 bg-primary-container"
         >
-          <UIcon name="i-lucide-book-marked" class="w-4 h-4 shrink-0 text-primary" />
+          <LucideBookMarked class="w-4 h-4 shrink-0 text-primary" />
           <p class="text-xs font-medium text-primary">
             {{ rangeSummary }}
           </p>
@@ -289,7 +289,7 @@ const labelUi = {
           v-if="validationError"
           class="px-3 py-2 rounded-lg flex items-center gap-2 bg-track-near-bg"
         >
-          <UIcon name="i-lucide-alert-circle" class="w-4 h-4 shrink-0 text-track-near" />
+          <LucideAlertCircle class="w-4 h-4 shrink-0 text-track-near" />
           <p class="text-xs text-track-near">
             {{ validationError }}
           </p>

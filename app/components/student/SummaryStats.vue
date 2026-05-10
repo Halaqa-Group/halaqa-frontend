@@ -11,7 +11,7 @@ const { summary } = useStudentsView()
         </span>
         <span class="text-2xl font-bold text-on-surface">{{ summary.total }}</span>
       </div>
-      <UIcon name="i-lucide-users" class="w-7 h-7 text-primary shrink-0" />
+      <LucideUsers class="w-7 h-7 text-primary shrink-0" />
     </div>
 
     <div class="rounded-2xl px-4 py-3 flex items-center justify-between gap-3 bg-track-hifz-bg border border-track-hifz/20">
@@ -21,7 +21,7 @@ const { summary } = useStudentsView()
         </span>
         <span class="text-2xl font-bold text-track-hifz">{{ summary.active }}</span>
       </div>
-      <UIcon name="i-lucide-user-check" class="w-7 h-7 text-track-hifz shrink-0" />
+      <LucideUserCheck class="w-7 h-7 text-track-hifz shrink-0" />
     </div>
 
     <div class="rounded-2xl px-4 py-3 flex items-center justify-between gap-3 bg-surface-container border border-outline-variant">
@@ -31,7 +31,7 @@ const { summary } = useStudentsView()
         </span>
         <span class="text-2xl font-bold text-on-surface">{{ summary.inactive }}</span>
       </div>
-      <UIcon name="i-lucide-user-minus" class="w-7 h-7 text-on-surface-variant shrink-0" />
+      <LucideUserMinus class="w-7 h-7 text-on-surface-variant shrink-0" />
     </div>
 
     <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
@@ -41,7 +41,7 @@ const { summary } = useStudentsView()
         </span>
         <span class="text-2xl font-bold text-primary">{{ summary.graduated }}</span>
       </div>
-      <UIcon name="i-lucide-graduation-cap" class="w-7 h-7 text-primary shrink-0" />
+      <LucideGraduationCap class="w-7 h-7 text-primary shrink-0" />
     </div>
   </div>
 </template>

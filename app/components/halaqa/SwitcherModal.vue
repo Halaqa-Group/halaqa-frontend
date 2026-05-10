@@ -91,7 +91,7 @@ function isSelected(halaqa: ApiHalaqa) {
                 class="absolute top-3 end-3"
                 :style="`color: ${getColor(i).text};`"
               >
-                <UIcon name="i-lucide-check-circle" class="w-5 h-5" style="fill: currentColor;" />
+                <LucideCheckCircle class="w-5 h-5" style="fill: currentColor;" />
               </div>
 
               <!-- Icon -->
@@ -133,7 +133,7 @@ function isSelected(halaqa: ApiHalaqa) {
                 class="w-12 h-12 rounded-full flex items-center justify-center mb-3 bg-white"
                 style="color: var(--color-on-surface-variant);"
               >
-                <UIcon name="i-lucide-plus" class="w-6 h-6" />
+                <LucidePlus class="w-6 h-6" />
               </div>
               <h3 class="text-sm font-bold" style="color: var(--color-on-surface-variant);">
                 إضافة جديد

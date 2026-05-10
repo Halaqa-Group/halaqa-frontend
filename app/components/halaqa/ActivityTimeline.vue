@@ -125,7 +125,7 @@ function targetSummary(item: ApiActivityLogItem) {
         :key="item.id"
         class="flex items-start gap-3 p-4"
       >
-        <UIcon name="i-lucide-circle-dot" class="mt-1 text-muted shrink-0" />
+        <LucideCircleDot class="mt-1 text-muted shrink-0" />
         <div class="flex-1 space-y-1">
           <div class="flex items-center justify-between gap-2">
             <span class="font-medium">{{ actionLabel(item.action) }}</span>

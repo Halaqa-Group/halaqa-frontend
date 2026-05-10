@@ -98,11 +98,11 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
 
 <template>
   <div v-if="isLoading && students.length === 0" class="flex justify-center py-16">
-    <UIcon name="i-lucide-loader-circle" class="w-10 h-10 animate-spin text-primary" />
+    <LucideLoaderCircle class="w-10 h-10 animate-spin text-primary" />
   </div>
 
   <div v-else-if="error" class="rounded-2xl p-6 text-center bg-status-conflict-bg">
-    <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2 text-status-conflict" />
+    <LucideAlertCircle class="w-8 h-8 mx-auto mb-2 text-status-conflict" />
     <p class="text-status-conflict">
       {{ error }}
     </p>
@@ -113,7 +113,7 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
     class="flex flex-col items-center justify-center gap-5 py-20 rounded-2xl border border-dashed border-outline-variant"
   >
     <div class="w-20 h-20 rounded-full flex items-center justify-center bg-primary-container">
-      <UIcon name="i-lucide-user-plus" class="w-10 h-10 text-primary" />
+      <LucideUserPlus class="w-10 h-10 text-primary" />
     </div>
     <p class="text-lg font-semibold text-on-surface">
       {{ $t('pages.students.empty.welcomeTitle') }}
@@ -134,7 +134,7 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
     class="flex flex-col items-center justify-center gap-4 py-16 rounded-2xl border border-dashed border-outline-variant"
   >
     <div class="w-16 h-16 rounded-full flex items-center justify-center bg-primary-container">
-      <UIcon name="i-lucide-search-x" class="w-8 h-8 text-primary" />
+      <LucideSearchX class="w-8 h-8 text-primary" />
     </div>
     <p class="text-on-surface">
       {{ $t('pages.students.empty.noMatchTitle') }}

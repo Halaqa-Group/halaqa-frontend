@@ -43,7 +43,7 @@ onMounted(async () => {
     </div>
 
     <div v-if="isLoading" class="flex justify-center py-10">
-      <UIcon name="i-lucide-loader-circle" class="h-8 w-8 animate-spin text-primary" />
+      <LucideLoaderCircle class="h-8 w-8 animate-spin text-primary" />
     </div>
 
     <template v-else>

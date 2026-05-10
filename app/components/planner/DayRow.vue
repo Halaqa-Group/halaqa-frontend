@@ -80,7 +80,7 @@ const restDay = computed(() => isRestDay(props.data.id))
         v-else-if="restDay"
         class="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-track-far-bg text-track-far self-start"
       >
-        <UIcon name="i-lucide-coffee" class="w-3 h-3" />
+        <LucideCoffee class="w-3 h-3" />
         {{ $t('pages.planner.row.restDayActive') }}
       </span>
 
@@ -129,7 +129,7 @@ const restDay = computed(() => isRestDay(props.data.id))
         class="absolute inset-0 flex items-center justify-center rounded-xl bg-track-far-bg/85 backdrop-blur-[2px] pointer-events-none border border-track-far/20"
       >
         <span class="text-base font-bold text-track-far flex items-center gap-2">
-          <UIcon name="i-lucide-coffee" class="w-5 h-5" />
+          <LucideCoffee class="w-5 h-5" />
           {{ $t('pages.planner.row.restDayActive') }}
         </span>
       </div>

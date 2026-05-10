@@ -59,7 +59,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     </UForm>
 
     <NuxtLink to="/auth/login" class="text-sm text-primary hover:underline mt-6 inline-flex items-center gap-1">
-      <UIcon name="i-lucide-arrow-right" class="rtl:rotate-180" />
+      <LucideArrowRight class="rtl:rotate-180" />
       {{ $t('pages.forgotPassword.backToLogin') }}
     </NuxtLink>
   </div>

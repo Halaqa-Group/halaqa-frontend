@@ -299,7 +299,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
 
         <!-- Loading state when fetching student for edit -->
         <div v-if="loading" class="flex-1 flex items-center justify-center py-24">
-          <UIcon name="i-lucide-loader-circle" class="w-10 h-10 animate-spin text-primary" />
+          <LucideLoaderCircle class="w-10 h-10 animate-spin text-primary" />
         </div>
 
         <!-- Scrollable form body -->
@@ -340,8 +340,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
             <div
               class="md:col-span-4 flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-default bg-primary/5 cursor-pointer transition-all group hover:border-primary/50">
               <div class="w-24 h-24 rounded-full bg-default shadow-sm flex items-center justify-center mb-4 overflow-hidden">
-                <UIcon
-                  name="i-lucide-camera"
+                <LucideCamera
                   class="w-10 h-10 text-muted transition-colors group-hover:text-primary" />
               </div>
               <p class="text-xs font-semibold uppercase tracking-wide text-muted">

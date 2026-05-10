@@ -192,12 +192,11 @@ onMounted(async () => {
                   class="w-7 h-7 rounded-full object-cover shrink-0"
                   referrerpolicy="no-referrer"
                 >
-                <UIcon v-else name="i-lucide-user" class="w-4 h-4" />
+                <LucideUser v-else class="w-4 h-4" />
                 <span class="font-semibold text-sm">
                   {{ selectedStudentObj?.name || $t('common.selectStudent') }}
                 </span>
-                <UIcon
-                  name="i-lucide-chevron-down"
+                <LucideChevronDown
                   class="w-4 h-4 transition-transform"
                   :class="{ 'rotate-180': isStudentPopoverOpen }"
                 />
@@ -249,9 +248,8 @@ onMounted(async () => {
                           :class="selectedStudentObj?.id === s.id ? 'text-white/75' : 'text-on-surface-variant'"
                         >{{ s.halaqa }}</span>
                       </div>
-                      <UIcon
-                        v-if="selectedStudentObj?.id === s.id"
-                        name="i-lucide-check"
+                      <LucideCheck
+                        v-if="selectedStudentObj?.id === s.id"
                         class="w-4 h-4 shrink-0"
                       />
                     </UButton>
@@ -374,7 +372,7 @@ onMounted(async () => {
 
         <template v-else-if="planStatus === 'approved' && !isEditMode">
           <div class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold text-sm bg-status-ok-bg border-status-ok/40 text-status-ok">
-            <UIcon name="i-lucide-check-circle" class="w-4 h-4" />
+            <LucideCheckCircle class="w-4 h-4" />
             {{ $t('pages.planner.approved') }}
           </div>
           <UButton

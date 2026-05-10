@@ -56,7 +56,7 @@ function clampPercent(n: number) {
     <!-- Recent achievements -->
     <div class="rounded-xl p-5 border border-outline-variant">
       <h4 class="body-lg font-bold mb-4 flex items-center gap-2 text-on-surface">
-        <UIcon name="i-lucide-award" class="w-5 h-5 text-secondary" />
+        <LucideAward class="w-5 h-5 text-secondary" />
         {{ $t('pages.students.viewModal.activity.recentAchievementsTitle') }}
       </h4>
       <div
@@ -103,7 +103,7 @@ function clampPercent(n: number) {
     <!-- Recent attendance strip -->
     <div class="rounded-xl p-5 border border-outline-variant">
       <h4 class="body-lg font-bold mb-4 flex items-center gap-2 text-on-surface">
-        <UIcon name="i-lucide-calendar-check" class="w-5 h-5 text-secondary" />
+        <LucideCalendarCheck class="w-5 h-5 text-secondary" />
         {{ $t('pages.students.viewModal.activity.recentAttendanceTitle') }}
       </h4>
       <div
@@ -146,7 +146,7 @@ function clampPercent(n: number) {
     <!-- Weekly plan progress -->
     <div class="rounded-xl p-5 border border-outline-variant">
       <h4 class="body-lg font-bold mb-4 flex items-center gap-2 text-on-surface">
-        <UIcon name="i-lucide-list-checks" class="w-5 h-5 text-secondary" />
+        <LucideListChecks class="w-5 h-5 text-secondary" />
         {{ $t('pages.students.viewModal.activity.weeklyPlanTitle') }}
       </h4>
       <div

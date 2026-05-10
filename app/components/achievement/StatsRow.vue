@@ -31,7 +31,7 @@ const stats = computed(() => {
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
     <div class="rounded-2xl p-4 flex items-center gap-3 ring ring-card-border bg-surface-container-lowest">
       <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary-container">
-        <UIcon name="i-lucide-award" class="w-5 h-5 text-primary" />
+        <LucideAward class="w-5 h-5 text-primary" />
       </div>
       <div class="min-w-0">
         <p class="text-xl font-bold leading-tight tabular-nums text-on-surface">
@@ -45,7 +45,7 @@ const stats = computed(() => {
 
     <div class="rounded-2xl p-4 flex items-center gap-3 ring ring-card-border bg-surface-container-lowest">
       <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-track-near-bg">
-        <UIcon name="i-lucide-alert-circle" class="w-5 h-5 text-track-near" />
+        <LucideAlertCircle class="w-5 h-5 text-track-near" />
       </div>
       <div class="min-w-0">
         <p class="text-xl font-bold leading-tight tabular-nums text-on-surface">
@@ -59,7 +59,7 @@ const stats = computed(() => {
 
     <div class="rounded-2xl p-4 flex items-center gap-3 ring ring-card-border bg-surface-container-lowest">
       <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-status-ok-bg">
-        <UIcon name="i-lucide-sparkles" class="w-5 h-5 text-status-ok" />
+        <LucideSparkles class="w-5 h-5 text-status-ok" />
       </div>
       <div class="min-w-0">
         <p class="text-xl font-bold leading-tight tabular-nums text-on-surface">
@@ -76,7 +76,7 @@ const stats = computed(() => {
         class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
         :class="stats.quality.bgClass"
       >
-        <UIcon name="i-lucide-activity" class="w-5 h-5" :class="stats.quality.textClass" />
+        <LucideActivity class="w-5 h-5" :class="stats.quality.textClass" />
       </div>
       <div class="min-w-0">
         <span

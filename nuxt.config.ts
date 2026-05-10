@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/i18n', '@vueuse/nuxt'],
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/i18n', '@vueuse/nuxt', 'nuxt-lucide-icons'],
 
   ssr: false,
 
@@ -27,6 +27,14 @@ export default defineNuxtConfig({
       defaultVariants: {
         size: 'lg'
       }
+    }
+  },
+
+  icon: {
+    provider: 'iconify',
+    fallbackToApi: false,
+    clientBundle: {
+      scan: true
     }
   },
 

@@ -81,7 +81,7 @@ async function submitForm() {
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
       <div class="space-y-1 min-w-0">
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-building-2" class="w-5 h-5 shrink-0" style="color: var(--color-primary);" />
+          <LucideBuilding2 class="w-5 h-5 shrink-0" style="color: var(--color-primary);" />
           <h3 class="text-lg font-bold" style="color: var(--color-on-surface);">
             {{ t('pages.home.schoolCard.title') }}
           </h3>
@@ -104,7 +104,7 @@ async function submitForm() {
 
     <div class="mt-4">
       <div v-if="isLoading" class="flex items-center gap-2 py-6 justify-center">
-        <UIcon name="i-lucide-loader-circle" class="w-6 h-6 animate-spin" style="color: var(--color-primary);" />
+        <LucideLoaderCircle class="w-6 h-6 animate-spin" style="color: var(--color-primary);" />
       </div>
       <dl v-else-if="school" class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
         <div>

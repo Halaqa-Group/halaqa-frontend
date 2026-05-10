@@ -75,7 +75,7 @@ const totals = computed(() => {
       v-if="achievements.length === 0"
       class="rounded-2xl p-8 flex flex-col items-center gap-3 bg-surface-container-lowest"
     >
-      <UIcon name="i-lucide-award" class="w-10 h-10 text-on-surface-variant" />
+      <LucideAward class="w-10 h-10 text-on-surface-variant" />
       <p class="text-sm font-normal leading-relaxed text-center text-on-surface-variant">
         لا توجد إنجازات لهذا الطالب اليوم
       </p>
@@ -101,8 +101,7 @@ const totals = computed(() => {
               class="px-3 py-1.5 rounded-full flex items-center gap-2"
               :class="getTrackClass(achievement.track_type).bgClass"
             >
-              <UIcon
-                name="i-lucide-award"
+              <LucideAward
                 class="w-3.5 h-3.5"
                 :class="getTrackClass(achievement.track_type).textClass"
               />
@@ -157,7 +156,7 @@ const totals = computed(() => {
 
         <!-- Quran range -->
         <div class="flex items-center gap-2 mb-4 px-1">
-          <UIcon name="i-lucide-book-open" class="w-4 h-4 shrink-0 text-on-surface-variant" />
+          <LucideBookOpen class="w-4 h-4 shrink-0 text-on-surface-variant" />
           <p class="text-sm font-normal leading-relaxed text-on-surface">
             {{ formatRange(achievement) }}
           </p>
@@ -210,7 +209,7 @@ const totals = computed(() => {
             v-if="achievement.is_unplanned"
             class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-status-warning-bg"
           >
-            <UIcon name="i-lucide-alert-triangle" class="w-3.5 h-3.5 text-status-warning" />
+            <LucideAlertTriangle class="w-3.5 h-3.5 text-status-warning" />
             <p class="text-xs text-status-warning">
               إنجاز غير مخطط
             </p>
@@ -219,7 +218,7 @@ const totals = computed(() => {
             v-if="achievement.is_flagged_conflict"
             class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-track-near-bg"
           >
-            <UIcon name="i-lucide-alert-circle" class="w-3.5 h-3.5 text-track-near" />
+            <LucideAlertCircle class="w-3.5 h-3.5 text-track-near" />
             <p class="text-xs text-track-near">
               تعارض مع الحضور
             </p>

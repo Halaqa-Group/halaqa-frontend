@@ -109,9 +109,12 @@ const prayerItems = computed(() => [
   ...PRAYER_SLOTS.map(value => ({ label: t(`pages.halaqat.prayer.${value}`), value }))
 ])
 
+const canAddScheduleRow = computed(() => form.schedule.length < HALAQA_DAY_ORDER.length)
+
 function addScheduleRow() {
   const used = new Set(form.schedule.map(r => r.day_of_week))
-  const next = HALAQA_DAY_ORDER.find(d => !used.has(d)) ?? 0
+  const next = HALAQA_DAY_ORDER.find(d => !used.has(d))
+  if (next === undefined) return
   form.schedule.push({
     day_of_week: next,
     prayer_slot: null,
@@ -273,6 +276,7 @@ async function submit() {
             {{ t('pages.halaqat.scheduleNoEntries') }}
           </p>
           <UButton
+            v-if="canAddScheduleRow"
             variant="soft"
             color="neutral"
             icon="i-lucide-plus"

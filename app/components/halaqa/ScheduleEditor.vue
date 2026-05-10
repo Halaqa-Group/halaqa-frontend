@@ -60,9 +60,12 @@ const prayerItems = computed(() => [
   ...PRAYER_SLOTS.map(value => ({ label: t(`pages.halaqat.prayer.${value}`), value }))
 ])
 
+const canAddRow = computed(() => rows.value.length < HALAQA_DAY_ORDER.length)
+
 function addRow() {
   const used = new Set(rows.value.map(r => r.day_of_week))
-  const next = HALAQA_DAY_ORDER.find(d => !used.has(d)) ?? 0
+  const next = HALAQA_DAY_ORDER.find(d => !used.has(d))
+  if (next === undefined) return
   rows.value.push({
     day_of_week: next,
     prayer_slot: null,
@@ -164,9 +167,17 @@ async function save() {
     </div>
 
     <div v-if="!readOnly" class="flex items-center justify-between">
-      <UButton variant="soft" color="neutral" icon="i-lucide-plus" @click="addRow">
+      <UButton
+        v-if="canAddRow"
+        variant="soft"
+        color="neutral"
+        icon="i-lucide-plus"
+        @click="addRow"
+      >
         {{ t('pages.halaqat.scheduleAddDay') }}
       </UButton>
+      <span v-else />
+
       <UButton :loading="saving" @click="save">
         {{ t('pages.halaqat.save') }}
       </UButton>

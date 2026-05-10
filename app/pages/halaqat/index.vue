@@ -88,6 +88,8 @@ function clearFilters() {
 // ── Form modal (create / edit) ────────────────────────────────────────────
 const formOpen = ref(false)
 const editing = ref<ApiHalaqaListItem | null>(null)
+const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
+const formSaving = computed(() => formRef.value?.saving.value ?? false)
 
 function openAdd() {
   editing.value = null
@@ -356,10 +358,25 @@ onMounted(() => loadList(1))
       <UButton class="sr-only" :label="t('pages.halaqat.add')" tabindex="-1" />
       <template #body>
         <HalaqaForm
+          ref="formRef"
           :editing="editing"
           @saved="onFormSaved"
-          @cancel="formOpen = false"
         />
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-end gap-2 w-full">
+          <UButton
+            variant="soft"
+            color="neutral"
+            :disabled="formSaving"
+            @click="formOpen = false"
+          >
+            {{ t('pages.halaqat.cancel') }}
+          </UButton>
+          <UButton type="submit" form="halaqa-form" :loading="formSaving">
+            {{ t('pages.halaqat.save') }}
+          </UButton>
+        </div>
       </template>
     </UModal>
 

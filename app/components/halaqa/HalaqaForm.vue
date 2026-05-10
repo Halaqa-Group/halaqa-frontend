@@ -16,7 +16,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   saved: []
-  cancel: []
 }>()
 
 const { t } = useI18n()
@@ -137,6 +136,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     saving.value = false
   }
 }
+
+defineExpose({ saving })
 </script>
 
 <template>
@@ -199,20 +200,5 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         <HalaqaScheduleDays v-model="state.schedule" />
       </UFormField>
     </template>
-
-    <div class="flex items-center justify-end gap-2 pt-2">
-      <UButton
-        type="button"
-        variant="soft"
-        color="neutral"
-        :disabled="saving"
-        @click="emit('cancel')"
-      >
-        {{ t('pages.halaqat.cancel') }}
-      </UButton>
-      <UButton type="submit" :loading="saving">
-        {{ t('pages.halaqat.save') }}
-      </UButton>
-    </div>
   </UForm>
 </template>

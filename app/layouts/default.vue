@@ -124,7 +124,7 @@ onMounted(async () => {
           tooltip
           popover
           class="my-auto"
-          :ui="{ link: collapsed ? 'justify-center py-3' : ' py-3' }"
+          :ui="{ link: collapsed ? 'justify-center size-11 mx-auto p-0 rounded-md' : 'py-3 rounded-md' }"
         />
 
         <UNavigationMenu
@@ -134,7 +134,7 @@ onMounted(async () => {
           orientation="vertical"
           tooltip
           class="mt-auto"
-          :ui="{ link: collapsed ? 'justify-center py-3' : ' py-3' }"
+          :ui="{ link: collapsed ? 'justify-center size-11 mx-auto p-0 rounded-md' : 'py-3 rounded-md' }"
         />
       </template>
 

@@ -12,7 +12,8 @@ const { user, logout } = useAuth()
 const userAvatar = computed(() => ({
   src: user.value?.photoUrl ?? undefined,
   alt: user.value?.name ?? '',
-  text: (user.value?.name ?? '?').slice(0, 1).toUpperCase()
+  text: (user.value?.name ?? '?').slice(0, 1).toUpperCase(),
+  ui: { root: 'rounded-full' }
 }))
 
 const items = computed<DropdownMenuItem[][]>(() => ([[{
@@ -74,10 +75,14 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
       color="neutral"
       variant="ghost"
       block
-      :square="collapsed"
-      class="data-[state=open]:bg-elevated"
-      :class="collapsed && 'aspect-square mx-auto'"
-      :ui="{ trailingIcon: 'text-dimmed' }"
+      :class="[
+        'data-[state=open]:bg-elevated',
+        collapsed && 'size-11 mx-auto p-0 justify-center rounded-full hover:bg-transparent'
+      ]"
+      :ui="{
+        trailingIcon: 'text-dimmed',
+        leadingAvatar: collapsed ? 'size-full rounded-full' : ''
+      }"
     />
   </UDropdownMenu>
 </template>

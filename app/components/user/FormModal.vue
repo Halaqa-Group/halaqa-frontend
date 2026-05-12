@@ -379,7 +379,8 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
                 {{ locale === 'ar' ? r.nameAr : r.nameEn }}
               </div>
               <LucideLock
-                v-if="isRoleLocked(r.slug)"
+                v-if="isRoleLocked(r.slug)"
+
                 class="size-4 text-muted"
                 :aria-label="$t('pages.users.form.cannotRemoveOwnPrincipal')"
               />

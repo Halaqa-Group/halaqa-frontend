@@ -2,19 +2,13 @@ import { ref } from 'vue'
 import {
   LazyStudentFormModal,
   LazyStudentViewModal,
-  LazyStudentNotifyParentModal,
   LazyCommonConfirmDialog
 } from '#components'
 import type {
   Student,
-  StudentNote,
-  StudentAchievementSummary,
-  StudentAttendanceEntry,
-  StudentWeeklyPlanSummary,
   ApiGuardian,
   ApiStudent,
-  ApiStudentListResult,
-  ApiStudentsStats
+  ApiStudentListResult
 } from '~/types'
 
 const students = ref<Student[]>([])
@@ -22,15 +16,9 @@ const searchQuery = ref('')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const totalStudents = ref(0)
-const studentNotes = ref<Record<string, StudentNote[]>>({})
-const studentAchievements = ref<Record<string, StudentAchievementSummary[]>>({})
-const studentAttendance = ref<Record<string, StudentAttendanceEntry[]>>({})
-const studentWeeklyPlan = ref<Record<string, StudentWeeklyPlanSummary>>({})
-const studentsStats = ref<ApiStudentsStats | null>(null)
-const isStatsLoading = ref(false)
 // Snapshot of the unfiltered list summary. Captured on the most recent
 // no-filter fetch so the SummaryStats cards don't shift when the user filters.
-// Used as a fallback while the real /students/stats endpoint isn't wired.
+// The backend has no dedicated stats endpoint — this snapshot is the source of truth.
 const summarySnapshot = ref<{ total: number, active: number, inactive: number, graduated: number } | null>(null)
 const PAGE_LIMIT = 20
 const currentPage = ref(1)
@@ -48,18 +36,15 @@ function apiToStudent(s: ApiStudent): Student {
     name: s.name,
     gender: s.gender ?? 'male',
     status: s.status,
+    idNumber: s.id_number ?? null,
     dob: s.dob,
     joinDate: s.join_date,
     deletedAt: s.deleted_at ?? null,
     notes: s.notes,
-    currentSurah: s.current_surah ?? null,
-    progress: s.progress_percent ?? null,
-    weekProgress: s.week_progress_percent ?? null,
-    halaqat: s.halaqat ?? (s.halaqa_name ? [s.halaqa_name] : []),
-    attendance: s.attendance_rate ?? null,
     dailyHifzPagesCapacity: hifz,
     dailyNearPagesCapacity: near,
     dailyFarPagesCapacity: far,
+    photoUrl: s.photo_url,
     guardians,
     avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`
   }
@@ -152,24 +137,6 @@ export function useStudents() {
 
   const hasMoreStudents = computed(() => students.value.length < totalStudents.value)
 
-  async function fetchStudentsStats(halaqaId?: number) {
-    isStatsLoading.value = true
-    try {
-      const params = new URLSearchParams()
-      if (halaqaId) params.set('halaqa_id', String(halaqaId))
-      studentsStats.value = await api<ApiStudentsStats>(
-        `/students/stats${params.toString() ? `?${params}` : ''}`
-      )
-    } catch (e) {
-      // Non-fatal: list still works without stats; cards fall back to client-side
-      // counts of the loaded page until a retry succeeds.
-      studentsStats.value = null
-      if (import.meta.dev) console.warn('[students/stats] fetch failed', e)
-    } finally {
-      isStatsLoading.value = false
-    }
-  }
-
   async function createStudent(dto: Record<string, any>) {
     // Backend forces school_id from the authenticated user; we don't send it.
     const data = await api<ApiStudent>('/students', {
@@ -178,7 +145,7 @@ export function useStudents() {
     })
     students.value.unshift(apiToStudent(data))
     totalStudents.value += 1
-    return data
+    return { data, warnings: api.lastWarnings.value.slice() }
   }
 
   async function openView(student: Student) {
@@ -226,7 +193,7 @@ export function useStudents() {
     if (idx !== -1) {
       students.value[idx] = apiToStudent(data)
     }
-    return data
+    return { data, warnings: api.lastWarnings.value.slice() }
   }
 
   async function fetchStudent(id: number | string) {
@@ -234,34 +201,14 @@ export function useStudents() {
     return apiToStudent(data)
   }
 
-  function getStudentNotes(studentId: string): StudentNote[] {
-    return studentNotes.value[studentId] ?? []
-  }
-
-  function openNotifyParent(student: Student) {
-    overlay.create(LazyStudentNotifyParentModal, {
-      destroyOnClose: true,
-      props: { student }
-    }).open()
-  }
-
-  async function submitParentNote(studentId: string, message: string): Promise<StudentNote | null> {
-    const trimmed = message.trim()
-    if (!studentId || !trimmed) return null
-    // Frontend-only dummy: persist in module state. Replace with real API call later.
-    const { user } = useAuth()
-    const author = user.value
-    const note: StudentNote = {
-      id: `${studentId}-${Date.now()}`,
-      studentId,
-      authorId: author?.id ?? 0,
-      authorName: author?.name ?? 'أنا',
-      message: trimmed,
-      createdAt: new Date().toISOString()
-    }
-    const existing = studentNotes.value[studentId] ?? []
-    studentNotes.value[studentId] = [note, ...existing]
-    return note
+  /** Refresh a single student's detail in the in-memory list. Used after
+   *  guardian mutations so the modal & list stay in sync. */
+  async function refetchStudent(id: number | string): Promise<Student> {
+    const data = await api<ApiStudent>(`/students/${id}`)
+    const mapped = apiToStudent(data)
+    const idx = students.value.findIndex(s => s.id === String(id))
+    if (idx !== -1) students.value[idx] = mapped
+    return mapped
   }
 
   async function deleteStudent(id: number | string) {
@@ -392,19 +339,13 @@ export function useStudents() {
     totalStudents,
     hasMoreStudents,
     currentPage,
-    studentNotes,
-    studentAchievements,
-    studentAttendance,
-    studentWeeklyPlan,
-    studentsStats,
     summarySnapshot,
-    isStatsLoading,
     searchQuery,
     fetchStudents,
     loadMoreStudents,
     fetchSummarySnapshot,
-    fetchStudentsStats,
     fetchStudent,
+    refetchStudent,
     createStudent,
     updateStudent,
     deleteStudent,
@@ -419,9 +360,6 @@ export function useStudents() {
     unlinkGuardian,
     openView,
     openAdd,
-    openEdit,
-    openNotifyParent,
-    submitParentNote,
-    getStudentNotes
+    openEdit
   }
 }

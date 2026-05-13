@@ -4,7 +4,8 @@ import type { Student } from '~/types'
 const props = defineProps<{ student: Student }>()
 const emit = defineEmits<{ close: [] }>()
 const { t, locale } = useI18n()
-const { openEdit, openNotifyParent } = useStudents()
+const { user } = useAuth()
+const { openEdit } = useStudents()
 
 const dateFormatter = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
@@ -18,18 +19,11 @@ const statusLabel = computed(() => {
   return ''
 })
 
-const statusBadgeClass = computed(() => {
-  const s = props.student.status
-  if (s === 'active') return 'bg-secondary text-on-secondary'
-  if (s === 'graduated') return 'bg-primary text-on-primary'
-  return 'bg-outline text-white'
-})
-
-const genderLabel = computed(() => {
-  const g = props.student.gender
-  if (g === 'male') return t('pages.students.viewModal.male')
-  if (g === 'female') return t('pages.students.viewModal.female')
-  return ''
+const statusColor = computed<'success' | 'warning' | 'info' | 'error'>(() => {
+  if (props.student.deletedAt) return 'error'
+  if (props.student.status === 'active') return 'success'
+  if (props.student.status === 'inactive') return 'warning'
+  return 'info'
 })
 
 const ageLabel = computed(() => {
@@ -53,13 +47,16 @@ const joinDateLabel = computed(() => {
   return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
 })
 
+const canEdit = computed(() => {
+  const roles = user.value?.roles ?? []
+  return roles.includes('principal')
+    || roles.includes('vice_principal')
+    || roles.includes('teacher')
+})
+
 function handleEditClick() {
   emit('close')
   openEdit(props.student)
-}
-
-function handleNotifyClick() {
-  openNotifyParent(props.student)
 }
 
 async function handleLogAchievement() {
@@ -76,104 +73,76 @@ async function handleRecordAttendance() {
 </script>
 
 <template>
-  <div class="w-full lg:w-1/3 shrink-0 flex flex-col items-center text-center p-8 gap-6 border-e border-outline-variant bg-surface-container-low">
-    <div class="relative">
+  <UCard
+    class="w-full lg:w-72 shrink-0"
+    :ui="{ body: 'p-5' }"
+  >
+    <div class="flex flex-col items-center text-center gap-4">
       <img
         :src="student.avatar"
         :alt="student.name"
-        class="w-32 h-32 rounded-full object-cover border-4 border-surface-container-lowest"
-        style="box-shadow: 0 2px 12px rgba(128,76,125,0.12);"
+        class="w-24 h-24 rounded-full object-cover border border-default"
       >
-      <span
-        class="absolute bottom-2 end-0 px-3 py-1 rounded-full text-xs font-bold"
-        :class="statusBadgeClass"
-      >{{ statusLabel }}</span>
-    </div>
 
-    <div class="space-y-1">
-      <h2 class="display-md text-on-surface">
-        {{ student.name }}
-      </h2>
-      <p class="body-md text-on-surface-variant">
-        {{ student.halaqat.length > 0 ? student.halaqat.join('، ') : '—' }}
-      </p>
-    </div>
+      <div class="space-y-1">
+        <h2 class="text-lg font-semibold">
+          {{ student.name }}
+        </h2>
+        <p v-if="student.idNumber" class="text-xs text-muted tabular-nums" dir="ltr">
+          {{ student.idNumber }}
+        </p>
+        <UBadge variant="subtle" :color="statusColor" :label="statusLabel" />
+      </div>
 
-    <div class="w-full rounded-xl p-4 space-y-3 bg-surface-container-lowest shadow-sm text-start">
-      <div v-if="genderLabel" class="flex justify-between items-center gap-3">
-        <span class="body-md text-on-surface-variant">
-          {{ $t('pages.students.viewModal.gender') }}
-        </span>
-        <span class="body-md font-medium text-on-surface">{{ genderLabel }}</span>
+      <div class="w-full text-sm space-y-2 pt-2 border-t border-default">
+        <div class="flex justify-between items-center gap-3">
+          <span class="text-muted">{{ t('pages.students.viewModal.gender') }}</span>
+          <span class="font-medium">
+            {{ student.gender === 'male' ? t('pages.students.viewModal.male') : t('pages.students.viewModal.female') }}
+          </span>
+        </div>
+        <div v-if="ageLabel" class="flex justify-between items-center gap-3">
+          <span class="text-muted">{{ t('pages.students.viewModal.age') }}</span>
+          <span class="font-medium">{{ ageLabel }}</span>
+        </div>
+        <div class="flex justify-between items-center gap-3">
+          <span class="text-muted">{{ t('pages.students.viewModal.joinDate') }}</span>
+          <span class="font-medium">{{ joinDateLabel }}</span>
+        </div>
+        <div class="flex justify-between items-center gap-3">
+          <span class="text-muted">{{ t('pages.students.viewModal.guardiansCount') }}</span>
+          <span class="font-semibold text-primary">{{ student.guardians.length }}</span>
+        </div>
       </div>
-      <div v-if="ageLabel" class="flex justify-between items-center gap-3">
-        <span class="body-md text-on-surface-variant">
-          {{ $t('pages.students.viewModal.age') }}
-        </span>
-        <span class="body-md font-medium text-on-surface">{{ ageLabel }}</span>
-      </div>
-      <div class="flex justify-between items-center gap-3">
-        <span class="body-md text-on-surface-variant">
-          {{ $t('pages.students.viewModal.joinDate') }}
-        </span>
-        <span class="body-md font-medium text-on-surface">{{ joinDateLabel }}</span>
-      </div>
-      <div class="flex justify-between items-center gap-3 pt-3 border-t border-outline-variant">
-        <span class="body-md text-on-surface-variant">
-          {{ $t('pages.students.viewModal.guardiansCount') }}
-        </span>
-        <span class="body-lg font-bold text-primary">{{ student.guardians.length }}</span>
-      </div>
-    </div>
 
-    <div class="w-full flex flex-col gap-3 mt-auto">
-      <UButton
-        block
-        color="primary"
-        icon="i-lucide-file-edit"
-        :label="$t('pages.students.viewModal.editProfile')"
-        class="rounded-full"
-        @click="handleEditClick"
-      />
-      <UButton
-        block
-        variant="outline"
-        color="primary"
-        icon="i-lucide-bell"
-        :label="$t('pages.students.viewModal.notifyParent')"
-        class="rounded-full"
-        @click="handleNotifyClick"
-      />
-      <div class="grid grid-cols-2 gap-2">
+      <div class="w-full flex flex-col gap-2 pt-2">
         <UButton
-          variant="outline"
+          v-if="canEdit"
+          block
+          icon="i-lucide-pencil"
+          @click="handleEditClick"
+        >
+          {{ t('pages.students.viewModal.editProfile') }}
+        </UButton>
+        <UButton
+          block
+          variant="soft"
           color="neutral"
           icon="i-lucide-book-open"
-          size="sm"
-          class="rounded-full justify-center"
           @click="handleLogAchievement"
         >
-          {{ $t('pages.students.actions.logAchievement') }}
+          {{ t('pages.students.actions.logAchievement') }}
         </UButton>
         <UButton
-          variant="outline"
+          block
+          variant="soft"
           color="neutral"
           icon="i-lucide-check"
-          size="sm"
-          class="rounded-full justify-center"
           @click="handleRecordAttendance"
         >
-          {{ $t('pages.students.actions.recordAttendance') }}
+          {{ t('pages.students.actions.recordAttendance') }}
         </UButton>
       </div>
-      <UButton
-        variant="ghost"
-        color="neutral"
-        block
-        :label="$t('pages.students.viewModal.close')"
-        class="w-full py-2 body-md hover:opacity-70 font-normal text-muted"
-        @click="emit('close')"
-      />
     </div>
-  </div>
+  </UCard>
 </template>

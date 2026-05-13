@@ -70,11 +70,9 @@ function buildSeed(): MockDB {
 
   const students: ApiStudent[] = studentNames.map((name, i) => ({
     id: i + 1,
-    school_id: 1,
-    father_id: null,
-    mother_id: null,
     name,
-    email: null,
+    gender: i % 2 === 0 ? 'female' : 'male',
+    id_number: null,
     dob: null,
     join_date: join,
     status: i === 2 || i === 5 ? 'inactive' : 'active',

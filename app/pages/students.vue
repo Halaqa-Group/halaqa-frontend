@@ -9,20 +9,18 @@ const showProgress = computed(() =>
 )
 
 function loadAll() {
-  const isDeleted = filterStatus.value === 'deleted'
+  const status = filterStatus.value
+  const isDeleted = status === 'deleted'
   fetchStudents({
     halaqaId: selectedHalaqaId.value ?? undefined,
     q: searchQuery.value || undefined,
-    status: isDeleted ? undefined : (filterStatus.value ?? undefined),
+    status: status && status !== 'deleted' ? status : undefined,
     includeDeleted: isDeleted || undefined
   })
-  // fetchStudentsStats(halaqaId) — backend endpoint not ready
 }
 
-// Halaqa + status: refetch immediately on change.
 watch([selectedHalaqaId, filterStatus], () => loadAll())
 
-// Search: debounce so we don't hammer the server on every keystroke.
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 watch(searchQuery, () => {
   if (searchTimer) clearTimeout(searchTimer)
@@ -30,18 +28,24 @@ watch(searchQuery, () => {
 })
 
 onMounted(() => {
-  // Frozen one-shot stats fetch — never refetched on filter changes.
   fetchSummarySnapshot()
   loadAll()
 })
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-6">
     <StudentPageHeader />
     <StudentSummaryStats v-if="showSummary" />
-    <StudentFilterBar />
-    <StudentResults />
-    <StudentProgressFooter v-if="showProgress" />
+
+    <UCard :ui="{ body: 'p-0 sm:p-0' }">
+      <template #header>
+        <StudentFilterBar />
+      </template>
+      <StudentResults />
+      <template v-if="showProgress" #footer>
+        <StudentProgressFooter />
+      </template>
+    </UCard>
   </div>
 </template>

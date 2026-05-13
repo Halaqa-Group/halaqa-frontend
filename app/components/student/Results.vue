@@ -11,20 +11,19 @@ const {
   openAdd,
   openView,
   openEdit,
-  openNotifyParent,
   requestDelete,
   requestGraduate,
   requestRestore
 } = useStudents()
-const canCreateStudent = computed(() => {
+const isPrincipalOrVP = computed(() => {
   const roles = user.value?.roles ?? []
   return roles.includes('principal') || roles.includes('vice_principal')
 })
-const { viewMode, sortedStudents, hasMore, isLoadingMore, loadMore, clearFilters } = useStudentsView()
+const { viewMode, sortedStudents, clearFilters } = useStudentsView()
 
 const columns = computed<TableColumn<Student>[]>(() => [
   { accessorKey: 'name', header: t('pages.students.table.student') },
-  { accessorKey: 'halaqat', header: t('pages.students.table.halaqat') },
+  { accessorKey: 'idNumber', header: t('pages.students.table.idNumber') },
   { accessorKey: 'status', header: t('pages.students.table.status') },
   { accessorKey: 'dailyHifzPagesCapacity', header: t('pages.students.table.dailyHifz') },
   { accessorKey: 'dailyNearPagesCapacity', header: t('pages.students.table.dailyNear') },
@@ -49,6 +48,11 @@ function statusColor(student: Student): 'success' | 'warning' | 'info' | 'error'
 function rowMenuItems(student: Student): DropdownMenuItem[][] {
   const primary: DropdownMenuItem[] = [
     {
+      label: t('pages.students.actions.viewProfile'),
+      icon: 'i-lucide-eye',
+      onSelect: () => openView(student)
+    },
+    {
       label: t('pages.students.actions.logAchievement'),
       icon: 'i-lucide-book-open',
       onSelect: () => navigateTo(`/achievements?studentId=${student.id}`)
@@ -59,22 +63,17 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
       onSelect: () => navigateTo(`/attendance?studentId=${student.id}`)
     },
     {
-      label: t('pages.students.actions.notifyParent'),
-      icon: 'i-lucide-bell',
-      onSelect: () => openNotifyParent(student)
-    },
-    {
       label: t('pages.students.actions.editStudent'),
       icon: 'i-lucide-pencil',
       onSelect: () => openEdit(student)
     }
   ]
+  if (!isPrincipalOrVP.value) return [primary]
   const lifecycle: DropdownMenuItem[] = []
   if (student.deletedAt) {
     lifecycle.push({
       label: t('pages.students.actions.restore'),
       icon: 'i-lucide-rotate-ccw',
-      color: 'success',
       onSelect: () => requestRestore(student)
     })
   } else {
@@ -98,103 +97,75 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
 
 <template>
   <div v-if="isLoading && students.length === 0" class="flex justify-center py-16">
-    <LucideLoaderCircle class="w-10 h-10 animate-spin text-primary" />
+    <LucideLoaderCircle class="w-8 h-8 animate-spin text-primary" />
   </div>
 
-  <div v-else-if="error" class="rounded-2xl p-6 text-center bg-status-conflict-bg">
-    <LucideAlertCircle class="w-8 h-8 mx-auto mb-2 text-status-conflict" />
-    <p class="text-status-conflict">
-      {{ error }}
-    </p>
+  <div v-else-if="error" class="p-6 text-sm text-error text-center">
+    {{ error }}
   </div>
 
-  <div
-    v-else-if="students.length === 0"
-    class="flex flex-col items-center justify-center gap-5 py-20 rounded-2xl border border-dashed border-outline-variant"
-  >
-    <div class="w-20 h-20 rounded-full flex items-center justify-center bg-primary-container">
-      <LucideUserPlus class="w-10 h-10 text-primary" />
-    </div>
-    <p class="text-lg font-semibold text-on-surface">
-      {{ $t('pages.students.empty.welcomeTitle') }}
+  <div v-else-if="students.length === 0" class="flex flex-col items-center justify-center gap-3 py-12">
+    <UIcon name="i-lucide-user-plus" class="w-10 h-10 text-muted" />
+    <p class="text-sm text-muted">
+      {{ t('pages.students.empty.welcomeTitle') }}
     </p>
     <UButton
-      v-if="canCreateStudent"
+      v-if="isPrincipalOrVP"
       icon="i-lucide-plus"
-      size="lg"
-      class="font-bold rounded-full px-6"
+      size="sm"
       @click="openAdd"
     >
-      {{ $t('pages.students.addNew') }}
+      {{ t('pages.students.addNew') }}
     </UButton>
   </div>
 
-  <div
-    v-else-if="sortedStudents.length === 0"
-    class="flex flex-col items-center justify-center gap-4 py-16 rounded-2xl border border-dashed border-outline-variant"
-  >
-    <div class="w-16 h-16 rounded-full flex items-center justify-center bg-primary-container">
-      <LucideSearchX class="w-8 h-8 text-primary" />
-    </div>
-    <p class="text-on-surface">
-      {{ $t('pages.students.empty.noMatchTitle') }}
+  <div v-else-if="sortedStudents.length === 0" class="flex flex-col items-center justify-center gap-3 py-12">
+    <UIcon name="i-lucide-search-x" class="w-8 h-8 text-muted" />
+    <p class="text-sm text-muted">
+      {{ t('pages.students.empty.noMatchTitle') }}
     </p>
     <UButton
       variant="soft"
-      color="primary"
+      color="neutral"
       icon="i-lucide-x"
-      size="md"
-      class="rounded-full"
+      size="sm"
       @click="clearFilters"
     >
-      {{ $t('pages.students.empty.clearFilters') }}
+      {{ t('pages.students.empty.clearFilters') }}
     </UButton>
   </div>
 
   <template v-else>
-    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 sm:p-6">
       <StudentCard v-for="student in sortedStudents" :key="student.id" :student="student" />
     </div>
 
-    <div v-else class="rounded-2xl border border-outline-variant bg-surface-container-lowest overflow-x-auto">
+    <div v-else class="overflow-x-auto">
       <UTable
         :data="sortedStudents"
         :columns="columns"
-        class="min-w-[900px]"
+        :loading="isLoading"
+        class="min-w-[800px]"
       >
         <template #name-cell="{ row }">
           <button
             type="button"
-            class="flex items-center gap-3 min-w-0 text-start hover:opacity-80 transition-opacity"
+            class="flex items-center gap-3 min-w-0 text-start hover:underline"
             @click="openView(row.original)"
           >
             <img
               :src="row.original.avatar"
               :alt="row.original.name"
-              class="w-9 h-9 rounded-full object-cover border border-outline-variant shrink-0"
+              class="w-8 h-8 rounded-full object-cover border border-default shrink-0"
             >
-            <div class="flex flex-col min-w-0">
-              <span class="font-semibold text-on-surface truncate">{{ row.original.name }}</span>
-              <span class="text-xs text-on-surface-variant truncate">
-                {{ $t('pages.students.card.currentSurah') }}: {{ row.original.currentSurah ?? '—' }}
-              </span>
-            </div>
+            <span class="font-medium truncate">{{ row.original.name }}</span>
           </button>
         </template>
 
-        <template #halaqat-cell="{ row }">
-          <div v-if="row.original.halaqat.length === 0" class="text-on-surface-variant">
-            —
-          </div>
-          <div v-else class="flex flex-wrap gap-1">
-            <UBadge
-              v-for="(name, i) in row.original.halaqat"
-              :key="i"
-              variant="subtle"
-              color="primary"
-              :label="name"
-            />
-          </div>
+        <template #idNumber-cell="{ row }">
+          <span class="tabular-nums text-muted" dir="ltr">
+            {{ row.original.idNumber ?? '—' }}
+          </span>
         </template>
 
         <template #status-cell="{ row }">
@@ -206,53 +177,32 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
         </template>
 
         <template #dailyHifzPagesCapacity-cell="{ row }">
-          <span class="tabular-nums text-on-surface">
-            {{ row.original.dailyHifzPagesCapacity }}
-          </span>
+          <span class="tabular-nums">{{ row.original.dailyHifzPagesCapacity }}</span>
         </template>
 
         <template #dailyNearPagesCapacity-cell="{ row }">
-          <span class="tabular-nums text-on-surface">
-            {{ row.original.dailyNearPagesCapacity }}
-          </span>
+          <span class="tabular-nums">{{ row.original.dailyNearPagesCapacity }}</span>
         </template>
 
         <template #dailyFarPagesCapacity-cell="{ row }">
-          <span class="tabular-nums text-on-surface">
-            {{ row.original.dailyFarPagesCapacity }}
-          </span>
+          <span class="tabular-nums">{{ row.original.dailyFarPagesCapacity }}</span>
         </template>
 
         <template #actions-cell="{ row }">
           <UDropdownMenu
             :items="rowMenuItems(row.original)"
             :content="{ align: 'end', collisionPadding: 12 }"
-            :ui="{ content: 'w-56' }"
           >
             <UButton
               icon="i-lucide-ellipsis-vertical"
               color="neutral"
               variant="ghost"
               square
-              :aria-label="$t('pages.students.table.actions')"
+              :aria-label="t('pages.students.table.actions')"
             />
           </UDropdownMenu>
         </template>
       </UTable>
-    </div>
-
-    <div v-if="hasMore" class="flex justify-center mt-8">
-      <UButton
-        variant="outline"
-        color="primary"
-        size="md"
-        class="rounded-full px-6"
-        :loading="isLoadingMore"
-        :disabled="isLoadingMore"
-        @click="loadMore"
-      >
-        {{ $t('pages.students.loadMore') }}
-      </UButton>
     </div>
   </template>
 </template>

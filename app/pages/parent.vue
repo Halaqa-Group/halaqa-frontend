@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { Student } from '~/types'
+
 definePageMeta({
   middleware: ['parent-only'],
   breadcrumb: [
@@ -6,29 +8,35 @@ definePageMeta({
   ]
 })
 
-const { t } = useI18n()
-const { students, fetchStudents, isLoading } = useStudents()
+const { t, locale } = useI18n()
+const { children, isLoading, error, fetchChildren } = useMyChildren()
+const { openView } = useStudents()
 
-const averageProgress = computed(() => {
-  if (!students.value.length) return 0
-  const total = students.value.reduce((sum, student) => sum + (student.progress || 0), 0)
-  return Math.round(total / students.value.length)
-})
+const dateFormatter = computed(() =>
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
+)
 
-const averageAttendance = computed(() => {
-  if (!students.value.length) return 0
-  const total = students.value.reduce((sum, student) => sum + (student.attendance || 0), 0)
-  return Math.round(total / students.value.length)
-})
+function formatDate(iso: string | null): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+}
 
-const topStudent = computed(() => {
-  if (!students.value.length) return null
-  return [...students.value].sort((a, b) => (b.progress || 0) - (a.progress || 0))[0]
-})
+function statusLabel(s: Student) {
+  if (s.deletedAt) return t('pages.students.statusDeleted')
+  if (s.status === 'active') return t('pages.students.statusActive')
+  if (s.status === 'inactive') return t('pages.students.statusInactive')
+  return t('pages.students.statusGraduated')
+}
 
-onMounted(async () => {
-  await fetchStudents()
-})
+function statusColor(s: Student): 'success' | 'warning' | 'info' | 'error' {
+  if (s.deletedAt) return 'error'
+  if (s.status === 'active') return 'success'
+  if (s.status === 'inactive') return 'warning'
+  return 'info'
+}
+
+onMounted(fetchChildren)
 </script>
 
 <template>
@@ -46,93 +54,75 @@ onMounted(async () => {
       <LucideLoaderCircle class="h-8 w-8 animate-spin text-primary" />
     </div>
 
+    <div v-else-if="error" class="rounded-2xl p-6 text-center bg-status-conflict-bg">
+      <LucideAlertCircle class="w-8 h-8 mx-auto mb-2 text-status-conflict" />
+      <p class="text-status-conflict">
+        {{ error }}
+      </p>
+    </div>
+
     <template v-else>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <UCard>
           <p class="text-sm text-muted mb-1">
             {{ t('pages.parent.stats.childrenCount') }}
           </p>
           <p class="text-2xl font-bold">
-            {{ students.length }}
+            {{ children.length }}
           </p>
         </UCard>
 
         <UCard>
           <p class="text-sm text-muted mb-1">
-            {{ t('pages.parent.stats.avgProgress') }}
+            {{ t('pages.parent.stats.activeCount') }}
           </p>
           <p class="text-2xl font-bold">
-            {{ averageProgress }}%
-          </p>
-        </UCard>
-
-        <UCard>
-          <p class="text-sm text-muted mb-1">
-            {{ t('pages.parent.stats.avgAttendance') }}
-          </p>
-          <p class="text-2xl font-bold">
-            {{ averageAttendance }}%
+            {{ children.filter(c => c.status === 'active' && !c.deletedAt).length }}
           </p>
         </UCard>
       </div>
 
-      <UCard v-if="topStudent">
-        <template #header>
-          <h2 class="font-semibold">
-            {{ t('pages.parent.bestChild') }}
-          </h2>
-        </template>
-        <p class="text-sm">
-          {{ topStudent.name }} - {{ topStudent.progress }}%
-        </p>
-      </UCard>
-
       <UCard>
         <template #header>
           <h2 class="font-semibold">
-            {{ t('pages.parent.childrenAchievements') }}
+            {{ t('pages.parent.childrenList') }}
           </h2>
         </template>
 
-        <div v-if="students.length === 0" class="text-sm text-muted">
+        <div v-if="children.length === 0" class="text-sm text-muted py-2">
           {{ t('pages.parent.noChildren') }}
         </div>
 
         <div v-else class="space-y-3">
-          <div
-            v-for="student in students"
+          <button
+            v-for="student in children"
             :key="student.id"
-            class="rounded-lg border border-default p-4"
+            type="button"
+            class="w-full rounded-lg border border-default p-4 text-start transition-colors hover:bg-surface-container-low"
+            @click="openView(student)"
           >
-            <div class="flex items-center justify-between gap-3">
-              <div>
-                <p class="font-semibold">
+            <div class="flex items-center gap-4">
+              <img
+                :src="student.avatar"
+                :alt="student.name"
+                class="w-12 h-12 rounded-full object-cover border border-outline-variant shrink-0"
+              >
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold truncate">
                   {{ student.name }}
                 </p>
-                <p class="text-xs text-muted">
-                  {{ t('pages.parent.currentSurah') }}: {{ student.currentSurah || '—' }}
+                <p v-if="student.idNumber" class="text-xs text-muted tabular-nums" dir="ltr">
+                  {{ student.idNumber }}
                 </p>
               </div>
-              <UBadge color="primary" variant="soft">
-                {{ student.progress ?? 0 }}%
-              </UBadge>
-            </div>
-
-            <div class="mt-3 space-y-2">
-              <div>
-                <p class="text-xs text-muted mb-1">
-                  {{ t('pages.parent.memorizationProgress') }}
-                </p>
-                <UProgress :model-value="student.progress || 0" />
-              </div>
-              <div>
-                <p class="text-xs text-muted mb-1">
-                  {{ t('pages.parent.attendanceRate') }}
-                </p>
-                <UProgress :model-value="student.attendance || 0" color="secondary" />
+              <div class="flex flex-col items-end gap-1 shrink-0">
+                <UBadge variant="subtle" :color="statusColor(student)" :label="statusLabel(student)" />
+                <span class="text-xs text-muted">
+                  {{ t('pages.parent.joinedOn', { date: formatDate(student.joinDate) }) }}
+                </span>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       </UCard>
     </template>

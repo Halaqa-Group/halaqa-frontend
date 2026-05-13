@@ -15,7 +15,6 @@ export function useStudentsView() {
   const {
     students,
     searchQuery,
-    studentsStats,
     summarySnapshot,
     totalStudents,
     hasMoreStudents,
@@ -43,20 +42,11 @@ export function useStudentsView() {
     }
   })
 
-  // Stats are intentionally decoupled from active filters. Source preference:
-  // 1. real /students/stats endpoint when wired,
-  // 2. snapshot from the most recent unfiltered fetch,
-  // 3. live counts of the loaded set (only meaningful when no filter is active).
+  // Stats are intentionally decoupled from active filters. Backend has no
+  // dedicated stats endpoint; we capture a frozen snapshot from the first
+  // unfiltered fetch (fetchSummarySnapshot). Live counts of the loaded set
+  // are the last-resort fallback when the snapshot hasn't been taken yet.
   const summary = computed(() => {
-    const stats = studentsStats.value
-    if (stats) {
-      return {
-        total: stats.total,
-        active: stats.active,
-        inactive: stats.inactive,
-        graduated: stats.graduated
-      }
-    }
     if (summarySnapshot.value) return summarySnapshot.value
     return {
       total: students.value.length,
@@ -78,11 +68,12 @@ export function useStudentsView() {
   }
 
   function loadMore() {
-    const isDeleted = filterStatus.value === 'deleted'
+    const status = filterStatus.value
+    const isDeleted = status === 'deleted'
     return loadMoreStudents({
       halaqaId: selectedHalaqaId.value ?? undefined,
       q: searchQuery.value || undefined,
-      status: isDeleted ? undefined : (filterStatus.value ?? undefined),
+      status: status && status !== 'deleted' ? status : undefined,
       includeDeleted: isDeleted || undefined
     })
   }

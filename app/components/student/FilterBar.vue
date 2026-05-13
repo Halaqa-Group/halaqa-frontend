@@ -6,17 +6,13 @@ type StatusFilter = Student['status'] | 'deleted' | null
 
 const { t } = useI18n()
 const { user } = useAuth()
-const { searchQuery, openAdd } = useStudents()
+const { searchQuery } = useStudents()
 const { filterStatus, sortKey, viewMode } = useStudentsView()
 
-// Backend silently ignores include_deleted for non-principal/VP roles, so the
-// "Deleted" status option is only useful for principal/VP. POST /students is
-// principal/VP only too — same gate hides Add.
 const canManageDeleted = computed(() => {
   const roles = user.value?.roles ?? []
   return roles.includes('principal') || roles.includes('vice_principal')
 })
-const canCreateStudent = canManageDeleted
 
 const statusFilters = computed<{ label: string, value: StatusFilter }[]>(() => {
   const base: { label: string, value: StatusFilter }[] = [
@@ -32,86 +28,75 @@ const statusFilters = computed<{ label: string, value: StatusFilter }[]>(() => {
 })
 
 const sortItems = computed<DropdownMenuItem[][]>(() => [[
-  { label: t('pages.students.sort.newest'), icon: 'i-lucide-clock', onSelect: () => { sortKey.value = 'newest' } },
-  { label: t('pages.students.sort.joinDateDesc'), icon: 'i-lucide-calendar', onSelect: () => { sortKey.value = 'joinDateDesc' } },
-  { label: t('pages.students.sort.nameAsc'), icon: 'i-lucide-arrow-down-a-z', onSelect: () => { sortKey.value = 'nameAsc' } }
+  {
+    label: t('pages.students.sort.newest'),
+    icon: 'i-lucide-clock',
+    onSelect: () => { sortKey.value = 'newest' }
+  },
+  {
+    label: t('pages.students.sort.joinDateDesc'),
+    icon: 'i-lucide-calendar',
+    onSelect: () => { sortKey.value = 'joinDateDesc' }
+  },
+  {
+    label: t('pages.students.sort.nameAsc'),
+    icon: 'i-lucide-arrow-down-a-z',
+    onSelect: () => { sortKey.value = 'nameAsc' }
+  }
 ]])
 
 const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-3 mb-8">
-    <div>
-      <UInput
-        v-model="searchQuery"
-        type="text"
-        :placeholder="$t('pages.students.searchByName')"
-        icon="i-lucide-search"
-        class="flex-1 min-w-72"
-        :ui="{ base: 'rounded-full' }" />
-    </div>
-
-    <div>
-      <USelectMenu
-        v-model="filterStatus"
-        :items="statusFilters"
-        value-key="value"
-        :search-input="false"
-        :ui="{ base: 'rounded-full px-4 min-w-48' }">
-        <template #default="{ modelValue }">
-          <span class="flex-1 text-start">
-            {{statusFilters.find(f => f.value === modelValue)?.label ?? $t('pages.students.statusAll')}}
-          </span>
-        </template>
-      </USelectMenu>
-    </div>
-
-    <div>
-      <UDropdownMenu
-        :items="sortItems"
-        :content="{ align: 'end', collisionPadding: 12 }"
-        :ui="{ content: 'w-56' }">
-        <UButton
-          variant="outline"
-          color="neutral"
-          trailing-icon="i-lucide-chevron-down"
-          icon="i-lucide-arrow-up-down"
-          size="md"
-          class="rounded-full px-4">
-          {{ $t('pages.students.sort.label') }}: {{ sortLabel }}
-        </UButton>
-      </UDropdownMenu>
-    </div>
-
-    <div class="flex items-center gap-2 ms-auto shrink-0">
-      <div class="flex items-center bg-elevated p-1 rounded-full border border-default">
-        <UButton
-          :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
-          color="primary"
-          icon="i-lucide-layout-grid"
-          size="md"
-          class="rounded-full px-3"
-          :aria-label="$t('pages.students.view.grid')"
-          @click="viewMode = 'grid'" />
-        <UButton
-          :variant="viewMode === 'table' ? 'soft' : 'ghost'"
-          color="primary"
-          icon="i-lucide-table-2"
-          size="md"
-          class="rounded-full px-3"
-          :aria-label="$t('pages.students.view.table')"
-          @click="viewMode = 'table'" />
-      </div>
-
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <UInput
+      v-model="searchQuery"
+      icon="i-lucide-search"
+      :placeholder="t('pages.students.searchByName')"
+      class="w-full sm:w-64"
+    />
+    <USelect
+      v-model="filterStatus"
+      :items="statusFilters"
+      value-key="value"
+      class="w-full sm:w-40"
+    />
+    <UDropdownMenu
+      :items="sortItems"
+      :content="{ align: 'end', collisionPadding: 12 }"
+    >
       <UButton
-        v-if="canCreateStudent"
-        icon="i-lucide-plus"
-        size="lg"
-        class="font-bold rounded-full shrink-0 px-6"
-        @click="openAdd">
-        {{ $t('pages.students.addNew') }}
+        variant="outline"
+        color="neutral"
+        trailing-icon="i-lucide-chevron-down"
+        icon="i-lucide-arrow-up-down"
+        size="sm"
+        class="w-full sm:w-auto"
+      >
+        {{ t('pages.students.sort.label') }}: {{ sortLabel }}
       </UButton>
+    </UDropdownMenu>
+
+    <div class="sm:ms-auto flex items-center gap-1 rounded-md border border-default p-0.5">
+      <UButton
+        :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
+        color="primary"
+        icon="i-lucide-layout-grid"
+        size="sm"
+        square
+        :aria-label="t('pages.students.view.grid')"
+        @click="viewMode = 'grid'"
+      />
+      <UButton
+        :variant="viewMode === 'table' ? 'soft' : 'ghost'"
+        color="primary"
+        icon="i-lucide-table-2"
+        size="sm"
+        square
+        :aria-label="t('pages.students.view.table')"
+        @click="viewMode = 'table'"
+      />
     </div>
   </div>
 </template>

@@ -1,4 +1,5 @@
 import type { FetchOptions } from 'ofetch'
+import type { Ref } from 'vue'
 import { tryMock } from '~/mocks'
 import type { ApiClient } from '~/types'
 
@@ -14,6 +15,10 @@ export function useApi(): ApiClient {
 function createClient(): ApiClient {
   const config = useRuntimeConfig()
   const token = useCookie<string | null>('auth_token')
+  // Single-flight side channel for backend non-fatal warnings (e.g.
+  // id_number.checksum_invalid). Callers read this immediately after their
+  // awaited api(...) call. Documented limitation: concurrent calls race.
+  const lastWarnings = ref<string[]>([])
 
   // The single network terminus. Lives in this closure only — no other
   // module can reach it, so there is exactly one path to issue a request:
@@ -63,10 +68,10 @@ function createClient(): ApiClient {
 
   async function api<T = unknown>(url: string, opts: FetchOptions = {}): Promise<T> {
     const mocked = await tryMock(url, opts)
-    if (mocked.matched) return unwrap<T>(mocked.data)
+    if (mocked.matched) return unwrap<T>(mocked.data, lastWarnings)
 
     try {
-      return unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]))
+      return unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
     } catch (e: unknown) {
       const status = (e as { response?: { status?: number }, status?: number } | null)?.response?.status
         ?? (e as { status?: number } | null)?.status
@@ -91,18 +96,21 @@ function createClient(): ApiClient {
         throw e
       }
       // onRequest reads token reactively, so the retry sends the new access token.
-      return unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]))
+      return unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
     }
   }
 
-  return api
+  return Object.assign(api, { lastWarnings }) as ApiClient
 }
 
-function unwrap<T>(raw: unknown): T {
+function unwrap<T>(raw: unknown, lastWarnings: Ref<string[]>): T {
   if (raw && typeof raw === 'object'
     && 'code' in (raw as Record<string, unknown>)
     && 'data' in (raw as Record<string, unknown>)) {
-    return (raw as { data: T }).data
+    const env = raw as { data: T, warnings?: string[] }
+    lastWarnings.value = Array.isArray(env.warnings) ? env.warnings : []
+    return env.data
   }
+  lastWarnings.value = []
   return raw as T
 }

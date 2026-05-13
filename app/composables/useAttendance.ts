@@ -117,7 +117,9 @@ export function useAttendance() {
           studentId: String(s.id),
           name: s.name,
           avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
-          currentSurah: s.current_surah ?? '—',
+          // current_surah is not on the slimmed ApiStudent — it belongs to the
+          // (not-yet-built) achievements module. Leave as a placeholder.
+          currentSurah: '—',
           status: ex ? backendToStatus(ex.status) : 'present' as AttendanceStatus,
           notes: ex?.notes || ''
         }

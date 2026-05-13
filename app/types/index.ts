@@ -1,8 +1,15 @@
 import type { FetchOptions } from 'ofetch'
+import type { Ref } from 'vue'
 
 // ── API client ──────────────────────────────────────────────────────────────
 
-export type ApiClient = <T = unknown>(url: string, opts?: FetchOptions) => Promise<T>
+export type ApiClient = {
+  <T = unknown>(url: string, opts?: FetchOptions): Promise<T>
+  /** Warnings array from the most recent envelope (e.g. `id_number.checksum_invalid`).
+   *  Reset to [] on every request that returns no warnings. Single-flight only —
+   *  for concurrent calls, only the latest is observable. */
+  lastWarnings: Ref<string[]>
+}
 
 // ── UI types (used by existing components) ──────────────────────────────────
 
@@ -29,54 +36,17 @@ export interface Student {
   name: string
   gender: 'male' | 'female'
   status: 'active' | 'inactive' | 'graduated'
+  idNumber: string | null
   dob: string | null
   joinDate: string
   deletedAt: string | null
   notes: string | null
-  currentSurah: string | null
-  progress: number | null
-  weekProgress: number | null
-  halaqat: string[]
-  attendance: number | null
   dailyHifzPagesCapacity: number
   dailyNearPagesCapacity: number
   dailyFarPagesCapacity: number
+  photoUrl: string | null
   guardians: ApiGuardian[]
   avatar: string
-}
-
-export interface StudentNote {
-  id: string
-  studentId: string
-  authorId: number
-  authorName: string
-  message: string
-  createdAt: string
-}
-
-export interface StudentAchievementSummary {
-  id: string
-  date: string
-  trackType: 'Hifz' | 'Near' | 'Far'
-  startSurah: string
-  startVerse: number
-  endSurah: string
-  endVerse: number
-  score: number
-  status: 'approved' | 'unapproved'
-}
-
-export interface StudentAttendanceEntry {
-  id: string
-  date: string
-  status: 'Present' | 'Late' | 'Absent' | 'Excused'
-}
-
-export interface StudentWeeklyPlanSummary {
-  weekStartDate: string
-  totalPlanned: number
-  totalAchieved: number
-  coveragePercent: number
 }
 
 export type AttendanceStatus = 'present' | 'late' | 'absent'
@@ -92,15 +62,15 @@ export interface AttendanceEntry {
 
 // ── API types (backend entity shapes) ───────────────────────────────────────
 
+/** Backend StudentResponse shape — fields the API actually returns.
+ *  Note: progress/attendance/current_surah/halaqat etc. live in other
+ *  modules (attendance, achievements, weekly-plans) and are NOT on this
+ *  endpoint. */
 export interface ApiStudent {
   id: number
-  school_id?: number
-  father_id?: number | null
-  mother_id?: number | null
-  email?: string | null
   name: string
-  gender?: 'male' | 'female'
-  id_number?: string | null
+  gender: 'male' | 'female'
+  id_number: string | null
   dob: string | null
   join_date: string
   status: 'active' | 'inactive' | 'graduated'
@@ -110,12 +80,7 @@ export interface ApiStudent {
   daily_far_pages_capacity: number | string
   notes: string | null
   photo_url: string | null
-  progress_percent?: number
-  week_progress_percent?: number
-  current_surah?: string
-  halaqa_name?: string | null
-  halaqat?: string[]
-  attendance_rate?: number
+  /** Present on detail (GET /students/:id) and as eager-loaded on create response. */
   guardians?: ApiGuardian[]
 }
 
@@ -124,13 +89,6 @@ export interface ApiStudentListResult {
   total: number
   page: number
   limit: number
-}
-
-export interface ApiStudentsStats {
-  total: number
-  active: number
-  inactive: number
-  graduated: number
 }
 
 export interface ApiGuardian {

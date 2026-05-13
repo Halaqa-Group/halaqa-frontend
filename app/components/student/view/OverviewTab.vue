@@ -2,7 +2,7 @@
 import type { Student } from '~/types'
 
 const props = defineProps<{ student: Student }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const dailyTracks = computed(() => [
   { label: t('pages.students.card.dailyHifz'), value: props.student.dailyHifzPagesCapacity },
@@ -10,92 +10,117 @@ const dailyTracks = computed(() => [
   { label: t('pages.students.card.dailyFar'), value: props.student.dailyFarPagesCapacity }
 ])
 
-function clampPercent(n: number) {
-  return Math.min(Math.max(n, 0), 100)
+const dateFormatter = computed(() =>
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
+)
+
+function formatDateOnly(iso: string | null): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
 }
 
-const hasPerformance = computed(() =>
-  props.student.attendance !== null || props.student.progress !== null
-)
+const ageLabel = computed(() => {
+  const dob = props.student.dob
+  if (!dob) return null
+  const birth = new Date(dob)
+  if (Number.isNaN(birth.getTime())) return null
+  const now = new Date()
+  let years = now.getFullYear() - birth.getFullYear()
+  const monthDiff = now.getMonth() - birth.getMonth()
+  const dayDiff = now.getDate() - birth.getDate()
+  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) years -= 1
+  if (years < 0) return null
+  return t('pages.students.viewModal.ageYears', { count: years })
+})
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 pt-6">
-    <!-- Current surah headline -->
-    <div class="rounded-xl p-6 bg-surface-container-low">
-      <span class="label-md block mb-1 text-on-surface-variant">
-        {{ $t('pages.students.card.currentSurah') }}
-      </span>
-      <span class="display-md text-on-surface">{{ student.currentSurah ?? '—' }}</span>
-    </div>
+  <div class="flex flex-col gap-4 pt-4">
+    <UCard :ui="{ body: 'p-0 sm:p-0' }">
+      <template #header>
+        <h3 class="font-semibold">
+          {{ t('pages.students.viewModal.identityTitle') }}
+        </h3>
+      </template>
+      <dl class="divide-y divide-default">
+        <div class="flex items-center justify-between gap-3 p-4 text-sm">
+          <dt class="text-muted">
+            {{ t('pages.students.viewModal.idNumber') }}
+          </dt>
+          <dd class="font-medium tabular-nums" dir="ltr">
+            {{ student.idNumber ?? '—' }}
+          </dd>
+        </div>
+        <div class="flex items-center justify-between gap-3 p-4 text-sm">
+          <dt class="text-muted">
+            {{ t('pages.students.viewModal.gender') }}
+          </dt>
+          <dd class="font-medium">
+            {{ student.gender === 'male' ? t('pages.students.viewModal.male') : t('pages.students.viewModal.female') }}
+          </dd>
+        </div>
+        <div v-if="ageLabel" class="flex items-center justify-between gap-3 p-4 text-sm">
+          <dt class="text-muted">
+            {{ t('pages.students.viewModal.age') }}
+          </dt>
+          <dd class="font-medium">
+            {{ ageLabel }}
+          </dd>
+        </div>
+        <div class="flex items-center justify-between gap-3 p-4 text-sm">
+          <dt class="text-muted">
+            {{ t('pages.students.viewModal.dob') }}
+          </dt>
+          <dd class="font-medium">
+            {{ formatDateOnly(student.dob) }}
+          </dd>
+        </div>
+        <div class="flex items-center justify-between gap-3 p-4 text-sm">
+          <dt class="text-muted">
+            {{ t('pages.students.viewModal.joinDate') }}
+          </dt>
+          <dd class="font-medium">
+            {{ formatDateOnly(student.joinDate) }}
+          </dd>
+        </div>
+      </dl>
+    </UCard>
 
-    <!-- Performance stat tiles -->
-    <div v-if="hasPerformance" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div v-if="student.attendance !== null" class="rounded-xl p-5 border border-outline-variant">
-        <div class="flex items-center justify-between gap-3 mb-3">
-          <span class="label-md text-on-surface-variant flex items-center gap-2">
-            <LucideCalendarCheck class="w-4 h-4 text-secondary" />
-            {{ $t('pages.students.viewModal.attendanceRate') }}
-          </span>
-          <span class="text-2xl font-bold text-on-surface">{{ student.attendance }}%</span>
-        </div>
-        <div class="w-full h-2 rounded-full overflow-hidden bg-primary-container">
-          <div
-            class="h-full bg-primary transition-all duration-300"
-            :style="{ width: `${clampPercent(student.attendance)}%` }"
-          />
-        </div>
-      </div>
-      <div v-if="student.progress !== null" class="rounded-xl p-5 border border-outline-variant">
-        <div class="flex items-center justify-between gap-3 mb-3">
-          <span class="label-md text-on-surface-variant flex items-center gap-2">
-            <LucideTarget class="w-4 h-4 text-secondary" />
-            {{ $t('pages.students.viewModal.progress') }}
-          </span>
-          <span class="text-2xl font-bold text-on-surface">{{ student.progress }}%</span>
-        </div>
-        <div class="w-full h-2 rounded-full overflow-hidden bg-primary-container">
-          <div
-            class="h-full bg-secondary transition-all duration-300"
-            :style="{ width: `${clampPercent(student.progress)}%` }"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- General notes -->
-    <div
-      v-if="student.notes"
-      class="rounded-xl p-5 border border-outline-variant bg-surface-container-low"
-    >
-      <h4 class="body-lg font-bold mb-3 flex items-center gap-2 text-on-surface">
-        <LucideStickyNote class="w-5 h-5 text-secondary" />
-        {{ $t('pages.students.viewModal.generalNotesTitle') }}
-      </h4>
-      <p class="body-md text-on-surface whitespace-pre-line">
+    <UCard v-if="student.notes">
+      <template #header>
+        <h3 class="font-semibold">
+          {{ t('pages.students.viewModal.generalNotesTitle') }}
+        </h3>
+      </template>
+      <p class="text-sm whitespace-pre-line">
         {{ student.notes }}
       </p>
-    </div>
+    </UCard>
 
-    <!-- Daily capacity -->
-    <div class="rounded-xl p-5 border border-outline-variant">
-      <h4 class="body-lg font-bold mb-4 flex items-center gap-2 text-on-surface">
-        <LucideBarChart2 class="w-5 h-5 text-secondary" />
-        {{ $t('pages.students.viewModal.dailyCapacityTitle') }}
-      </h4>
+    <UCard>
+      <template #header>
+        <h3 class="font-semibold">
+          {{ t('pages.students.viewModal.dailyCapacityTitle') }}
+        </h3>
+      </template>
       <div class="grid grid-cols-3 gap-3">
         <div
           v-for="(track, i) in dailyTracks"
           :key="i"
-          class="rounded-lg p-4 bg-surface-container-low text-center"
+          class="rounded-lg border border-default p-4 text-center"
         >
-          <span class="label-md text-on-surface-variant block mb-2">{{ track.label }}</span>
-          <span class="text-2xl font-bold text-primary block">{{ track.value }}</span>
-          <span class="label-md text-on-surface-variant">
-            {{ $t('pages.students.card.pagesUnit') }}
-          </span>
+          <p class="text-xs text-muted mb-1">
+            {{ track.label }}
+          </p>
+          <p class="text-2xl font-semibold tabular-nums">
+            {{ track.value }}
+          </p>
+          <p class="text-xs text-muted mt-1">
+            {{ t('pages.students.card.pagesUnit') }}
+          </p>
         </div>
       </div>
-    </div>
+    </UCard>
   </div>
 </template>

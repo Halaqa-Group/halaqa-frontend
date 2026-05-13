@@ -17,11 +17,13 @@ const isPrincipalOrVP = computed(() => {
 
 const localGuardians = ref<ApiGuardian[]>([])
 const isLoadingGuardians = ref(false)
+const hasLoadedGuardians = ref(false)
 
 async function reloadGuardians() {
   isLoadingGuardians.value = true
   try {
     localGuardians.value = await fetchGuardians(props.student.id)
+    hasLoadedGuardians.value = true
   } finally {
     isLoadingGuardians.value = false
   }
@@ -30,14 +32,16 @@ async function reloadGuardians() {
 onMounted(reloadGuardians)
 
 const sortedGuardians = computed(() => {
-  const source = localGuardians.value.length > 0 || isLoadingGuardians.value
+  const source = hasLoadedGuardians.value || isLoadingGuardians.value
     ? localGuardians.value
     : props.student.guardians
   return [...source].sort((a, b) => Number(b.is_primary) - Number(a.is_primary))
 })
 
 const guardianCount = computed(() => {
-  return localGuardians.value.length || props.student.guardians.length
+  return hasLoadedGuardians.value || isLoadingGuardians.value
+    ? localGuardians.value.length
+    : props.student.guardians.length
 })
 
 // ── Link dialog ─────────────────────────────────────────────────────────

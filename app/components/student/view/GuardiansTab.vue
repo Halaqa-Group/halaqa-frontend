@@ -31,6 +31,15 @@ async function reloadGuardians() {
 
 onMounted(reloadGuardians)
 
+watch(
+  () => props.student.id,
+  () => {
+    localGuardians.value = []
+    hasLoadedGuardians.value = false
+    reloadGuardians()
+  }
+)
+
 const sortedGuardians = computed(() => {
   const source = hasLoadedGuardians.value || isLoadingGuardians.value
     ? localGuardians.value

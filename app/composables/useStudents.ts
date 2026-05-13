@@ -1,7 +1,6 @@
 import { ref } from 'vue'
 import {
   LazyStudentFormModal,
-  LazyStudentViewModal,
   LazyCommonConfirmDialog
 } from '#components'
 import type {
@@ -149,17 +148,7 @@ export function useStudents() {
   }
 
   async function openView(student: Student) {
-    const modal = overlay.create(LazyStudentViewModal, {
-      destroyOnClose: true,
-      props: { student }
-    })
-    modal.open()
-    try {
-      const fresh = await fetchStudent(student.id)
-      modal.patch({ student: fresh })
-    } catch {
-      // Keep the already available list payload if detail fetch fails.
-    }
+    return navigateTo(`/students/${student.id}`)
   }
 
   function openAdd() {

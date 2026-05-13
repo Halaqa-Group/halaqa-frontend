@@ -36,7 +36,7 @@ onMounted(() => {
 <template>
   <div class="flex flex-col gap-6">
     <StudentPageHeader />
-    <StudentSummaryStats v-if="showSummary" />
+    <!-- <StudentSummaryStats v-if="showSummary" /> -->
 
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
       <template #header>

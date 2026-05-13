@@ -845,6 +845,7 @@
         "joinDate": "Join date",
         "pickDate": "Pick a date",
         "guardiansTitle": "Guardians",
+        "guardiansHint": "You can add guardians after creating the student from the Guardians tab.",
         "metricsTitle": "Daily performance targets",
         "memPages": "New memorization pages",
         "nearPages": "Near revision pages",

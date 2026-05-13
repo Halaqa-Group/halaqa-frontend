@@ -50,7 +50,7 @@ const linkSaving = ref(false)
 const linkSchema = computed(() => z.object({
   mode: z.enum(['email', 'userId']),
   email: z.string(),
-  userId: z.string(),
+  userId: z.coerce.string(),
   relation: z.enum(GUARDIAN_RELATIONS),
   isPrimary: z.boolean(),
   canPickup: z.boolean()

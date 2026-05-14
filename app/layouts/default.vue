@@ -34,7 +34,7 @@ const links = computed<NavigationMenuItem[][]>(() => {
   }
 
   mainLinks.push(
-    { label: t('nav.students'), icon: 'i-lucide-users', to: '/students', active: route.path === '/students' || route.path.startsWith('/students/') },
+    { label: t('nav.students'), icon: 'i-lucide-graduation-cap', to: '/students' },
     { label: t('nav.attendance'), icon: 'i-lucide-user-check', to: '/attendance' },
     { label: t('nav.achievements'), icon: 'i-lucide-award', to: '/achievements' },
     { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' }

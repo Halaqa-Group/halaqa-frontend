@@ -79,32 +79,10 @@ watch(studentId, () => {
     </div>
 
     <template v-else-if="student">
-      <div class="flex flex-col gap-2">
-        <UButton
-          :to="backTo"
-          variant="link"
-          color="neutral"
-          :icon="backIcon"
-          size="sm"
-          class="self-start px-0 h-auto"
-        >
-          {{ t('common.back') }}
-        </UButton>
-
-        <div class="flex flex-col gap-1">
-          <h1 class="text-2xl font-bold">
-            {{ student.name }}
-          </h1>
-          <p v-if="student.idNumber" class="text-sm text-muted tabular-nums" dir="ltr">
-            {{ student.idNumber }}
-          </p>
-        </div>
-      </div>
-
       <div class="flex flex-col lg:flex-row gap-6">
         <StudentViewProfilePanel :student="student" />
 
-        <div class="flex-1 min-w-0">
+        <div class="flex-1 min-w-0 ring-1 ring-muted/50 rounded-2xl sm:p-6 p-5">
           <UTabs
             v-model="activeTab"
             :items="tabs"

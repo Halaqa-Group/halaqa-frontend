@@ -10,6 +10,19 @@ const {
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const toast = useToast()
 
+// Built lazily so it picks up live changes to student/halaqa/date.
+const reciteLink = computed(() => {
+  if (!selectedStudent.value || !selectedHalaqaId.value) return null
+  return {
+    path: '/recite',
+    query: {
+      student_id: selectedStudent.value.id,
+      halaqa_id: selectedHalaqaId.value,
+      date: selectedDate.value
+    }
+  }
+})
+
 const filteredAchievements = computed(() =>
   achievements.value.filter(a =>
     a.student_id === selectedStudent.value?.id
@@ -112,11 +125,24 @@ onMounted(async () => {
         </p>
       </div>
 
-      <AchievementStudentSelector
-        v-if="hasHalaqa && hasStudents"
-        :students="students"
-        :selected-student="selectedStudent"
-        @select="handleStudentSelect" />
+      <div class="flex items-center gap-3 flex-wrap justify-end">
+        <UButton
+          v-if="reciteLink"
+          :to="reciteLink"
+          icon="i-lucide-book-open"
+          color="primary"
+          variant="soft"
+          size="md"
+          class="rounded-full"
+        >
+          تلاوة في المصحف
+        </UButton>
+        <AchievementStudentSelector
+          v-if="hasHalaqa && hasStudents"
+          :students="students"
+          :selected-student="selectedStudent"
+          @select="handleStudentSelect" />
+      </div>
     </div>
 
     <!-- Mini stats row -->

@@ -298,6 +298,22 @@ register('PATCH', '/attendance/:id', ({ params, body }) => {
   return db.attendance[idx]
 })
 
+// ── Students ────────────────────────────────────────────────────────────────
+// Real backend uses snake_case query keys. The existing useAchievements()
+// composable still calls /students?halaqaId=… (camelCase legacy) — we
+// match both here so neither caller breaks.
+register('GET', '/students', ({ query }) => {
+  let list = db.students
+  const halaqaId = Number(query.halaqa_id ?? query.halaqaId ?? 0) || null
+  if (halaqaId) {
+    const enrolledIds = new Set(
+      db.enrollments.filter(e => e.halaqaId === halaqaId).map(e => e.studentId)
+    )
+    list = list.filter(s => enrolledIds.has(s.id))
+  }
+  return list
+})
+
 // ── Achievements ────────────────────────────────────────────────────────────
 
 register('GET', '/achievements', ({ query }) => {
@@ -363,6 +379,18 @@ register('DELETE', '/achievements/:id', ({ params }) => {
 })
 
 // ── Weekly plans ────────────────────────────────────────────────────────────
+
+// Real backend path is /weekly-plans with snake_case query keys (per
+// docs/openapi.json). The legacy /plans handler below is kept for any
+// existing code that points there; new callers should target /weekly-plans.
+register('GET', '/weekly-plans', ({ query }) => {
+  let list = db.plans
+  if (query.student_id) list = list.filter(p => p.student_id === Number(query.student_id))
+  if (query.halaqa_id) list = list.filter(p => p.halaqa_id === Number(query.halaqa_id))
+  if (query.week_start_date) list = list.filter(p => p.week_start_date === query.week_start_date)
+  if (query.status) list = list.filter(p => p.status === query.status)
+  return list
+})
 
 register('GET', '/plans', ({ query }) => {
   let list = db.plans

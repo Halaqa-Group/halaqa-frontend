@@ -224,16 +224,55 @@ function buildSeed(): MockDB {
     enrollments,
     attendance,
     achievements,
-    plans: [],
+    plans: buildSeedPlans(),
     seq: {
       student: students.length + 1,
       parent: 4,
       attendance: attSeq,
       achievement: achSeq,
-      plan: 1,
-      planItem: 1
+      plan: 5,
+      planItem: 50
     }
   }
+}
+
+// Seeds an approved weekly plan for student 1 in halaqa 1 covering the
+// current week. day_of_week uses Sat=0..Fri=6 to match halaqa_schedules.
+// We add a Hifz item AND a Near item for today so the /recite page can
+// demonstrate the "pick a track" chips.
+function buildSeedPlans(): ApiWeeklyPlan[] {
+  const today = new Date()
+  const dow = (today.getDay() + 1) % 7 // Sat=0..Fri=6
+  const sat = new Date(today)
+  sat.setDate(today.getDate() - dow)
+  const weekStart =
+    `${sat.getFullYear()}-${String(sat.getMonth() + 1).padStart(2, '0')}-${String(sat.getDate()).padStart(2, '0')}`
+
+  return [
+    {
+      id: 1,
+      student_id: 1,
+      halaqa_id: 1,
+      week_start_date: weekStart,
+      status: 'approved',
+      items: [
+        {
+          id: 1, weekly_plan_id: 1,
+          day_of_week: dow, track_type: 'Hifz',
+          start_surah: 1, start_verse: 1, end_surah: 1, end_verse: 7,
+          total_verses: 7, achieved_verses: 0,
+          status: 'due', is_manual_override: false
+        },
+        {
+          id: 2, weekly_plan_id: 1,
+          day_of_week: dow, track_type: 'Near',
+          start_surah: 78, start_verse: 1, end_surah: 78, end_verse: 20,
+          total_verses: 20, achieved_verses: 0,
+          status: 'due', is_manual_override: false
+        }
+      ]
+    }
+  ]
 }
 
 export const db: MockDB = buildSeed()

@@ -72,14 +72,7 @@ const renderedLines = computed(() => {
   color: var(--mushaf-fg);
   border: 1px solid var(--mushaf-border);
   border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  /* Padding shrinks on small screens — we don't want big empty margins
-     stealing valuable real estate from the printed-page text. */
   padding: clamp(0.75rem, 3.5vw, 2rem) clamp(0.5rem, 3vw, 1.5rem) clamp(0.5rem, 2vw, 1rem);
-  /* Become a query container so children (Line, words, basmala, cartouche)
-     can size themselves relative to THIS box's width, not the viewport.
-     This is what lets a mushaf line always fit on one row: the words
-     shrink proportionally as the page shrinks. */
   container-type: inline-size;
   container-name: mushaf;
 }

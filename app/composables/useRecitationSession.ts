@@ -10,14 +10,25 @@ function storageKey(sessionId: string) {
  * Holds the local state for one "marking session" — a teacher sitting with
  * one student to review one assigned range.
  *
- * The session is keyed by an opaque sessionId (in Phase 4 this will be
+ * The session is keyed by an opaque sessionId (in Phase 4 this becomes
  * `${studentId}:${date}:${planItemId}`; for the dev sandbox it's a hash
  * of the range). State auto-persists to localStorage on every change so a
  * page refresh during the session doesn't lose work.
+ *
+ * Storage strategy:
+ *   - `marks` is a shallowRef holding a plain {wordKey: MarkType} object.
+ *   - tap() mutates the object IN PLACE and calls triggerRef() instead of
+ *     cloning. Cloning was visibly slow on huge ranges (e.g. full Baqarah,
+ *     ~6,000 words) where each tap allocated a fresh object including all
+ *     unrelated entries. The shallow ref means Vue won't deep-walk the
+ *     object on every dependency check, and triggerRef forces dependents
+ *     to re-evaluate without us paying for an immutable update.
+ *   - Consumers keep the same `marks[wordKey]` read API — the data shape
+ *     didn't change, only how mutations are scheduled.
  */
 export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
   const mode = ref<MarkType>('mistake')
-  const marks = ref<RecitationMarks>({})
+  const marks = shallowRef<RecitationMarks>({})
 
   function load(id: string) {
     if (!id) {
@@ -44,27 +55,26 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
 
   watch(() => toValue(sessionId), id => load(id), { immediate: true })
 
-  watch(
-    marks,
-    (m) => { persist(toValue(sessionId), m) },
-    { deep: true }
-  )
+  // shallowRef only fires on reference swap OR explicit triggerRef. Both
+  // load() (reassigns marks) and tap() (calls triggerRef below) flow
+  // through this same watcher. No { deep: true } needed any more.
+  watch(marks, (m) => { persist(toValue(sessionId), m) })
 
   /**
    * Apply or toggle the current mode on a word.
-   *   - if the word already carries the same mode → clear it
-   *   - if it carries a different mode → replace
-   *   - if it has no mark → set to current mode
+   *   - same mode → clear it
+   *   - different mode → replace
+   *   - no mark → set to current mode
+   * Mutates in place; relies on triggerRef() to notify dependents.
    */
   function tap(wordKey: WordKey) {
     const current = marks.value[wordKey]
     if (current === mode.value) {
-      const next = { ...marks.value }
-      delete next[wordKey]
-      marks.value = next
+      delete marks.value[wordKey]
     } else {
-      marks.value = { ...marks.value, [wordKey]: mode.value }
+      marks.value[wordKey] = mode.value
     }
+    triggerRef(marks)
   }
 
   function clearAll() {
@@ -85,7 +95,7 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
 
   return {
     mode,
-    marks: readonly(marks),
+    marks,
     counts,
     tap,
     clearAll

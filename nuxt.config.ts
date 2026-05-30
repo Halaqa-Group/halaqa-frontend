@@ -57,6 +57,15 @@ export default defineNuxtConfig({
         target: `http://127.0.0.1:${import.meta.env.NUXT_BACKEND_PORT}/api`,
         changeOrigin: true
       }
+    },
+    // Mushaf assets are baked at build time and never change for a given
+    // deploy. Tagging them `immutable` lets browsers skip the conditional
+    // GET on every reload — repeat-visit cost drops from ~50-100ms per file
+    // to zero. If we ever need to invalidate, bump a `?v=` query in the URL.
+    routeRules: {
+      '/quran/fonts/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+      '/quran/pages/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
+      '/quran/meta/**':  { headers: { 'cache-control': 'public, max-age=31536000, immutable' } }
     }
   },
 

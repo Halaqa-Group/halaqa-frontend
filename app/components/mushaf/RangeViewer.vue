@@ -33,6 +33,15 @@ const highlight = computed(() =>
   makeRangePredicate(props.startSurah, props.startVerse, props.endSurah, props.endVerse)
 )
 
+// Range-aware prefetch — when we know the user is about to render N pages,
+// kick off every page's JSON + font in parallel right away. Without this,
+// MushafPage's per-instance load runs sequentially as each <MushafPage>
+// component mounts; the staircase wait you see on Surah Yaseen is ~50ms × 6.
+// Pages already cached are no-ops.
+watch(pages, (list) => {
+  for (const p of list) prefetchMushafPage(p)
+}, { immediate: true })
+
 const rangeLabel = computed(() => {
   const startName = SURAH_NAMES[props.startSurah] ?? `سورة ${props.startSurah}`
   if (props.startSurah === props.endSurah) {

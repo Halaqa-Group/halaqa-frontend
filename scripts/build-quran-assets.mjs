@@ -77,20 +77,32 @@ async function fetchPage(pageNumber, attempt = 1) {
 }
 
 /**
- * Convert Quran.com response into our compact per-page shape:
- *   { page, surahs: number[], verses: string[],
- *     lines: [{ n, words: [{ c, k, p, t }] }] }
+ * Convert Quran.com response into our compact wire format. Each word is a
+ * tuple to avoid repeating object keys; verse_key is hoisted to the LINE
+ * level when every word on a line belongs to the same verse (the common
+ * case — ~85% of mushaf lines).
  *
- * c = code_v1 glyph char        (string)
- * k = verse_key  "1:1"          (string)
- * p = position in verse         (number, 1-indexed)
- * t = char_type_name short      ('w'|'e'|'p'|'r'|'s' or absent for word)
+ * Disk shape:
+ *   { page, surahs: number[], verses: string[],
+ *     lines: [
+ *       { n, k: "1:1", w: [["ﭑ",1], ["ﭕ",5,"e"]] },     // hoisted (single verse)
+ *       { n, w: [["ﱋ","1:3",1], ["ﱎ","1:4",1]] }       // not hoisted (multi-verse line)
+ *     ]
+ *   }
+ *
+ * Each `w` tuple:
+ *   - line-level k present: [char, position]            or [char, position, type]
+ *   - line-level k absent:  [char, verseKey, position]  or [char, verseKey, position, type]
+ *
+ * useMushafPage's loadPageJson() normalizes back to {c,k,p,t} objects so
+ * downstream code stays unchanged.
  */
 function compactPage(pageNumber, apiResponse) {
   const verses = apiResponse.verses ?? []
   const surahs = new Set()
   const verseKeys = []
-  const lineMap = new Map() // line_number -> word[]
+  // line_number -> [{ c, k, p, t? }] in reading order
+  const lineMap = new Map()
 
   for (const verse of verses) {
     verseKeys.push(verse.verse_key)
@@ -98,17 +110,14 @@ function compactPage(pageNumber, apiResponse) {
     for (const word of verse.words ?? []) {
       const lineNo = word.line_number
       if (!lineMap.has(lineNo)) lineMap.set(lineNo, [])
-      const compact = {
+      const entry = {
         c: word.code_v1,
         k: verse.verse_key,
-        p: word.position,
+        p: word.position
       }
-      // Only set type for non-word entries; saves bytes
       const type = word.char_type_name
-      if (type && type !== 'word') {
-        compact.t = type[0] // 'e' for end, 'p' for pause, etc.
-      }
-      lineMap.get(lineNo).push(compact)
+      if (type && type !== 'word') entry.t = type[0]
+      lineMap.get(lineNo).push(entry)
     }
   }
 
@@ -118,14 +127,29 @@ function compactPage(pageNumber, apiResponse) {
   // would interleave words across verses incorrectly.
   const lines = Array.from(lineMap.entries())
     .sort(([a], [b]) => a - b)
-    .map(([n, words]) => ({ n, words }))
+    .map(([n, words]) => compactLine(n, words))
 
   return {
     page: pageNumber,
     surahs: Array.from(surahs).sort((a, b) => a - b),
     verses: verseKeys,
-    lines,
+    lines
   }
+}
+
+/**
+ * Convert one line's word objects into the wire-tuple format described
+ * above compactPage(). Hoists `k` to the line when every word shares it.
+ */
+function compactLine(n, words) {
+  const allSameVerse = words.every(w => w.k === words[0].k)
+  if (allSameVerse) {
+    const k = words[0].k
+    const w = words.map(word => word.t ? [word.c, word.p, word.t] : [word.c, word.p])
+    return { n, k, w }
+  }
+  const w = words.map(word => word.t ? [word.c, word.k, word.p, word.t] : [word.c, word.k, word.p])
+  return { n, w }
 }
 
 async function buildOnePage(pageNumber) {

@@ -44,10 +44,10 @@ async function loadStudent() {
   if (!studentId.value || !halaqaId.value) { student.value = null; return }
   studentLoading.value = true
   try {
-    // Backend's OpenAPI uses snake_case query keys (halaqa_id, student_id, …).
-    const raw = await api<ApiStudent[] | { items: ApiStudent[] }>(`/students?halaqa_id=${halaqaId.value}`)
-    const list = Array.isArray(raw) ? raw : (raw.items ?? [])
-    student.value = list.find(s => s.id === studentId.value) ?? null
+    // Single-record fetch — used to be `GET /students?halaqa_id=N` which
+    // returns the whole halaqa just to read one name. Direct lookup is one
+    // tiny payload instead of ~30 ApiStudent records.
+    student.value = await api<ApiStudent>(`/students/${studentId.value}`)
   } catch {
     student.value = null
   } finally {
@@ -73,6 +73,28 @@ watch(todayItems, (items) => {
 const selectedItem = computed<ApiWeeklyPlanItem | null>(() =>
   todayItems.value.find(i => i.id === selectedItemId.value) ?? null
 )
+
+// Preload the first page's font + JSON via <link rel="preload"> so the
+// browser starts fetching them BEFORE Vue mounts MushafRangeViewer. Saves
+// ~50-100ms on the cold path because the request goes out during route
+// transition instead of during component setup.
+const { pageFor } = useVerseToPage()
+const firstPageNumber = computed(() => {
+  const item = selectedItem.value
+  if (!item) return null
+  return pageFor(`${item.start_surah}:${item.start_verse}`) ?? null
+})
+
+useHead(() => {
+  const p = firstPageNumber.value
+  if (!p) return {}
+  return {
+    link: [
+      { rel: 'preload', as: 'fetch', href: `/quran/pages/${p}.json`, crossorigin: 'anonymous' },
+      { rel: 'preload', as: 'font', type: 'font/woff2', href: `/quran/fonts/v1/p${p}.woff2`, crossorigin: 'anonymous' }
+    ]
+  }
+})
 
 // ── Prior achievements for this student + halaqa + date (Phase 5 item 1) ───
 // Shows the teacher what's already been recorded so they don't double-submit,

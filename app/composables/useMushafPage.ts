@@ -1,4 +1,40 @@
-import type { MushafPageData } from '~/types/mushaf'
+import type { MushafApiLine, MushafPageData, MushafWord } from '~/types/mushaf'
+
+// ── Wire format ────────────────────────────────────────────────────────────
+//
+// public/quran/pages/{N}.json uses a compact tuple shape for size:
+//   - line-level k present  → word tuple = [char, position]            or [char, position, type]
+//   - line-level k absent   → word tuple = [char, verseKey, position]  or [char, verseKey, position, type]
+//
+// We normalize back to {c,k,p,t} objects after fetch so every downstream
+// consumer (synthesizeLines, MushafLine, RecitationSession) sees the same
+// shape regardless of wire format. ~40% smaller on disk, ~0.1ms transform.
+type WireWord = [string, number] | [string, number, string] | [string, string, number] | [string, string, number, string]
+interface WireLine { n: number, k?: string, w: WireWord[] }
+interface WirePage { page: number, surahs: number[], verses: string[], lines: WireLine[] }
+
+function normalizeWord(tuple: WireWord, lineK: string | undefined): MushafWord {
+  if (lineK) {
+    // [char, position]  or  [char, position, type]
+    const [c, p, t] = tuple as [string, number, string?]
+    const w: MushafWord = { c, k: lineK, p }
+    if (t) w.t = t as MushafWord['t']
+    return w
+  }
+  // [char, verseKey, position]  or  [char, verseKey, position, type]
+  const [c, k, p, t] = tuple as [string, string, number, string?]
+  const w: MushafWord = { c, k, p }
+  if (t) w.t = t as MushafWord['t']
+  return w
+}
+
+function normalizePage(wire: WirePage): MushafPageData {
+  const lines: MushafApiLine[] = wire.lines.map(line => ({
+    n: line.n,
+    words: line.w.map(t => normalizeWord(t, line.k))
+  }))
+  return { page: wire.page, surahs: wire.surahs, verses: wire.verses, lines }
+}
 
 // Pages whose @font-face has already been injected into <head>.
 const injectedFonts = new Set<number>()
@@ -65,7 +101,8 @@ function loadPageJson(page: number): Promise<MushafPageData> {
   if (cached) return Promise.resolve(cached)
   const existing = inflight.get(page)
   if (existing) return existing
-  const p = $fetch<MushafPageData>(`/quran/pages/${page}.json`).then((data) => {
+  const p = $fetch<WirePage>(`/quran/pages/${page}.json`).then((wire) => {
+    const data = normalizePage(wire)
     pageCache.set(page, data)
     inflight.delete(page)
     return data

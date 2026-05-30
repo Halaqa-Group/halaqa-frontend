@@ -300,6 +300,14 @@ register('PATCH', '/attendance/:id', ({ params, body }) => {
 
 // ── Students ────────────────────────────────────────────────────────────────
 // GET /students is owned by the real backend (paginated, snake_case halaqa_id).
+// GET /students/:id is mocked here only because /recite uses it for a single
+// name lookup and we need dev-without-backend to keep working.
+register('GET', '/students/:id', ({ params }) => {
+  const id = Number(params.id)
+  const found = db.students.find(s => s.id === id)
+  if (!found) throw new MockError(404, 'Student not found')
+  return found
+})
 
 // ── Achievements ────────────────────────────────────────────────────────────
 

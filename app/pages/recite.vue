@@ -74,24 +74,35 @@ const selectedItem = computed<ApiWeeklyPlanItem | null>(() =>
   todayItems.value.find(i => i.id === selectedItemId.value) ?? null
 )
 
-// Preload the first page's font + JSON via <link rel="preload"> so the
-// browser starts fetching them BEFORE Vue mounts MushafRangeViewer. Saves
-// ~50-100ms on the cold path because the request goes out during route
-// transition instead of during component setup.
+const PRELOAD_LIMIT = 3
 const { pageFor } = useVerseToPage()
-const firstPageNumber = computed(() => {
+
+const pageRange = computed<number[]>(() => {
   const item = selectedItem.value
-  if (!item) return null
-  return pageFor(`${item.start_surah}:${item.start_verse}`) ?? null
+  if (!item) return []
+  const start = pageFor(`${item.start_surah}:${item.start_verse}`)
+  const end = pageFor(`${item.end_surah}:${item.end_verse}`)
+  if (!start || !end || end < start) return []
+  const out: number[] = []
+  for (let p = start; p <= end; p++) out.push(p)
+  return out
 })
 
 useHead(() => {
-  const p = firstPageNumber.value
-  if (!p) return {}
+  const pages = pageRange.value
+  if (!pages.length) return {}
+  const preload = pages.slice(0, PRELOAD_LIMIT)
+  const prefetch = pages.slice(PRELOAD_LIMIT)
   return {
     link: [
-      { rel: 'preload', as: 'fetch', href: `/quran/pages/${p}.json`, crossorigin: 'anonymous' },
-      { rel: 'preload', as: 'font', type: 'font/woff2', href: `/quran/fonts/v1/p${p}.woff2`, crossorigin: 'anonymous' }
+      ...preload.flatMap(p => [
+        { rel: 'preload', as: 'fetch', href: `/quran/pages/${p}.json`, crossorigin: 'anonymous' },
+        { rel: 'preload', as: 'font', type: 'font/woff2', href: `/quran/fonts/v1/p${p}.woff2`, crossorigin: 'anonymous' }
+      ]),
+      ...prefetch.flatMap(p => [
+        { rel: 'prefetch', as: 'fetch', href: `/quran/pages/${p}.json`, crossorigin: 'anonymous' },
+        { rel: 'prefetch', as: 'font', type: 'font/woff2', href: `/quran/fonts/v1/p${p}.woff2`, crossorigin: 'anonymous' }
+      ])
     ]
   }
 })

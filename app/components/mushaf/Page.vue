@@ -19,6 +19,42 @@ const renderedLines = computed(() => {
   if (!page.value) return []
   return synthesizeLines(page.value)
 })
+
+// Defer the skeleton so it never flashes for loads that finish quickly
+// (prefetched/warm-cache cases land in ~30–60 ms). Showing loading UI for
+// sub-100 ms waits feels like jank — the eye registers it as a flicker
+// rather than a useful affordance.
+const SKELETON_DELAY_MS = 120
+const showSkeleton = ref(false)
+let skeletonTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearSkeletonTimer() {
+  if (skeletonTimer) { clearTimeout(skeletonTimer); skeletonTimer = null }
+}
+
+watch(
+  [loading, page],
+  ([isLoading, pageData]) => {
+    if (pageData) {
+      clearSkeletonTimer()
+      showSkeleton.value = false
+      return
+    }
+    if (isLoading) {
+      if (showSkeleton.value || skeletonTimer) return
+      skeletonTimer = setTimeout(() => {
+        showSkeleton.value = true
+        skeletonTimer = null
+      }, SKELETON_DELAY_MS)
+    } else {
+      clearSkeletonTimer()
+      showSkeleton.value = false
+    }
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(clearSkeletonTimer)
 </script>
 
 <template>
@@ -51,10 +87,18 @@ const renderedLines = computed(() => {
         />
       </template>
 
-      <template v-else>
+      <template v-else-if="showSkeleton">
         <div class="mushaf-page__skeleton">
           <div v-for="i in 15" :key="i" class="mushaf-page__skeleton-line" />
         </div>
+      </template>
+
+      <template v-else>
+        <!-- Quiet pre-skeleton state: reserve the page's vertical space so
+             layout doesn't jump when content arrives, but show nothing. For
+             prefetched / warm-cache pages this is the only state ever seen,
+             which is what makes navigation feel instant. -->
+        <div class="mushaf-page__placeholder" aria-hidden="true" />
       </template>
     </div>
 
@@ -91,6 +135,12 @@ const renderedLines = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+}
+
+.mushaf-page__placeholder {
+  /* Roughly matches a full 15-line page so the surrounding layout (header,
+     stack gap) doesn't reflow when the real content lands. */
+  min-height: calc(15 * 2.4em + 14 * 0.25rem);
 }
 
 .mushaf-page__skeleton-line {

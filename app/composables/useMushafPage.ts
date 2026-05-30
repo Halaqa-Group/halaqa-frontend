@@ -43,6 +43,13 @@ const injectedFonts = new Set<number>()
 // and so prefetched fonts are awaited (not re-fetched) when the user navigates.
 const fontLoaded = new Map<number, Promise<void>>()
 
+// Pages whose font has finished loading and is ready to paint. We track this
+// ourselves instead of relying on `document.fonts.check()` — that API returns
+// false until the next paint cycle even after FontFace.load() resolves, which
+// kept forcing the slow path (and the skeleton flash) for pages that were
+// actually ready.
+const fontReady = new Set<number>()
+
 // Cache page JSON across the app — pages are immutable, so one fetch per page
 // per session is enough.
 const pageCache = new Map<number, MushafPageData>()
@@ -89,10 +96,11 @@ function ensureFontLoaded(page: number): Promise<void> {
   const p = ff.load().then(loaded => {
     document.fonts.add(loaded)
     injectClassBinding(page)
+    fontReady.add(page)
   })
   fontLoaded.set(page, p)
   // Drop the cached failure so the user can retry by re-navigating.
-  p.catch(() => { fontLoaded.delete(page) })
+  p.catch(() => { fontLoaded.delete(page); fontReady.delete(page) })
   return p
 }
 
@@ -141,7 +149,7 @@ export function useMushafPage(pageNumber: MaybeRefOrGetter<number>) {
     // loading flag entirely so the skeleton never flashes for prefetched
     // / recently-viewed pages — navigation looks instant.
     const cachedJson = pageCache.get(page)
-    if (cachedJson && injectedFonts.has(page) && document.fonts.check(`1em "p${page}-v1"`)) {
+    if (cachedJson && fontReady.has(page) && injectedFonts.has(page)) {
       data.value = cachedJson
       loading.value = false
       onIdle(() => {

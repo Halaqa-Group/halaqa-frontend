@@ -33,22 +33,14 @@ const highlight = computed(() =>
   makeRangePredicate(props.startSurah, props.startVerse, props.endSurah, props.endVerse)
 )
 
-// ── Range-aware prefetch (Tier A) ─────────────────────────────────────────
-// When we know the user is about to render N pages, kick off every page's
-// JSON + font in parallel right away. Without this, MushafPage's per-instance
-// load runs sequentially as each <MushafPage> mounts — the staircase you see
-// on Surah Yaseen is ~50 ms × 6.
+// Range-aware prefetch — when we know the user is about to render N pages,
+// kick off every page's JSON + font in parallel right away. Without this,
+// MushafPage's per-instance load runs sequentially as each <MushafPage>
+// component mounts; the staircase wait you see on Surah Yaseen is ~50ms × 6.
+// Pages already cached are no-ops.
 watch(pages, (list) => {
   for (const p of list) prefetchMushafPage(p)
 }, { immediate: true })
-
-// ── Off-screen rendering ──────────────────────────────────────────────────
-// We rely on `content-visibility: auto` on .mushaf-page (set globally there)
-// to let the browser skip layout + paint for pages outside the viewport.
-// No IntersectionObserver, no reactive churn during scroll — the previous
-// JS-driven virtualization caused visible scroll jank because every slot
-// boundary crossing forced Vue to re-render the list. content-visibility
-// is the native primitive for this exact problem.
 
 const rangeLabel = computed(() => {
   const startName = SURAH_NAMES[props.startSurah] ?? `سورة ${props.startSurah}`

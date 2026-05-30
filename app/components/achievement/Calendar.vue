@@ -72,7 +72,7 @@ function dayDotClass(d: { year: number, month: number, day: number }): string | 
       </UCalendar>
 
       <!-- Legend -->
-      <div class="mt-3 pt-3 flex items-center justify-around gap-2 text-[10px] border-t border-card-border">
+      <div class="mt-3 pt-3 flex flex-wrap items-center justify-around gap-x-3 gap-y-1.5 text-[10px] border-t border-card-border">
         <div class="flex items-center gap-1">
           <span class="w-1.5 h-1.5 rounded-full bg-status-ok" />
           <span class="text-on-surface-variant">ممتاز</span>

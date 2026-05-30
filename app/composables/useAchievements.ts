@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import type { ApiAchievement, ApiAttendance, ApiStudent, StudentWithAttendance, CreateAchievementDto } from '~/types'
+import type { ApiAchievement, ApiAttendance, ApiStudent, ApiStudentListResult, StudentWithAttendance, CreateAchievementDto } from '~/types'
 
 const students = ref<StudentWithAttendance[]>([])
 const selectedStudent = ref<StudentWithAttendance | null>(null)
@@ -14,40 +14,41 @@ export function useAchievements() {
   const { user } = useAuth()
 
   /**
-   * Loads students enrolled in the halaqa and their attendance status for the selected date
-   * Filters to show only Present/Late students
+   * Loads students enrolled in the halaqa and their attendance status for the selected date.
+   * Students come from GET /students?halaqa_id=… (paginated, snake_case per backend contract).
+   * Attendance is still mocked: halaqa-backend has no AttendanceModule yet — see
+   * halaqa-backend/src/modules/achievements/stubs/attendance-query.stub.ts. The attendance
+   * call is wrapped in try/catch so a 404 from a future real backend still lets the picker
+   * render (students show with attendanceStatus = null).
    */
   async function loadStudents(halaqaId: number, date: string) {
     selectedDate.value = date
     isLoading.value = true
 
     try {
-      // Fetch students and attendance in parallel
       const [studentsData, attendanceData] = await Promise.all([
-        api<ApiStudent[]>(`/students?halaqaId=${halaqaId}`),
-        api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`)
+        api<ApiStudentListResult | ApiStudent[]>(`/students?halaqa_id=${halaqaId}&limit=100`),
+        api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`).catch(() => [])
       ])
 
-      // Create attendance map for quick lookup
+      const studentItems: ApiStudent[] = Array.isArray(studentsData) ? studentsData : studentsData.items
+
       const attendanceMap = new Map<number, ApiAttendance>(
         attendanceData.map((a: ApiAttendance) => [a.student_id, a])
       )
 
-      // Map students with their attendance status
-      const allStudents: StudentWithAttendance[] = studentsData.map((s: ApiStudent) => {
+      const allStudents: StudentWithAttendance[] = studentItems.map((s: ApiStudent) => {
         const attendance = attendanceMap.get(s.id)
         return {
           id: s.id,
           name: s.name,
-          avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
+          avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
           attendanceStatus: attendance ? attendance.status : null
         }
       })
 
-      // Show all enrolled students; attendance status is displayed for context
       students.value = allStudents
 
-      // Reset selected student if no longer enrolled
       if (selectedStudent.value && !students.value.find(s => s.id === selectedStudent.value!.id)) {
         selectedStudent.value = null
         achievements.value = []

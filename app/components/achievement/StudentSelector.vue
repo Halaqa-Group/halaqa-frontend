@@ -54,23 +54,23 @@ watch(() => props.selectedStudent, () => {
 </script>
 
 <template>
-  <div class="flex items-center gap-1.5 shrink-0">
+  <div class="flex items-center gap-1.5 min-w-0 w-full sm:w-auto">
     <UButton
       variant="ghost"
       color="neutral"
       icon="i-lucide-chevron-right"
       size="md"
-      class="rounded-full w-9 h-9 justify-center disabled:opacity-30"
+      class="hidden sm:flex rounded-full w-9 h-9 justify-center disabled:opacity-30 shrink-0"
       :disabled="!canPrev"
       :aria-label="'الطالب السابق'"
       @click="goPrev"
     />
 
-    <UPopover v-model:open="isOpen" :ui="{ content: 'min-w-[260px]' }">
+    <UPopover v-model:open="isOpen" :ui="{ content: 'min-w-[260px]' }" class="flex-1 sm:flex-initial min-w-0">
       <UButton
         variant="soft"
         color="primary"
-        class="rounded-full px-3 py-2 gap-2.5 hover:opacity-90"
+        class="w-full sm:w-auto rounded-full px-3 py-2 gap-2.5 hover:opacity-90 min-w-0"
       >
         <img
           v-if="selectedStudent"
@@ -78,12 +78,12 @@ watch(() => props.selectedStudent, () => {
           :alt="selectedStudent.name"
           class="w-7 h-7 rounded-full object-cover shrink-0"
         >
-        <LucideUser v-else class="w-4 h-4" />
-        <span class="font-semibold text-sm">
+        <LucideUser v-else class="w-4 h-4 shrink-0" />
+        <span class="font-semibold text-sm flex-1 min-w-0 truncate text-start">
           {{ selectedStudent?.name || $t('common.selectStudent') }}
         </span>
-        <LucideChevronDown
-          class="w-4 h-4 transition-transform"
+        <LucideChevronDown
+          class="w-4 h-4 shrink-0 transition-transform"
           :class="{ 'rotate-180': isOpen }"
         />
       </UButton>
@@ -134,7 +134,7 @@ watch(() => props.selectedStudent, () => {
                 >{{ $t(`attendance.status.${student.attendanceStatus.toLowerCase()}`) }}</span>
               </div>
               <LucideCheck
-                v-if="selectedStudent?.id === student.id"
+                v-if="selectedStudent?.id === student.id"
                 class="w-4 h-4 shrink-0"
               />
             </UButton>
@@ -154,7 +154,7 @@ watch(() => props.selectedStudent, () => {
       color="neutral"
       icon="i-lucide-chevron-left"
       size="md"
-      class="rounded-full w-9 h-9 justify-center disabled:opacity-30"
+      class="hidden sm:flex rounded-full w-9 h-9 justify-center disabled:opacity-30 shrink-0"
       :disabled="!canNext"
       :aria-label="'الطالب التالي'"
       @click="goNext"

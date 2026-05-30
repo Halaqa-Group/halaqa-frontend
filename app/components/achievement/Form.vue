@@ -186,13 +186,13 @@ const labelUi = {
 <template>
   <div class="rounded-2xl overflow-hidden ring ring-card-border bg-surface-container-lowest shadow-card">
     <!-- Header -->
-    <div class="px-6 pt-5 pb-4 flex items-center gap-3 border-b border-outline-variant">
+    <div class="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 sm:pb-4 flex items-center gap-3 border-b border-outline-variant">
       <img :src="student.avatar" class="w-10 h-10 rounded-full object-cover shrink-0" :alt="student.name">
       <div class="flex-1 min-w-0">
-        <p class="text-xs font-bold uppercase tracking-widest mb-0.5 text-primary">
+        <p class="text-[11px] sm:text-xs font-bold uppercase tracking-widest mb-0.5 text-primary">
           {{ isEditing ? 'تعديل إنجاز' : 'تسجيل إنجاز' }}
         </p>
-        <p class="text-xl font-bold truncate leading-tight text-on-surface">
+        <p class="text-lg sm:text-xl font-bold truncate leading-tight text-on-surface">
           {{ student.name }}
         </p>
       </div>
@@ -208,7 +208,7 @@ const labelUi = {
       />
     </div>
 
-    <div class="px-6 pt-5 pb-6 flex flex-col gap-5">
+    <div class="px-4 sm:px-6 pt-4 sm:pt-5 pb-5 sm:pb-6 flex flex-col gap-5">
       <!-- Track type tabs -->
       <div class="grid grid-cols-3 gap-2">
         <UButton
@@ -220,57 +220,66 @@ const labelUi = {
           :label="type.label"
           size="md"
           block
-          class="rounded-xl font-semibold py-2.5"
+          class="rounded-xl font-semibold min-h-12 py-2.5 text-xs sm:text-sm"
+          :ui="{ leadingIcon: 'w-4 h-4 shrink-0' }"
           @click="trackType = type.value as TrackKey"
         />
       </div>
 
       <!-- Range -->
-      <div class="rounded-2xl p-4 flex flex-col gap-3 bg-surface-container-low">
-        <div class="flex gap-2 items-end">
-          <UFormField label="من — السورة" class="flex-[3]" :ui="labelUi">
-            <USelect
-              v-model="startSurah"
-              :items="surahOptions"
-              variant="none"
-              class="w-full"
-              :ui="fieldUi"
-            />
-          </UFormField>
-          <UFormField label="الآية" class="flex-1" :ui="labelUi">
-            <UInput
-              v-model.number="startVerse"
-              type="number"
-              :min="1"
-              :max="maxStartVerse"
-              variant="none"
-              class="w-full"
-              :ui="numberFieldUi"
-            />
-          </UFormField>
-          <div class="pb-2.5 px-0.5">
+      <div class="rounded-2xl p-3 sm:p-4 flex flex-col gap-3 bg-surface-container-low">
+        <div class="flex flex-col gap-3 md:flex-row md:gap-2 md:items-end">
+          <!-- "From" group: stacked on mobile (label + 2 fields), inline on md+ via display:contents -->
+          <div class="flex gap-2 items-end md:contents">
+            <UFormField label="من — السورة" class="flex-[3] md:flex-[3]" :ui="labelUi">
+              <USelect
+                v-model="startSurah"
+                :items="surahOptions"
+                variant="none"
+                class="w-full"
+                :ui="fieldUi"
+              />
+            </UFormField>
+            <UFormField label="الآية" class="flex-1 md:flex-1" :ui="labelUi">
+              <UInput
+                v-model.number="startVerse"
+                type="number"
+                :min="1"
+                :max="maxStartVerse"
+                variant="none"
+                class="w-full"
+                :ui="numberFieldUi"
+              />
+            </UFormField>
+          </div>
+          <!-- Separator: arrow on md+, divider line on mobile -->
+          <div class="hidden md:block md:pb-2.5 md:px-0.5">
             <LucideArrowLeftRight class="w-3.5 h-3.5 text-outline" />
           </div>
-          <UFormField label="إلى — السورة" class="flex-[3]" :ui="labelUi">
-            <USelect
-              v-model="endSurah"
-              :items="surahOptions"
-              variant="none"
-              class="w-full"
-              :ui="fieldUi"
-            />
-          </UFormField>
-          <UFormField label="الآية" class="flex-1" :ui="labelUi">
-            <UInput
-              v-model.number="endVerse"
-              type="number"
-              :min="1"
-              :max="maxEndVerse"
-              variant="none"
-              class="w-full"
-              :ui="numberFieldUi"
-            />
-          </UFormField>
+          <div class="h-px bg-card-border md:hidden mx-1" />
+          <!-- "To" group -->
+          <div class="flex gap-2 items-end md:contents">
+            <UFormField label="إلى — السورة" class="flex-[3] md:flex-[3]" :ui="labelUi">
+              <USelect
+                v-model="endSurah"
+                :items="surahOptions"
+                variant="none"
+                class="w-full"
+                :ui="fieldUi"
+              />
+            </UFormField>
+            <UFormField label="الآية" class="flex-1 md:flex-1" :ui="labelUi">
+              <UInput
+                v-model.number="endVerse"
+                type="number"
+                :min="1"
+                :max="maxEndVerse"
+                variant="none"
+                class="w-full"
+                :ui="numberFieldUi"
+              />
+            </UFormField>
+          </div>
         </div>
 
         <!-- Live summary -->
@@ -299,24 +308,24 @@ const labelUi = {
       <!-- Themed counters -->
       <div class="grid grid-cols-3 gap-3">
         <!-- Mistakes — red -->
-        <div class="rounded-2xl p-4 flex flex-col items-center gap-3 bg-track-near-bg">
+        <div class="rounded-2xl p-3 sm:p-4 flex flex-col items-center gap-3 bg-track-near-bg">
           <span class="text-[10px] font-bold uppercase tracking-wider text-track-near">أخطاء</span>
           <span
             :key="`m-${mistakesCount}`"
             class="text-3xl font-bold counter-pop text-track-near"
           >{{ mistakesCount }}</span>
-          <div class="flex gap-2">
+          <div class="flex gap-2 w-full sm:w-auto">
             <UButton
               variant="ghost"
               icon="i-lucide-minus"
-              class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 bg-track-near/15 text-track-near"
+              class="flex-1 h-11 sm:flex-initial sm:w-9 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 bg-track-near/15 text-track-near"
               :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="decrement('mistakes')"
             />
             <UButton
               variant="ghost"
               icon="i-lucide-plus"
-              class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 bg-track-near/15 text-track-near"
+              class="flex-1 h-11 sm:flex-initial sm:w-9 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 bg-track-near/15 text-track-near"
               :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="increment('mistakes')"
             />
@@ -324,24 +333,24 @@ const labelUi = {
         </div>
 
         <!-- Warnings — orange -->
-        <div class="rounded-2xl p-4 flex flex-col items-center gap-3 bg-status-warning-bg">
+        <div class="rounded-2xl p-3 sm:p-4 flex flex-col items-center gap-3 bg-status-warning-bg">
           <span class="text-[10px] font-bold uppercase tracking-wider text-status-warning">تنبيهات</span>
           <span
             :key="`w-${warningsCount}`"
             class="text-3xl font-bold counter-pop text-status-warning"
           >{{ warningsCount }}</span>
-          <div class="flex gap-2">
+          <div class="flex gap-2 w-full sm:w-auto">
             <UButton
               variant="ghost"
               icon="i-lucide-minus"
-              class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 bg-status-warning/15 text-status-warning"
+              class="flex-1 h-11 sm:flex-initial sm:w-9 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 bg-status-warning/15 text-status-warning"
               :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="decrement('warnings')"
             />
             <UButton
               variant="ghost"
               icon="i-lucide-plus"
-              class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 bg-status-warning/15 text-status-warning"
+              class="flex-1 h-11 sm:flex-initial sm:w-9 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 bg-status-warning/15 text-status-warning"
               :ui="{ leadingIcon: 'w-4 h-4' }"
               @click="increment('warnings')"
             />
@@ -349,7 +358,7 @@ const labelUi = {
         </div>
 
         <!-- Tajweed — green, 0..10 -->
-        <div class="rounded-2xl p-4 flex flex-col items-center gap-3 bg-status-ok-bg">
+        <div class="rounded-2xl p-3 sm:p-4 flex flex-col items-center gap-3 bg-status-ok-bg">
           <span class="text-[10px] font-bold uppercase tracking-wider text-status-ok">تجويد</span>
           <span
             :key="`t-${tajweedScore}`"
@@ -357,11 +366,11 @@ const labelUi = {
           >
             {{ tajweedScore }}<span class="text-base font-normal opacity-70">/10</span>
           </span>
-          <div class="flex gap-2">
+          <div class="flex gap-2 w-full sm:w-auto">
             <UButton
               variant="ghost"
               icon="i-lucide-minus"
-              class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 disabled:opacity-40 bg-status-ok/15 text-status-ok"
+              class="flex-1 h-11 sm:flex-initial sm:w-9 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 disabled:opacity-40 bg-status-ok/15 text-status-ok"
               :ui="{ leadingIcon: 'w-4 h-4' }"
               :disabled="tajweedScore <= 0"
               @click="decrement('tajweed')"
@@ -369,7 +378,7 @@ const labelUi = {
             <UButton
               variant="ghost"
               icon="i-lucide-plus"
-              class="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 disabled:opacity-40 bg-status-ok/15 text-status-ok"
+              class="flex-1 h-11 sm:flex-initial sm:w-9 sm:h-9 min-h-[44px] sm:min-h-[36px] rounded-full justify-center hover:scale-105 active:scale-95 disabled:opacity-40 bg-status-ok/15 text-status-ok"
               :ui="{ leadingIcon: 'w-4 h-4' }"
               :disabled="tajweedScore >= 10"
               @click="increment('tajweed')"

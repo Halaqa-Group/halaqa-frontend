@@ -959,10 +959,15 @@
       "todayCount": "{count} achievements today",
       "selectStudentToLog": "Select a student to log an achievement",
       "todaysAchievements": "Today's achievements",
-      "savedToast": "Achievement saved successfully",
+      "reciteInMushaf": "Recite in Mushaf",
+      "savedToast": "Achievement saved successfully ✓",
       "saveErrorTitle": "Failed to save achievement",
+      "updatedToast": "Achievement updated successfully ✓",
+      "updateErrorTitle": "Failed to update achievement",
+      "duplicatedToast": "Achievement data copied to form",
       "deletedToast": "Achievement deleted",
-      "deleteErrorTitle": "Failed to delete achievement"
+      "deleteErrorTitle": "Failed to delete achievement",
+      "changeDate": "Change date"
     },
     "analytics": {
       "performanceLabel": "Performance",

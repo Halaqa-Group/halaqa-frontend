@@ -299,20 +299,7 @@ register('PATCH', '/attendance/:id', ({ params, body }) => {
 })
 
 // ── Students ────────────────────────────────────────────────────────────────
-// Real backend uses snake_case query keys. The existing useAchievements()
-// composable still calls /students?halaqaId=… (camelCase legacy) — we
-// match both here so neither caller breaks.
-register('GET', '/students', ({ query }) => {
-  let list = db.students
-  const halaqaId = Number(query.halaqa_id ?? query.halaqaId ?? 0) || null
-  if (halaqaId) {
-    const enrolledIds = new Set(
-      db.enrollments.filter(e => e.halaqaId === halaqaId).map(e => e.studentId)
-    )
-    list = list.filter(s => enrolledIds.has(s.id))
-  }
-  return list
-})
+// GET /students is owned by the real backend (paginated, snake_case halaqa_id).
 
 // ── Achievements ────────────────────────────────────────────────────────────
 

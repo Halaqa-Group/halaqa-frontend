@@ -91,17 +91,17 @@ const totals = computed(() => {
       <div
         v-for="achievement in achievements"
         :key="achievement.id"
-        class="rounded-2xl p-5 relative bg-surface-container-lowest ring ring-card-border"
+        class="rounded-2xl p-4 sm:p-5 relative bg-surface-container-lowest ring ring-card-border"
         :class="editingId === achievement.id ? 'ring-2 ring-primary' : ''"
       >
         <!-- Track badge + quality + actions -->
-        <div class="flex items-center justify-between gap-2 mb-4 flex-wrap">
-          <div class="flex items-center gap-2">
+        <div class="flex items-center justify-between gap-2 mb-4">
+          <div class="flex items-center gap-2 flex-wrap min-w-0 flex-1">
             <div
               class="px-3 py-1.5 rounded-full flex items-center gap-2"
               :class="getTrackClass(achievement.track_type).bgClass"
             >
-              <LucideAward
+              <LucideAward
                 class="w-3.5 h-3.5"
                 :class="getTrackClass(achievement.track_type).textClass"
               />
@@ -123,7 +123,7 @@ const totals = computed(() => {
             </span>
           </div>
 
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1 shrink-0 ms-auto">
             <UButton
               variant="ghost"
               color="neutral"

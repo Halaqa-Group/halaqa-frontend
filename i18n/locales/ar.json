@@ -959,10 +959,15 @@
       "todayCount": "{count} إنجاز اليوم",
       "selectStudentToLog": "اختر طالباً لتسجيل إنجاز",
       "todaysAchievements": "إنجازات اليوم",
-      "savedToast": "تم حفظ الإنجاز بنجاح",
+      "reciteInMushaf": "تلاوة في المصحف",
+      "savedToast": "تم حفظ الإنجاز بنجاح ✓",
       "saveErrorTitle": "خطأ في حفظ الإنجاز",
+      "updatedToast": "تم تحديث الإنجاز بنجاح ✓",
+      "updateErrorTitle": "خطأ في تحديث الإنجاز",
+      "duplicatedToast": "تم نسخ بيانات الإنجاز إلى النموذج",
       "deletedToast": "تم حذف الإنجاز",
-      "deleteErrorTitle": "خطأ في حذف الإنجاز"
+      "deleteErrorTitle": "خطأ في حذف الإنجاز",
+      "changeDate": "تغيير التاريخ"
     },
     "analytics": {
       "performanceLabel": "رصد الأداء",

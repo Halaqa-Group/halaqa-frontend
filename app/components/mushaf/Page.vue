@@ -25,9 +25,13 @@ const renderedLines = computed(() => {
   <div class="mushaf-page" dir="rtl">
     <div class="mushaf-page__inner">
       <template v-if="error && !page">
-        <div class="mushaf-page__error" dir="ltr">
-          <UIcon name="i-lucide-triangle-alert" class="size-5 text-red-500" />
-          <span>Failed to load page {{ pageNumber }} — {{ error.message }}</span>
+        <div class="mushaf-page__error" dir="rtl">
+          <UIcon name="i-lucide-triangle-alert" class="size-6 text-error" />
+          <p class="mushaf-page__error-title">تعذّر عرض الصفحة {{ pageNumber }}</p>
+          <p class="mushaf-page__error-detail">
+            تأكد من اتصالك بالشبكة ثم أعد المحاولة.
+          </p>
+          <p class="mushaf-page__error-tech" dir="ltr">{{ error.message }}</p>
         </div>
       </template>
 
@@ -103,11 +107,32 @@ const renderedLines = computed(() => {
 
 .mushaf-page__error {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  padding: 1rem;
-  color: #b91c1c;
-  font-size: 0.9rem;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.mushaf-page__error-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-on-surface, #1c1917);
+  margin: 0;
+}
+
+.mushaf-page__error-detail {
+  font-size: 0.875rem;
+  color: var(--color-on-surface-variant, #78716c);
+  margin: 0;
+}
+
+.mushaf-page__error-tech {
+  font-size: 0.7rem;
+  color: var(--color-on-surface-variant, #78716c);
+  opacity: 0.6;
+  margin: 0;
+  font-family: monospace;
 }
 
 .mushaf-page__footer {

@@ -26,32 +26,37 @@ function paddedPage(page: number): string {
   return String(page).padStart(3, '0')
 }
 
-function injectFontFace(page: number) {
+// Inject only the small `.pN-v1 { font-family: 'pN-v1' }` class binding.
+// The actual @font-face is built imperatively via the FontFace API in
+// ensureFontLoaded() so we can detect download failures (CSS @font-face
+// silently swallows network errors).
+function injectClassBinding(page: number) {
   if (injectedFonts.has(page)) return
   injectedFonts.add(page)
   const style = document.createElement('style')
   style.dataset.mushafFontPage = String(page)
-  style.textContent = `
-    @font-face {
-      font-family: 'p${page}-v1';
-      src: local(QCF_P${paddedPage(page)}),
-           url('${FONT_URL(page)}') format('woff2');
-      font-display: block;
-    }
-    .p${page}-v1 { font-family: 'p${page}-v1'; }
-  `
+  style.textContent = `.p${page}-v1 { font-family: 'p${page}-v1'; }`
   document.head.appendChild(style)
 }
 
 function ensureFontLoaded(page: number): Promise<void> {
   const cached = fontLoaded.get(page)
   if (cached) return cached
-  injectFontFace(page)
-  // document.fonts.load() resolves when the named family is ready (downloaded
-  // OR confirmed unavailable). The CSS-style font shorthand needs a size +
-  // family — the size is arbitrary, it just has to parse.
-  const p = document.fonts.load(`1em "p${page}-v1"`).then(() => undefined)
+  // FontFace.load() rejects on network failure (unlike `document.fonts.load`
+  // against an @font-face declaration). This is what surfaces font outages
+  // to the caller so the UI can show a meaningful error.
+  const ff = new FontFace(
+    `p${page}-v1`,
+    `local(QCF_P${paddedPage(page)}), url(${FONT_URL(page)}) format('woff2')`,
+    { display: 'block' }
+  )
+  const p = ff.load().then(loaded => {
+    document.fonts.add(loaded)
+    injectClassBinding(page)
+  })
   fontLoaded.set(page, p)
+  // Drop the cached failure so the user can retry by re-navigating.
+  p.catch(() => { fontLoaded.delete(page) })
   return p
 }
 

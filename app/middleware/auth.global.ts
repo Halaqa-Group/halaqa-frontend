@@ -27,7 +27,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
     await fetchMe()
   }
 
-  if (activeRole.value === 'parent' && to.path !== '/parent') {
+  // Parents can additionally view today's recitation in read-only mode — the
+  // /recite page enforces the read-only contract via its own role check.
+  const PARENT_EXTRA = new Set(['/parent', '/recite'])
+  if (activeRole.value === 'parent' && !PARENT_EXTRA.has(to.path)) {
     return navigateTo('/parent')
   }
 

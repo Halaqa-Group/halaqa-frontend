@@ -1,11 +1,21 @@
 <script setup lang="ts">
+import { LazyCommonConfirmDialog } from '#components'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
-import type { ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto } from '~/types'
+import type { ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto } from '~/types'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const api = useApi()
+const overlay = useOverlay()
+const { user, activeRole } = useAuth()
+
+// Parent role gets a read-only experience: prior recitations are visible
+// (without mistake counters) but the toolbar + tap interactions are hidden.
+// A user with multiple roles (e.g. principal + parent) only enters read-only
+// when they're *actively* in the parent role — checking the user's role
+// array would lock principals out of editing.
+const isParentReadOnly = computed(() => activeRole.value === 'parent')
 
 // ── URL state ───────────────────────────────────────────────────────────────
 // Driven by the query so a teacher can deep-link from /achievements, share
@@ -64,6 +74,31 @@ const selectedItem = computed<ApiWeeklyPlanItem | null>(() =>
   todayItems.value.find(i => i.id === selectedItemId.value) ?? null
 )
 
+// ── Prior achievements for this student + halaqa + date (Phase 5 item 1) ───
+// Shows the teacher what's already been recorded so they don't double-submit,
+// and gives the parent role context for the day.
+const priorAchievements = ref<ApiAchievement[]>([])
+const priorLoading = ref(false)
+
+async function loadPrior() {
+  if (!studentId.value || !halaqaId.value) {
+    priorAchievements.value = []
+    return
+  }
+  priorLoading.value = true
+  try {
+    const raw = await api<ApiAchievement[] | { items: ApiAchievement[] }>(
+      `/achievements?student_id=${studentId.value}&halaqa_id=${halaqaId.value}&date=${dateStr.value}`
+    )
+    priorAchievements.value = Array.isArray(raw) ? raw : (raw.items ?? [])
+  } catch {
+    priorAchievements.value = []
+  } finally {
+    priorLoading.value = false
+  }
+}
+watch([studentId, halaqaId, dateStr], loadPrior, { immediate: true })
+
 // ── Marking session ─────────────────────────────────────────────────────────
 // One autosave bucket per (student, date, plan item) so a teacher can
 // switch students mid-session and come back without losing marks.
@@ -74,50 +109,87 @@ const sessionId = computed(() =>
 )
 const { mode, marks, counts, tap, clearAll } = useRecitationSession(sessionId)
 
-// ── Submit ──────────────────────────────────────────────────────────────────
+// ── Submit with confirmation (Phase 5 item 3) ──────────────────────────────
 const submitting = ref(false)
 
-async function onSubmit() {
+function onSubmitRequest() {
   const item = selectedItem.value
   if (!item || !studentId.value || !halaqaId.value) return
+  if (counts.value.total === 0) return
+
+  const c = counts.value
+  const modal = overlay.create(LazyCommonConfirmDialog, {
+    destroyOnClose: true,
+    props: {
+      'open': true,
+      'title': 'تأكيد حفظ الإنجاز',
+      'message':
+        `هل تريد حفظ إنجاز ${trackLabel(item.track_type)} لـ${rangeLabel(item)}؟`
+        + `\n${c.mistake} خطأ، ${c.warning} تنبيه، ${c.tajweed} تجويد.`,
+      'confirmLabel': 'حفظ',
+      'cancelLabel': 'إلغاء',
+      'loading': false,
+      'onUpdate:open': (v: boolean) => { if (!v) modal.close() },
+      async onConfirm() {
+        try {
+          modal.patch({ loading: true })
+          await postAchievement(item, studentId.value!, halaqaId.value!)
+          // close() destroys the overlay outright — patching `open: false`
+          // first races with the dialog's own v-model sync and can leave
+          // the backdrop visible until the next interaction.
+          modal.close()
+        } catch (e) {
+          modal.patch({ loading: false })
+          const err = e as { data?: { message?: string }, message?: string }
+          toast.add({
+            title: 'خطأ في حفظ الإنجاز',
+            description: err.data?.message || err.message || 'حدث خطأ غير معروف',
+            color: 'error',
+            icon: 'i-lucide-alert-circle'
+          })
+        }
+      }
+    }
+  })
+  // overlay.create() merely registers the modal — open() actually mounts it.
+  modal.open()
+}
+
+async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number) {
   submitting.value = true
   try {
+    const c = counts.value
     const dto: CreateAchievementDto = {
-      student_id: studentId.value,
-      halaqa_id: halaqaId.value,
+      student_id: sid,
+      halaqa_id: hid,
       date: dateStr.value,
       track_type: item.track_type,
       start_surah: item.start_surah,
       start_verse: item.start_verse,
       end_surah: item.end_surah,
       end_verse: item.end_verse,
-      mistakes_count: counts.value.mistake,
-      warnings_count: counts.value.warning,
-      tajweed_errors_count: counts.value.tajweed
+      mistakes_count: c.mistake,
+      warnings_count: c.warning,
+      tajweed_errors_count: c.tajweed
     }
-    await api('/achievements', { method: 'POST', body: dto })
+    const created = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
+    // Optimistically prepend to the prior list so it's visible immediately
+    // without a second round-trip.
+    priorAchievements.value = [created, ...priorAchievements.value]
+    clearAll()
     toast.add({
       title: 'تم حفظ الإنجاز ✓',
-      description: `${counts.value.mistake} خطأ، ${counts.value.warning} تنبيه، ${counts.value.tajweed} تجويد`,
+      description: `${c.mistake} خطأ، ${c.warning} تنبيه، ${c.tajweed} تجويد`,
       color: 'success',
       icon: 'i-lucide-check-circle'
-    })
-    clearAll()
-  } catch (e) {
-    const err = e as { data?: { message?: string }, message?: string }
-    toast.add({
-      title: 'خطأ في حفظ الإنجاز',
-      description: err.data?.message || err.message || 'حدث خطأ غير معروف',
-      color: 'error',
-      icon: 'i-lucide-alert-circle'
     })
   } finally {
     submitting.value = false
   }
 }
 
-// ── Pretty range label for the item chip ────────────────────────────────────
-function rangeLabel(item: ApiWeeklyPlanItem): string {
+// ── Pretty labels ───────────────────────────────────────────────────────────
+function rangeLabel(item: Pick<ApiWeeklyPlanItem, 'start_surah' | 'start_verse' | 'end_surah' | 'end_verse'>): string {
   const ss = SURAH_NAMES[item.start_surah] ?? `${item.start_surah}`
   if (item.start_surah === item.end_surah) {
     return `${ss} ${item.start_verse}–${item.end_verse}`
@@ -170,13 +242,43 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
           @click="router.push('/achievements')"
         />
         <div class="flex-1 min-w-0">
-          <p class="text-[10px] font-bold uppercase tracking-widest text-primary">تلاوة في المصحف</p>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-primary">
+            {{ isParentReadOnly ? 'تلاوة اليوم — للعرض فقط' : 'تلاوة في المصحف' }}
+          </p>
           <p class="text-base font-bold truncate text-on-surface">
             {{ studentLoading ? '…' : (student?.name ?? `طالب #${studentId}`) }}
           </p>
         </div>
         <span class="text-xs text-on-surface-variant whitespace-nowrap">{{ dateStr }}</span>
       </header>
+
+      <!-- ── Prior achievements strip (Phase 5 item 1) ────────────────── -->
+      <section
+        v-if="priorAchievements.length || priorLoading"
+        class="recite-page__prior"
+        dir="rtl"
+      >
+        <div class="recite-page__prior-header">
+          <UIcon name="i-lucide-check-square" class="size-4 text-primary" />
+          <span>تم تسجيله اليوم ({{ priorAchievements.length }})</span>
+          <span v-if="priorLoading" class="recite-page__prior-loading">…</span>
+        </div>
+        <ul class="recite-page__prior-list">
+          <li
+            v-for="a in priorAchievements"
+            :key="a.id"
+            :class="['recite-page__prior-item', `recite-page__prior-item--${a.track_type.toLowerCase()}`]"
+          >
+            <span class="recite-page__prior-track">{{ trackLabel(a.track_type) }}</span>
+            <span class="recite-page__prior-range">{{ rangeLabel(a) }}</span>
+            <!-- Mistake counters are hidden from parents per the backend's
+                 own role-based redaction policy. -->
+            <span v-if="!isParentReadOnly" class="recite-page__prior-counts">
+              {{ a.mistakes_count }}خ · {{ a.warnings_count }}ت · {{ a.tajweed_errors_count }}ج
+            </span>
+          </li>
+        </ul>
+      </section>
 
       <!-- ── Plan items: pick a track for today ──────────────────────── -->
       <div v-if="planLoading" class="recite-page__hint">
@@ -192,8 +294,10 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
       <div v-else-if="!plan" class="recite-page__no-plan">
         <UIcon name="i-lucide-calendar-off" class="size-8 text-on-surface-variant opacity-60" />
         <p class="text-sm font-medium text-on-surface">لا توجد خطة أسبوعية معتمدة لهذا الطالب.</p>
-        <p class="text-xs text-on-surface-variant">يجب إنشاء الخطة من صفحة المخطط أولاً.</p>
-        <UButton to="/planner" variant="soft" color="primary" size="sm">
+        <p v-if="!isParentReadOnly" class="text-xs text-on-surface-variant">
+          يجب إنشاء الخطة من صفحة المخطط أولاً.
+        </p>
+        <UButton v-if="!isParentReadOnly" to="/planner" variant="soft" color="primary" size="sm">
           فتح المخطط
         </UButton>
       </div>
@@ -218,8 +322,8 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
           </UButton>
         </div>
 
-        <!-- Sticky mark toolbar -->
-        <div class="recite-page__sticky">
+        <!-- Sticky mark toolbar — hidden for parent (Phase 5 item 5) -->
+        <div v-if="!isParentReadOnly" class="recite-page__sticky">
           <MushafMarkToolbar
             :mode="mode"
             :counts="counts"
@@ -227,19 +331,20 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
             :submitting="submitting"
             @update:mode="mode = $event"
             @clear="clearAll"
-            @submit="onSubmit"
+            @submit="onSubmitRequest"
           />
         </div>
 
         <!-- The mushaf, sized to the assigned range -->
+        <!-- Parent role: no tap handler so words aren't tappable -->
         <MushafRangeViewer
           v-if="selectedItem"
           :start-surah="selectedItem.start_surah"
           :start-verse="selectedItem.start_verse"
           :end-surah="selectedItem.end_surah"
           :end-verse="selectedItem.end_verse"
-          :marks="marks"
-          :on-word-tap="tap"
+          :marks="isParentReadOnly ? undefined : marks"
+          :on-word-tap="isParentReadOnly ? undefined : tap"
         />
       </template>
     </template>
@@ -307,5 +412,69 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
   position: sticky;
   top: 0.5rem;
   z-index: 10;
+}
+
+/* Prior recitations strip */
+.recite-page__prior {
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-card-border);
+  border-radius: 12px;
+}
+
+.recite-page__prior-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-on-surface-variant);
+  margin-bottom: 0.5rem;
+}
+
+.recite-page__prior-loading {
+  margin-inline-start: auto;
+  color: var(--color-primary);
+}
+
+.recite-page__prior-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.recite-page__prior-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  background: var(--color-surface-container-low);
+  border: 1px solid var(--color-card-border);
+}
+
+.recite-page__prior-item--hifz { color: var(--color-track-hifz); border-color: var(--color-track-hifz-bg); background: var(--color-track-hifz-bg); }
+.recite-page__prior-item--near { color: var(--color-track-near); border-color: var(--color-track-near-bg); background: var(--color-track-near-bg); }
+.recite-page__prior-item--far { color: var(--color-track-far); border-color: var(--color-track-far-bg); background: var(--color-track-far-bg); }
+
+.recite-page__prior-track {
+  font-weight: 700;
+}
+
+.recite-page__prior-range {
+  opacity: 0.85;
+}
+
+.recite-page__prior-counts {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+  margin-inline-start: auto;
 }
 </style>

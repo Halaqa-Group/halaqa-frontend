@@ -195,6 +195,29 @@ async function buildVerseToPage() {
   console.log(`✓ verse-to-page.json (${Object.keys(map).length} entries)`)
 }
 
+async function buildPagesBundle() {
+  // Roll all 604 per-page JSONs into a single bundle. The client fetches it
+  // once during idle time after first paint, then per-page JSON lookups are
+  // synchronous Map reads forever — no more cold-fetch latency for pages
+  // the user hasn't visited yet. Per-page files stay on disk so anything
+  // that requests one URL still works (preload hints, partial prefetch).
+  //
+  // Size budget: 604 pages × ~4.5 KB ≈ 2.7 MB raw, ~900 KB gzipped over
+  // the wire. Worth it because it converts an open-ended N-fetch problem
+  // into one bounded request.
+  const { readFile } = await import('node:fs/promises')
+  const pages = []
+  for (let p = 1; p <= TOTAL_PAGES; p++) {
+    const path = resolve(PAGES_DIR, `${p}.json`)
+    if (!(await fileExists(path))) continue
+    pages.push(JSON.parse(await readFile(path, 'utf8')))
+  }
+  const out = resolve(META_DIR, 'pages-all.json')
+  const json = JSON.stringify(pages)
+  await writeFile(out, json)
+  console.log(`✓ pages-all.json (${pages.length} pages, ${(json.length / 1024).toFixed(0)} KB raw)`)
+}
+
 async function runQueue(label, fetcher) {
   const queue = []
   for (let i = 1; i <= TOTAL_PAGES; i++) queue.push(i)
@@ -245,6 +268,10 @@ async function main() {
     console.log(`\nFonts → ${FONTS_DIR}`)
     allErrors.push(...await runQueue('font', downloadFont))
   }
+  // Always (re)emit the all-pages bundle from whatever per-page JSONs are
+  // on disk. Cheap (~1s of disk reads) and keeps it in sync whether the
+  // user ran the full build or just refreshed individual pages.
+  await buildPagesBundle()
 
   if (allErrors.length) {
     console.error(`\n${allErrors.length} item(s) failed. Re-run to retry.`)

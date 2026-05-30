@@ -152,10 +152,7 @@ export function useMushafPage(pageNumber: MaybeRefOrGetter<number>) {
     if (cachedJson && fontReady.has(page) && injectedFonts.has(page)) {
       data.value = cachedJson
       loading.value = false
-      onIdle(() => {
-        prefetchMushafPage(page - 1)
-        prefetchMushafPage(page + 1)
-      })
+      onIdle(() => warmNeighbourPages(page))
       return
     }
 
@@ -170,10 +167,7 @@ export function useMushafPage(pageNumber: MaybeRefOrGetter<number>) {
       ])
       if (myToken !== token) return
       data.value = pageData
-      onIdle(() => {
-        prefetchMushafPage(page - 1)
-        prefetchMushafPage(page + 1)
-      })
+      onIdle(() => warmNeighbourPages(page))
     } catch (e) {
       if (myToken !== token) return
       error.value = e as Error
@@ -197,4 +191,102 @@ export function prefetchMushafPage(page: number) {
   if (page < 1 || page > 604) return
   void ensureFontLoaded(page)
   void loadPageJson(page)
+}
+
+// Neighbour radius for the idle warm-up after a successful page load.
+// ±3 keeps page-by-page scrolling and back/forward navigation hot without
+// touching pages the user is unlikely to reach from here.
+const NEIGHBOUR_RADIUS = 3
+
+function warmNeighbourPages(page: number) {
+  for (let d = 1; d <= NEIGHBOUR_RADIUS; d++) {
+    prefetchMushafPage(page - d)
+    prefetchMushafPage(page + d)
+  }
+}
+
+// One-shot, best-effort: fetch every page's woff2 into the SW cache so future
+// FontFace loads never touch the network. We deliberately do NOT call
+// FontFace.load() for these — that would register all 604 fonts with
+// document.fonts (~42 MB of parsed font data in memory). The bytes-only
+// strategy keeps memory bounded while still making cold-page font loads
+// hit the SW cache (~3 ms) instead of the network (~50-500 ms).
+//
+// Pacing: 2 parallel fetches with an idle gap between each, so this can
+// run for a minute in the background without competing with active use.
+// Skipped on metered/slow connections so we don't burn the user's data.
+let warmAllFontBytesPromise: Promise<void> | null = null
+
+export function warmAllFontBytes(): Promise<void> {
+  if (warmAllFontBytesPromise) return warmAllFontBytesPromise
+
+  warmAllFontBytesPromise = (async () => {
+    if (typeof navigator === 'undefined') return
+    // NetworkInformation is non-standard — guard accordingly.
+    const conn = (navigator as Navigator & {
+      connection?: { saveData?: boolean, effectiveType?: string }
+    }).connection
+    if (conn?.saveData) return
+    if (conn?.effectiveType === 'slow-2g' || conn?.effectiveType === '2g') return
+
+    const CONCURRENCY = 2
+    const queue: number[] = []
+    for (let p = 1; p <= 604; p++) queue.push(p)
+
+    async function paceIdle(): Promise<void> {
+      return new Promise((r) => {
+        if (typeof requestIdleCallback === 'function') {
+          requestIdleCallback(() => r(), { timeout: 500 })
+        } else {
+          setTimeout(r, 50)
+        }
+      })
+    }
+
+    async function worker() {
+      while (queue.length) {
+        const p = queue.shift()!
+        // Skip pages whose font is already fully registered — going through
+        // the network again would just churn the SW cache for no gain.
+        if (fontReady.has(p)) { await paceIdle(); continue }
+        try {
+          // `cache: 'force-cache'` short-circuits to HTTP cache when present;
+          // SW still gets a fetch event either way and serves from its cache
+          // if it has one. Reading the blob ensures the body is fully
+          // downloaded so the SW writes a complete response.
+          const res = await fetch(`/quran/fonts/v1/p${p}.woff2`, { cache: 'force-cache' })
+          await res.blob()
+        } catch {
+          // Best-effort — log nothing, the on-demand FontFace.load() path
+          // will handle this page later.
+        }
+        await paceIdle()
+      }
+    }
+
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker))
+  })()
+
+  return warmAllFontBytesPromise
+}
+
+// Bulk-prime the in-memory pageCache from /quran/meta/pages-all.json.
+// Called once at idle time by app/plugins/quran-bundle.client.ts. After
+// this runs, every loadPageJson() call for a known page returns
+// synchronously from cache — the only thing the slow path still waits on
+// is the per-page font (which the SW caches on first use).
+//
+// Existing entries are kept as-is. Anything that already ran a per-page
+// fetch (e.g. the initial preloaded range) wins — we don't clobber.
+export function primePagesCache(rawPages: unknown[]): number {
+  if (!Array.isArray(rawPages)) return 0
+  let primed = 0
+  for (const raw of rawPages) {
+    const wire = raw as WirePage
+    if (!wire || typeof wire.page !== 'number') continue
+    if (pageCache.has(wire.page)) continue
+    pageCache.set(wire.page, normalizePage(wire))
+    primed++
+  }
+  return primed
 }

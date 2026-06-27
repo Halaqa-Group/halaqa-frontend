@@ -967,7 +967,69 @@
       "duplicatedToast": "Achievement data copied to form",
       "deletedToast": "Achievement deleted",
       "deleteErrorTitle": "Failed to delete achievement",
-      "changeDate": "Change date"
+      "changeDate": "Change date",
+      "statusApproved": "Approved",
+      "statusPending": "Pending approval",
+      "approve": "Approve",
+      "unapprove": "Revoke approval",
+      "approvedToast": "Achievement approved ✓",
+      "unapprovedToast": "Achievement approval revoked",
+      "approveErrorTitle": "Failed to approve achievement",
+      "unapproveErrorTitle": "Failed to revoke approval",
+      "computedScore": "Computed score",
+      "recordButton": "Record achievement",
+      "recordTitle": "Record achievement",
+      "editTitle": "Edit achievement",
+      "save": "Save",
+      "update": "Update",
+      "selectStudent": "Select a student",
+      "noResults": "No achievements for this day",
+      "noMatch": "No matching results",
+      "versesCount": "{count} verses",
+      "mistakes": "Mistakes",
+      "warnings": "Warnings",
+      "tajweedErrors": "Tajweed errors",
+      "notes": "Teacher notes",
+      "notesPlaceholder": "Add notes on the student's performance... (optional)",
+      "table": {
+        "student": "Student",
+        "track": "Track",
+        "range": "Range",
+        "score": "Score",
+        "errors": "Errors",
+        "status": "Status",
+        "date": "Date",
+        "actions": "Actions"
+      },
+      "tracks": {
+        "Hifz": "New memorization",
+        "Near": "Near review",
+        "Far": "Far review"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by student name",
+        "allTracks": "All tracks",
+        "allStatuses": "All statuses",
+        "clear": "Clear"
+      },
+      "view": {
+        "grid": "Grid view",
+        "table": "Table view"
+      },
+      "actions": {
+        "recite": "Recite in Mushaf",
+        "edit": "Edit",
+        "duplicate": "Duplicate",
+        "delete": "Delete"
+      },
+      "validation": {
+        "student": "Select a student",
+        "range": "Invalid verse range"
+      },
+      "deleteConfirm": {
+        "title": "Delete achievement",
+        "message": "Are you sure you want to delete this achievement? This action cannot be undone."
+      }
     },
     "analytics": {
       "performanceLabel": "Performance",

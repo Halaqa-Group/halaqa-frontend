@@ -135,9 +135,7 @@ function buildSeed(): MockDB {
         tajweed_errors_count: (en.studentId + d) % 2,
         percentage_score: 80 + ((en.studentId * 5 + d) % 20),
         status: 'approved',
-        teacher_notes: null,
-        is_unplanned: false,
-        is_flagged_conflict: false
+        teacher_notes: null
       })
     }
   }

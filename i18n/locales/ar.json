@@ -967,7 +967,69 @@
       "duplicatedToast": "تم نسخ بيانات الإنجاز إلى النموذج",
       "deletedToast": "تم حذف الإنجاز",
       "deleteErrorTitle": "خطأ في حذف الإنجاز",
-      "changeDate": "تغيير التاريخ"
+      "changeDate": "تغيير التاريخ",
+      "statusApproved": "معتمد",
+      "statusPending": "بانتظار الاعتماد",
+      "approve": "اعتماد",
+      "unapprove": "إلغاء الاعتماد",
+      "approvedToast": "تم اعتماد الإنجاز ✓",
+      "unapprovedToast": "تم إلغاء اعتماد الإنجاز",
+      "approveErrorTitle": "خطأ في اعتماد الإنجاز",
+      "unapproveErrorTitle": "خطأ في إلغاء اعتماد الإنجاز",
+      "computedScore": "النتيجة المحسوبة",
+      "recordButton": "تسجيل إنجاز",
+      "recordTitle": "تسجيل إنجاز",
+      "editTitle": "تعديل إنجاز",
+      "save": "حفظ",
+      "update": "تحديث",
+      "selectStudent": "اختر الطالب",
+      "noResults": "لا توجد إنجازات في هذا اليوم",
+      "noMatch": "لا توجد نتائج مطابقة",
+      "versesCount": "{count} آية",
+      "mistakes": "أخطاء",
+      "warnings": "تنبيهات",
+      "tajweedErrors": "أخطاء التجويد",
+      "notes": "ملاحظات المعلم",
+      "notesPlaceholder": "أضف ملاحظاتك على أداء الطالب... (اختياري)",
+      "table": {
+        "student": "الطالب",
+        "track": "المسار",
+        "range": "النطاق",
+        "score": "النتيجة",
+        "errors": "الأخطاء",
+        "status": "الحالة",
+        "date": "التاريخ",
+        "actions": "إجراءات"
+      },
+      "tracks": {
+        "Hifz": "حفظ جديد",
+        "Near": "مراجعة قريبة",
+        "Far": "مراجعة بعيدة"
+      },
+      "filters": {
+        "searchPlaceholder": "ابحث باسم الطالب",
+        "allTracks": "كل المسارات",
+        "allStatuses": "كل الحالات",
+        "clear": "مسح"
+      },
+      "view": {
+        "grid": "عرض شبكي",
+        "table": "عرض جدول"
+      },
+      "actions": {
+        "recite": "تلاوة في المصحف",
+        "edit": "تعديل",
+        "duplicate": "نسخ",
+        "delete": "حذف"
+      },
+      "validation": {
+        "student": "اختر الطالب",
+        "range": "نطاق الآيات غير صحيح"
+      },
+      "deleteConfirm": {
+        "title": "حذف الإنجاز",
+        "message": "هل أنت متأكد من حذف هذا الإنجاز؟ لا يمكن التراجع عن هذا الإجراء."
+      }
     },
     "analytics": {
       "performanceLabel": "رصد الأداء",

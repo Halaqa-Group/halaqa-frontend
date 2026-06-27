@@ -1,7 +1,8 @@
 import { ref, computed } from 'vue'
 import { STATUS_CYCLE, SURAH_NAMES } from '~/data/constants'
 import { totalVersesInRange } from '~/utils/quran'
-import type { DayData, LessonItem, LessonCategory, ApiWeeklyPlan } from '~/types'
+import { unwrapList } from '~/utils/api/list'
+import type { DayData, LessonItem, LessonCategory, ApiWeeklyPlan, ApiWeeklyPlanItem } from '~/types'
 
 const ARABIC_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
 const ARABIC_DAYS = ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة']
@@ -23,6 +24,22 @@ const TRACK_TYPE_MAP: Record<LessonCategory, 'Hifz' | 'Near' | 'Far'> = {
 
 const TRACK_CAT_MAP: Record<string, LessonCategory> = {
   Hifz: 'mem', Near: 'near', Far: 'far'
+}
+
+// Maps a reconciled plan-item status onto the cell palette so an approved plan's
+// progress (driven by achievement reconciliation) is visible on load.
+const ITEM_STATUS_COLOR: Record<string, string> = {
+  completed: 'bg-[#A7D2CB]', // green
+  partial: 'bg-[#FFD9C0]', // orange
+  overdue: 'bg-[#EFB0C1]', // pink
+  due: 'bg-[#86A3B8]' // neutral
+}
+
+// Stable key for a backend plan item — must match lessonKey()'s shape exactly so
+// returned items can be matched back to grid lessons after create/save.
+function backendItemKey(item: ApiWeeklyPlanItem): string {
+  const cat = TRACK_CAT_MAP[item.track_type] ?? 'mem'
+  return `${item.day_of_week}|${cat}|${item.start_surah}|${item.start_verse}|${item.end_surah}|${item.end_verse}`
 }
 
 function toAr(n: number): string {
@@ -117,13 +134,14 @@ export function useSchedule() {
     isLoading.value = true
     try {
       const weekStart = formatDate(selectedWeekStart.value)
-      const plans = await api<ApiWeeklyPlan[]>(
-        `/plans?studentId=${Number(studentObj.id)}&halaqaId=${selectedHalaqaId.value}&weekStartDate=${weekStart}`
+      const raw = await api<unknown>(
+        `/weekly-plans?student_id=${Number(studentObj.id)}&halaqa_id=${selectedHalaqaId.value}&week_start_date=${weekStart}`
       )
+      const plans = unwrapList<ApiWeeklyPlan>(raw)
 
-      if (!plans?.length) return // No plan exists — keep fresh state
+      if (!plans.length) return // No plan exists — keep fresh state
 
-      const plan = plans[0]
+      const plan = plans[0]!
       currentPlanId.value = plan.id
       planStatus.value = plan.status as PlanStatus
       isEditMode.value = false // View mode when loading an existing plan
@@ -145,8 +163,12 @@ export function useSchedule() {
           endAyah: item.end_verse
         }
 
-        newSchedule[dayIndex].lessons[cat].push(lesson)
+        newSchedule[dayIndex]!.lessons[cat].push(lesson)
         newSavedKeys.set(lessonKey(dayIndex, cat, lesson), item.id)
+
+        // Reflect reconciliation status on the cell.
+        const color = ITEM_STATUS_COLOR[item.status]
+        if (color) newSchedule[dayIndex]!.statusColors[cat] = color
       }
 
       schedule.value = newSchedule
@@ -172,56 +194,73 @@ export function useSchedule() {
     try {
       const weekStart = formatDate(selectedWeekStart.value)
 
-      if (!currentPlanId.value) {
-        const plan = await api<{ id: number }>('/plans', {
-          method: 'POST',
-          body: {
-            student_id: Number(studentObj.id),
-            halaqa_id: selectedHalaqaId.value,
-            week_start_date: weekStart
-          }
-        })
-        currentPlanId.value = plan.id
-      }
-
-      // Build current lessons map
+      // Build current (non-empty) lessons map from the grid.
       const currentLessons = new Map<string, { dayIndex: number, cat: LessonCategory, lesson: LessonItem }>()
       for (let dayIndex = 0; dayIndex < schedule.value.length; dayIndex++) {
         for (const cat of (['mem', 'near', 'far'] as LessonCategory[])) {
-          for (const lesson of schedule.value[dayIndex].lessons[cat]) {
+          for (const lesson of schedule.value[dayIndex]!.lessons[cat]) {
             if (!lesson.startSurah || !lesson.endSurah) continue
             currentLessons.set(lessonKey(dayIndex, cat, lesson), { dayIndex, cat, lesson })
           }
         }
       }
 
-      // DELETE removed items
+      function itemBody(dayIndex: number, cat: LessonCategory, lesson: LessonItem) {
+        return {
+          day_of_week: dayIndex,
+          track_type: TRACK_TYPE_MAP[cat],
+          start_surah: getSurahNumber(lesson.startSurah),
+          start_verse: lesson.startAyah,
+          end_surah: getSurahNumber(lesson.endSurah),
+          end_verse: lesson.endAyah
+        }
+      }
+
+      if (!currentPlanId.value) {
+        // The backend requires at least one item to create a plan — there's no
+        // empty-plan endpoint. Nothing to save until the grid has a lesson.
+        if (currentLessons.size === 0) return
+
+        const plan = await api<ApiWeeklyPlan>('/weekly-plans', {
+          method: 'POST',
+          body: {
+            student_id: Number(studentObj.id),
+            halaqa_id: selectedHalaqaId.value,
+            week_start_date: weekStart,
+            items: [...currentLessons.values()].map(({ dayIndex, cat, lesson }) =>
+              itemBody(dayIndex, cat, lesson))
+          }
+        })
+        currentPlanId.value = plan.id
+        // Map the persisted items back to grid keys for future diffs.
+        const newKeys = new Map<string, number>()
+        for (const item of (plan.items ?? [])) newKeys.set(backendItemKey(item), item.id)
+        savedItemKeys.value = newKeys
+        planStatus.value = (plan.status as PlanStatus) ?? 'draft'
+        isEditMode.value = false
+        return
+      }
+
+      // Existing plan (draft): diff items. DELETE removed, POST added.
+      // Item delete is a flat route (not nested under the plan).
       const deletes: Promise<unknown>[] = []
       for (const [key, itemId] of savedItemKeys.value) {
         if (!currentLessons.has(key)) {
           deletes.push(
-            api(`/plans/${currentPlanId.value}/items/${itemId}`, { method: 'DELETE' })
+            api(`/weekly-plan-items/${itemId}`, { method: 'DELETE' })
               .then(() => { savedItemKeys.value.delete(key) })
           )
         }
       }
       await Promise.all(deletes)
 
-      // POST new items only
       const adds: Promise<unknown>[] = []
       for (const [key, { dayIndex, cat, lesson }] of currentLessons) {
         if (!savedItemKeys.value.has(key)) {
           adds.push(
-            api<{ id: number }>(`/plans/${currentPlanId.value}/items`, {
+            api<ApiWeeklyPlanItem>(`/weekly-plans/${currentPlanId.value}/items`, {
               method: 'POST',
-              body: {
-                day_of_week: dayIndex,
-                track_type: TRACK_TYPE_MAP[cat],
-                start_surah: getSurahNumber(lesson.startSurah),
-                start_verse: lesson.startAyah,
-                end_surah: getSurahNumber(lesson.endSurah),
-                end_verse: lesson.endAyah
-              }
+              body: itemBody(dayIndex, cat, lesson)
             }).then((created) => { savedItemKeys.value.set(key, created.id) })
           )
         }
@@ -239,9 +278,22 @@ export function useSchedule() {
     if (!currentPlanId.value) return
     isSaving.value = true
     try {
-      await api(`/plans/${currentPlanId.value}/submit`, { method: 'POST' })
+      await api(`/weekly-plans/${currentPlanId.value}/approve`, { method: 'POST' })
       planStatus.value = 'approved'
       isEditMode.value = false
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  // Principal/VP only (server-enforced). Required before adding/removing items on
+  // an approved plan — the backend rejects structural edits while approved.
+  async function unapprovePlan() {
+    if (!currentPlanId.value) return
+    isSaving.value = true
+    try {
+      await api(`/weekly-plans/${currentPlanId.value}/unapprove`, { method: 'POST' })
+      planStatus.value = 'draft'
     } finally {
       isSaving.value = false
     }
@@ -460,10 +512,10 @@ export function useSchedule() {
       }
       reviewSessions += day.lessons.near.length + day.lessons.far.length
 
-      const filled =
-        (day.lessons.mem.length > 0 ? 1 : 0)
-        + (day.lessons.near.length > 0 ? 1 : 0)
-        + (day.lessons.far.length > 0 ? 1 : 0)
+      const filled
+        = (day.lessons.mem.length > 0 ? 1 : 0)
+          + (day.lessons.near.length > 0 ? 1 : 0)
+          + (day.lessons.far.length > 0 ? 1 : 0)
       if (filled === 3) completedDays += 1
     }
 
@@ -497,6 +549,7 @@ export function useSchedule() {
     changeWeek,
     saveAsDraft,
     approvePlan,
+    unapprovePlan,
     startEditing,
     cancelEditing,
     toggleSelectRow,

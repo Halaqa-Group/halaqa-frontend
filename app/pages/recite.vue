@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { LazyCommonConfirmDialog } from '#components'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
+import { computePercentageScore } from '~/utils/score'
 import type { ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto } from '~/types'
 
 const route = useRoute()
@@ -9,6 +10,7 @@ const toast = useToast()
 const api = useApi()
 const overlay = useOverlay()
 const { user, activeRole } = useAuth()
+const { loadEvaluationSettings } = useAchievements()
 
 // Parent role gets a read-only experience: prior recitations are visible
 // (without mistake counters) but the toolbar + tap interactions are hidden.
@@ -192,6 +194,9 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
   submitting.value = true
   try {
     const c = counts.value
+    // Backend requires percentage_score; compute it from the halaqa's
+    // evaluation_settings (same formula/cache as the achievements page).
+    const settings = await loadEvaluationSettings(hid)
     const dto: CreateAchievementDto = {
       student_id: sid,
       halaqa_id: hid,
@@ -203,7 +208,11 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
       end_verse: item.end_verse,
       mistakes_count: c.mistake,
       warnings_count: c.warning,
-      tajweed_errors_count: c.tajweed
+      tajweed_errors_count: c.tajweed,
+      percentage_score: computePercentageScore(
+        { mistakes_count: c.mistake, warnings_count: c.warning, tajweed_errors_count: c.tajweed },
+        settings
+      )
     }
     const created = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
     // Optimistically prepend to the prior list so it's visible immediately

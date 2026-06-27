@@ -1,4 +1,5 @@
 import type { ApiWeeklyPlan, ApiWeeklyPlanItem } from '~/types'
+import { unwrapList } from '~/utils/api/list'
 
 // ── Calendar helpers ────────────────────────────────────────────────────────
 //
@@ -30,17 +31,6 @@ export function startOfWeekSat(d: Date): Date {
   const sat = new Date(d)
   sat.setDate(d.getDate() - offset)
   return sat
-}
-
-// Some list endpoints in this backend return either a bare array or a
-// paginated `{ items, total, ... }` envelope depending on the resource.
-// Normalize both shapes here so callers don't have to.
-function unwrapList<T>(raw: unknown): T[] {
-  if (Array.isArray(raw)) return raw as T[]
-  if (raw && typeof raw === 'object' && 'items' in raw && Array.isArray((raw as { items: unknown[] }).items)) {
-    return (raw as { items: T[] }).items
-  }
-  return []
 }
 
 // ── Composable ──────────────────────────────────────────────────────────────

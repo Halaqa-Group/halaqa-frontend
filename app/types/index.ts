@@ -5,9 +5,11 @@ import type { Ref } from 'vue'
 
 export type ApiClient = {
   <T = unknown>(url: string, opts?: FetchOptions): Promise<T>
-  /** Warnings array from the most recent envelope (e.g. `id_number.checksum_invalid`).
+  /**
+   * Warnings array from the most recent envelope (e.g. `id_number.checksum_invalid`).
    *  Reset to [] on every request that returns no warnings. Single-flight only —
-   *  for concurrent calls, only the latest is observable. */
+   *  for concurrent calls, only the latest is observable.
+   */
   lastWarnings: Ref<string[]>
 }
 
@@ -62,10 +64,12 @@ export interface AttendanceEntry {
 
 // ── API types (backend entity shapes) ───────────────────────────────────────
 
-/** Backend StudentResponse shape — fields the API actually returns.
+/**
+ * Backend StudentResponse shape — fields the API actually returns.
  *  Note: progress/attendance/current_surah/halaqat etc. live in other
  *  modules (attendance, achievements, weekly-plans) and are NOT on this
- *  endpoint. */
+ *  endpoint.
+ */
 export interface ApiStudent {
   id: number
   name: string
@@ -121,15 +125,15 @@ export type EndReason = 'reassigned' | 'left_school' | 'vacation' | 'retired' | 
 export type PrayerSlot = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'
 export type StudentHalaqaStatus = 'active' | 'transferred' | 'completed' | 'archived'
 
-export type HalaqaActivityAction =
-  | 'halaqa_created' | 'halaqa_updated' | 'halaqa_archived'
-  | 'halaqa_completed' | 'halaqa_restored'
-  | 'teacher_assigned' | 'teacher_unassigned' | 'teacher_role_changed'
-  | 'acting_started' | 'acting_extended' | 'acting_ended'
-  | 'student_enrolled' | 'student_re_enrolled' | 'student_unenrolled'
-  | 'student_transferred_in' | 'student_transferred_out' | 'student_completed'
-  | 'supervisor_assigned' | 'supervisor_unassigned'
-  | 'schedule_updated'
+export type HalaqaActivityAction
+  = | 'halaqa_created' | 'halaqa_updated' | 'halaqa_archived'
+    | 'halaqa_completed' | 'halaqa_restored'
+    | 'teacher_assigned' | 'teacher_unassigned' | 'teacher_role_changed'
+    | 'acting_started' | 'acting_extended' | 'acting_ended'
+    | 'student_enrolled' | 'student_re_enrolled' | 'student_unenrolled'
+    | 'student_transferred_in' | 'student_transferred_out' | 'student_completed'
+    | 'supervisor_assigned' | 'supervisor_unassigned'
+    | 'schedule_updated'
 
 export interface ApiPrimaryTeacher {
   user_id: number
@@ -319,15 +323,26 @@ export interface ApiAchievement {
   start_verse: number
   end_surah: number
   end_verse: number
-  mistakes_count: number
-  warnings_count: number
-  tajweed_errors_count: number
-  percentage_score: number
+  /** Omitted from the response for the parent role (side-channel prevention). */
+  mistakes_count?: number
+  warnings_count?: number
+  tajweed_errors_count?: number
+  percentage_score: number | string
   status: 'approved' | 'unapproved'
+  /** Resolved actor names; omitted for the parent role. */
+  recorded_by_name?: string | null
+  approved_by_name?: string | null
+  approved_at?: string | null
   teacher_notes: string | null
-  is_unplanned: boolean
-  is_flagged_conflict: boolean
+  created_at?: string
   student?: ApiStudent
+}
+
+export interface ApiAchievementListResult {
+  items: ApiAchievement[]
+  total: number
+  page: number
+  limit: number
 }
 
 export interface ApiWeeklyPlan {
@@ -336,12 +351,22 @@ export interface ApiWeeklyPlan {
   halaqa_id: number
   week_start_date: string
   status: 'draft' | 'approved'
+  approved_by?: number | null
   items: ApiWeeklyPlanItem[]
+  created_at?: string
+}
+
+export interface ApiWeeklyPlanListResult {
+  items: ApiWeeklyPlan[]
+  total: number
+  page: number
+  limit: number
 }
 
 export interface ApiWeeklyPlanItem {
   id: number
-  weekly_plan_id: number
+  /** Not returned by the backend item mapper; present only in mock/local shapes. */
+  weekly_plan_id?: number
   day_of_week: number
   track_type: 'Hifz' | 'Near' | 'Far'
   start_surah: number
@@ -352,6 +377,7 @@ export interface ApiWeeklyPlanItem {
   achieved_verses: number
   status: 'due' | 'completed' | 'partial' | 'overdue'
   is_manual_override: boolean
+  created_at?: string
 }
 
 export interface ApiWarnings {
@@ -391,7 +417,10 @@ export interface CreateAchievementDto {
   mistakes_count?: number
   warnings_count?: number
   tajweed_errors_count?: number
+  /** Required by the backend; computed client-side from the halaqa's evaluation_settings. */
+  percentage_score: number
   teacher_notes?: string
+  approve?: boolean
 }
 
 // ── Student with attendance status (for achievements page) ──────────────────

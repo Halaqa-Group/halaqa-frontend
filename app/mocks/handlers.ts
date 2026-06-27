@@ -1,11 +1,8 @@
 import type {
-  ApiAchievement,
   ApiAttendance,
   ApiParent,
   ApiSchool,
-  ApiTeacher,
-  ApiWeeklyPlan,
-  ApiWeeklyPlanItem
+  ApiTeacher
 } from '~/types'
 import { db } from './db'
 import { MockError, register } from './router'
@@ -309,142 +306,13 @@ register('GET', '/students/:id', ({ params }) => {
   return found
 })
 
-// ── Achievements ────────────────────────────────────────────────────────────
-
-register('GET', '/achievements', ({ query }) => {
-  let list = db.achievements
-  if (query.halaqaId) list = list.filter(a => a.halaqa_id === Number(query.halaqaId))
-  if (query.studentId) list = list.filter(a => a.student_id === Number(query.studentId))
-  if (query.date) list = list.filter(a => a.date === query.date)
-  return list
-})
-
-register('POST', '/achievements', ({ body }) => {
-  const b = body as {
-    student_id: number
-    halaqa_id: number
-    date: string
-    track_type: ApiAchievement['track_type']
-    start_surah: number
-    start_verse: number
-    end_surah: number
-    end_verse: number
-    mistakes_count?: number
-    warnings_count?: number
-    tajweed_errors_count?: number
-    teacher_notes?: string | null
-  }
-  const created: ApiAchievement = {
-    id: db.seq.achievement++,
-    student_id: Number(b.student_id),
-    halaqa_id: Number(b.halaqa_id),
-    date: b.date,
-    track_type: b.track_type,
-    start_surah: b.start_surah,
-    start_verse: b.start_verse,
-    end_surah: b.end_surah,
-    end_verse: b.end_verse,
-    mistakes_count: b.mistakes_count ?? 0,
-    warnings_count: b.warnings_count ?? 0,
-    tajweed_errors_count: b.tajweed_errors_count ?? 0,
-    percentage_score: 100,
-    status: 'approved',
-    teacher_notes: b.teacher_notes ?? null,
-    is_unplanned: false,
-    is_flagged_conflict: false
-  }
-  db.achievements.push(created)
-  return created
-})
-
-register('PATCH', '/achievements/:id', ({ params, body }) => {
-  const id = Number(params.id)
-  const idx = db.achievements.findIndex(a => a.id === id)
-  if (idx === -1) throw new MockError(404, 'Achievement not found')
-  db.achievements[idx] = { ...db.achievements[idx]!, ...(body as Partial<ApiAchievement>), id }
-  return db.achievements[idx]
-})
-
-register('DELETE', '/achievements/:id', ({ params }) => {
-  const id = Number(params.id)
-  const before = db.achievements.length
-  db.achievements = db.achievements.filter(a => a.id !== id)
-  if (db.achievements.length === before) throw new MockError(404, 'Achievement not found')
-  return { success: true }
-})
-
-// ── Weekly plans ────────────────────────────────────────────────────────────
-
-// Real backend path is /weekly-plans with snake_case query keys (per
-// docs/openapi.json). The legacy /plans handler below is kept for any
-// existing code that points there; new callers should target /weekly-plans.
-register('GET', '/weekly-plans', ({ query }) => {
-  let list = db.plans
-  if (query.student_id) list = list.filter(p => p.student_id === Number(query.student_id))
-  if (query.halaqa_id) list = list.filter(p => p.halaqa_id === Number(query.halaqa_id))
-  if (query.week_start_date) list = list.filter(p => p.week_start_date === query.week_start_date)
-  if (query.status) list = list.filter(p => p.status === query.status)
-  return list
-})
-
-register('GET', '/plans', ({ query }) => {
-  let list = db.plans
-  if (query.studentId) list = list.filter(p => p.student_id === Number(query.studentId))
-  if (query.halaqaId) list = list.filter(p => p.halaqa_id === Number(query.halaqaId))
-  if (query.weekStartDate) list = list.filter(p => p.week_start_date === query.weekStartDate)
-  return list
-})
-
-register('POST', '/plans', ({ body }) => {
-  const b = body as { student_id: number, halaqa_id: number, week_start_date: string }
-  const created: ApiWeeklyPlan = {
-    id: db.seq.plan++,
-    student_id: Number(b.student_id),
-    halaqa_id: Number(b.halaqa_id),
-    week_start_date: b.week_start_date,
-    status: 'draft',
-    items: []
-  }
-  db.plans.push(created)
-  return created
-})
-
-register('POST', '/plans/:planId/items', ({ params, body }) => {
-  const planId = Number(params.planId)
-  const plan = db.plans.find(p => p.id === planId)
-  if (!plan) throw new MockError(404, 'Plan not found')
-  const b = body as Omit<ApiWeeklyPlanItem, 'id' | 'weekly_plan_id' | 'total_verses' | 'achieved_verses' | 'status' | 'is_manual_override'>
-  const item: ApiWeeklyPlanItem = {
-    id: db.seq.planItem++,
-    weekly_plan_id: planId,
-    day_of_week: b.day_of_week,
-    track_type: b.track_type,
-    start_surah: b.start_surah,
-    start_verse: b.start_verse,
-    end_surah: b.end_surah,
-    end_verse: b.end_verse,
-    total_verses: 0,
-    achieved_verses: 0,
-    status: 'due',
-    is_manual_override: false
-  }
-  plan.items.push(item)
-  return item
-})
-
-register('DELETE', '/plans/:planId/items/:itemId', ({ params }) => {
-  const planId = Number(params.planId)
-  const itemId = Number(params.itemId)
-  const plan = db.plans.find(p => p.id === planId)
-  if (!plan) throw new MockError(404, 'Plan not found')
-  plan.items = plan.items.filter(i => i.id !== itemId)
-  return { success: true }
-})
-
-register('POST', '/plans/:planId/submit', ({ params }) => {
-  const planId = Number(params.planId)
-  const plan = db.plans.find(p => p.id === planId)
-  if (!plan) throw new MockError(404, 'Plan not found')
-  plan.status = 'approved'
-  return plan
-})
+// ── Achievements & Weekly plans ──────────────────────────────────────────────
+//
+// These endpoints are served by the real NestJS backend (achievements module):
+//   /achievements, /achievements/:id(/approve|/unapprove)
+//   /weekly-plans, /weekly-plans/:id(/approve|/unapprove), /weekly-plans/:id/items
+//   /weekly-plan-items/:id
+// No mock handlers are registered for them, so they fall through to $fetch in
+// useApi. (The earlier mock contract diverged from the backend — paginated
+// envelopes, snake_case params, server-computed percentage_score and approval
+// state machine — so it was removed during the backend integration.)

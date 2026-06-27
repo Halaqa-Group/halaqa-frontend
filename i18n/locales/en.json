@@ -719,7 +719,17 @@
         "all": "All students",
         "present": "Present",
         "absent": "Absent",
-        "late": "Late"
+        "late": "Late",
+        "clear": "Clear"
+      },
+      "statusLabel": "Status",
+      "noMatch": "No matching results",
+      "view": {
+        "table": "Table view"
+      },
+      "table": {
+        "student": "Student",
+        "note": "Note"
       },
       "markAllPresent": "Mark all present",
       "markedAllPresent": "All students marked present",

@@ -4,8 +4,8 @@ defineProps<{
 }>()
 
 defineEmits<{
-  (e: 'save'): void
-  (e: 'discard'): void
+  save: []
+  discard: []
 }>()
 
 const { isDirty } = useAttendance()
@@ -23,7 +23,7 @@ const { isDirty } = useAttendance()
       class="fixed bottom-0 inset-x-0 z-40 px-3 sm:px-4 pb-3 sm:pb-4 pointer-events-none"
     >
       <div
-        class="mx-auto max-w-5xl rounded-2xl bg-surface-container-lowest border border-outline-variant shadow-2xl px-3 sm:px-5 py-3 flex items-center justify-between gap-2 sm:gap-4 pointer-events-auto"
+        class="mx-auto max-w-5xl rounded-2xl bg-default border border-default shadow-2xl px-3 sm:px-5 py-3 flex items-center justify-between gap-2 sm:gap-4 pointer-events-auto"
       >
         <div class="flex items-center gap-2 sm:gap-3 min-w-0">
           <span class="relative flex w-2.5 h-2.5 shrink-0">
@@ -36,7 +36,7 @@ const { isDirty } = useAttendance()
               style="background-color: var(--color-status-warning);"
             />
           </span>
-          <p class="text-xs sm:text-sm font-semibold text-on-surface truncate">
+          <p class="text-xs sm:text-sm font-semibold truncate">
             {{ $t('pages.attendance.unsavedChanges') }}
           </p>
         </div>

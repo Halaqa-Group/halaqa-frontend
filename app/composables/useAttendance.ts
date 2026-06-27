@@ -1,7 +1,8 @@
 import { computed, ref } from 'vue'
-import type { ApiAttendance, ApiStudent, AttendanceStatus } from '~/types'
+import type { ApiAttendance, ApiStudent, ApiStudentListResult, AttendanceStatus } from '~/types'
+import { unwrapList } from '~/utils/api/list'
 
-interface AttendanceRow {
+export interface AttendanceRow {
   studentId: string
   name: string
   avatar: string
@@ -22,18 +23,9 @@ interface RowSnapshot {
 }
 
 export type StatusFilter = 'all' | AttendanceStatus
-export type ViewMode = 'grid' | 'list'
+export type ViewMode = 'grid' | 'table'
 
-export interface DateStripDay {
-  iso: string
-  dayName: string
-  dayNumber: number
-  rate: number | null
-  isToday: boolean
-  isFuture: boolean
-}
-
-const sessionNotes = ref('')
+const search = ref('')
 const attendanceRows = ref<AttendanceRow[]>([])
 const existingRecords = ref<Map<string, ExistingRecord>>(new Map())
 const originalSnapshot = ref<Map<string, RowSnapshot>>(new Map())
@@ -47,7 +39,7 @@ const isSaving = ref(false)
 const loadError = ref<string | null>(null)
 const saveError = ref<string | null>(null)
 const statusFilter = ref<StatusFilter>('all')
-const viewMode = ref<ViewMode>('grid')
+const viewMode = ref<ViewMode>('table')
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0')
@@ -83,7 +75,6 @@ export function useAttendance() {
   async function loadSession(halaqaId: number, date: string) {
     selectedHalaqaId.value = halaqaId
     selectedDate.value = date
-    sessionNotes.value = ''
     isLoading.value = true
     loadError.value = null
     try {
@@ -91,11 +82,14 @@ export function useAttendance() {
       const fromDate = new Date(sessionDate)
       fromDate.setDate(fromDate.getDate() - 14)
 
-      const [studentsData, existingData, historyData] = await Promise.all([
-        api<ApiStudent[]>(`/students?halaqaId=${halaqaId}`),
+      const [studentsRaw, existingData, historyData] = await Promise.all([
+        // Students come from the real backend (snake_case, paginated envelope).
+        api<ApiStudentListResult | ApiStudent[]>(`/students?halaqa_id=${halaqaId}&limit=100`),
+        // Attendance is mock-served (no backend module); its mock filters by camelCase halaqaId.
         api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`),
         api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&from=${isoOf(fromDate)}&to=${date}`)
       ])
+      const studentsData = unwrapList<ApiStudent>(studentsRaw)
 
       const recMap = new Map<string, ExistingRecord>()
       existingData.forEach((a) => {
@@ -116,7 +110,7 @@ export function useAttendance() {
         return {
           studentId: String(s.id),
           name: s.name,
-          avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
+          avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
           // current_surah is not on the slimmed ApiStudent — it belongs to the
           // (not-yet-built) achievements module. Leave as a placeholder.
           currentSurah: '—',
@@ -201,12 +195,6 @@ export function useAttendance() {
     if (row) row.notes = notes
   }
 
-  function appendNote(tag: string) {
-    sessionNotes.value = sessionNotes.value
-      ? `${sessionNotes.value}، ${tag}`
-      : tag
-  }
-
   function setFilter(filter: StatusFilter) {
     statusFilter.value = filter
   }
@@ -225,7 +213,7 @@ export function useAttendance() {
       notes: r.notes
     }))
     const ids = attendanceRows.value.map(r => r.studentId)
-    attendanceRows.value.forEach((r) => { r.status = 'present' })
+    for (const r of attendanceRows.value) r.status = 'present'
     return snap.map((s, i) => ({ ...s, studentId: ids[i] } as any))
   }
 
@@ -256,37 +244,6 @@ export function useAttendance() {
     return recs.some(r => String(r.student_id) === studentId && r.status === 'Absent')
   }
 
-  function rateForDate(iso: string): number | null {
-    const recs = historyByDate.value.get(iso)
-    if (!recs || recs.length === 0) return null
-    const present = recs.filter(r => r.status === 'Present').length
-    return Math.round((present / recs.length) * 100)
-  }
-
-  function buildDateStrip(locale: string, days = 14): DateStripDay[] {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const todayIso = isoOf(today)
-    const fmt = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-SA' : 'en-US', { weekday: 'short' })
-    const out: DateStripDay[] = []
-    for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today)
-      d.setDate(today.getDate() - i)
-      const iso = isoOf(d)
-      const isToday = iso === todayIso
-      const isFuture = d > today
-      out.push({
-        iso,
-        dayName: fmt.format(d),
-        dayNumber: d.getDate(),
-        rate: isFuture || isToday ? null : rateForDate(iso),
-        isToday,
-        isFuture
-      })
-    }
-    return out
-  }
-
   const presentCount = computed(() => attendanceRows.value.filter(r => r.status === 'present').length)
   const absentCount = computed(() => attendanceRows.value.filter(r => r.status === 'absent').length)
   const lateCount = computed(() => attendanceRows.value.filter(r => r.status === 'late').length)
@@ -297,9 +254,19 @@ export function useAttendance() {
   )
 
   const filteredRows = computed(() => {
-    if (statusFilter.value === 'all') return attendanceRows.value
-    return attendanceRows.value.filter(r => r.status === statusFilter.value)
+    const q = search.value.trim().toLowerCase()
+    return attendanceRows.value.filter((r) => {
+      if (statusFilter.value !== 'all' && r.status !== statusFilter.value) return false
+      if (q && !r.name.toLowerCase().includes(q)) return false
+      return true
+    })
   })
+
+  const hasActiveFilters = computed(() => search.value.trim() !== '' || statusFilter.value !== 'all')
+  function clearFilters() {
+    search.value = ''
+    statusFilter.value = 'all'
+  }
 
   const isDirty = computed(() => {
     if (originalSnapshot.value.size === 0 && attendanceRows.value.length === 0) return false
@@ -314,7 +281,7 @@ export function useAttendance() {
 
   return {
     attendanceRows,
-    sessionNotes,
+    search,
     selectedHalaqaId,
     selectedDate,
     isLoading,
@@ -326,6 +293,7 @@ export function useAttendance() {
     lateCount,
     attendanceRate,
     filteredRows,
+    hasActiveFilters,
     statusFilter,
     viewMode,
     isDirty,
@@ -334,14 +302,13 @@ export function useAttendance() {
     setStatus,
     cycleStatus,
     setNote,
-    appendNote,
     setFilter,
     toggleFilter,
     setViewMode,
+    clearFilters,
     markAllPresent,
     applyUndoSnapshot,
     discardChanges,
-    wasAbsentYesterday,
-    buildDateStrip
+    wasAbsentYesterday
   }
 }

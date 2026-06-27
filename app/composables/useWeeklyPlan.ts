@@ -15,6 +15,11 @@ export interface CreatePlanItemDto {
   end_surah: number
   end_verse: number
 }
+
+function ymd(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 /** Saturday on/before the given date (backend week starts Sat = day_of_week 0). */
 export function startOfWeekSat(d: Date): Date {
   const r = new Date(d)
@@ -25,7 +30,7 @@ export function startOfWeekSat(d: Date): Date {
 
 // ── Module-level shared state (singleton) ─────────────────────────────────────
 const students = ref<StudentWithAttendance[]>([])
-const selectedStudentId = ref<number | null>(null)
+const selectedStudentId = ref<number | undefined>(undefined)
 const selectedWeekStart = ref<string>(ymd(startOfWeekSat(new Date())))
 const plan = ref<ApiWeeklyPlan | null>(null)
 const isLoading = ref(false)

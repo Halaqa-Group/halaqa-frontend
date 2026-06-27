@@ -86,7 +86,7 @@ async function onDeletePlan() {
 }
 
 watch(selectedHalaqaId, async (id) => {
-  selectedStudentId.value = null
+  selectedStudentId.value = undefined
   plan.value = null
   if (id) await loadStudents(id)
 })

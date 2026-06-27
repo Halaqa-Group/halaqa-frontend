@@ -1,504 +1,205 @@
 <script setup lang="ts">
-import type { Student, LessonCategory } from '~/types'
+import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
+import { achievementStatusColor } from '~/utils/achievement'
 
-const {
-  scheduleWithDates,
-  selectedWeekStart,
-  isEditMode,
-  planStatus,
-  selectedStudent,
-  isSaving,
-  saveAsDraft,
-  approvePlan,
-  startEditing,
-  cancelEditing,
-  loadPlan,
-  resetState,
-  applyColumnToAllDays,
-  copyDayToAllDays,
-  clearAllDays
-} = useSchedule()
-
-const { t } = useI18n()
-const { students, fetchStudents } = useStudents()
-const toast = useToast()
-
-async function handleSaveAsDraft() {
-  try {
-    await saveAsDraft()
-    toast.add({ title: t('pages.planner.savedDraftToast'), icon: 'i-lucide-check-circle', color: 'success' })
-  } catch (e: any) {
-    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e?.data?.message || e?.message, icon: 'i-lucide-alert-circle', color: 'error' })
-  }
-}
-
-async function handleApprovePlan() {
-  try {
-    await approvePlan()
-    toast.add({ title: t('pages.planner.approvedToast'), icon: 'i-lucide-check-circle', color: 'success' })
-  } catch (e: any) {
-    toast.add({ title: t('pages.planner.approveErrorTitle'), description: e?.data?.message || e?.message, icon: 'i-lucide-alert-circle', color: 'error' })
-  }
-}
-
-// ── Student pill (inline pill + prev/next) ──────────────────────────────
-const isStudentPopoverOpen = ref(false)
-const studentSearch = ref('')
-
-const selectedStudentObj = computed(() =>
-  students.value.find(s => s.name === selectedStudent.value) || null
-)
-
-const filteredDropdownStudents = computed(() =>
-  studentSearch.value.trim()
-    ? students.value.filter(s => s.name.includes(studentSearch.value.trim()))
-    : students.value
-)
-
-const currentStudentIndex = computed(() =>
-  selectedStudentObj.value
-    ? students.value.findIndex(s => s.id === selectedStudentObj.value!.id)
-    : -1
-)
-
-const canPrevStudent = computed(() => currentStudentIndex.value > 0)
-const canNextStudent = computed(() =>
-  currentStudentIndex.value !== -1 && currentStudentIndex.value < students.value.length - 1
-)
-
-function pickStudent(s: Student) {
-  selectedStudent.value = s.name
-  isStudentPopoverOpen.value = false
-  studentSearch.value = ''
-}
-
-function prevStudent() {
-  if (!canPrevStudent.value) return
-  const prev = students.value[currentStudentIndex.value - 1]
-  if (prev) selectedStudent.value = prev.name
-}
-
-function nextStudent() {
-  if (!canNextStudent.value) return
-  const next = students.value[currentStudentIndex.value + 1]
-  if (next) selectedStudent.value = next.name
-}
-
-watch(selectedStudent, async (newVal, oldVal) => {
-  if (newVal !== oldVal) {
-    resetState()
-    await loadPlan()
-  }
+definePageMeta({
+  breadcrumb: [
+    { label: 'home', to: '/' },
+    { label: 'pages.planner.title' }
+  ]
 })
 
-// ── Confirmations: clear all, copy day, apply column ────────────────────
-const isClearConfirmOpen = ref(false)
-const isCopyDayConfirmOpen = ref(false)
-const copyDayTargetId = ref<string | null>(null)
-const isApplyColumnConfirmOpen = ref(false)
-const applyColumnTarget = ref<LessonCategory | null>(null)
+const { t } = useI18n()
+const toast = useToast()
+const { activeRole } = useAuth()
+const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
+const {
+  selectedStudentId, selectedWeekStart, plan, planStatus,
+  formOpen, editing, deleteOpen, deleteTarget,
+  loadStudents, loadPlan, approvePlan, unapprovePlan, deletePlan, deleteItem, openAdd
+} = useWeeklyPlan()
 
-function requestClearAll() {
-  isClearConfirmOpen.value = true
-}
-function doClearAll() {
-  clearAllDays()
-  toast.add({ title: t('pages.planner.topActions.clearedToast'), icon: 'i-lucide-eraser', color: 'primary' })
+const isStaff = computed(() => activeRole.value !== 'parent')
+const canApprove = computed(() => ['principal', 'vice_principal', 'supervisor', 'teacher'].includes(activeRole.value ?? ''))
+const canAdmin = computed(() => ['principal', 'vice_principal'].includes(activeRole.value ?? ''))
+const canModify = computed(() => isStaff.value && planStatus.value !== 'approved')
+
+const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
+const formSaving = computed(() => formRef.value?.saving.value ?? false)
+
+const statusBadgeColor = computed(() => achievementStatusColor(planStatus.value === 'approved' ? 'approved' : 'unapproved'))
+const statusLabel = computed(() =>
+  planStatus.value === 'approved' ? t('pages.planner.approved') : t('pages.planner.draft')
+)
+
+const deletePlanOpen = ref(false)
+function openDeletePlan() {
+  deletePlanOpen.value = true
 }
 
-function requestCopyDay(dayId: string) {
-  copyDayTargetId.value = dayId
-  isCopyDayConfirmOpen.value = true
-}
-function doCopyDay() {
-  if (!copyDayTargetId.value) return
-  const ok = copyDayToAllDays(copyDayTargetId.value)
-  copyDayTargetId.value = null
-  if (ok) toast.add({ title: t('pages.planner.row.copiedToast'), icon: 'i-lucide-copy', color: 'primary' })
+const planMenu = computed(() => {
+  if (!plan.value || !canAdmin.value) return []
+  return [[{ label: t('pages.planner.deletePlan'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: openDeletePlan }]]
+})
+
+function onSaved() {
+  formOpen.value = false
 }
 
-function requestApplyColumn(cat: LessonCategory) {
-  applyColumnTarget.value = cat
-  isApplyColumnConfirmOpen.value = true
-}
-function doApplyColumn() {
-  if (!applyColumnTarget.value) return
-  const ok = applyColumnToAllDays(applyColumnTarget.value)
-  applyColumnTarget.value = null
-  if (ok) {
-    toast.add({ title: t('pages.planner.columns.appliedToast'), icon: 'i-lucide-copy', color: 'primary' })
-  } else {
-    toast.add({ title: t('pages.planner.columns.noFilledCell'), icon: 'i-lucide-info', color: 'neutral' })
+async function onApprove() {
+  try {
+    await approvePlan()
+    toast.add({ title: t('pages.planner.approvedToast'), color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: t('pages.planner.approveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
   }
 }
 
-// ── Preview modal ───────────────────────────────────────────────────────
-const isPreviewOpen = ref(false)
+async function onUnapprove() {
+  try {
+    await unapprovePlan()
+    toast.add({ title: t('pages.planner.unapprovedToast'), color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: t('pages.planner.approveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+  }
+}
 
-// ── Column header definitions ───────────────────────────────────────────
-const columns: { key: LessonCategory, label: string, textClass: string, bgClass: string, icon: string }[] = [
-  { key: 'mem', label: 'tracks.hifzNew', textClass: 'text-track-hifz', bgClass: 'bg-track-hifz-bg', icon: 'i-lucide-book-open' },
-  { key: 'near', label: 'tracks.nearReview', textClass: 'text-track-near', bgClass: 'bg-track-near-bg', icon: 'i-lucide-rotate-ccw' },
-  { key: 'far', label: 'tracks.farReview', textClass: 'text-track-far', bgClass: 'bg-track-far-bg', icon: 'i-lucide-library' }
-]
+async function onDeleteItem() {
+  const target = deleteTarget.value
+  if (!target) return
+  deleteTarget.value = null
+  try {
+    await deleteItem(target.id)
+    toast.add({ title: t('pages.planner.itemDeletedToast'), color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+  }
+}
+
+async function onDeletePlan() {
+  try {
+    await deletePlan()
+    toast.add({ title: t('pages.planner.planDeletedToast'), color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+  }
+}
+
+watch(selectedHalaqaId, async (id) => {
+  selectedStudentId.value = null
+  plan.value = null
+  if (id) await loadStudents(id)
+})
+watch(selectedStudentId, () => loadPlan())
+watch(selectedWeekStart, () => loadPlan())
 
 onMounted(async () => {
-  await fetchStudents()
-  if (students.value[0] && !selectedStudent.value) {
-    selectedStudent.value = students.value[0].name
-  } else if (selectedStudent.value) {
-    await loadPlan()
-  }
+  if (selectedHalaqaId.value) await loadStudents(selectedHalaqaId.value)
 })
 </script>
 
 <template>
-  <div>
-    <!-- Page header -->
-    <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-6">
-      <div class="space-y-1 min-w-0">
-        <span class="text-xs font-bold uppercase tracking-widest text-primary">
-          {{ $t('pages.planner.weeklyPlanning') }}
-        </span>
-
-        <div class="flex flex-wrap items-center gap-3">
-          <h2 class="display-lg text-on-surface">
-            {{ $t('pages.planner.title') }}
-          </h2>
-
-          <!-- Student pill + prev/next -->
-          <div class="flex items-center gap-1.5 shrink-0">
-            <UButton
-              variant="ghost"
-              color="neutral"
-              icon="i-lucide-chevron-right"
-              size="md"
-              class="rounded-full w-9 h-9 justify-center disabled:opacity-30"
-              :disabled="!canPrevStudent"
-              :aria-label="'الطالب السابق'"
-              @click="prevStudent"
-            />
-
-            <UPopover v-model:open="isStudentPopoverOpen" :ui="{ content: 'min-w-[280px] rounded-2xl' }">
-              <UButton
-                variant="soft"
-                color="primary"
-                class="rounded-full px-3 py-2 gap-2.5 hover:opacity-90"
-              >
-                <img
-                  v-if="selectedStudentObj"
-                  :src="selectedStudentObj.avatar"
-                  :alt="selectedStudentObj.name"
-                  class="w-7 h-7 rounded-full object-cover shrink-0"
-                  referrerpolicy="no-referrer"
-                >
-                <LucideUser v-else class="w-4 h-4" />
-                <span class="font-semibold text-sm">
-                  {{ selectedStudentObj?.name || $t('common.selectStudent') }}
-                </span>
-                <LucideChevronDown
-                  class="w-4 h-4 transition-transform"
-                  :class="{ 'rotate-180': isStudentPopoverOpen }"
-                />
-              </UButton>
-
-              <template #content>
-                <div class="w-[280px] p-2">
-                  <div class="px-2 pb-2">
-                    <UInput
-                      v-model="studentSearch"
-                      type="text"
-                      :placeholder="$t('common.searchPlaceholder')"
-                      leading-icon="i-lucide-search"
-                      variant="none"
-                      class="w-full"
-                      :ui="{
-                        base: 'w-full rounded-lg px-3 py-2 bg-surface-container-low text-sm text-on-surface',
-                        leadingIcon: 'w-3.5 h-3.5 text-on-surface-variant'
-                      }"
-                    />
-                  </div>
-
-                  <div class="flex flex-col gap-0.5 max-h-[280px] overflow-y-auto">
-                    <UButton
-                      v-for="s in filteredDropdownStudents"
-                      :key="s.id"
-                      variant="ghost"
-                      color="primary"
-                      class="w-full gap-3 px-3 py-2 rounded-xl font-normal justify-start"
-                      :class="selectedStudentObj?.id === s.id ? 'bg-primary text-white' : ''"
-                      @click="pickStudent(s)"
-                    >
-                      <img
-                        :src="s.avatar"
-                        :alt="s.name"
-                        class="w-8 h-8 rounded-full object-cover shrink-0"
-                        referrerpolicy="no-referrer"
-                      >
-                      <div class="flex-1 text-start">
-                        <p
-                          class="text-sm font-bold leading-tight"
-                          :class="selectedStudentObj?.id === s.id ? 'text-white' : 'text-on-surface'"
-                        >
-                          {{ s.name }}
-                        </p>
-                        <span
-                          v-if="s.halaqa && s.halaqa !== '—'"
-                          class="text-[11px]"
-                          :class="selectedStudentObj?.id === s.id ? 'text-white/75' : 'text-on-surface-variant'"
-                        >{{ s.halaqa }}</span>
-                      </div>
-                      <LucideCheck
-                        v-if="selectedStudentObj?.id === s.id"
-                        class="w-4 h-4 shrink-0"
-                      />
-                    </UButton>
-
-                    <div v-if="filteredDropdownStudents.length === 0" class="px-3 py-4 text-center">
-                      <p class="text-sm text-on-surface-variant">
-                        {{ $t('common.noResults') }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </UPopover>
-
-            <UButton
-              variant="ghost"
-              color="neutral"
-              icon="i-lucide-chevron-left"
-              size="md"
-              class="rounded-full w-9 h-9 justify-center disabled:opacity-30"
-              :disabled="!canNextStudent"
-              :aria-label="'الطالب التالي'"
-              @click="nextStudent"
-            />
-          </div>
-        </div>
-
-        <p class="text-sm text-on-surface-variant">
-          {{ $t('pages.planner.subtitle') }}
+  <div class="flex flex-col gap-6">
+    <!-- Header -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div class="space-y-1">
+        <h1 class="text-2xl font-bold">
+          {{ t('pages.planner.title') }}
+        </h1>
+        <p class="text-sm text-muted">
+          {{ t('pages.planner.subtitle') }}
         </p>
       </div>
 
-      <!-- Top action bar -->
-      <div class="flex flex-wrap items-center gap-2 shrink-0">
+      <div v-if="hasHalaqa && selectedStudentId" class="flex items-center gap-2 flex-wrap">
+        <UBadge v-if="plan" variant="subtle" :color="statusBadgeColor" size="lg">
+          {{ statusLabel }}
+        </UBadge>
         <UButton
-          variant="outline"
-          color="neutral"
-          :label="$t('pages.planner.copyFromLastWeek')"
-          icon="i-lucide-copy"
-          size="md"
-          class="font-semibold rounded-full px-4"
-        />
-        <UButton
-          variant="outline"
-          color="error"
-          :label="$t('pages.planner.topActions.clearAll')"
-          icon="i-lucide-eraser"
-          size="md"
-          class="font-semibold rounded-full px-4"
-          @click="requestClearAll"
-        />
-        <UButton
-          variant="outline"
+          v-if="canApprove && planStatus === 'draft'"
+          icon="i-lucide-check-check"
           color="primary"
-          :label="$t('pages.planner.topActions.preview')"
-          icon="i-lucide-eye"
-          size="md"
-          class="font-semibold rounded-full px-4"
-          @click="isPreviewOpen = true"
-        />
-
-        <!-- Status-aware primary action -->
-        <template v-if="planStatus === 'new'">
-          <UButton
-            color="primary"
-            :label="$t('pages.planner.saveAsDraft')"
-            icon="i-lucide-save"
-            size="md"
-            class="font-bold rounded-full px-5"
-            :loading="isSaving"
-            :disabled="isSaving"
-            @click="handleSaveAsDraft"
-          />
-        </template>
-
-        <template v-else-if="planStatus === 'draft' && !isEditMode">
-          <UButton
-            variant="outline"
-            color="neutral"
-            :label="$t('pages.planner.editPlan')"
-            icon="i-lucide-pencil"
-            size="md"
-            class="font-semibold rounded-full px-4"
-            @click="startEditing"
-          />
-          <UButton
-            color="primary"
-            :label="$t('pages.planner.approvePlan')"
-            icon="i-lucide-check-circle"
-            size="md"
-            class="font-bold rounded-full px-5"
-            :loading="isSaving"
-            :disabled="isSaving"
-            @click="handleApprovePlan"
-          />
-        </template>
-
-        <template v-else-if="planStatus === 'draft' && isEditMode">
-          <UButton
-            variant="ghost"
-            color="neutral"
-            :label="$t('common.cancel')"
-            icon="i-lucide-x"
-            size="md"
-            class="font-semibold rounded-full px-4"
-            :disabled="isSaving"
-            @click="cancelEditing"
-          />
-          <UButton
-            color="primary"
-            :label="$t('pages.planner.saveAsDraft')"
-            icon="i-lucide-save"
-            size="md"
-            class="font-bold rounded-full px-5"
-            :loading="isSaving"
-            :disabled="isSaving"
-            @click="handleSaveAsDraft"
-          />
-        </template>
-
-        <template v-else-if="planStatus === 'approved' && !isEditMode">
-          <div class="flex items-center gap-2 px-4 py-2 rounded-full border font-semibold text-sm bg-status-ok-bg border-status-ok/40 text-status-ok">
-            <LucideCheckCircle class="w-4 h-4" />
-            {{ $t('pages.planner.approved') }}
-          </div>
-          <UButton
-            variant="outline"
-            color="neutral"
-            :label="$t('pages.planner.editPlan')"
-            icon="i-lucide-pencil"
-            size="md"
-            class="font-semibold rounded-full px-4"
-            @click="startEditing"
-          />
-        </template>
-
-        <template v-else-if="planStatus === 'approved' && isEditMode">
-          <UButton
-            variant="ghost"
-            color="neutral"
-            :label="$t('common.cancel')"
-            icon="i-lucide-x"
-            size="md"
-            class="font-semibold rounded-full px-4"
-            :disabled="isSaving"
-            @click="cancelEditing"
-          />
-          <UButton
-            color="primary"
-            :label="$t('pages.planner.saveChanges')"
-            icon="i-lucide-save"
-            size="md"
-            class="font-bold rounded-full px-5"
-            :loading="isSaving"
-            :disabled="isSaving"
-            @click="handleSaveAsDraft"
-          />
-        </template>
+          @click="onApprove"
+        >
+          {{ t('pages.planner.approvePlan') }}
+        </UButton>
+        <UButton
+          v-if="canAdmin && planStatus === 'approved'"
+          icon="i-lucide-undo-2"
+          color="warning"
+          variant="soft"
+          @click="onUnapprove"
+        >
+          {{ t('pages.planner.unapprove') }}
+        </UButton>
+        <UButton
+          v-if="canModify"
+          icon="i-lucide-plus"
+          @click="openAdd"
+        >
+          {{ t('pages.planner.addItem') }}
+        </UButton>
+        <UDropdownMenu v-if="planMenu.length" :items="planMenu" :content="{ align: 'end' }">
+          <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
+        </UDropdownMenu>
       </div>
     </div>
 
-    <!-- Week list -->
-    <div class="mb-6">
-      <PlannerWeekList />
+    <!-- No halaqa -->
+    <div
+      v-if="!hasHalaqa"
+      class="flex flex-col items-center gap-3 py-12 rounded-xl border border-default bg-default"
+    >
+      <UIcon name="i-lucide-layers" class="w-10 h-10 text-muted" />
+      <p class="text-sm text-muted">
+        {{ t('common.selectHalaqaPrompt') }}
+      </p>
     </div>
 
-    <!-- Weekly summary -->
-    <div class="mb-4">
-      <PlannerSummaryBar />
-    </div>
+    <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
+      <template #header>
+        <PlannerFilterBar />
+      </template>
+      <PlannerResults />
+    </UCard>
 
-    <!-- Grid -->
-    <div class="overflow-x-auto -mx-2 px-2 pb-2">
-      <div class="min-w-[760px] flex flex-col gap-4">
-        <!-- Column headers -->
-        <div class="flex items-stretch gap-4 px-4">
-          <div class="w-[150px] shrink-0" />
-          <div class="flex-1 flex gap-6">
-            <div
-              v-for="col in columns"
-              :key="col.key"
-              class="flex-[4] flex flex-col gap-2 rounded-t-xl border-t-4 px-3 py-2"
-              :class="[col.bgClass, {
-                'border-track-hifz': col.key === 'mem',
-                'border-track-near': col.key === 'near',
-                'border-track-far': col.key === 'far'
-              }]"
-            >
-              <div class="flex items-center justify-center gap-2">
-                <UIcon :name="col.icon" class="w-4 h-4" :class="col.textClass" />
-                <span class="text-sm font-bold" :class="col.textClass">
-                  {{ $t(col.label) }}
-                </span>
-              </div>
-              <UButton
-                v-if="isEditMode"
-                variant="ghost"
-                color="neutral"
-                size="xs"
-                icon="i-lucide-arrow-down-up"
-                class="rounded-full mx-auto px-2"
-                :class="col.textClass + ' hover:bg-white/50'"
-                @click="requestApplyColumn(col.key)"
-              >
-                <span class="text-[11px]">{{ $t('pages.planner.columns.applyToAllDays') }}</span>
-              </UButton>
-            </div>
-          </div>
+    <!-- Add / edit item modal -->
+    <UModal
+      v-model:open="formOpen"
+      :title="editing ? t('pages.planner.form.editTitle') : t('pages.planner.form.addTitle')"
+      :ui="{ content: 'sm:max-w-xl rounded-2xl' }"
+    >
+      <template #body>
+        <PlannerForm ref="formRef" @saved="onSaved" />
+      </template>
+      <template #footer>
+        <div class="flex items-center justify-end gap-2 w-full">
+          <UButton variant="soft" color="neutral" :disabled="formSaving" @click="formOpen = false">
+            {{ t('common.cancel') }}
+          </UButton>
+          <UButton type="submit" form="planner-item-form" :loading="formSaving">
+            {{ editing ? t('pages.planner.saveChanges') : t('pages.planner.addItem') }}
+          </UButton>
         </div>
+      </template>
+    </UModal>
 
-        <!-- Day rows -->
-        <div class="flex flex-col gap-3">
-          <PlannerDayRow
-            v-for="(day, idx) in scheduleWithDates"
-            :key="day.id"
-            :data="day"
-            :week-start="selectedWeekStart"
-            :day-index="idx"
-            @request-copy-day="requestCopyDay"
-          />
-        </div>
-      </div>
-    </div>
-
-    <!-- Preview modal -->
-    <PlannerPreviewModal v-model:open="isPreviewOpen" />
-
-    <!-- Confirmations -->
-    <CommonConfirmDialog
-      v-model:open="isClearConfirmOpen"
-      :title="$t('pages.planner.topActions.clearConfirmTitle')"
-      :message="$t('pages.planner.topActions.clearConfirmMessage')"
-      :confirm-label="$t('pages.planner.topActions.clearAll')"
+    <ConfirmDialog
+      v-model:open="deleteOpen"
+      :title="t('pages.planner.deleteItemConfirm.title')"
+      :message="t('pages.planner.deleteItemConfirm.message')"
       destructive
-      @confirm="doClearAll"
+      :confirm-label="t('common.delete')"
+      @confirm="onDeleteItem"
     />
 
-    <CommonConfirmDialog
-      v-model:open="isCopyDayConfirmOpen"
-      :title="$t('pages.planner.row.copyConfirmTitle')"
-      :message="$t('pages.planner.row.copyConfirmMessage')"
-      @confirm="doCopyDay"
-    />
-
-    <CommonConfirmDialog
-      v-model:open="isApplyColumnConfirmOpen"
-      :title="$t('pages.planner.columns.applyConfirmTitle')"
-      :message="$t('pages.planner.columns.applyConfirmMessage')"
-      @confirm="doApplyColumn"
+    <ConfirmDialog
+      v-model:open="deletePlanOpen"
+      :title="t('pages.planner.deletePlanConfirm.title')"
+      :message="t('pages.planner.deletePlanConfirm.message')"
+      destructive
+      :confirm-label="t('common.delete')"
+      @confirm="onDeletePlan"
     />
   </div>
 </template>

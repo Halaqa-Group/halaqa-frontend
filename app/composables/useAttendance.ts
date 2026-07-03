@@ -52,12 +52,14 @@ function isoOf(d: Date): string {
 function backendToStatus(status: string): AttendanceStatus {
   if (status === 'Present') return 'present'
   if (status === 'Late') return 'late'
+  if (status === 'Excused') return 'excused'
   return 'absent'
 }
 
 function statusToBackend(status: AttendanceStatus): string {
   if (status === 'present') return 'Present'
   if (status === 'late') return 'Late'
+  if (status === 'excused') return 'Excused'
   return 'Absent'
 }
 
@@ -185,7 +187,8 @@ export function useAttendance() {
     const next: Record<AttendanceStatus, AttendanceStatus> = {
       present: 'late',
       late: 'absent',
-      absent: 'present'
+      absent: 'excused',
+      excused: 'present'
     }
     row.status = next[row.status]
   }
@@ -247,6 +250,7 @@ export function useAttendance() {
   const presentCount = computed(() => attendanceRows.value.filter(r => r.status === 'present').length)
   const absentCount = computed(() => attendanceRows.value.filter(r => r.status === 'absent').length)
   const lateCount = computed(() => attendanceRows.value.filter(r => r.status === 'late').length)
+  const excusedCount = computed(() => attendanceRows.value.filter(r => r.status === 'excused').length)
   const attendanceRate = computed(() =>
     attendanceRows.value.length > 0
       ? Math.round((presentCount.value / attendanceRows.value.length) * 100)
@@ -291,6 +295,7 @@ export function useAttendance() {
     presentCount,
     absentCount,
     lateCount,
+    excusedCount,
     attendanceRate,
     filteredRows,
     hasActiveFilters,

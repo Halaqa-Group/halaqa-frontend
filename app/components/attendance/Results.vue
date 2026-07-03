@@ -51,8 +51,8 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
   </div>
 
   <template v-else>
-    <!-- Grid -->
-    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6">
+    <!-- Mobile: always a single-column card list (touch-first, no horizontal scroll) -->
+    <div class="md:hidden flex flex-col gap-3 p-3">
       <AttendanceCard
         v-for="row in filteredRows"
         :key="row.studentId"
@@ -64,37 +64,53 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
       />
     </div>
 
-    <!-- Table -->
-    <div v-else class="overflow-x-auto">
-      <UTable :data="filteredRows" :columns="columns" :loading="isLoading" class="min-w-[640px]">
-        <template #name-cell="{ row }">
-          <div class="flex items-center gap-3 min-w-0">
-            <img
-              :src="row.original.avatar"
-              :alt="row.original.name"
-              class="w-8 h-8 rounded-full object-cover border border-default shrink-0"
-            >
-            <span class="font-medium truncate">{{ row.original.name }}</span>
-            <UBadge
-              v-if="wasAbsentYesterday(row.original.studentId)"
-              color="error"
-              variant="subtle"
-              size="sm"
-              icon="i-lucide-alert-triangle"
-            >
-              {{ t('pages.attendance.absentYesterday') }}
-            </UBadge>
-          </div>
-        </template>
+    <!-- Desktop: respect the view toggle -->
+    <div class="hidden md:block">
+      <!-- Grid -->
+      <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6">
+        <AttendanceCard
+          v-for="row in filteredRows"
+          :key="row.studentId"
+          :student-id="row.studentId"
+          :name="row.name"
+          :avatar="row.avatar"
+          :status="row.status"
+          :notes="row.notes"
+        />
+      </div>
 
-        <template #status-cell="{ row }">
-          <AttendanceStatusChip :student-id="row.original.studentId" :status="row.original.status" />
-        </template>
+      <!-- Table -->
+      <div v-else class="overflow-x-auto">
+        <UTable :data="filteredRows" :columns="columns" :loading="isLoading" class="min-w-[640px]">
+          <template #name-cell="{ row }">
+            <div class="flex items-center gap-3 min-w-0">
+              <img
+                :src="row.original.avatar"
+                :alt="row.original.name"
+                class="w-8 h-8 rounded-full object-cover border border-default shrink-0"
+              >
+              <span class="font-medium truncate">{{ row.original.name }}</span>
+              <UBadge
+                v-if="wasAbsentYesterday(row.original.studentId)"
+                color="error"
+                variant="subtle"
+                size="sm"
+                icon="i-lucide-alert-triangle"
+              >
+                {{ t('pages.attendance.absentYesterday') }}
+              </UBadge>
+            </div>
+          </template>
 
-        <template #note-cell="{ row }">
-          <AttendanceNotePopover :student-id="row.original.studentId" :name="row.original.name" :notes="row.original.notes" />
-        </template>
-      </UTable>
+          <template #status-cell="{ row }">
+            <AttendanceStatusToggle :student-id="row.original.studentId" :status="row.original.status" compact />
+          </template>
+
+          <template #note-cell="{ row }">
+            <AttendanceNotePopover :student-id="row.original.studentId" :name="row.original.name" :notes="row.original.notes" />
+          </template>
+        </UTable>
+      </div>
     </div>
   </template>
 </template>

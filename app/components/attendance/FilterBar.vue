@@ -4,7 +4,7 @@ import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 const { t, locale } = useI18n()
 const {
   search, selectedDate, statusFilter, viewMode,
-  presentCount, lateCount, absentCount, hasActiveFilters, clearFilters
+  presentCount, lateCount, absentCount, excusedCount, hasActiveFilters, clearFilters
 } = useAttendance()
 
 const calendarOpen = ref(false)
@@ -13,7 +13,8 @@ const statusItems = computed(() => [
   { label: t('pages.attendance.filters.all'), value: 'all' },
   { label: t('pages.attendance.filters.present'), value: 'present' },
   { label: t('pages.attendance.filters.late'), value: 'late' },
-  { label: t('pages.attendance.filters.absent'), value: 'absent' }
+  { label: t('pages.attendance.filters.absent'), value: 'absent' },
+  { label: t('pages.attendance.filters.excused'), value: 'excused' }
 ])
 
 const calendarValue = computed(() => {
@@ -92,8 +93,8 @@ function onCalendarPick(value: unknown) {
     </UButton>
 
     <!-- Slim count summary + view toggle -->
-    <div class="lg:ms-auto flex items-center gap-2">
-      <div class="flex items-center gap-1.5 text-xs">
+    <div class="lg:ms-auto flex items-center gap-2 flex-wrap">
+      <div class="flex items-center gap-1.5 text-xs flex-wrap">
         <UBadge color="success" variant="subtle">
           {{ presentCount }} {{ t('pages.attendance.filters.present') }}
         </UBadge>
@@ -103,8 +104,12 @@ function onCalendarPick(value: unknown) {
         <UBadge color="error" variant="subtle">
           {{ absentCount }} {{ t('pages.attendance.filters.absent') }}
         </UBadge>
+        <UBadge color="info" variant="subtle">
+          {{ excusedCount }} {{ t('pages.attendance.filters.excused') }}
+        </UBadge>
       </div>
-      <div class="flex items-center gap-1 rounded-md border border-default p-0.5">
+      <!-- View toggle is desktop-only; mobile always uses the card list -->
+      <div class="hidden md:flex items-center gap-1 rounded-md border border-default p-0.5">
         <UButton
           :variant="viewMode === 'table' ? 'soft' : 'ghost'"
           color="primary"

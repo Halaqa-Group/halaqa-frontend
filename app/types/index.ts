@@ -51,7 +51,7 @@ export interface Student {
   avatar: string
 }
 
-export type AttendanceStatus = 'present' | 'late' | 'absent'
+export type AttendanceStatus = 'present' | 'late' | 'absent' | 'excused'
 
 export interface AttendanceEntry {
   studentId: string

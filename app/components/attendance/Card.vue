@@ -16,7 +16,7 @@ const absentYesterday = computed(() => wasAbsentYesterday(props.studentId))
 <template>
   <div class="rounded-xl border border-default bg-default p-4 flex flex-col gap-3">
     <div class="flex items-center gap-3">
-      <img :src="avatar" :alt="name" class="w-9 h-9 rounded-full object-cover border border-default shrink-0">
+      <img :src="avatar" :alt="name" class="w-10 h-10 rounded-full object-cover border border-default shrink-0">
       <div class="min-w-0 flex-1">
         <p class="font-semibold truncate">
           {{ name }}
@@ -35,9 +35,6 @@ const absentYesterday = computed(() => wasAbsentYesterday(props.studentId))
       <AttendanceNotePopover :student-id="studentId" :name="name" :notes="notes" />
     </div>
 
-    <div class="flex items-center justify-between border-t border-default pt-3">
-      <span class="text-xs text-muted">{{ $t('pages.attendance.statusLabel') }}</span>
-      <AttendanceStatusChip :student-id="studentId" :status="status" />
-    </div>
+    <AttendanceStatusToggle :student-id="studentId" :status="status" />
   </div>
 </template>

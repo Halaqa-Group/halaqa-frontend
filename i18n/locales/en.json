@@ -713,7 +713,8 @@
         "present": "Present",
         "absent": "Absent",
         "late": "Late",
-        "clear": "Clear"
+        "clear": "Clear",
+        "excused": "Excused"
       },
       "statusLabel": "Status",
       "noMatch": "No matching results",

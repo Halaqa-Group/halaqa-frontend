@@ -195,6 +195,86 @@ async function buildVerseToPage() {
   console.log(`✓ verse-to-page.json (${Object.keys(map).length} entries)`)
 }
 
+async function fetchPageMeta(pageNumber, attempt = 1) {
+  // Lightweight companion to fetchPage — no words, just the structural numbers
+  // we need to locate juz / hizb / rub-el-hizb boundaries. A page holds ~15
+  // verses so per_page=50 never paginates.
+  const url =
+    `${API_BASE}/verses/by_page/${pageNumber}` +
+    `?fields=juz_number,hizb_number,rub_el_hizb_number` +
+    `&mushaf=2&per_page=50`
+  const res = await fetch(url)
+  if (!res.ok) {
+    if (attempt < RETRY_LIMIT) {
+      await sleep(RETRY_DELAY_MS * attempt)
+      return fetchPageMeta(pageNumber, attempt + 1)
+    }
+    throw new Error(`page-meta ${pageNumber}: HTTP ${res.status}`)
+  }
+  const json = await res.json()
+  return json.verses ?? []
+}
+
+async function buildQuranStructure() {
+  // Emit ascending verse_key arrays for the four "unit" boundaries the plan
+  // generator advances over: pages, juz (30), hizb (60), rub-el-hizb (240).
+  // The first verse (in reading order) carrying a new number begins that unit.
+  const out = resolve(META_DIR, 'quran-structure.json')
+  if (!FORCE && (await fileExists(out))) {
+    console.log('✓ quran-structure.json (exists — pass --force to rebuild)')
+    return []
+  }
+
+  // Fetch all pages concurrently, then iterate in strict page/verse order so
+  // "first occurrence" reflects true mushaf reading order.
+  const byPage = new Map()
+  const queue = []
+  for (let p = 1; p <= TOTAL_PAGES; p++) queue.push(p)
+  const errors = []
+  let done = 0
+  async function worker() {
+    while (queue.length) {
+      const p = queue.shift()
+      try {
+        byPage.set(p, await fetchPageMeta(p))
+        if (++done % 100 === 0 || done === TOTAL_PAGES) {
+          process.stdout.write(`  structure: ${done}/${TOTAL_PAGES}\n`)
+        }
+      } catch (err) {
+        errors.push({ pageNumber: p, message: err.message })
+        process.stderr.write(`  ✗ structure ${p}: ${err.message}\n`)
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker))
+  if (errors.length) return errors
+
+  const pageStarts = []
+  const juzStarts = []
+  const hizbStarts = []
+  const rubStarts = []
+  const seenJuz = new Set()
+  const seenHizb = new Set()
+  const seenRub = new Set()
+
+  for (let p = 1; p <= TOTAL_PAGES; p++) {
+    const verses = byPage.get(p) ?? []
+    verses.forEach((v, i) => {
+      if (i === 0) pageStarts.push(v.verse_key)
+      if (!seenJuz.has(v.juz_number)) { seenJuz.add(v.juz_number); juzStarts.push(v.verse_key) }
+      if (!seenHizb.has(v.hizb_number)) { seenHizb.add(v.hizb_number); hizbStarts.push(v.verse_key) }
+      if (!seenRub.has(v.rub_el_hizb_number)) { seenRub.add(v.rub_el_hizb_number); rubStarts.push(v.verse_key) }
+    })
+  }
+
+  await writeFile(out, JSON.stringify({ pageStarts, juzStarts, hizbStarts, rubStarts }))
+  console.log(
+    `✓ quran-structure.json (${pageStarts.length} pages, ${juzStarts.length} juz, ` +
+    `${hizbStarts.length} hizb, ${rubStarts.length} rub)`
+  )
+  return []
+}
+
 async function buildPagesBundle() {
   // Roll all 604 per-page JSONs into a single bundle. The client fetches it
   // once during idle time after first paint, then per-page JSON lookups are
@@ -263,6 +343,8 @@ async function main() {
     console.log(`\nPages JSON → ${PAGES_DIR}`)
     allErrors.push(...await runQueue('json', buildOnePage))
     await buildVerseToPage()
+    console.log(`\nStructure (page/juz/hizb/rub boundaries) → ${META_DIR}`)
+    allErrors.push(...await buildQuranStructure())
   }
   if (!SKIP_FONTS) {
     console.log(`\nFonts → ${FONTS_DIR}`)

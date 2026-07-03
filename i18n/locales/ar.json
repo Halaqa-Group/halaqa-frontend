@@ -54,7 +54,7 @@
     "max": "يجب ألا يزيد هذا الحقل عن {max} أحرف.",
     "combination": "يجب أن تتضمن كلمة المرور مجموعة من الأحرف والرموز والأرقام.",
     "mixed": "يجب أن تحتوي كلمة المرور على أحرف كبيرة وصغيرة.",
-    "contact_format": "يجب أن يكون هذا الحقل بالصيغة التالية: \u200E+970 59X XXX XXX",
+    "contact_format": "يجب أن يكون هذا الحقل بالصيغة التالية: ‎+970 59X XXX XXX",
     "url": "الرابط غير صالح.",
     "slug": "يجب أن يكون هذا الحقل رابطًا صالحًا (أحرف صغيرة وأرقام وشرطات فقط).",
     "palestinian_id": "يجب أن يتكون رقم الهوية من 9 أرقام."
@@ -290,7 +290,10 @@
         "name": "الاسم",
         "type": "النوع",
         "teacher": "المعلم",
-        "schedule": "الجدول"
+        "schedule": "الجدول",
+        "status": "الحالة",
+        "students": "الطلاب",
+        "primaryTeacher": "المعلم الأساسي"
       },
       "dayShort": {
         "sat": "س",
@@ -322,16 +325,6 @@
         "searchPlaceholder": "ابحث باسم الحلقة",
         "clear": "مسح الفلاتر",
         "all": "الكل"
-      },
-      "table": {
-        "id": "المعرّف",
-        "name": "الاسم",
-        "type": "النوع",
-        "teacher": "المعلم",
-        "schedule": "الجدول",
-        "status": "الحالة",
-        "students": "الطلاب",
-        "primaryTeacher": "المعلم الأساسي"
       },
       "actingBadge": "بالنيابة",
       "primaryTeacherEmpty": "—",
@@ -1096,17 +1089,48 @@
       "itemAddedToast": "تمت إضافة الدرس",
       "itemUpdatedToast": "تم تحديث الدرس",
       "itemDeletedToast": "تم حذف الدرس",
-      "table": { "day": "اليوم", "track": "المسار", "range": "النطاق", "progress": "التقدم", "actions": "إجراءات" },
-      "filters": { "allTracks": "كل المسارات", "allStatuses": "كل الحالات", "clear": "مسح" },
-      "view": { "grid": "عرض شبكي", "table": "عرض جدول" },
-      "itemStatus": { "due": "مستحق", "partial": "جزئي", "completed": "مكتمل", "overdue": "متأخر" },
-      "actions": { "edit": "تعديل", "delete": "حذف" },
-      "form": { "addTitle": "إضافة درس", "editTitle": "تعديل درس", "day": "اليوم" },
-      "deleteItemConfirm": { "title": "حذف الدرس", "message": "هل أنت متأكد من حذف هذا الدرس؟" },
-      "deletePlanConfirm": { "title": "حذف الخطة", "message": "هل أنت متأكد من حذف الخطة بالكامل؟ لا يمكن التراجع عن هذا الإجراء." },
+      "table": {
+        "day": "اليوم",
+        "track": "المسار",
+        "range": "النطاق",
+        "progress": "التقدم",
+        "actions": "إجراءات"
+      },
+      "filters": {
+        "allTracks": "كل المسارات",
+        "allStatuses": "كل الحالات",
+        "clear": "مسح"
+      },
+      "view": {
+        "grid": "عرض شبكي",
+        "table": "عرض جدول",
+        "matrix": "عرض الجدول"
+      },
+      "itemStatus": {
+        "due": "مستحق",
+        "partial": "جزئي",
+        "completed": "مكتمل",
+        "overdue": "متأخر"
+      },
+      "actions": {
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "form": {
+        "addTitle": "إضافة درس",
+        "editTitle": "تعديل درس",
+        "day": "اليوم"
+      },
+      "deleteItemConfirm": {
+        "title": "حذف الدرس",
+        "message": "هل أنت متأكد من حذف هذا الدرس؟"
+      },
+      "deletePlanConfirm": {
+        "title": "حذف الخطة",
+        "message": "هل أنت متأكد من حذف الخطة بالكامل؟ لا يمكن التراجع عن هذا الإجراء."
+      },
       "saveErrorTitle": "خطأ في حفظ الخطة",
       "approvedToast": "تم اعتماد الخطة",
-      "approveErrorTitle": "خطأ في اعتماد الخطة",
       "selectWeek": "اختر أسبوعًا",
       "selectAll": "تحديد الكل",
       "daysSelected": "{count} أيام محددة",
@@ -1153,7 +1177,9 @@
         "toAyahLabel": "إلى الآية",
         "errorOrder": "آية النهاية يجب أن تكون بعد آية البداية",
         "confirm": "تأكيد",
-        "cancel": "إلغاء"
+        "cancel": "إلغاء",
+        "startLabel": "من (السورة/الآية)",
+        "endLabel": "إلى (السورة/الآية)"
       },
       "row": {
         "restDay": "يوم راحة",
@@ -1183,6 +1209,37 @@
         "previewTitle": "معاينة الخطة",
         "previewEmpty": "لا توجد دروس في هذا اليوم",
         "previewRestDay": "يوم راحة"
+      },
+      "saveDraft": "حفظ المسودة",
+      "pageBadge": "صفحة {page}",
+      "cellCopiedToast": "تم نسخ الخلية",
+      "cellPastedToast": "تم لصق الخلية",
+      "cellDialog": {
+        "title": "تفاصيل الدرس",
+        "empty": "لا يوجد درس مخطط لهذه الخلية",
+        "achievements": "عمليات الإنجاز المرتبطة",
+        "record": "تسجيل إنجاز",
+        "noAchievements": "لا توجد إنجازات مسجلة بعد"
+      },
+      "units": {
+        "page": "صفحة",
+        "juz": "جزء",
+        "hizb": "حزب",
+        "quarter": "ربع",
+        "surah": "سورة"
+      },
+      "wizard": {
+        "title": "إنشاء خطة الأسبوع",
+        "subtitle": "اضبط كل مسار ثم أنشئ جدول الأسبوع تلقائيًا",
+        "open": "إنشاء خطة",
+        "generate": "إنشاء الجدول",
+        "startAyah": "بداية من",
+        "dailyAmount": "المقدار اليومي",
+        "unit": "نوع المقدار",
+        "willSchedule": "سيتم توزيع الخطة على {days} أيام من الأسبوع",
+        "noTrack": "فعّل مسارًا واحدًا على الأقل",
+        "noData": "بيانات الوحدة غير متوفرة لهذا المسار",
+        "generatedToast": "تم إنشاء جدول الأسبوع"
       }
     }
   },

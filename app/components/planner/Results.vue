@@ -63,6 +63,9 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
     </p>
   </div>
 
+  <!-- Matrix (day × track) — always renders the grid so empty weeks are fillable -->
+  <PlannerMatrix v-else-if="viewMode === 'matrix'" :editable="canModify" />
+
   <!-- No plan / no items yet -->
   <div v-else-if="items.length === 0" class="flex flex-col items-center justify-center gap-3 py-14">
     <UIcon name="i-lucide-book-open" class="w-10 h-10 text-muted" />

@@ -14,8 +14,9 @@ const toast = useToast()
 const { activeRole } = useAuth()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const {
-  selectedStudentId, selectedWeekStart, plan, planStatus,
+  selectedStudentId, selectedWeekStart, plan, planStatus, viewMode,
   formOpen, editing, deleteOpen, deleteTarget,
+  wizardOpen, matrixDirty, matrixSummary, saveDraft,
   loadStudents, loadPlan, approvePlan, unapprovePlan, deletePlan, deleteItem, openAdd
 } = useWeeklyPlan()
 
@@ -44,6 +45,15 @@ const planMenu = computed(() => {
 
 function onSaved() {
   formOpen.value = false
+}
+
+async function onSaveDraft() {
+  try {
+    await saveDraft()
+    toast.add({ title: t('pages.planner.savedDraftToast'), color: 'success' })
+  } catch (e: any) {
+    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+  }
 }
 
 async function onApprove() {
@@ -132,8 +142,26 @@ onMounted(async () => {
         >
           {{ t('pages.planner.unapprove') }}
         </UButton>
+        <!-- Matrix mode: generate wizard + save draft -->
         <UButton
-          v-if="canModify"
+          v-if="canModify && viewMode === 'matrix'"
+          icon="i-lucide-wand-sparkles"
+          variant="soft"
+          @click="wizardOpen = true"
+        >
+          {{ t('pages.planner.wizard.open') }}
+        </UButton>
+        <UButton
+          v-if="canModify && viewMode === 'matrix'"
+          icon="i-lucide-save"
+          :disabled="!matrixDirty"
+          @click="onSaveDraft"
+        >
+          {{ t('pages.planner.saveDraft') }}
+        </UButton>
+        <!-- Table/grid mode: single-item add -->
+        <UButton
+          v-if="canModify && viewMode !== 'matrix'"
           icon="i-lucide-plus"
           @click="openAdd"
         >
@@ -162,6 +190,47 @@ onMounted(async () => {
       </template>
       <PlannerResults />
     </UCard>
+
+    <!-- Week summary (matrix mode) -->
+    <div
+      v-if="hasHalaqa && selectedStudentId && viewMode === 'matrix'"
+      class="grid grid-cols-2 sm:grid-cols-4 gap-3"
+    >
+      <div class="rounded-xl border border-default bg-default p-3 text-center">
+        <p class="text-lg font-bold tabular-nums">
+          {{ matrixSummary.hifzAyahs }}
+        </p>
+        <p class="text-xs text-muted">
+          {{ t('pages.planner.summary.totalMemAyahs') }}
+        </p>
+      </div>
+      <div class="rounded-xl border border-default bg-default p-3 text-center">
+        <p class="text-lg font-bold tabular-nums">
+          {{ matrixSummary.reviewSessions }}
+        </p>
+        <p class="text-xs text-muted">
+          {{ t('pages.planner.summary.reviewSessions') }}
+        </p>
+      </div>
+      <div class="rounded-xl border border-default bg-default p-3 text-center">
+        <p class="text-lg font-bold tabular-nums">
+          {{ matrixSummary.plannedDays }}
+        </p>
+        <p class="text-xs text-muted">
+          {{ t('pages.planner.summary.completedDays') }}
+        </p>
+      </div>
+      <div class="rounded-xl border border-default bg-default p-3 text-center">
+        <p class="text-lg font-bold tabular-nums">
+          {{ matrixSummary.restDays }}
+        </p>
+        <p class="text-xs text-muted">
+          {{ t('pages.planner.summary.restDays') }}
+        </p>
+      </div>
+    </div>
+
+    <PlannerCreateWizard />
 
     <!-- Add / edit item modal -->
     <UModal

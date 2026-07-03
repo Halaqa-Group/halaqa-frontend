@@ -1,0 +1,255 @@
+<script setup lang="ts">
+/**
+ * Weekly plan matrix (جدول): 7 day rows × 3 track columns. Desktop renders a
+ * grid; mobile stacks into per-day cards (mobile-first). Each cell opens the
+ * CellDialog. Rows can be copied to all days, columns applied to all days, and
+ * a copied cell can be pasted straight onto any target cell.
+ */
+import type { DropdownMenuItem } from '@nuxt/ui'
+import { SURAH_NAMES } from '~/data/constants'
+import { formatVerseRange } from '~/utils/quran'
+import { TRACK_BADGE_COLOR, TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
+import { planItemStatusDot } from '~/utils/plan'
+import { PLAN_TRACKS } from '~/composables/useWeeklyPlan'
+
+type TrackType = 'Hifz' | 'Near' | 'Far'
+
+defineProps<{ editable: boolean }>()
+
+const { t, locale } = useI18n()
+const toast = useToast()
+const {
+  restDays, copiedCell, dateOfDay, getCell,
+  toggleRestDay, copyRowToAllDays, applyColumnToAllDays, pasteCell
+} = useWeeklyPlan()
+
+const days = computed(() =>
+  Array.from({ length: 7 }, (_, i) => {
+    const d = dateOfDay(i)
+    let label = String(i)
+    let short = String(i)
+    try {
+      label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long' })
+      short = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { day: 'numeric', month: 'short' })
+    } catch { /* keep numeric */ }
+    return { index: i, label, short, isRest: restDays.has(i) }
+  })
+)
+
+const tracks = PLAN_TRACKS as TrackType[]
+
+function rangeLabel(day: number, track: TrackType) {
+  const c = getCell(day, track)
+  return c ? formatVerseRange(c.start_surah, c.start_verse, c.end_surah, c.end_verse, SURAH_NAMES) : ''
+}
+
+// ── Cell dialog ────────────────────────────────────────────────────────────────
+const dialogOpen = ref(false)
+const active = ref<{ day: number, track: TrackType }>({ day: 0, track: 'Hifz' })
+function openCell(day: number, track: TrackType) {
+  active.value = { day, track }
+  dialogOpen.value = true
+}
+
+function onPaste(day: number, track: TrackType) {
+  pasteCell(day, track)
+  toast.add({ title: t('pages.planner.cellPastedToast'), color: 'success' })
+}
+
+// ── Bulk menus ───────────────────────────────────────────────────────────────
+function rowMenu(day: number): DropdownMenuItem[][] {
+  return [[
+    {
+      label: restDays.has(day) ? t('pages.planner.row.restDayActive') : t('pages.planner.row.restDay'),
+      icon: 'i-lucide-moon',
+      onSelect: () => toggleRestDay(day)
+    },
+    {
+      label: t('pages.planner.row.copyToAllDays'),
+      icon: 'i-lucide-copy',
+      onSelect: () => {
+        copyRowToAllDays(day)
+        toast.add({ title: t('pages.planner.row.copiedToast'), color: 'success' })
+      }
+    }
+  ]]
+}
+function columnMenu(track: TrackType): DropdownMenuItem[][] {
+  return [[
+    {
+      label: t('pages.planner.columns.applyToAllDays'),
+      icon: 'i-lucide-arrow-down-to-line',
+      onSelect: () => {
+        const ok = applyColumnToAllDays(track)
+        toast.add({
+          title: ok ? t('pages.planner.columns.appliedToast') : t('pages.planner.columns.noFilledCell'),
+          color: ok ? 'success' : 'warning'
+        })
+      }
+    }
+  ]]
+}
+</script>
+
+<template>
+  <div class="p-3 sm:p-5">
+    <!-- ── Desktop grid ── -->
+    <div class="hidden md:block overflow-x-auto">
+      <div class="min-w-[720px]">
+        <!-- Header -->
+        <div class="grid grid-cols-[10rem_repeat(3,1fr)] gap-2 pb-2">
+          <div />
+          <div v-for="track in tracks" :key="track" class="flex items-center justify-between gap-1 px-2">
+            <span class="inline-flex items-center gap-1.5 font-semibold text-sm">
+              <UIcon :name="TRACK_ICON[track as AchievementTrack]" class="w-4 h-4" />
+              {{ t(`pages.achievements.tracks.${track}`) }}
+            </span>
+            <UDropdownMenu v-if="editable" :items="columnMenu(track)" :content="{ align: 'end' }">
+              <UButton icon="i-lucide-chevron-down" size="xs" color="neutral" variant="ghost" square />
+            </UDropdownMenu>
+          </div>
+        </div>
+
+        <!-- Rows -->
+        <div
+          v-for="day in days"
+          :key="day.index"
+          class="grid grid-cols-[10rem_repeat(3,1fr)] gap-2 py-1"
+          :class="day.isRest && 'opacity-60'"
+        >
+          <!-- Day label + row menu -->
+          <div class="flex items-center justify-between gap-1 px-2 py-2 rounded-lg bg-elevated">
+            <div class="min-w-0">
+              <p class="text-sm font-medium truncate">
+                {{ day.label }}
+              </p>
+              <p class="text-xs text-muted">
+                {{ day.short }}
+              </p>
+            </div>
+            <UDropdownMenu v-if="editable" :items="rowMenu(day.index)" :content="{ align: 'end' }">
+              <UButton icon="i-lucide-ellipsis-vertical" size="xs" color="neutral" variant="ghost" square />
+            </UDropdownMenu>
+          </div>
+
+          <!-- Cells -->
+          <div v-for="track in tracks" :key="track" class="relative">
+            <template v-if="day.isRest">
+              <div class="h-full min-h-[3.25rem] flex items-center justify-center rounded-lg border border-dashed border-default text-xs text-muted">
+                {{ t('pages.planner.row.restDay') }}
+              </div>
+            </template>
+            <button
+              v-else-if="getCell(day.index, track)"
+              type="button"
+              class="w-full h-full min-h-[3.25rem] flex flex-col items-start justify-center gap-1 rounded-lg border border-default bg-default px-3 py-2 text-start transition hover:border-primary hover:bg-elevated"
+              @click="openCell(day.index, track)"
+            >
+              <span class="text-sm font-medium leading-tight">{{ rangeLabel(day.index, track) }}</span>
+              <span
+                v-if="getCell(day.index, track)?.status"
+                class="inline-flex items-center gap-1 text-[11px] text-muted"
+              >
+                <span class="w-1.5 h-1.5 rounded-full" :class="planItemStatusDot(getCell(day.index, track)!.status!)" />
+                {{ getCell(day.index, track)!.achieved_verses }}/{{ getCell(day.index, track)!.total_verses }}
+              </span>
+            </button>
+            <button
+              v-else
+              type="button"
+              class="w-full h-full min-h-[3.25rem] flex items-center justify-center rounded-lg border border-dashed border-default text-muted transition hover:border-primary hover:text-primary"
+              :disabled="!editable"
+              @click="openCell(day.index, track)"
+            >
+              <UIcon name="i-lucide-plus" class="w-4 h-4" />
+            </button>
+
+            <!-- Quick paste affordance -->
+            <UButton
+              v-if="editable && copiedCell && !day.isRest"
+              icon="i-lucide-clipboard-paste"
+              size="xs"
+              color="primary"
+              variant="soft"
+              square
+              class="absolute top-1 end-1"
+              :aria-label="t('pages.planner.paste', { count: 1 })"
+              @click.stop="onPaste(day.index, track)"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Mobile day cards ── -->
+    <div class="md:hidden space-y-3">
+      <div
+        v-for="day in days"
+        :key="day.index"
+        class="rounded-xl border border-default bg-default overflow-hidden"
+        :class="day.isRest && 'opacity-70'"
+      >
+        <div class="flex items-center justify-between gap-2 px-3 py-2 bg-elevated">
+          <div>
+            <p class="text-sm font-semibold">
+              {{ day.label }}
+            </p>
+            <p class="text-xs text-muted">
+              {{ day.short }}
+            </p>
+          </div>
+          <UDropdownMenu v-if="editable" :items="rowMenu(day.index)" :content="{ align: 'end' }">
+            <UButton icon="i-lucide-ellipsis-vertical" size="xs" color="neutral" variant="ghost" square />
+          </UDropdownMenu>
+        </div>
+
+        <div v-if="day.isRest" class="px-3 py-4 text-center text-xs text-muted">
+          {{ t('pages.planner.row.restDay') }}
+        </div>
+        <div v-else class="divide-y divide-default">
+          <div
+            v-for="track in tracks"
+            :key="track"
+            class="flex items-center gap-2 px-3 py-2.5"
+          >
+            <UBadge variant="subtle" size="sm" :color="TRACK_BADGE_COLOR[track as AchievementTrack]" class="shrink-0">
+              {{ t(`pages.achievements.tracks.${track}`) }}
+            </UBadge>
+            <button
+              type="button"
+              class="flex-1 min-w-0 flex items-center justify-between gap-2 text-start"
+              @click="openCell(day.index, track)"
+            >
+              <span v-if="getCell(day.index, track)" class="text-sm truncate">{{ rangeLabel(day.index, track) }}</span>
+              <span v-else class="text-xs text-muted inline-flex items-center gap-1">
+                <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" /> {{ t('pages.planner.cell.addLabel') }}
+              </span>
+              <span
+                v-if="getCell(day.index, track)?.status"
+                class="w-2 h-2 rounded-full shrink-0"
+                :class="planItemStatusDot(getCell(day.index, track)!.status!)"
+              />
+            </button>
+            <UButton
+              v-if="editable && copiedCell"
+              icon="i-lucide-clipboard-paste"
+              size="xs"
+              color="primary"
+              variant="ghost"
+              square
+              :aria-label="t('pages.planner.paste', { count: 1 })"
+              @click="onPaste(day.index, track)"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <PlannerCellDialog
+      v-model:open="dialogOpen"
+      :day="active.day"
+      :track="active.track"
+      :editable="editable"
+    />
+  </div>
+</template>

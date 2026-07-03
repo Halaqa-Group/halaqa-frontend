@@ -290,7 +290,10 @@
         "name": "Name",
         "type": "Type",
         "teacher": "Teacher",
-        "schedule": "Schedule"
+        "schedule": "Schedule",
+        "status": "Status",
+        "students": "Students",
+        "primaryTeacher": "Primary teacher"
       },
       "dayShort": {
         "sat": "Sat",
@@ -322,16 +325,6 @@
         "searchPlaceholder": "Search by halaqa name",
         "clear": "Clear filters",
         "all": "All"
-      },
-      "table": {
-        "id": "ID",
-        "name": "Name",
-        "type": "Type",
-        "teacher": "Teacher",
-        "schedule": "Schedule",
-        "status": "Status",
-        "students": "Students",
-        "primaryTeacher": "Primary teacher"
       },
       "actingBadge": "Acting",
       "primaryTeacherEmpty": "—",
@@ -1096,17 +1089,48 @@
       "itemAddedToast": "Lesson added",
       "itemUpdatedToast": "Lesson updated",
       "itemDeletedToast": "Lesson deleted",
-      "table": { "day": "Day", "track": "Track", "range": "Range", "progress": "Progress", "actions": "Actions" },
-      "filters": { "allTracks": "All tracks", "allStatuses": "All statuses", "clear": "Clear" },
-      "view": { "grid": "Grid view", "table": "Table view" },
-      "itemStatus": { "due": "Due", "partial": "Partial", "completed": "Completed", "overdue": "Overdue" },
-      "actions": { "edit": "Edit", "delete": "Delete" },
-      "form": { "addTitle": "Add lesson", "editTitle": "Edit lesson", "day": "Day" },
-      "deleteItemConfirm": { "title": "Delete lesson", "message": "Are you sure you want to delete this lesson?" },
-      "deletePlanConfirm": { "title": "Delete plan", "message": "Are you sure you want to delete the entire plan? This action cannot be undone." },
+      "table": {
+        "day": "Day",
+        "track": "Track",
+        "range": "Range",
+        "progress": "Progress",
+        "actions": "Actions"
+      },
+      "filters": {
+        "allTracks": "All tracks",
+        "allStatuses": "All statuses",
+        "clear": "Clear"
+      },
+      "view": {
+        "grid": "Grid view",
+        "table": "Table view",
+        "matrix": "Matrix view"
+      },
+      "itemStatus": {
+        "due": "Due",
+        "partial": "Partial",
+        "completed": "Completed",
+        "overdue": "Overdue"
+      },
+      "actions": {
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "form": {
+        "addTitle": "Add lesson",
+        "editTitle": "Edit lesson",
+        "day": "Day"
+      },
+      "deleteItemConfirm": {
+        "title": "Delete lesson",
+        "message": "Are you sure you want to delete this lesson?"
+      },
+      "deletePlanConfirm": {
+        "title": "Delete plan",
+        "message": "Are you sure you want to delete the entire plan? This action cannot be undone."
+      },
       "saveErrorTitle": "Failed to save plan",
       "approvedToast": "Plan approved",
-      "approveErrorTitle": "Failed to approve plan",
       "selectWeek": "Select a week",
       "selectAll": "Select all",
       "daysSelected": "{count} days selected",
@@ -1153,7 +1177,9 @@
         "toAyahLabel": "To ayah",
         "errorOrder": "End ayah must be at or after start ayah",
         "confirm": "Confirm",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "startLabel": "From (surah/ayah)",
+        "endLabel": "To (surah/ayah)"
       },
       "row": {
         "restDay": "Rest day",
@@ -1183,6 +1209,37 @@
         "previewTitle": "Plan preview",
         "previewEmpty": "No lessons this day",
         "previewRestDay": "Rest day"
+      },
+      "saveDraft": "Save draft",
+      "pageBadge": "Page {page}",
+      "cellCopiedToast": "Cell copied",
+      "cellPastedToast": "Cell pasted",
+      "cellDialog": {
+        "title": "Lesson details",
+        "empty": "No lesson planned for this cell",
+        "achievements": "Linked achievements",
+        "record": "Record achievement",
+        "noAchievements": "No achievements recorded yet"
+      },
+      "units": {
+        "page": "Page",
+        "juz": "Juz",
+        "hizb": "Hizb",
+        "quarter": "Quarter",
+        "surah": "Surah"
+      },
+      "wizard": {
+        "title": "Create weekly plan",
+        "subtitle": "Configure each track, then auto-schedule the week",
+        "open": "Create plan",
+        "generate": "Generate schedule",
+        "startAyah": "Start from",
+        "dailyAmount": "Daily amount",
+        "unit": "Amount unit",
+        "willSchedule": "The plan will be spread across {days} days",
+        "noTrack": "Enable at least one track",
+        "noData": "Unit data unavailable for this track",
+        "generatedToast": "Weekly schedule generated"
       }
     }
   },

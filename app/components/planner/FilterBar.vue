@@ -118,6 +118,15 @@ function onCalendarPick(value: unknown) {
       </UBadge>
       <div class="flex items-center gap-1 rounded-md border border-default p-0.5">
         <UButton
+          :variant="viewMode === 'matrix' ? 'soft' : 'ghost'"
+          color="primary"
+          icon="i-lucide-calendar-range"
+          size="sm"
+          square
+          :aria-label="t('pages.planner.view.matrix')"
+          @click="viewMode = 'matrix'"
+        />
+        <UButton
           :variant="viewMode === 'table' ? 'soft' : 'ghost'"
           color="primary"
           icon="i-lucide-table-2"

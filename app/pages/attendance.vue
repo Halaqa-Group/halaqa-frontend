@@ -91,9 +91,6 @@ onBeforeUnmount(() => {
         <h1 class="text-2xl font-bold">
           {{ t('pages.attendance.title') }}
         </h1>
-        <p class="text-sm text-muted">
-          {{ t('pages.attendance.subtitle') }}
-        </p>
       </div>
       <UButton
         v-if="canMark && hasHalaqa && attendanceRows.length > 0"

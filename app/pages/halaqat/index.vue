@@ -238,9 +238,6 @@ onMounted(() => loadList(1))
         <h1 class="text-2xl font-bold">
           {{ t('pages.halaqat.title') }}
         </h1>
-        <p class="text-sm text-muted">
-          {{ t('pages.halaqat.subtitle') }}
-        </p>
       </div>
       <UButton
         v-if="canManage"

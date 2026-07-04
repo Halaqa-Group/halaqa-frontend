@@ -15,9 +15,6 @@ const canCreateStudent = computed(() => {
       <h1 class="text-2xl font-bold">
         {{ t('pages.students.title') }}
       </h1>
-      <p class="text-sm text-muted">
-        {{ t('pages.students.subtitle') }}
-      </p>
     </div>
     <UButton
       v-if="canCreateStudent"

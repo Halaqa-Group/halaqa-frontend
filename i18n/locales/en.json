@@ -1100,7 +1100,9 @@
       "filters": {
         "allTracks": "All tracks",
         "allStatuses": "All statuses",
-        "clear": "Clear"
+        "clear": "Clear",
+        "label": "Filters",
+        "statusLabel": "Status"
       },
       "view": {
         "grid": "Grid view",

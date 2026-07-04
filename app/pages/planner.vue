@@ -116,9 +116,6 @@ onMounted(async () => {
         <h1 class="text-2xl font-bold">
           {{ t('pages.planner.title') }}
         </h1>
-        <p class="text-sm text-muted">
-          {{ t('pages.planner.subtitle') }}
-        </p>
       </div>
 
       <div v-if="hasHalaqa && selectedStudentId" class="flex items-center gap-2 flex-wrap">

@@ -1100,7 +1100,9 @@
       "filters": {
         "allTracks": "كل المسارات",
         "allStatuses": "كل الحالات",
-        "clear": "مسح"
+        "clear": "مسح",
+        "label": "تصفية",
+        "statusLabel": "الحالة"
       },
       "view": {
         "grid": "عرض شبكي",

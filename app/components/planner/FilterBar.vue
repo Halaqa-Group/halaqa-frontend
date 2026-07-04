@@ -8,8 +8,13 @@ const {
 } = useWeeklyPlan()
 
 const calendarOpen = ref(false)
+const filtersOpen = ref(false)
 
 const studentItems = computed(() => students.value.map(s => ({ label: s.name, value: s.id })))
+
+const activeFilterCount = computed(() =>
+  (filters.trackType ? 1 : 0) + (filters.status ? 1 : 0)
+)
 
 const trackItems = computed(() => [
   { label: t('pages.planner.filters.allTracks'), value: null as string | null },
@@ -53,14 +58,15 @@ function onCalendarPick(value: unknown) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+  <div class="flex flex-wrap items-center gap-2">
+    <!-- Student -->
     <USelectMenu
       v-model="selectedStudentId"
       :items="studentItems"
       value-key="value"
       :placeholder="t('pages.planner.selectStudent')"
       searchable
-      class="w-full sm:w-52"
+      class="flex-1 min-w-40 sm:flex-none sm:w-52"
     />
 
     <!-- Week control -->
@@ -74,7 +80,7 @@ function onCalendarPick(value: unknown) {
         @click="prevWeek"
       />
       <UPopover v-model:open="calendarOpen">
-        <UButton variant="outline" color="neutral" icon="i-lucide-calendar-days" class="justify-between min-w-44">
+        <UButton variant="outline" color="neutral" icon="i-lucide-calendar-days" class="justify-between min-w-36">
           {{ t('pages.planner.weekOf', { date: weekLabel }) }}
         </UButton>
         <template #content>
@@ -97,25 +103,48 @@ function onCalendarPick(value: unknown) {
       />
     </div>
 
-    <USelect v-model="filters.trackType" :items="trackItems" value-key="value" class="w-full sm:w-36" />
-    <USelect v-model="filters.status" :items="statusItems" value-key="value" class="w-full sm:w-40" />
+    <!-- Right cluster: filters + coverage + view toggle -->
+    <div class="ms-auto flex items-center gap-2">
+      <!-- Track/status filters live in a popover (they only apply to the list views) -->
+      <UPopover v-if="viewMode !== 'matrix'" v-model:open="filtersOpen">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-list-filter"
+          :aria-label="t('pages.planner.filters.label')"
+        >
+          <span class="hidden sm:inline">{{ t('pages.planner.filters.label') }}</span>
+          <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
+            {{ activeFilterCount }}
+          </UBadge>
+        </UButton>
+        <template #content>
+          <div class="p-3 w-64 space-y-3">
+            <UFormField :label="t('pages.planner.table.track')">
+              <USelect v-model="filters.trackType" :items="trackItems" value-key="value" class="w-full" />
+            </UFormField>
+            <UFormField :label="t('pages.planner.filters.statusLabel')">
+              <USelect v-model="filters.status" :items="statusItems" value-key="value" class="w-full" />
+            </UFormField>
+            <UButton
+              v-if="hasActiveFilters"
+              block
+              variant="soft"
+              color="neutral"
+              icon="i-lucide-x"
+              size="sm"
+              @click="clearFilters"
+            >
+              {{ t('pages.planner.filters.clear') }}
+            </UButton>
+          </div>
+        </template>
+      </UPopover>
 
-    <UButton
-      v-if="hasActiveFilters"
-      variant="link"
-      color="neutral"
-      icon="i-lucide-x"
-      size="sm"
-      class="px-0"
-      @click="clearFilters"
-    >
-      {{ t('pages.planner.filters.clear') }}
-    </UButton>
-
-    <div class="lg:ms-auto flex items-center gap-2">
-      <UBadge color="primary" variant="subtle">
+      <UBadge color="primary" variant="subtle" class="hidden sm:inline-flex">
         {{ t('pages.planner.coverage', { achieved: summary.totalAchieved, total: summary.totalPlanned, percent: summary.coverage }) }}
       </UBadge>
+
       <div class="flex items-center gap-1 rounded-md border border-default p-0.5">
         <UButton
           :variant="viewMode === 'matrix' ? 'soft' : 'ghost'"

@@ -1015,7 +1015,9 @@
         "allTracks": "All tracks",
         "allStatuses": "All statuses",
         "clear": "Clear",
-        "label": "Filters"
+        "label": "Filters",
+        "prevDay": "Previous day",
+        "nextDay": "Next day"
       },
       "view": {
         "grid": "Grid view",
@@ -1030,12 +1032,18 @@
       },
       "validation": {
         "student": "Select a student",
-        "range": "Invalid verse range"
+        "range": "Invalid verse range",
+        "pickLesson": "Choose a lesson from today's plan"
       },
       "deleteConfirm": {
         "title": "Delete achievement",
         "message": "Are you sure you want to delete this achievement? This action cannot be undone."
-      }
+      },
+      "lessonFromPlan": "Lesson (from today's plan)",
+      "noPlanForDay": "No plan for this day — enter the range manually",
+      "enterManually": "Enter manually",
+      "usePlan": "Choose from plan",
+      "saveAndRecite": "Save & recite"
     },
     "analytics": {
       "performanceLabel": "Performance",

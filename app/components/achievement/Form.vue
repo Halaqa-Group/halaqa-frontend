@@ -3,9 +3,10 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
-import { isValidVerseRange, totalVersesInRange, VERSE_COUNTS } from '~/utils/quran'
+import { isValidVerseRange, totalVersesInRange, formatVerseRange, VERSE_COUNTS } from '~/utils/quran'
 import { computePercentageScore } from '~/utils/score'
-import type { CreateAchievementDto } from '~/types'
+import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
+import type { ApiWeeklyPlanItem, CreateAchievementDto } from '~/types'
 
 const emit = defineEmits<{ saved: [] }>()
 
@@ -20,6 +21,9 @@ const {
 type TrackKey = 'Hifz' | 'Near' | 'Far'
 
 const isEdit = computed(() => editing.value != null)
+
+// Set by the "Save & recite" footer button before it submits the form.
+const continueToRecite = ref(false)
 
 const state = reactive<{
   student_id: number | undefined
@@ -47,8 +51,17 @@ const state = reactive<{
   teacher_notes: ''
 })
 
+// When true, the track + range are entered by hand; otherwise they come from a
+// picked plan item. selectedPlanItemId tracks which plan lesson is chosen.
+const selectedPlanItemId = ref<number | null>(null)
+const manualRange = ref(false)
+
 function hydrate() {
   const src = editing.value ?? duplicateFrom.value
+  selectedPlanItemId.value = null
+  // Editing/duplicating starts in manual mode so the existing range shows;
+  // a fresh record prefers picking from the plan.
+  manualRange.value = !!src
   if (src) {
     state.student_id = src.student_id
     state.date = src.date
@@ -77,6 +90,38 @@ function hydrate() {
   }
 }
 watch([editing, duplicateFrom], hydrate, { immediate: true })
+
+// ── The selected student's plan for the chosen day ────────────────────────────
+// So the teacher picks the planned lesson instead of re-typing the range.
+const { items: planItems, loading: planLoading } = useTodayPlanItems(
+  () => state.student_id ?? null,
+  () => selectedHalaqaId.value ?? null,
+  () => state.date
+)
+
+function pickPlanItem(it: ApiWeeklyPlanItem) {
+  state.track_type = it.track_type
+  state.start_surah = it.start_surah
+  state.start_verse = it.start_verse
+  state.end_surah = it.end_surah
+  state.end_verse = it.end_verse
+  selectedPlanItemId.value = it.id
+  manualRange.value = false
+}
+
+// Drop a stale selection when the plan list changes (student/date switch).
+watch(planItems, (items) => {
+  if (selectedPlanItemId.value != null && !items.some(i => i.id === selectedPlanItemId.value)) {
+    selectedPlanItemId.value = null
+  }
+})
+
+// Show the manual track + range inputs when there's no plan, or the teacher
+// explicitly opted into manual entry.
+const showManual = computed(() => manualRange.value || planItems.value.length === 0)
+function planItemRange(it: ApiWeeklyPlanItem) {
+  return formatVerseRange(it.start_surah, it.start_verse, it.end_surah, it.end_verse, SURAH_NAMES)
+}
 
 const studentItems = computed(() => students.value.map(s => ({ label: s.name, value: s.id })))
 const trackItems = computed(() => TRACK_TYPES.map(tk => ({ label: t(`pages.achievements.tracks.${tk.value}`), value: tk.value })))
@@ -146,6 +191,11 @@ const schema = computed(() => z.object({
   if (val.student_id == null) {
     ctx.addIssue({ code: 'custom', path: ['student_id'], message: t('pages.achievements.validation.student') })
   }
+  // A plan exists but the teacher hasn't picked a lesson and isn't in manual mode.
+  if (planItems.value.length > 0 && !manualRange.value && selectedPlanItemId.value == null) {
+    ctx.addIssue({ code: 'custom', path: ['lesson'], message: t('pages.achievements.validation.pickLesson') })
+    return
+  }
   const r = rangeValid.value
   if (!r.valid) {
     ctx.addIssue({ code: 'custom', path: ['end_verse'], message: r.error || t('pages.achievements.validation.range') })
@@ -183,8 +233,16 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
       await addAchievement(dto)
       toast.add({ title: t('pages.achievements.savedToast'), color: 'success' })
     }
+    // "Save & recite": after a successful save, continue into the mushaf for
+    // this student/date so the teacher can mark the recitation.
+    if (continueToRecite.value) {
+      continueToRecite.value = false
+      await navigateTo({ path: '/recite', query: { student_id: studentId, halaqa_id: halaqaId, date: state.date } })
+      return
+    }
     emit('saved')
   } catch (e: any) {
+    continueToRecite.value = false
     toast.add({
       title: isEdit.value ? t('pages.achievements.updateErrorTitle') : t('pages.achievements.saveErrorTitle'),
       description: e.data?.message || e.message,
@@ -193,7 +251,12 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
   }
 }
 
-defineExpose({ saving: isSaving })
+// Exposed as a method (not the raw ref): a ref accessed through a template ref
+// is unwrapped, so the parent can't assign `.value` to it.
+function setContinueToRecite(value: boolean) {
+  continueToRecite.value = value
+}
+defineExpose({ saving: isSaving, setContinueToRecite })
 </script>
 
 <template>
@@ -219,46 +282,95 @@ defineExpose({ saving: isSaving })
       />
     </UFormField>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <UFormField :label="t('pages.achievements.table.date')" name="date">
-        <UPopover v-model:open="calendarOpen">
-          <UButton
-            variant="outline"
-            color="neutral"
-            icon="i-lucide-calendar-days"
-            trailing-icon="i-lucide-chevron-down"
-            class="w-full justify-between"
-          >
-            {{ formattedDate }}
-          </UButton>
-          <template #content>
-            <UCalendar
-              :model-value="calendarValue"
-              :max-value="maxCalendarValue"
-              color="primary"
-              class="p-2"
-              @update:model-value="onCalendarPick"
-            />
-          </template>
-        </UPopover>
-      </UFormField>
+    <UFormField :label="t('pages.achievements.table.date')" name="date">
+      <UPopover v-model:open="calendarOpen">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-calendar-days"
+          trailing-icon="i-lucide-chevron-down"
+          class="w-full justify-between"
+        >
+          {{ formattedDate }}
+        </UButton>
+        <template #content>
+          <UCalendar
+            :model-value="calendarValue"
+            :max-value="maxCalendarValue"
+            color="primary"
+            class="p-2"
+            @update:model-value="onCalendarPick"
+          />
+        </template>
+      </UPopover>
+    </UFormField>
 
+    <!-- Pick the planned lesson so the range isn't re-typed -->
+    <UFormField :label="t('pages.achievements.lessonFromPlan')" name="lesson">
+      <div v-if="planLoading" class="flex items-center gap-2 text-xs text-muted">
+        <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+        {{ t('common.loading') }}
+      </div>
+      <template v-else>
+        <div v-if="planItems.length" class="flex flex-wrap gap-2">
+          <UButton
+            v-for="it in planItems"
+            :key="it.id"
+            size="sm"
+            :variant="!manualRange && selectedPlanItemId === it.id ? 'solid' : 'soft'"
+            :color="TRACK_BADGE_COLOR[it.track_type as AchievementTrack]"
+            @click="pickPlanItem(it)"
+          >
+            {{ t(`pages.achievements.tracks.${it.track_type}`) }} · {{ planItemRange(it) }}
+          </UButton>
+        </div>
+        <p v-else class="text-xs text-muted">
+          {{ t('pages.achievements.noPlanForDay') }}
+        </p>
+
+        <button
+          v-if="planItems.length"
+          type="button"
+          class="mt-2 text-xs text-primary hover:underline"
+          @click="manualRange = !manualRange"
+        >
+          {{ manualRange ? t('pages.achievements.usePlan') : t('pages.achievements.enterManually') }}
+        </button>
+      </template>
+    </UFormField>
+
+    <!-- Manual track + range (no plan, or the teacher opted in) -->
+    <template v-if="showManual">
       <UFormField :label="t('pages.achievements.table.track')" name="track_type">
         <USelect v-model="state.track_type" :items="trackItems" value-key="value" class="w-full" />
       </UFormField>
-    </div>
 
-    <UFormField :label="t('pages.achievements.table.range')" name="end_verse">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <USelectMenu v-model="state.start_surah" :items="surahItems" value-key="value" searchable class="w-full" />
-        <UInput v-model.number="state.start_verse" type="number" :min="1" :max="maxStartVerse" class="w-full" />
-        <USelectMenu v-model="state.end_surah" :items="surahItems" value-key="value" searchable class="w-full" />
-        <UInput v-model.number="state.end_verse" type="number" :min="1" :max="maxEndVerse" class="w-full" />
-      </div>
-      <p v-if="rangeSummary" class="mt-1.5 text-xs text-muted">
-        {{ rangeSummary }}
-      </p>
-    </UFormField>
+      <UFormField :label="t('pages.achievements.table.range')" name="end_verse">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <USelectMenu v-model="state.start_surah" :items="surahItems" value-key="value" searchable class="w-full" />
+          <UInput v-model.number="state.start_verse" type="number" :min="1" :max="maxStartVerse" class="w-full" />
+          <USelectMenu v-model="state.end_surah" :items="surahItems" value-key="value" searchable class="w-full" />
+          <UInput v-model.number="state.end_verse" type="number" :min="1" :max="maxEndVerse" class="w-full" />
+        </div>
+        <p v-if="rangeSummary" class="mt-1.5 text-xs text-muted">
+          {{ rangeSummary }}
+        </p>
+      </UFormField>
+    </template>
+
+    <!-- Chosen lesson summary (read-only) -->
+    <div
+      v-else-if="selectedPlanItemId != null"
+      class="flex items-center justify-between gap-2 rounded-lg border border-default bg-elevated px-3 py-2.5"
+    >
+      <span class="inline-flex items-center gap-2 text-sm font-medium">
+        <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[state.track_type as AchievementTrack]">
+          {{ t(`pages.achievements.tracks.${state.track_type}`) }}
+        </UBadge>
+        {{ formatVerseRange(state.start_surah, state.start_verse, state.end_surah, state.end_verse, SURAH_NAMES) }}
+      </span>
+      <span v-if="rangeSummary" class="text-xs text-muted">{{ rangeSummary }}</span>
+    </div>
 
     <div class="grid grid-cols-3 gap-3">
       <UFormField :label="t('pages.achievements.mistakes')" name="mistakes_count">

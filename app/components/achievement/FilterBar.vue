@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
+import { CalendarDate } from '@internationalized/date'
 
 const { t, locale } = useI18n()
 const { selectedDate, filters, viewMode, hasActiveFilters, clearFilters } = useAchievements()
@@ -28,7 +28,6 @@ const calendarValue = computed(() => {
   const [y, m, d] = selectedDate.value.split('-').map(Number)
   return new CalendarDate(y!, m!, d!)
 })
-const maxCalendarValue = today(getLocalTimeZone())
 
 const formattedDate = computed(() => {
   const [y, m, d] = selectedDate.value.split('-').map(Number)
@@ -48,6 +47,14 @@ function onCalendarPick(value: unknown) {
   selectedDate.value = `${v.year}-${String(v.month).padStart(2, '0')}-${String(v.day).padStart(2, '0')}`
   calendarOpen.value = false
 }
+
+/** Shift the selected date by whole days (−1 = previous, +1 = next). */
+function shiftDay(delta: number) {
+  const [y, m, d] = selectedDate.value.split('-').map(Number)
+  const dt = new Date(y!, m! - 1, d!)
+  dt.setDate(dt.getDate() + delta)
+  selectedDate.value = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`
+}
 </script>
 
 <template>
@@ -60,27 +67,43 @@ function onCalendarPick(value: unknown) {
       class="flex-1 min-w-40 sm:flex-none sm:w-56"
     />
 
-    <!-- Date (primary) -->
-    <UPopover v-model:open="calendarOpen">
+    <!-- Date (primary) — prev/next day arrows around the calendar picker -->
+    <div class="flex items-center gap-1">
       <UButton
         variant="outline"
         color="neutral"
-        icon="i-lucide-calendar-days"
-        trailing-icon="i-lucide-chevron-down"
-        class="justify-between"
-      >
-        {{ formattedDate }}
-      </UButton>
-      <template #content>
-        <UCalendar
-          :model-value="calendarValue"
-          :max-value="maxCalendarValue"
-          color="primary"
-          class="p-2"
-          @update:model-value="onCalendarPick"
-        />
-      </template>
-    </UPopover>
+        icon="i-lucide-chevron-right"
+        square
+        :aria-label="t('pages.achievements.filters.prevDay')"
+        @click="shiftDay(-1)"
+      />
+      <UPopover v-model:open="calendarOpen">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-calendar-days"
+          class="justify-between min-w-36"
+        >
+          {{ formattedDate }}
+        </UButton>
+        <template #content>
+          <UCalendar
+            :model-value="calendarValue"
+            color="primary"
+            class="p-2"
+            @update:model-value="onCalendarPick"
+          />
+        </template>
+      </UPopover>
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-chevron-left"
+        square
+        :aria-label="t('pages.achievements.filters.nextDay')"
+        @click="shiftDay(1)"
+      />
+    </div>
 
     <!-- Right cluster: filters popover + view toggle -->
     <div class="ms-auto flex items-center gap-2">

@@ -222,10 +222,13 @@ function trackLabel(track: ApiWeeklyPlanItem['track_type']): string {
 }
 
 const missingArgs = computed(() => !halaqaId.value || !studentId.value)
+
+// The mark toolbar shows as a sticky bottom bar while a lesson is selected.
+const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.value)
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 max-w-[640px] mx-auto w-full pb-24">
+  <div class="flex flex-col gap-3 max-w-[640px] mx-auto w-full pb-6">
     <div
       v-if="missingArgs"
       class="mx-auto my-8 max-w-sm w-full flex flex-col items-center gap-3 text-center px-6 py-10 rounded-2xl border border-default bg-default"
@@ -260,36 +263,34 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
             {{ studentLoading ? '…' : (student?.name ?? `طالب #${studentId}`) }}
           </p>
         </div>
-        <UBadge color="neutral" variant="subtle" size="sm" class="shrink-0 tabular-nums">
+        <UBadge color="neutral" variant="subtle" size="sm" class="shrink-0 tabular-nums hidden sm:inline-flex">
           {{ dateStr }}
         </UBadge>
-      </div>
 
-      <div
-        v-if="priorAchievements.length || priorLoading"
-        class="rounded-xl border border-default bg-default p-3"
-        dir="rtl"
-      >
-        <div class="flex items-center gap-1.5 text-xs font-semibold text-muted mb-2">
-          <UIcon name="i-lucide-check-square" class="w-4 h-4 text-primary" />
-          <span>تم تسجيله اليوم ({{ priorAchievements.length }})</span>
-          <UIcon v-if="priorLoading" name="i-lucide-loader-2" class="w-3.5 h-3.5 animate-spin ms-auto text-primary" />
-        </div>
-        <div class="flex flex-wrap gap-1.5">
-          <UBadge
-            v-for="a in priorAchievements"
-            :key="a.id"
-            :color="TRACK_BADGE_COLOR[a.track_type as AchievementTrack]"
-            variant="subtle"
-            class="gap-1.5"
-          >
-            <span class="font-bold">{{ trackLabel(a.track_type) }}</span>
-            <span class="opacity-80">{{ rangeLabel(a) }}</span>
-            <span v-if="!isParentReadOnly" class="tabular-nums opacity-70">
-              · {{ a.mistakes_count }}خ {{ a.warnings_count }}ت {{ a.tajweed_errors_count }}ج
-            </span>
-          </UBadge>
-        </div>
+        <!-- "Recorded today" collapsed into a chip + popover to save vertical space -->
+        <UPopover v-if="priorAchievements.length">
+          <UButton size="sm" variant="soft" color="primary" icon="i-lucide-check-square" class="shrink-0 tabular-nums">
+            {{ priorAchievements.length }}
+          </UButton>
+          <template #content>
+            <div class="p-3 w-64 max-h-72 overflow-auto" dir="rtl">
+              <p class="text-xs font-semibold text-muted mb-2">
+                تم تسجيله اليوم ({{ priorAchievements.length }})
+              </p>
+              <ul class="flex flex-col items-start gap-1.5">
+                <li v-for="a in priorAchievements" :key="a.id">
+                  <UBadge :color="TRACK_BADGE_COLOR[a.track_type as AchievementTrack]" variant="subtle" class="gap-1.5">
+                    <span class="font-bold">{{ trackLabel(a.track_type) }}</span>
+                    <span class="opacity-80">{{ rangeLabel(a) }}</span>
+                    <span v-if="!isParentReadOnly" class="tabular-nums opacity-70">
+                      · {{ a.mistakes_count }}خ {{ a.warnings_count }}ت {{ a.tajweed_errors_count }}ج
+                    </span>
+                  </UBadge>
+                </li>
+              </ul>
+            </div>
+          </template>
+        </UPopover>
       </div>
 
       <div v-if="planLoading" class="flex items-center justify-center gap-2 py-6 text-sm text-muted">
@@ -343,18 +344,6 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
           </UButton>
         </div>
 
-        <div v-if="!isParentReadOnly" class="sticky top-2 z-10">
-          <MushafMarkToolbar
-            :mode="mode"
-            :counts="counts"
-            :can-submit="!!selectedItem"
-            :submitting="submitting"
-            @update:mode="mode = $event"
-            @clear="clearAll"
-            @submit="onSubmitRequest"
-          />
-        </div>
-
         <MushafRangeViewer
           v-if="selectedItem"
           :start-surah="selectedItem.start_surah"
@@ -365,6 +354,22 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
           :on-word-tap="isParentReadOnly ? undefined : tap"
         />
       </template>
+
+      <!-- Marking controls pinned to the bottom. `sticky` keeps it inside the
+           640px content column so it stays aligned/centered with the mushaf
+           (a `fixed` bar would center against the whole window, off to the side
+           of the sidebar). -->
+      <div v-if="showToolbar" class="sticky bottom-3 z-30 mt-1">
+        <MushafMarkToolbar
+          :mode="mode"
+          :counts="counts"
+          :can-submit="!!selectedItem"
+          :submitting="submitting"
+          @update:mode="mode = $event"
+          @clear="clearAll"
+          @submit="onSubmitRequest"
+        />
+      </div>
     </template>
   </div>
 </template>

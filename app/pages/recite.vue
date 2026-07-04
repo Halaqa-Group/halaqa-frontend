@@ -132,22 +132,34 @@ const { mode, marks, counts, tap, clearAll } = useRecitationSession(sessionId)
 
 const submitting = ref(false)
 
+// An achievement already recorded today for this exact session (same track +
+// range). Re-submitting updates it instead of creating a duplicate.
+function findExistingAchievement(item: ApiWeeklyPlanItem): ApiAchievement | null {
+  return priorAchievements.value.find(a =>
+    a.track_type === item.track_type
+    && a.start_surah === item.start_surah && a.start_verse === item.start_verse
+    && a.end_surah === item.end_surah && a.end_verse === item.end_verse
+  ) ?? null
+}
+
 function onSubmitRequest() {
   const item = selectedItem.value
   if (!item || !studentId.value || !halaqaId.value) return
 
   const c = counts.value
+  const existing = findExistingAchievement(item)
+  const verb = existing ? 'تحديث' : 'حفظ'
   const modal = overlay.create(LazyCommonConfirmDialog, {
     destroyOnClose: true,
     props: {
       'open': true,
-      'title': 'تأكيد حفظ الإنجاز',
+      'title': existing ? 'تأكيد تحديث الجلسة' : 'تأكيد حفظ الإنجاز',
       'message':
-        `هل تريد حفظ إنجاز ${trackLabel(item.track_type)} لـ${rangeLabel(item)}؟`
+        `هل تريد ${verb} إنجاز ${trackLabel(item.track_type)} لـ${rangeLabel(item)}؟`
         + (c.total === 0
           ? '\nتلاوة تامة بدون أخطاء ✓'
           : `\n${c.mistake} خطأ، ${c.warning} تنبيه، ${c.tajweed} تجويد.`),
-      'confirmLabel': 'حفظ',
+      'confirmLabel': verb,
       'cancelLabel': 'إلغاء',
       'loading': false,
       'onUpdate:open': (v: boolean) => { if (!v) modal.close() },
@@ -177,6 +189,42 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
   try {
     const c = counts.value
     const settings = await loadEvaluationSettings(hid)
+    const score = computePercentageScore(
+      { mistakes_count: c.mistake, warnings_count: c.warning, tajweed_errors_count: c.tajweed },
+      settings
+    )
+    const existing = findExistingAchievement(item)
+
+    if (existing) {
+      if (existing.status === 'approved') {
+        throw new Error('هذا الإنجاز معتمد ولا يمكن تعديله. ألغِ الاعتماد أولاً.')
+      }
+      // Update the same session instead of creating a duplicate.
+      const updated = await api<ApiAchievement>(`/achievements/${existing.id}`, {
+        method: 'PATCH',
+        body: {
+          track_type: item.track_type,
+          start_surah: item.start_surah,
+          start_verse: item.start_verse,
+          end_surah: item.end_surah,
+          end_verse: item.end_verse,
+          mistakes_count: c.mistake,
+          warnings_count: c.warning,
+          tajweed_errors_count: c.tajweed,
+          percentage_score: score
+        }
+      })
+      priorAchievements.value = priorAchievements.value.map(a => a.id === existing.id ? updated : a)
+      clearAll()
+      toast.add({
+        title: 'تم تحديث الجلسة ✓',
+        description: `${c.mistake} خطأ، ${c.warning} تنبيه، ${c.tajweed} تجويد`,
+        color: 'success',
+        icon: 'i-lucide-check-circle'
+      })
+      return
+    }
+
     const dto: CreateAchievementDto = {
       student_id: sid,
       halaqa_id: hid,
@@ -189,10 +237,7 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
       mistakes_count: c.mistake,
       warnings_count: c.warning,
       tajweed_errors_count: c.tajweed,
-      percentage_score: computePercentageScore(
-        { mistakes_count: c.mistake, warnings_count: c.warning, tajweed_errors_count: c.tajweed },
-        settings
-      )
+      percentage_score: score
     }
     const created = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
     priorAchievements.value = [created, ...priorAchievements.value]
@@ -335,8 +380,8 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
           class="flex items-center gap-3 rounded-xl border border-default bg-default px-3 py-2.5"
           dir="rtl"
         >
-          <span class="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-muted">
-            <UIcon name="i-lucide-hand-pointer" class="w-3.5 h-3.5" />
+          <span class="shrink-0 hidden sm:inline-flex items-center gap-1 text-xs font-medium text-muted">
+            <UIcon name="i-lucide-pointer" class="w-3.5 h-3.5" />
             اختر الجلسة
           </span>
           <UButton
@@ -347,6 +392,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
             :color="TRACK_BADGE_COLOR[item.track_type as AchievementTrack]"
             :icon="TRACK_ICON[item.track_type as AchievementTrack]"
             :trailing-icon="selectedItemId === item.id ? 'i-lucide-check' : undefined"
+            :ui="{ label: 'truncate' }"
             class="flex-1 min-w-0 justify-center cursor-pointer"
             @click="selectedItemId = item.id"
           >

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SURAH_NAMES } from '~/data/constants'
+import { SURAH_HEADER_GLYPHS } from '~/data/surah-header-glyphs'
 import type { RenderedLine } from '~/types/mushaf'
 import type { MarkType, RecitationMarks, WordKey } from '~/types/recitation'
 
@@ -28,7 +28,7 @@ function markClass(mark: MarkType | undefined): string | null {
     v-if="line.kind === 'surah_name'"
     class="mushaf-line mushaf-line--surah"
   >
-    <span class="mushaf-surah-cartouche">سُورَةُ {{ SURAH_NAMES[line.surah] }}</span>
+    <span class="mushaf-surah-header">{{ SURAH_HEADER_GLYPHS[line.surah] }}</span>
   </div>
 
   <div
@@ -63,6 +63,14 @@ function markClass(mark: MarkType | undefined): string | null {
 </template>
 
 <style scoped>
+/* Authentic KFGQPC surah-header banner (QUL "Surah header font" #458):
+   one glyph per surah = the ornamental frame with the name inside. */
+@font-face {
+  font-family: 'surah-header';
+  src: url('/quran/fonts/surah-name/surah-header.woff2') format('woff2');
+  font-display: swap;
+}
+
 .mushaf-line {
   display: flex;
   align-items: center;
@@ -71,19 +79,16 @@ function markClass(mark: MarkType | undefined): string | null {
   justify-content: center;
 }
 
+.mushaf-surah-header {
+  font-family: 'surah-header';
+  /* Scale the banner to the page width like the printed mushaf. */
+  font-size: clamp(56px, 24cqi, 150px);
+  line-height: 1;
+}
+
 .mushaf-line--surah,
 .mushaf-line--basmala {
   justify-content: center;
-}
-
-.mushaf-surah-cartouche {
-  font-family: 'Thmanyah Sans', 'Amiri', serif;
-  font-size: clamp(14px, 3.5cqi, 22px);
-  font-weight: 600;
-  padding: 0.3em 1.2em;
-  border: 1px solid currentColor;
-  border-radius: 0.4em;
-  letter-spacing: 0.02em;
 }
 
 .mushaf-basmala {

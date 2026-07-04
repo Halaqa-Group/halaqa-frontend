@@ -330,26 +330,28 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
       </div>
 
       <template v-else>
-        <div v-if="todayItems.length > 1" class="space-y-1.5" dir="rtl">
-          <p class="flex items-center gap-1 text-xs font-medium text-muted">
+        <div
+          v-if="todayItems.length > 1"
+          class="flex items-center gap-3 rounded-xl border border-default bg-default px-3 py-2.5"
+          dir="rtl"
+        >
+          <span class="shrink-0 inline-flex items-center gap-1 text-xs font-medium text-muted">
             <UIcon name="i-lucide-hand-pointer" class="w-3.5 h-3.5" />
             اختر الجلسة
-          </p>
-          <div class="flex flex-wrap gap-2">
-            <UButton
-              v-for="item in todayItems"
-              :key="item.id"
-              size="md"
-              :variant="selectedItemId === item.id ? 'solid' : 'outline'"
-              :color="TRACK_BADGE_COLOR[item.track_type as AchievementTrack]"
-              :icon="TRACK_ICON[item.track_type as AchievementTrack]"
-              :trailing-icon="selectedItemId === item.id ? 'i-lucide-check' : undefined"
-              class="cursor-pointer"
-              @click="selectedItemId = item.id"
-            >
-              {{ trackLabel(item.track_type) }} · {{ rangeLabel(item) }}
-            </UButton>
-          </div>
+          </span>
+          <UButton
+            v-for="item in todayItems"
+            :key="item.id"
+            size="sm"
+            :variant="selectedItemId === item.id ? 'solid' : 'outline'"
+            :color="TRACK_BADGE_COLOR[item.track_type as AchievementTrack]"
+            :icon="TRACK_ICON[item.track_type as AchievementTrack]"
+            :trailing-icon="selectedItemId === item.id ? 'i-lucide-check' : undefined"
+            class="flex-1 min-w-0 justify-center cursor-pointer"
+            @click="selectedItemId = item.id"
+          >
+            {{ trackLabel(item.track_type) }}
+          </UButton>
         </div>
 
         <MushafRangeViewer

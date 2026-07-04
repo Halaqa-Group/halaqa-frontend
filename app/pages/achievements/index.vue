@@ -14,24 +14,11 @@ const { activeRole } = useAuth()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const {
   selectedDate, filters, page, total, limit, totalPages, isLoading,
-  recordOpen, editing, deleteOpen, deleteTarget,
+  deleteOpen, deleteTarget,
   loadAll, loadAchievements, openRecord, deleteAchievement
 } = useAchievements()
 
 const canRecord = computed(() => activeRole.value !== 'parent')
-
-const formRef = useTemplateRef<{ saving: Ref<boolean>, setContinueToRecite: (v: boolean) => void } | null>('formRef')
-const formSaving = computed(() => formRef.value?.saving.value ?? false)
-
-function onSaved() {
-  recordOpen.value = false
-}
-
-// Tell the form whether to continue into the mushaf after saving. Set on the
-// submit button's click, which fires before the form actually submits.
-function setContinueToRecite(value: boolean) {
-  formRef.value?.setContinueToRecite(value)
-}
 
 async function onDeleteConfirm() {
   const target = deleteTarget.value
@@ -114,43 +101,6 @@ onMounted(() => {
         </div>
       </template>
     </UCard>
-
-    <UModal
-      v-model:open="recordOpen"
-      :title="editing ? t('pages.achievements.editTitle') : t('pages.achievements.recordTitle')"
-      :ui="{ content: 'sm:max-w-2xl rounded-2xl' }"
-    >
-      <template #body>
-        <AchievementForm ref="formRef" @saved="onSaved" />
-      </template>
-      <template #footer>
-        <div class="flex items-center justify-end gap-2 w-full flex-wrap">
-          <UButton variant="soft" color="neutral" :disabled="formSaving" @click="recordOpen = false">
-            {{ t('common.cancel') }}
-          </UButton>
-          <UButton
-            v-if="!editing"
-            type="submit"
-            form="achievement-form"
-            variant="soft"
-            color="primary"
-            icon="i-lucide-book-open"
-            :disabled="formSaving"
-            @click="setContinueToRecite(true)"
-          >
-            {{ t('pages.achievements.saveAndRecite') }}
-          </UButton>
-          <UButton
-            type="submit"
-            form="achievement-form"
-            :loading="formSaving"
-            @click="setContinueToRecite(false)"
-          >
-            {{ editing ? t('pages.achievements.update') : t('pages.achievements.save') }}
-          </UButton>
-        </div>
-      </template>
-    </UModal>
 
     <ConfirmDialog
       v-model:open="deleteOpen"

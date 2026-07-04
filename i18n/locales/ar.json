@@ -1014,7 +1014,8 @@
         "searchPlaceholder": "ابحث باسم الطالب",
         "allTracks": "كل المسارات",
         "allStatuses": "كل الحالات",
-        "clear": "مسح"
+        "clear": "مسح",
+        "label": "تصفية"
       },
       "view": {
         "grid": "عرض شبكي",
@@ -1024,7 +1025,8 @@
         "recite": "تلاوة في المصحف",
         "edit": "تعديل",
         "duplicate": "نسخ",
-        "delete": "حذف"
+        "delete": "حذف",
+        "viewInPlanner": "عرض في المخطط"
       },
       "validation": {
         "student": "اختر الطالب",

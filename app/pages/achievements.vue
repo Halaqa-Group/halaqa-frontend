@@ -65,6 +65,9 @@ onMounted(() => {
         <h1 class="text-2xl font-bold">
           {{ t('pages.achievements.title') }}
         </h1>
+        <p class="text-sm text-muted">
+          {{ t('pages.achievements.subtitle') }}
+        </p>
       </div>
       <UButton
         v-if="canRecord && hasHalaqa"

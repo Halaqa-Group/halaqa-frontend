@@ -105,6 +105,10 @@ watch(selectedWeekStart, () => loadPlan())
 
 onMounted(async () => {
   if (selectedHalaqaId.value) await loadStudents(selectedHalaqaId.value)
+  // A student may already be selected — e.g. deep-linked from the achievements
+  // page's "View in planner". The selectedStudentId watch isn't immediate, so
+  // load the plan here too.
+  if (selectedStudentId.value) await loadPlan()
 })
 </script>
 
@@ -115,6 +119,9 @@ onMounted(async () => {
         <h1 class="text-2xl font-bold">
           {{ t('pages.planner.title') }}
         </h1>
+        <p class="text-sm text-muted">
+          {{ t('pages.planner.subtitle') }}
+        </p>
       </div>
 
       <div v-if="hasHalaqa && selectedStudentId" class="flex items-center gap-2 flex-wrap">

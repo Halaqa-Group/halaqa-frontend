@@ -1014,7 +1014,8 @@
         "searchPlaceholder": "Search by student name",
         "allTracks": "All tracks",
         "allStatuses": "All statuses",
-        "clear": "Clear"
+        "clear": "Clear",
+        "label": "Filters"
       },
       "view": {
         "grid": "Grid view",
@@ -1024,7 +1025,8 @@
         "recite": "Recite in Mushaf",
         "edit": "Edit",
         "duplicate": "Duplicate",
-        "delete": "Delete"
+        "delete": "Delete",
+        "viewInPlanner": "View in planner"
       },
       "validation": {
         "student": "Select a student",

@@ -5,6 +5,11 @@ const { t, locale } = useI18n()
 const { selectedDate, filters, viewMode, hasActiveFilters, clearFilters } = useAchievements()
 
 const calendarOpen = ref(false)
+const filtersOpen = ref(false)
+
+const activeFilterCount = computed(() =>
+  (filters.trackType ? 1 : 0) + (filters.status ? 1 : 0)
+)
 
 const trackItems = computed(() => [
   { label: t('pages.achievements.filters.allTracks'), value: null as string | null },
@@ -46,21 +51,23 @@ function onCalendarPick(value: unknown) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+  <div class="flex flex-wrap items-center gap-2">
+    <!-- Search (primary) -->
     <UInput
       v-model="filters.search"
       icon="i-lucide-search"
       :placeholder="t('pages.achievements.filters.searchPlaceholder')"
-      class="w-full sm:w-56"
+      class="flex-1 min-w-40 sm:flex-none sm:w-56"
     />
 
+    <!-- Date (primary) -->
     <UPopover v-model:open="calendarOpen">
       <UButton
         variant="outline"
         color="neutral"
         icon="i-lucide-calendar-days"
         trailing-icon="i-lucide-chevron-down"
-        class="w-full sm:w-auto justify-between"
+        class="justify-between"
       >
         {{ formattedDate }}
       </UButton>
@@ -75,51 +82,63 @@ function onCalendarPick(value: unknown) {
       </template>
     </UPopover>
 
-    <USelect
-      v-model="filters.trackType"
-      :items="trackItems"
-      value-key="value"
-      class="w-full sm:w-40"
-    />
+    <!-- Right cluster: filters popover + view toggle -->
+    <div class="ms-auto flex items-center gap-2">
+      <UPopover v-model:open="filtersOpen">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-list-filter"
+          :aria-label="t('pages.achievements.filters.label')"
+        >
+          <span class="hidden sm:inline">{{ t('pages.achievements.filters.label') }}</span>
+          <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
+            {{ activeFilterCount }}
+          </UBadge>
+        </UButton>
+        <template #content>
+          <div class="p-3 w-64 space-y-3">
+            <UFormField :label="t('pages.achievements.table.track')">
+              <USelect v-model="filters.trackType" :items="trackItems" value-key="value" class="w-full" />
+            </UFormField>
+            <UFormField :label="t('pages.achievements.table.status')">
+              <USelect v-model="filters.status" :items="statusItems" value-key="value" class="w-full" />
+            </UFormField>
+            <UButton
+              v-if="hasActiveFilters"
+              block
+              variant="soft"
+              color="neutral"
+              icon="i-lucide-x"
+              size="sm"
+              @click="clearFilters"
+            >
+              {{ t('pages.achievements.filters.clear') }}
+            </UButton>
+          </div>
+        </template>
+      </UPopover>
 
-    <USelect
-      v-model="filters.status"
-      :items="statusItems"
-      value-key="value"
-      class="w-full sm:w-44"
-    />
-
-    <UButton
-      v-if="hasActiveFilters"
-      variant="link"
-      color="neutral"
-      icon="i-lucide-x"
-      size="sm"
-      class="px-0"
-      @click="clearFilters"
-    >
-      {{ t('pages.achievements.filters.clear') }}
-    </UButton>
-
-    <div class="sm:ms-auto flex items-center gap-1 rounded-md border border-default p-0.5">
-      <UButton
-        :variant="viewMode === 'table' ? 'soft' : 'ghost'"
-        color="primary"
-        icon="i-lucide-table-2"
-        size="sm"
-        square
-        :aria-label="t('pages.achievements.view.table')"
-        @click="viewMode = 'table'"
-      />
-      <UButton
-        :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
-        color="primary"
-        icon="i-lucide-layout-grid"
-        size="sm"
-        square
-        :aria-label="t('pages.achievements.view.grid')"
-        @click="viewMode = 'grid'"
-      />
+      <div class="flex items-center gap-1 rounded-md border border-default p-0.5">
+        <UButton
+          :variant="viewMode === 'table' ? 'soft' : 'ghost'"
+          color="primary"
+          icon="i-lucide-table-2"
+          size="sm"
+          square
+          :aria-label="t('pages.achievements.view.table')"
+          @click="viewMode = 'table'"
+        />
+        <UButton
+          :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
+          color="primary"
+          icon="i-lucide-layout-grid"
+          size="sm"
+          square
+          :aria-label="t('pages.achievements.view.grid')"
+          @click="viewMode = 'grid'"
+        />
+      </div>
     </div>
   </div>
 </template>

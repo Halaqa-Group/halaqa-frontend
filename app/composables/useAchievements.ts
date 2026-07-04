@@ -30,7 +30,6 @@ const filters = reactive<{ search: string, trackType: TrackType | null, status: 
   status: null
 })
 
-const recordOpen = ref(false)
 const editing = ref<ApiAchievement | null>(null)
 const duplicateFrom = ref<ApiAchievement | null>(null)
 const deleteOpen = ref(false)
@@ -205,20 +204,22 @@ export function useAchievements() {
     await loadAchievements()
   }
 
+  // Record/edit/duplicate now happen on a dedicated page. These set the shared
+  // state, then navigate there; the record page reads editing/duplicateFrom.
   function openRecord() {
     editing.value = null
     duplicateFrom.value = null
-    recordOpen.value = true
+    navigateTo('/achievements/record')
   }
   function openEdit(a: ApiAchievement) {
     duplicateFrom.value = null
     editing.value = a
-    recordOpen.value = true
+    navigateTo('/achievements/record')
   }
   function openDuplicate(a: ApiAchievement) {
     editing.value = null
     duplicateFrom.value = a
-    recordOpen.value = true
+    navigateTo('/achievements/record')
   }
   function requestDelete(a: ApiAchievement) {
     deleteTarget.value = a
@@ -239,7 +240,6 @@ export function useAchievements() {
     limit,
     viewMode,
     filters,
-    recordOpen,
     editing,
     duplicateFrom,
     deleteOpen,

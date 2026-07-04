@@ -1242,7 +1242,22 @@
         "willSchedule": "The plan will be spread across {days} days",
         "noTrack": "Enable at least one track",
         "noData": "Unit data unavailable for this track",
-        "generatedToast": "Weekly schedule generated"
+        "generatedToast": "Weekly schedule generated",
+        "target": {
+          "label": "Apply to",
+          "this": "Current student",
+          "all": "All students",
+          "selected": "Selected students"
+        },
+        "pickStudents": "Pick students",
+        "conflict": {
+          "label": "Existing plans",
+          "skip": "Skip",
+          "replace": "Replace"
+        },
+        "applyToN": "Apply to {count} students",
+        "applyResult": "Created {created} · skipped {skipped} · replaced {replaced} · failed {failed}",
+        "noStudents": "No target students"
       }
     }
   },

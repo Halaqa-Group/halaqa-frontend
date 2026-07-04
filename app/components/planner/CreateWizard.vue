@@ -1,18 +1,24 @@
 <script setup lang="ts">
 /**
  * Plan creation wizard. Configure each of the three tracks once (start ayah,
- * daily amount, and unit) and generate the whole week into the editable matrix
- * in one step — the PDF's "one dialog, choose per track, then schedule the week".
+ * daily amount, and unit) and generate the whole week — either into the editable
+ * matrix for the current student, or fanned out to every / selected student in
+ * the halaqa in one step.
  */
 import { expandPlan, type PlanUnit } from '~/utils/quran-structure'
 import { TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
-import { PLAN_TRACKS } from '~/composables/useWeeklyPlan'
+import { PLAN_TRACKS, type CreatePlanItemDto } from '~/composables/useWeeklyPlan'
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
+type Target = 'this' | 'all' | 'selected'
+type Policy = 'skip' | 'replace'
 
 const { t } = useI18n()
 const toast = useToast()
-const { wizardOpen, activeDays, applyTrackGeneration } = useWeeklyPlan()
+const {
+  wizardOpen, activeDays, applyTrackGeneration,
+  students, selectedStudentId, applyPlanToStudents, isSaving
+} = useWeeklyPlan()
 const { boundariesFor, unitAvailable } = useQuranStructure()
 
 const UNITS: PlanUnit[] = ['page', 'juz', 'hizb', 'quarter', 'surah']
@@ -33,12 +39,38 @@ const config = reactive<Record<TrackType, TrackConfig>>({
   Far: defaults(false)
 })
 
-// Reset to defaults each time the wizard opens.
+// ── Target (who gets this plan) ───────────────────────────────────────────────
+const target = ref<Target>('this')
+const targetStudentIds = ref<number[]>([])
+const policy = ref<Policy>('skip')
+
+const studentItems = computed(() => students.value.map(s => ({ label: s.name, value: s.id })))
+const targetOptions = computed(() => [
+  { value: 'this' as Target, label: t('pages.planner.wizard.target.this') },
+  { value: 'all' as Target, label: t('pages.planner.wizard.target.all') },
+  { value: 'selected' as Target, label: t('pages.planner.wizard.target.selected') }
+])
+const policyOptions = computed(() => [
+  { value: 'skip' as Policy, label: t('pages.planner.wizard.conflict.skip') },
+  { value: 'replace' as Policy, label: t('pages.planner.wizard.conflict.replace') }
+])
+
+/** Resolved list of student ids the plan will be applied to. */
+const resolvedStudentIds = computed<number[]>(() => {
+  if (target.value === 'this') return selectedStudentId.value ? [selectedStudentId.value] : []
+  if (target.value === 'all') return students.value.map(s => s.id)
+  return targetStudentIds.value
+})
+
+// Reset everything each time the wizard opens.
 watch(wizardOpen, (v) => {
   if (v) {
     Object.assign(config.Hifz, defaults(true))
     Object.assign(config.Near, defaults(false))
     Object.assign(config.Far, defaults(false))
+    target.value = 'this'
+    targetStudentIds.value = []
+    policy.value = 'skip'
   }
 })
 
@@ -56,29 +88,95 @@ const unitItems = computed(() =>
 
 const dayCount = computed(() => activeDays.value.length)
 const anyEnabled = computed(() => PLAN_TRACKS.some(tk => config[tk as TrackType].enabled))
+const isMulti = computed(() => target.value !== 'this')
 
-function generate() {
-  if (!anyEnabled.value) {
-    toast.add({ title: t('pages.planner.wizard.noTrack'), color: 'warning' })
-    return
-  }
-  const days = dayCount.value
-  let generatedAny = false
+const canSubmit = computed(() => anyEnabled.value && resolvedStudentIds.value.length > 0)
+const submitLabel = computed(() =>
+  isMulti.value
+    ? t('pages.planner.wizard.applyToN', { count: resolvedStudentIds.value.length })
+    : t('pages.planner.wizard.generate')
+)
+
+/** Expand the track configs into flat plan items for the whole week. */
+function buildItems(): CreatePlanItemDto[] {
+  const days = activeDays.value
+  const items: CreatePlanItemDto[] = []
   for (const track of PLAN_TRACKS as TrackType[]) {
     const cfg = config[track]
     if (!cfg.enabled) continue
     const boundaries = boundariesFor(cfg.unit)
     if (!boundaries.length) continue
-    const ranges = expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundaries, days)
-    applyTrackGeneration(track, ranges)
-    generatedAny = true
+    const ranges = expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundaries, days.length)
+    ranges.forEach((r, i) => {
+      const day = days[i]
+      if (day === undefined) return
+      items.push({
+        day_of_week: day,
+        track_type: track,
+        start_surah: r.start_surah,
+        start_verse: r.start_verse,
+        end_surah: r.end_surah,
+        end_verse: r.end_verse
+      })
+    })
   }
-  if (!generatedAny) {
+  return items
+}
+
+async function submit() {
+  if (!anyEnabled.value) {
+    toast.add({ title: t('pages.planner.wizard.noTrack'), color: 'warning' })
+    return
+  }
+
+  // Single student → fill the editable matrix (review, then Save draft).
+  if (!isMulti.value) {
+    if (!selectedStudentId.value) {
+      toast.add({ title: t('pages.planner.selectStudent'), color: 'warning' })
+      return
+    }
+    let generatedAny = false
+    for (const track of PLAN_TRACKS as TrackType[]) {
+      const cfg = config[track]
+      if (!cfg.enabled) continue
+      const boundaries = boundariesFor(cfg.unit)
+      if (!boundaries.length) continue
+      const ranges = expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundaries, dayCount.value)
+      applyTrackGeneration(track, ranges)
+      generatedAny = true
+    }
+    if (!generatedAny) {
+      toast.add({ title: t('pages.planner.wizard.noData'), color: 'warning' })
+      return
+    }
+    wizardOpen.value = false
+    toast.add({ title: t('pages.planner.wizard.generatedToast'), color: 'success' })
+    return
+  }
+
+  // Many students → create a plan per student straight away.
+  const ids = resolvedStudentIds.value
+  if (ids.length === 0) {
+    toast.add({ title: t('pages.planner.wizard.noStudents'), color: 'warning' })
+    return
+  }
+  const items = buildItems()
+  if (items.length === 0) {
     toast.add({ title: t('pages.planner.wizard.noData'), color: 'warning' })
     return
   }
-  wizardOpen.value = false
-  toast.add({ title: t('pages.planner.wizard.generatedToast'), color: 'success' })
+  try {
+    const res = await applyPlanToStudents(items, ids, policy.value)
+    wizardOpen.value = false
+    toast.add({
+      title: t('pages.planner.wizard.applyResult', {
+        created: res.created, skipped: res.skipped, replaced: res.replaced, failed: res.failed
+      }),
+      color: res.failed > 0 ? 'warning' : 'success'
+    })
+  } catch (e: any) {
+    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e?.data?.message || e?.message, color: 'error' })
+  }
 }
 </script>
 
@@ -91,6 +189,54 @@ function generate() {
   >
     <template #body>
       <div class="space-y-4">
+        <!-- Who gets this plan -->
+        <div class="rounded-xl border border-default p-4 space-y-3">
+          <UFormField :label="t('pages.planner.wizard.target.label')">
+            <div class="flex gap-1 rounded-md border border-default p-0.5">
+              <UButton
+                v-for="opt in targetOptions"
+                :key="opt.value"
+                :variant="target === opt.value ? 'soft' : 'ghost'"
+                color="primary"
+                size="sm"
+                class="flex-1 justify-center"
+                @click="target = opt.value"
+              >
+                {{ opt.label }}
+              </UButton>
+            </div>
+          </UFormField>
+
+          <UFormField v-if="target === 'selected'" :label="t('pages.planner.wizard.pickStudents')">
+            <USelectMenu
+              v-model="targetStudentIds"
+              :items="studentItems"
+              value-key="value"
+              multiple
+              searchable
+              :placeholder="t('pages.planner.wizard.pickStudents')"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField v-if="isMulti" :label="t('pages.planner.wizard.conflict.label')">
+            <div class="flex gap-1 rounded-md border border-default p-0.5">
+              <UButton
+                v-for="opt in policyOptions"
+                :key="opt.value"
+                :variant="policy === opt.value ? 'soft' : 'ghost'"
+                :color="opt.value === 'replace' ? 'warning' : 'primary'"
+                size="sm"
+                class="flex-1 justify-center"
+                @click="policy = opt.value"
+              >
+                {{ opt.label }}
+              </UButton>
+            </div>
+          </UFormField>
+        </div>
+
+        <!-- Per-track config -->
         <section
           v-for="track in (PLAN_TRACKS as TrackType[])"
           :key="track"
@@ -131,11 +277,11 @@ function generate() {
 
     <template #footer>
       <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" @click="wizardOpen = false">
+        <UButton variant="soft" color="neutral" :disabled="isSaving" @click="wizardOpen = false">
           {{ t('common.cancel') }}
         </UButton>
-        <UButton icon="i-lucide-wand-sparkles" :disabled="!anyEnabled" @click="generate">
-          {{ t('pages.planner.wizard.generate') }}
+        <UButton icon="i-lucide-wand-sparkles" :disabled="!canSubmit || isSaving" :loading="isSaving" @click="submit">
+          {{ submitLabel }}
         </UButton>
       </div>
     </template>

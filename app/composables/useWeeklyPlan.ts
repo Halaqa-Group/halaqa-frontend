@@ -20,6 +20,14 @@ export interface CreatePlanItemDto {
   end_verse: number
 }
 
+/** Tally returned by applyPlanToStudents (bulk fan-out). */
+export interface ApplyResult {
+  created: number
+  skipped: number
+  replaced: number
+  failed: number
+}
+
 /** One (day × track) lesson in the editable matrix. `id` links it to a persisted item. */
 export interface DraftCell extends VerseRange {
   id?: number
@@ -273,6 +281,58 @@ export function useWeeklyPlan() {
     restDays.clear()
   }
 
+  /**
+   * Create the same set of plan items for many students in the current halaqa/week.
+   * `policy` decides what to do when a student already has a plan that week:
+   *   'skip'    — leave the existing plan untouched.
+   *   'replace' — delete the existing plan, then create the new one.
+   * Runs one request per student (the halaqa is small); returns a tally.
+   */
+  async function applyPlanToStudents(
+    items: CreatePlanItemDto[],
+    studentIds: number[],
+    policy: 'skip' | 'replace'
+  ): Promise<ApplyResult> {
+    const halaqaId = selectedHalaqaId.value
+    const result: ApplyResult = { created: 0, skipped: 0, replaced: 0, failed: 0 }
+    if (!halaqaId || items.length === 0 || studentIds.length === 0) return result
+
+    const week = selectedWeekStart.value
+    const makeBody = (studentId: number) => ({ student_id: studentId, halaqa_id: halaqaId, week_start_date: week, items })
+
+    isSaving.value = true
+    try {
+      for (const studentId of studentIds) {
+        // Look up an existing plan first so we know whether this is a create or replace.
+        let existingId: number | null = null
+        try {
+          const raw = await api<unknown>(`/weekly-plans?student_id=${studentId}&halaqa_id=${halaqaId}&week_start_date=${week}`)
+          existingId = unwrapList<ApiWeeklyPlan>(raw)[0]?.id ?? null
+        } catch { /* treat as no existing plan */ }
+
+        if (existingId && policy === 'skip') {
+          result.skipped++
+          continue
+        }
+
+        try {
+          if (existingId && policy === 'replace') {
+            await api(`/weekly-plans/${existingId}`, { method: 'DELETE' })
+          }
+          await api<ApiWeeklyPlan>('/weekly-plans', { method: 'POST', body: makeBody(studentId) })
+          if (existingId) result.replaced++
+          else result.created++
+        } catch {
+          result.failed++
+        }
+      }
+      await loadPlan()
+      return result
+    } finally {
+      isSaving.value = false
+    }
+  }
+
   // ── Item CRUD (persist immediately, then reload) ────────────────────────────
   async function addItem(dto: CreatePlanItemDto) {
     const halaqaId = selectedHalaqaId.value
@@ -478,6 +538,7 @@ export function useWeeklyPlan() {
     copyCell,
     pasteCell,
     saveDraft,
-    clearWeek
+    clearWeek,
+    applyPlanToStudents
   }
 }

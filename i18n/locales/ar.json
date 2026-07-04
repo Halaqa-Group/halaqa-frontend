@@ -1242,7 +1242,22 @@
         "willSchedule": "سيتم توزيع الخطة على {days} أيام من الأسبوع",
         "noTrack": "فعّل مسارًا واحدًا على الأقل",
         "noData": "بيانات الوحدة غير متوفرة لهذا المسار",
-        "generatedToast": "تم إنشاء جدول الأسبوع"
+        "generatedToast": "تم إنشاء جدول الأسبوع",
+        "target": {
+          "label": "تطبيق على",
+          "this": "الطالب الحالي",
+          "all": "كل الطلاب",
+          "selected": "طلاب محددون"
+        },
+        "pickStudents": "اختر الطلاب",
+        "conflict": {
+          "label": "الخطط الموجودة",
+          "skip": "تخطّي",
+          "replace": "استبدال"
+        },
+        "applyToN": "تطبيق على {count} طالب",
+        "applyResult": "أُنشئت {created} · تُخطّيت {skipped} · استُبدلت {replaced} · فشل {failed}",
+        "noStudents": "لا يوجد طلاب مستهدفون"
       }
     }
   },

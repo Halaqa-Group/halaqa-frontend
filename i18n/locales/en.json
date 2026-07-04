@@ -1033,13 +1033,13 @@
       "validation": {
         "student": "Select a student",
         "range": "Invalid verse range",
-        "pickLesson": "Choose a lesson from today's plan"
+        "pickLesson": "Choose a session from today's plan"
       },
       "deleteConfirm": {
         "title": "Delete achievement",
         "message": "Are you sure you want to delete this achievement? This action cannot be undone."
       },
-      "lessonFromPlan": "Lesson (from today's plan)",
+      "lessonFromPlan": "Session (from today's plan)",
       "noPlanForDay": "No plan for this day — enter the range manually",
       "enterManually": "Enter manually",
       "usePlan": "Choose from plan",
@@ -1077,7 +1077,7 @@
     "planner": {
       "weeklyPlanning": "Weekly planning",
       "title": "Weekly planner",
-      "subtitle": "Plan the week's lessons for each student and track memorization and review progress.",
+      "subtitle": "Plan the week's sessions for each student and track memorization and review progress.",
       "copyFromLastWeek": "Copy from last week",
       "saveAsDraft": "Save as draft",
       "editPlan": "Edit plan",
@@ -1089,7 +1089,7 @@
       "unapprove": "Revoke approval",
       "unapprovedToast": "Plan approval revoked",
       "approveErrorTitle": "Failed to approve plan",
-      "addItem": "Add lesson",
+      "addItem": "Add session",
       "weekOf": "Week of {date}",
       "selectStudent": "Select a student",
       "noPlan": "No plan for this week yet",
@@ -1097,9 +1097,9 @@
       "coverage": "{achieved}/{total} verses ({percent}%)",
       "deletePlan": "Delete plan",
       "planDeletedToast": "Plan deleted",
-      "itemAddedToast": "Lesson added",
-      "itemUpdatedToast": "Lesson updated",
-      "itemDeletedToast": "Lesson deleted",
+      "itemAddedToast": "Session added",
+      "itemUpdatedToast": "Session updated",
+      "itemDeletedToast": "Session deleted",
       "table": {
         "day": "Day",
         "track": "Track",
@@ -1130,13 +1130,13 @@
         "delete": "Delete"
       },
       "form": {
-        "addTitle": "Add lesson",
-        "editTitle": "Edit lesson",
+        "addTitle": "Add session",
+        "editTitle": "Edit session",
         "day": "Day"
       },
       "deleteItemConfirm": {
-        "title": "Delete lesson",
-        "message": "Are you sure you want to delete this lesson?"
+        "title": "Delete session",
+        "message": "Are you sure you want to delete this session?"
       },
       "deletePlanConfirm": {
         "title": "Delete plan",
@@ -1184,7 +1184,7 @@
         "rangeShort": "ayah {from} to {to}",
         "previewWithCount": "{surah}: ayah {from} to {to} ({count} ayahs)",
         "popoverTitle": "Edit cell",
-        "popoverTitleNew": "Add lesson",
+        "popoverTitleNew": "Add session",
         "surahLabel": "Surah",
         "fromAyahLabel": "From ayah",
         "toAyahLabel": "To ayah",
@@ -1217,10 +1217,10 @@
         "clearAll": "Clear week",
         "preview": "Preview plan",
         "clearConfirmTitle": "Clear week",
-        "clearConfirmMessage": "All lessons and rest days for this week will be deleted. This cannot be undone.",
+        "clearConfirmMessage": "All sessions and rest days for this week will be deleted. This cannot be undone.",
         "clearedToast": "Week cleared",
         "previewTitle": "Plan preview",
-        "previewEmpty": "No lessons this day",
+        "previewEmpty": "No sessions this day",
         "previewRestDay": "Rest day"
       },
       "saveDraft": "Save draft",
@@ -1228,8 +1228,8 @@
       "cellCopiedToast": "Cell copied",
       "cellPastedToast": "Cell pasted",
       "cellDialog": {
-        "title": "Lesson details",
-        "empty": "No lesson planned for this cell",
+        "title": "Session details",
+        "empty": "No session planned for this cell",
         "achievements": "Linked achievements",
         "record": "Record achievement",
         "noAchievements": "No achievements recorded yet"

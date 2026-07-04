@@ -1033,13 +1033,13 @@
       "validation": {
         "student": "اختر الطالب",
         "range": "نطاق الآيات غير صحيح",
-        "pickLesson": "اختر درسًا من خطة اليوم"
+        "pickLesson": "اختر جلسة من خطة اليوم"
       },
       "deleteConfirm": {
         "title": "حذف الإنجاز",
         "message": "هل أنت متأكد من حذف هذا الإنجاز؟ لا يمكن التراجع عن هذا الإجراء."
       },
-      "lessonFromPlan": "الدرس (من خطة اليوم)",
+      "lessonFromPlan": "الجلسة (من خطة اليوم)",
       "noPlanForDay": "لا توجد خطة لهذا اليوم — أدخل النطاق يدويًا",
       "enterManually": "إدخال يدوي",
       "usePlan": "اختر من الخطة",
@@ -1089,7 +1089,7 @@
       "unapprove": "إلغاء الاعتماد",
       "unapprovedToast": "تم إلغاء اعتماد الخطة",
       "approveErrorTitle": "خطأ في اعتماد الخطة",
-      "addItem": "إضافة درس",
+      "addItem": "إضافة جلسة",
       "weekOf": "أسبوع {date}",
       "selectStudent": "اختر الطالب",
       "noPlan": "لا توجد خطة لهذا الأسبوع بعد",
@@ -1097,9 +1097,9 @@
       "coverage": "{achieved}/{total} آية ({percent}%)",
       "deletePlan": "حذف الخطة",
       "planDeletedToast": "تم حذف الخطة",
-      "itemAddedToast": "تمت إضافة الدرس",
-      "itemUpdatedToast": "تم تحديث الدرس",
-      "itemDeletedToast": "تم حذف الدرس",
+      "itemAddedToast": "تمت إضافة الجلسة",
+      "itemUpdatedToast": "تم تحديث الجلسة",
+      "itemDeletedToast": "تم حذف الجلسة",
       "table": {
         "day": "اليوم",
         "track": "المسار",
@@ -1130,13 +1130,13 @@
         "delete": "حذف"
       },
       "form": {
-        "addTitle": "إضافة درس",
-        "editTitle": "تعديل درس",
+        "addTitle": "إضافة جلسة",
+        "editTitle": "تعديل جلسة",
         "day": "اليوم"
       },
       "deleteItemConfirm": {
-        "title": "حذف الدرس",
-        "message": "هل أنت متأكد من حذف هذا الدرس؟"
+        "title": "حذف الجلسة",
+        "message": "هل أنت متأكد من حذف هذه الجلسة؟"
       },
       "deletePlanConfirm": {
         "title": "حذف الخطة",
@@ -1184,7 +1184,7 @@
         "rangeShort": "من آية {from} إلى {to}",
         "previewWithCount": "{surah}: من آية {from} إلى {to} ({count} آيات)",
         "popoverTitle": "تعديل الخلية",
-        "popoverTitleNew": "إضافة درس جديد",
+        "popoverTitleNew": "إضافة جلسة جديدة",
         "surahLabel": "السورة",
         "fromAyahLabel": "من الآية",
         "toAyahLabel": "إلى الآية",
@@ -1228,8 +1228,8 @@
       "cellCopiedToast": "تم نسخ الخلية",
       "cellPastedToast": "تم لصق الخلية",
       "cellDialog": {
-        "title": "تفاصيل الدرس",
-        "empty": "لا يوجد درس مخطط لهذه الخلية",
+        "title": "تفاصيل الجلسة",
+        "empty": "لا توجد جلسة مخططة لهذه الخلية",
         "achievements": "عمليات الإنجاز المرتبطة",
         "record": "تسجيل إنجاز",
         "noAchievements": "لا توجد إنجازات مسجلة بعد"

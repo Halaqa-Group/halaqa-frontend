@@ -21,7 +21,10 @@
       "Bash(grep -qE \"Local:|ELIFECYCLE|build failed\" \"C:\\\\\\\\Users\\\\\\\\nassr\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-nassr-Github-my-work-halaqa-nuxtjs\\\\\\\\4e4034c0-c6d5-41c2-be33-dfa9b499c5b6\\\\\\\\tasks\\\\\\\\bvyhkdvn6.output\")",
       "Bash(grep -E \"Local:|Nitro server built|✔|ELIFECYCLE|build failed\" \"C:\\\\\\\\Users\\\\\\\\nassr\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-nassr-Github-my-work-halaqa-nuxtjs\\\\\\\\4e4034c0-c6d5-41c2-be33-dfa9b499c5b6\\\\\\\\tasks\\\\\\\\bvyhkdvn6.output\")",
       "Bash(grep -qE \"Local:|ELIFECYCLE|build failed\" \"C:\\\\\\\\Users\\\\\\\\nassr\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-nassr-Github-my-work-halaqa-nuxtjs\\\\\\\\4e4034c0-c6d5-41c2-be33-dfa9b499c5b6\\\\\\\\tasks\\\\\\\\b74krvn7f.output\")",
-      "Bash(grep -E \"Local:|Nitro server built|✔|ELIFECYCLE|build failed|TS error|Error:\" \"C:\\\\\\\\Users\\\\\\\\nassr\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-nassr-Github-my-work-halaqa-nuxtjs\\\\\\\\4e4034c0-c6d5-41c2-be33-dfa9b499c5b6\\\\\\\\tasks\\\\\\\\b74krvn7f.output\")"
+      "Bash(grep -E \"Local:|Nitro server built|✔|ELIFECYCLE|build failed|TS error|Error:\" \"C:\\\\\\\\Users\\\\\\\\nassr\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-nassr-Github-my-work-halaqa-nuxtjs\\\\\\\\4e4034c0-c6d5-41c2-be33-dfa9b499c5b6\\\\\\\\tasks\\\\\\\\b74krvn7f.output\")",
+      "Bash(pnpm install *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:3000/)",
+      "PowerShell(Get-NetTCPConnection *)"
     ]
   }
 }

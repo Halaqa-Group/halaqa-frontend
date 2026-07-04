@@ -97,7 +97,7 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
 
 <template>
   <div v-if="isLoading && students.length === 0" class="flex justify-center py-16">
-    <LucideLoaderCircle class="w-8 h-8 animate-spin text-primary" />
+    <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
   </div>
 
   <div v-else-if="error" class="p-6 text-sm text-error text-center">

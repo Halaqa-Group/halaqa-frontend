@@ -358,7 +358,7 @@ watch(modalOpen, (open) => {
 
     <template #body>
       <div v-if="loading" class="flex items-center justify-center py-16">
-        <LucideLoaderCircle class="w-8 h-8 animate-spin text-primary" />
+        <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
       </div>
 
       <UForm

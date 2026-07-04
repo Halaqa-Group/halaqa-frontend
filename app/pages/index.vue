@@ -190,7 +190,7 @@ onMounted(async () => {
       <div
         class="flex items-center gap-2 px-4 py-2 rounded-xl shrink-0"
         style="background-color: var(--color-primary-container);">
-        <LucideShieldCheck class="w-4 h-4" style="color: var(--color-primary);" />
+        <UIcon name="i-lucide-shield-check" class="w-4 h-4" style="color: var(--color-primary);" />
         <span class="text-sm font-semibold" style="color: var(--color-primary);">
           {{ $t(`roles.${userRoleLabel}`) }}
         </span>
@@ -200,7 +200,7 @@ onMounted(async () => {
     <SchoolSummaryCard />
 
     <div v-if="isLoading" class="flex justify-center py-16">
-      <LucideLoaderCircle class="w-10 h-10 animate-spin" style="color: var(--color-primary);" />
+      <UIcon name="i-lucide-loader-circle" class="w-10 h-10 animate-spin" style="color: var(--color-primary);" />
     </div>
 
     <template v-else>
@@ -210,7 +210,7 @@ onMounted(async () => {
           style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-primary-container);">
-              <LucideUsers class="w-5 h-5" style="color: var(--color-primary);" />
+              <UIcon name="i-lucide-users" class="w-5 h-5" style="color: var(--color-primary);" />
             </div>
             <svg width="80" height="24" class="opacity-60">
               <path
@@ -249,7 +249,7 @@ onMounted(async () => {
           style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-track-hifz-bg);">
-              <LucideLayoutGrid class="w-5 h-5" style="color: var(--color-secondary);" />
+              <UIcon name="i-lucide-layout-grid" class="w-5 h-5" style="color: var(--color-secondary);" />
             </div>
             <svg width="80" height="24" class="opacity-60">
               <path
@@ -277,7 +277,7 @@ onMounted(async () => {
           style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-conflict-bg);">
-              <LucideUserCheck class="w-5 h-5" style="color: var(--color-status-conflict);" />
+              <UIcon name="i-lucide-user-check" class="w-5 h-5" style="color: var(--color-status-conflict);" />
             </div>
             <svg width="80" height="24" class="opacity-60">
               <path
@@ -320,7 +320,7 @@ onMounted(async () => {
           style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-ok-bg);">
-              <LucideCalendarCheck class="w-5 h-5" style="color: var(--color-status-ok);" />
+              <UIcon name="i-lucide-calendar-check" class="w-5 h-5" style="color: var(--color-status-ok);" />
             </div>
           </div>
           <div>
@@ -339,7 +339,7 @@ onMounted(async () => {
           style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-start justify-between">
             <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-warning-bg);">
-              <LucideClock4 class="w-5 h-5" style="color: var(--color-status-warning);" />
+              <UIcon name="i-lucide-clock-4" class="w-5 h-5" style="color: var(--color-status-warning);" />
             </div>
             <svg width="80" height="24" class="opacity-60">
               <path
@@ -379,7 +379,7 @@ onMounted(async () => {
           class="rounded-2xl p-6 ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-center gap-2 mb-5">
-            <LucideCalendarClock class="w-5 h-5" style="color: var(--color-primary);" />
+            <UIcon name="i-lucide-calendar-clock" class="w-5 h-5" style="color: var(--color-primary);" />
             <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
               {{ $t('pages.home.schedule.title') }}
             </h3>
@@ -418,7 +418,7 @@ onMounted(async () => {
           style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-2">
-              <LucideBarChart3 class="w-5 h-5" style="color: var(--color-primary);" />
+              <UIcon name="i-lucide-bar-chart-3" class="w-5 h-5" style="color: var(--color-primary);" />
               <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
                 {{ $t('pages.home.weeklyAttendance.title') }}
               </h3>
@@ -470,7 +470,7 @@ onMounted(async () => {
           class="rounded-2xl p-6 ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-center gap-2 mb-5">
-            <LucideTrophy class="w-5 h-5" style="color: var(--color-secondary);" />
+            <UIcon name="i-lucide-trophy" class="w-5 h-5" style="color: var(--color-secondary);" />
             <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
               {{ $t('pages.home.topPerformers.title') }}
             </h3>
@@ -519,7 +519,7 @@ onMounted(async () => {
           class="rounded-2xl p-6 ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
           <div class="flex items-center gap-2 mb-5">
-            <LucideAlertTriangle class="w-5 h-5" style="color: var(--color-status-warning);" />
+            <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-warning);" />
             <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
               {{ $t('pages.home.absenceAlerts.title') }}
             </h3>
@@ -533,7 +533,7 @@ onMounted(async () => {
               <div
                 class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style="background-color: var(--color-status-warning-light);">
-                <LucideUserX class="w-5 h-5" style="color: var(--color-status-warning);" />
+                <UIcon name="i-lucide-user-x" class="w-5 h-5" style="color: var(--color-status-warning);" />
               </div>
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-semibold" style="color: var(--color-on-surface);">
@@ -554,7 +554,7 @@ onMounted(async () => {
             <div
               v-if="mockAbsenceAlerts.length === 0"
               class="text-center py-8">
-              <LucideCheckCircle class="w-8 h-8 mx-auto mb-2" style="color: var(--color-status-ok);" />
+              <UIcon name="i-lucide-check-circle" class="w-8 h-8 mx-auto mb-2" style="color: var(--color-status-ok);" />
               <p class="text-sm" style="color: var(--color-on-surface-variant);">
                 {{ $t('pages.home.absenceAlerts.noAlerts') }}
               </p>
@@ -567,7 +567,7 @@ onMounted(async () => {
         class="rounded-2xl p-6 ring ring-card-border"
         style="background-color: var(--color-surface-container-lowest);">
         <div class="flex items-center gap-2 mb-5">
-          <LucideActivity class="w-5 h-5" style="color: var(--color-primary);" />
+          <UIcon name="i-lucide-activity" class="w-5 h-5" style="color: var(--color-primary);" />
           <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
             {{ $t('pages.home.recentActivity.title') }}
           </h3>
@@ -628,7 +628,7 @@ onMounted(async () => {
 
       <div v-if="students.length === 0 || true" class="flex flex-col items-center gap-4 py-16 rounded-2xl ring-1 ring-card-border">
         <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-primary-container">
-          <LucideBookOpenText class="w-8 h-8 text-primary" />
+          <UIcon name="i-lucide-book-open-text" class="w-8 h-8 text-primary" />
         </div>
         <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
           {{ $t('pages.home.welcome.title') }}

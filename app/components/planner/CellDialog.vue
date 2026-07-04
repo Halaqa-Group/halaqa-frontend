@@ -221,7 +221,7 @@ watch(open, (v) => {
           </div>
 
           <div v-if="loadingAch" class="flex justify-center py-4">
-            <LucideLoaderCircle class="w-5 h-5 animate-spin text-primary" />
+            <UIcon name="i-lucide-loader-circle" class="w-5 h-5 animate-spin text-primary" />
           </div>
           <p v-else-if="achievements.length === 0" class="text-xs text-muted text-center py-3">
             {{ t('pages.planner.cellDialog.noAchievements') }}

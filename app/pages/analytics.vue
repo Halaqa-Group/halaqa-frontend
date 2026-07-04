@@ -102,7 +102,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
     </div>
 
     <div v-if="isLoading" class="flex justify-center py-16">
-      <LucideLoaderCircle class="w-10 h-10 animate-spin" style="color: var(--color-primary);" />
+      <UIcon name="i-lucide-loader-circle" class="w-10 h-10 animate-spin" style="color: var(--color-primary);" />
     </div>
 
     <div
@@ -110,7 +110,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       class="flex flex-col items-center gap-3 py-16 rounded-2xl"
       style="background-color: var(--color-surface-container-lowest);"
     >
-      <LucideBarChart3 class="w-12 h-12" style="color: var(--color-on-surface-variant);" />
+      <UIcon name="i-lucide-bar-chart-3" class="w-12 h-12" style="color: var(--color-on-surface-variant);" />
       <p style="color: var(--color-on-surface-variant);">
         {{ $t('pages.analytics.selectHalaqaForAnalytics') }}
       </p>
@@ -121,7 +121,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-warning-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-status-warning);">{{ $t('pages.analytics.unplanned.label') }}</span>
-            <LucideZap class="w-5 h-5" style="color: var(--color-status-warning);" />
+            <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
           </div>
           <p class="text-2xl font-bold leading-snug" style="color: var(--color-status-warning);">
             {{ warnings.unplannedAchievements.length }}
@@ -134,7 +134,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-conflict-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-status-conflict);">{{ $t('pages.analytics.conflicts.label') }}</span>
-            <LucideAlertTriangle class="w-5 h-5" style="color: var(--color-status-conflict);" />
+            <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
           </div>
           <p class="text-2xl font-bold leading-snug" style="color: var(--color-status-conflict);">
             {{ warnings.flaggedConflicts.length }}
@@ -147,7 +147,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-overdue-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-status-overdue);">{{ $t('pages.analytics.overdue.label') }}</span>
-            <LucideClockAlert class="w-5 h-5" style="color: var(--color-status-overdue);" />
+            <UIcon name="i-lucide-clock-alert" class="w-5 h-5" style="color: var(--color-status-overdue);" />
           </div>
           <p class="text-2xl font-bold leading-snug" style="color: var(--color-status-overdue);">
             {{ warnings.overdueItems.length }}
@@ -164,7 +164,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);"
       >
         <div class="flex items-center gap-2 mb-4">
-          <LucideZap class="w-5 h-5" style="color: var(--color-status-warning);" />
+          <UIcon name="i-lucide-zap" class="w-5 h-5" style="color: var(--color-status-warning);" />
           <h3 class="text-base font-medium leading-relaxed font-semibold" style="color: var(--color-on-surface);">
             {{ $t('pages.analytics.unplanned.title') }}
           </h3>
@@ -205,7 +205,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         style="background-color: var(--color-surface-container-lowest); border: 1px solid var(--color-card-border);"
       >
         <div class="flex items-center gap-2 mb-4">
-          <LucideAlertTriangle class="w-5 h-5" style="color: var(--color-status-conflict);" />
+          <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-conflict);" />
           <h3 class="text-base font-medium leading-relaxed font-semibold" style="color: var(--color-on-surface);">
             {{ $t('pages.analytics.conflicts.title') }}
           </h3>
@@ -245,7 +245,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         class="flex flex-col items-center gap-3 py-16 rounded-2xl"
         style="background-color: var(--color-status-ok-bg);"
       >
-        <LucideCheckCircle class="w-12 h-12" style="color: var(--color-status-ok);" />
+        <UIcon name="i-lucide-check-circle" class="w-12 h-12" style="color: var(--color-status-ok);" />
         <p class="text-base font-medium leading-relaxed font-semibold" style="color: var(--color-status-ok);">
           {{ $t('pages.analytics.allClear.title') }}
         </p>

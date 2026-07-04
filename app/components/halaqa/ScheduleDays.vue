@@ -130,7 +130,7 @@ function clearAllDays() {
     >
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div class="flex items-center gap-1.5 text-xs font-medium text-muted">
-          <LucideZap class="size-3.5" />
+          <UIcon name="i-lucide-zap" class="size-3.5" />
           {{ t('pages.halaqat.scheduleQuickActions') }}
         </div>
         <div class="flex items-center gap-1">

@@ -51,11 +51,11 @@ onMounted(fetchChildren)
     </div>
 
     <div v-if="isLoading" class="flex justify-center py-10">
-      <LucideLoaderCircle class="h-8 w-8 animate-spin text-primary" />
+      <UIcon name="i-lucide-loader-circle" class="h-8 w-8 animate-spin text-primary" />
     </div>
 
     <div v-else-if="error" class="rounded-2xl p-6 text-center bg-status-conflict-bg">
-      <LucideAlertCircle class="w-8 h-8 mx-auto mb-2 text-status-conflict" />
+      <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2 text-status-conflict" />
       <p class="text-status-conflict">
         {{ error }}
       </p>

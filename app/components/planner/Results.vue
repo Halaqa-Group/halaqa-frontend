@@ -52,7 +52,7 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
 
 <template>
   <div v-if="isLoading && !plan" class="flex justify-center py-16">
-    <LucideLoaderCircle class="w-8 h-8 animate-spin text-primary" />
+    <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
   </div>
 
   <div v-else-if="!selectedStudentId" class="flex flex-col items-center justify-center gap-3 py-14">

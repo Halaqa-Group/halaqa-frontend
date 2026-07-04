@@ -63,7 +63,7 @@ watch(studentId, () => {
     </div>
 
     <div v-else-if="error" class="rounded-2xl p-6 text-center bg-status-conflict-bg">
-      <LucideAlertCircle class="w-8 h-8 mx-auto mb-2 text-status-conflict" />
+      <UIcon name="i-lucide-alert-circle" class="w-8 h-8 mx-auto mb-2 text-status-conflict" />
       <p class="text-status-conflict">
         {{ error }}
       </p>

@@ -180,7 +180,22 @@ export function useAchievements() {
   async function updateAchievement(id: number, data: CreateAchievementDto) {
     isSaving.value = true
     try {
-      const body = await withComputedScore(data)
+      const full = await withComputedScore(data)
+      // The update endpoint only accepts mutable fields — student_id, halaqa_id
+      // and date are immutable for an existing record and are rejected by the
+      // backend's whitelist ("property student_id should not exist").
+      const body = {
+        track_type: full.track_type,
+        start_surah: full.start_surah,
+        start_verse: full.start_verse,
+        end_surah: full.end_surah,
+        end_verse: full.end_verse,
+        mistakes_count: full.mistakes_count,
+        warnings_count: full.warnings_count,
+        tajweed_errors_count: full.tajweed_errors_count,
+        percentage_score: full.percentage_score,
+        teacher_notes: full.teacher_notes
+      }
       const updated = await api<ApiAchievement>(`/achievements/${id}`, { method: 'PATCH', body })
       await loadAchievements()
       return updated

@@ -22,3 +22,6 @@ logs
 .env
 .env.*
 !.env.example
+
+# QUL mushaf-layout SQLite export (large binary; downloaded locally)
+scripts/data/*.sqlite

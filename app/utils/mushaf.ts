@@ -20,6 +20,16 @@ export function makeRangePredicate(
 }
 
 export function synthesizeLines(page: MushafPageData): RenderedLine[] {
+  if (page.lines.some(l => l.lt)) {
+    const out: RenderedLine[] = []
+    for (const line of page.lines) {
+      if (line.lt === 'surah_name') out.push({ kind: 'surah_name', n: line.n, surah: line.surah ?? 0 })
+      else if (line.lt === 'basmallah') out.push({ kind: 'basmala', n: line.n })
+      else out.push({ kind: 'ayah', n: line.n, words: line.words })
+    }
+    return out
+  }
+
   const apiByLine = new Map<number, MushafPageData['lines'][number]>()
   for (const line of page.lines) apiByLine.set(line.n, line)
 

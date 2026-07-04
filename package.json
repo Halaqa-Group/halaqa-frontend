@@ -10,7 +10,8 @@
     "typecheck": "nuxt typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build:quran": "node scripts/build-quran-assets.mjs"
+    "build:quran": "node scripts/build-quran-assets.mjs",
+    "build:mushaf-layout": "node --experimental-sqlite scripts/build-mushaf-layout.mjs"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.102",

@@ -1,7 +1,13 @@
 import type { MushafApiLine, MushafPageData, MushafWord } from '~/types/mushaf'
 
 type WireWord = [string, number] | [string, number, string] | [string, string, number] | [string, string, number, string]
-interface WireLine { n: number, k?: string, w: WireWord[] }
+interface WireLine {
+  n: number
+  k?: string
+  w?: WireWord[]
+  lt?: 'ayah' | 'surah_name' | 'basmallah'
+  sn?: number
+}
 interface WirePage { page: number, surahs: number[], verses: string[], lines: WireLine[] }
 
 function normalizeWord(tuple: WireWord, lineK: string | undefined): MushafWord {
@@ -20,7 +26,9 @@ function normalizeWord(tuple: WireWord, lineK: string | undefined): MushafWord {
 function normalizePage(wire: WirePage): MushafPageData {
   const lines: MushafApiLine[] = wire.lines.map(line => ({
     n: line.n,
-    words: line.w.map(t => normalizeWord(t, line.k))
+    words: (line.w ?? []).map(t => normalizeWord(t, line.k)),
+    lt: line.lt,
+    surah: line.sn
   }))
   return { page: wire.page, surahs: wire.surahs, verses: wire.verses, lines }
 }
@@ -57,13 +65,16 @@ function ensureFontLoaded(page: number): Promise<void> {
     `local(QCF_P${paddedPage(page)}), url(${FONT_URL(page)}) format('woff2')`,
     { display: 'block' }
   )
-  const p = ff.load().then(loaded => {
+  const p = ff.load().then((loaded) => {
     document.fonts.add(loaded)
     injectClassBinding(page)
     fontReady.add(page)
   })
   fontLoaded.set(page, p)
-  p.catch(() => { fontLoaded.delete(page); fontReady.delete(page) })
+  p.catch(() => {
+    fontLoaded.delete(page)
+    fontReady.delete(page)
+  })
   return p
 }
 
@@ -181,11 +192,15 @@ export function warmAllFontBytes(): Promise<void> {
     async function worker() {
       while (queue.length) {
         const p = queue.shift()!
-        if (fontReady.has(p)) { await paceIdle(); continue }
+        if (fontReady.has(p)) {
+          await paceIdle()
+          continue
+        }
         try {
           const res = await fetch(`/quran/fonts/v1/p${p}.woff2`, { cache: 'force-cache' })
           await res.blob()
         } catch {
+          // ignore fetch failures during idle warmup
         }
         await paceIdle()
       }

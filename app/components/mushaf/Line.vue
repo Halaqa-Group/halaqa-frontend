@@ -71,9 +71,6 @@ function markClass(mark: MarkType | undefined): string | null {
   justify-content: center;
 }
 
-.mushaf-line--ayah {
-}
-
 .mushaf-line--surah,
 .mushaf-line--basmala {
   justify-content: center;

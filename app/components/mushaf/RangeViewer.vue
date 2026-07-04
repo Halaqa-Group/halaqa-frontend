@@ -30,9 +30,32 @@ const highlight = computed(() =>
   makeRangePredicate(props.startSurah, props.startVerse, props.endSurah, props.endVerse)
 )
 
+// ── Page-by-page navigation ───────────────────────────────────────────────────
+const current = ref(0)
+const currentPage = computed<number | undefined>(() => pages.value[current.value])
+const hasMultiple = computed(() => pages.value.length > 1)
+const canPrev = computed(() => current.value > 0)
+const canNext = computed(() => current.value < pages.value.length - 1)
+function prev() {
+  if (canPrev.value) current.value--
+}
+function next() {
+  if (canNext.value) current.value++
+}
+
 watch(pages, (list) => {
+  current.value = 0
   for (const p of list) prefetchMushafPage(p)
 }, { immediate: true })
+
+const pageEl = ref<HTMLElement | null>(null)
+useSwipe(pageEl, {
+  threshold: 40,
+  onSwipeEnd(_e, direction) {
+    if (direction === 'left') next()
+    else if (direction === 'right') prev()
+  }
+})
 
 const rangeLabel = computed(() => {
   const startName = SURAH_NAMES[props.startSurah] ?? `سورة ${props.startSurah}`
@@ -61,21 +84,48 @@ const rangeLabel = computed(() => {
     <template v-else>
       <div class="mushaf-range-viewer__header" dir="rtl">
         <span class="mushaf-range-viewer__range-label">{{ rangeLabel }}</span>
-        <span class="mushaf-range-viewer__pages-label">
-          {{ pages.length === 1 ? `صفحة ${pages[0]}` : `صفحات ${pages[0]}–${pages[pages.length - 1]}` }}
-        </span>
+
+        <!-- Multi-page: page-by-page nav. Single page: static label. -->
+        <div v-if="hasMultiple" class="mushaf-range-viewer__nav">
+          <UButton
+            icon="i-lucide-chevron-right"
+            size="sm"
+            color="neutral"
+            variant="soft"
+            square
+            :disabled="!canPrev"
+            :aria-label="'الصفحة السابقة'"
+            @click="prev"
+          />
+          <span class="mushaf-range-viewer__pos tabular-nums">صفحة {{ currentPage }} · {{ current + 1 }}/{{ pages.length }}</span>
+          <UButton
+            icon="i-lucide-chevron-left"
+            size="sm"
+            color="neutral"
+            variant="soft"
+            square
+            :disabled="!canNext"
+            :aria-label="'الصفحة التالية'"
+            @click="next"
+          />
+        </div>
+        <span v-else class="mushaf-range-viewer__pages-label">صفحة {{ pages[0] }}</span>
       </div>
 
-      <div class="mushaf-range-viewer__stack">
+      <!-- One page at a time; swipeable on touch devices -->
+      <div ref="pageEl" class="mushaf-range-viewer__page">
         <MushafPage
-          v-for="p in pages"
-          :key="p"
-          :page-number="p"
+          v-if="currentPage"
+          :page-number="currentPage"
           :highlight="highlight"
           :marks="marks"
           :on-word-tap="onWordTap"
         />
       </div>
+
+      <p v-if="hasMultiple" class="mushaf-range-viewer__swipe-hint sm:hidden">
+        اسحب يمينًا أو يسارًا للتنقل بين الصفحات
+      </p>
     </template>
   </div>
 </template>
@@ -90,7 +140,8 @@ const rangeLabel = computed(() => {
 .mushaf-range-viewer__header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 0.75rem;
   max-width: 640px;
   margin: 0 auto;
   width: 100%;
@@ -102,17 +153,36 @@ const rangeLabel = computed(() => {
   font-size: 1rem;
   font-weight: 600;
   color: #1c1917;
+  min-width: 0;
 }
 
 .mushaf-range-viewer__pages-label {
   font-size: 0.8rem;
   color: #78716c;
+  white-space: nowrap;
 }
 
-.mushaf-range-viewer__stack {
+.mushaf-range-viewer__nav {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.mushaf-range-viewer__pos {
+  font-size: 0.8rem;
+  color: #57534e;
+  white-space: nowrap;
+}
+
+.mushaf-range-viewer__page {
+  touch-action: pan-y;
+}
+
+.mushaf-range-viewer__swipe-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #a8a29e;
 }
 
 .mushaf-range-viewer__hint,

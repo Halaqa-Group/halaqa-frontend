@@ -26,7 +26,6 @@ function jump() {
   router.push(`/dev/mushaf/${p}`)
 }
 
-// Quick-jump landmarks for sanity-checking the renderer at a glance.
 const LANDMARKS = [
   { page: 1, label: 'الفاتحة' },
   { page: 2, label: 'البقرة' },

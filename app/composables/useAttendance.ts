@@ -29,8 +29,6 @@ const search = ref('')
 const attendanceRows = ref<AttendanceRow[]>([])
 const existingRecords = ref<Map<string, ExistingRecord>>(new Map())
 const originalSnapshot = ref<Map<string, RowSnapshot>>(new Map())
-// Past 14 days of attendance for the loaded halaqa, grouped by ISO date.
-// Populated by loadSession; powers buildDateStrip and wasAbsentYesterday.
 const historyByDate = ref<Map<string, ApiAttendance[]>>(new Map())
 const selectedHalaqaId = ref<number | null>(null)
 const selectedDate = ref<string>(new Date().toISOString().split('T')[0]!)
@@ -85,9 +83,7 @@ export function useAttendance() {
       fromDate.setDate(fromDate.getDate() - 14)
 
       const [studentsRaw, existingData, historyData] = await Promise.all([
-        // Students come from the real backend (snake_case, paginated envelope).
         api<ApiStudentListResult | ApiStudent[]>(`/students?halaqa_id=${halaqaId}&limit=100`),
-        // Attendance is mock-served (no backend module); its mock filters by camelCase halaqaId.
         api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`),
         api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&from=${isoOf(fromDate)}&to=${date}`)
       ])
@@ -113,8 +109,6 @@ export function useAttendance() {
           studentId: String(s.id),
           name: s.name,
           avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
-          // current_surah is not on the slimmed ApiStudent — it belongs to the
-          // (not-yet-built) achievements module. Leave as a placeholder.
           currentSurah: '—',
           status: ex ? backendToStatus(ex.status) : 'present' as AttendanceStatus,
           notes: ex?.notes || ''

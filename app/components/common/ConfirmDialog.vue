@@ -6,7 +6,6 @@ const props = withDefaults(defineProps<{
   confirmLabel?: string
   cancelLabel?: string
   destructive?: boolean
-  // Override the default icon. Falls back to a destructive/info pair.
   icon?: string
   loading?: boolean
 }>(), {
@@ -28,8 +27,6 @@ const isOpen = computed({
 
 function onConfirm() {
   emit('confirm')
-  // Caller closes the dialog explicitly when its async work resolves; closing
-  // here would race a `loading` button state.
   if (!props.loading) isOpen.value = false
 }
 

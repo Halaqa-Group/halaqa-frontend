@@ -60,7 +60,6 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <!-- Header -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div class="space-y-1">
         <h1 class="text-2xl font-bold">
@@ -77,7 +76,6 @@ onMounted(() => {
       </UButton>
     </div>
 
-    <!-- No halaqa selected -->
     <div
       v-if="!hasHalaqa"
       class="flex flex-col items-center gap-3 py-12 rounded-xl border border-default bg-default"
@@ -108,7 +106,6 @@ onMounted(() => {
       </template>
     </UCard>
 
-    <!-- Record / edit modal -->
     <UModal
       v-model:open="recordOpen"
       :title="editing ? t('pages.achievements.editTitle') : t('pages.achievements.recordTitle')"

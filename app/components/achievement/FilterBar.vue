@@ -37,8 +37,6 @@ const formattedDate = computed(() => {
   }
 })
 
-// UCalendar's model can be a single date, a range, or an array; we only use the
-// single-date mode here. Typed as unknown to satisfy the broad handler signature.
 function onCalendarPick(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !('year' in value)) return
   const v = value as { year: number, month: number, day: number }

@@ -24,15 +24,12 @@ const { createHalaqa, updateHalaqa, fetchTeachers } = useHalaqat()
 
 const isEdit = computed(() => props.editing != null)
 
-// Real teachers in the caller's school — fetched on mount from
-// GET /users?role=teacher&status=active. Errors are surfaced inline so the
-// user can retry rather than silently seeing an empty dropdown.
 const teachers = ref<ApiTeacherOption[]>([])
 const teachersLoading = ref(false)
 const teachersError = ref<string | null>(null)
 
 async function loadTeachers() {
-  if (isEdit.value) return // edit form doesn't show the teacher field
+  if (isEdit.value) return
   teachersLoading.value = true
   teachersError.value = null
   try {

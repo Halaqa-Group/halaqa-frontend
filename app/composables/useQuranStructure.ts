@@ -1,12 +1,3 @@
-/**
- * Loads mushaf structural boundaries used by the plan generator.
- *
- * `meta/quran-structure.json` (built by scripts/build-quran-assets.mjs) holds
- * ascending verse_key arrays for pages / juz / hizb / rub-el-hizb (quarter).
- * It's optional: `surah` boundaries are computed locally and `page` falls back
- * to verse-to-page.json, so the wizard's core units keep working even before
- * the asset is generated. juz/hizb/quarter simply report unavailable until then.
- */
 import { pageStartsFromMap, surahStarts, type PlanUnit } from '~/utils/quran-structure'
 
 interface QuranStructure {
@@ -29,7 +20,6 @@ async function loadStructure(): Promise<QuranStructure | null> {
       return s
     })
     .catch(() => {
-      // Asset not built yet — degrade gracefully.
       inflight = null
       return null
     })
@@ -47,7 +37,6 @@ export function useQuranStructure() {
       .finally(() => { loading.value = false })
   }
 
-  /** Whether a unit can be generated right now (has boundary data). */
   function unitAvailable(unit: PlanUnit): boolean {
     if (unit === 'surah') return true
     if (unit === 'page') return !!data.value?.pageStarts?.length || !!v2p.value
@@ -57,7 +46,6 @@ export function useQuranStructure() {
     return false
   }
 
-  /** Ascending unit-start verse_keys for a unit, or [] when unavailable. */
   function boundariesFor(unit: PlanUnit): string[] {
     switch (unit) {
       case 'surah':

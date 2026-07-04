@@ -6,14 +6,8 @@ import type { MarkType, RecitationMarks, WordKey } from '~/types/recitation'
 const props = defineProps<{
   line: RenderedLine
   pageNumber: number
-  // Optional predicate: words whose verse_key fails the test get dimmed.
-  // When undefined, every word renders at full opacity (no range scoping).
   highlight?: (verseKey: string) => boolean
-  // Optional mark map keyed by `${verse_key}:${position}`. Words present in
-  // the map are tinted by their MarkType.
   marks?: RecitationMarks
-  // When provided, each ayah word becomes tappable. The handler receives the
-  // WordKey ("2:255:3") and the word's verse_key separately for convenience.
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
 }>()
 
@@ -78,7 +72,6 @@ function markClass(mark: MarkType | undefined): string | null {
 }
 
 .mushaf-line--ayah {
-  /* justify-content: space-between; */
 }
 
 .mushaf-line--surah,
@@ -102,13 +95,6 @@ function markClass(mark: MarkType | undefined): string | null {
 }
 
 .mushaf-word {
-  /* Each word is its own glyph (single private-use char). The page font is
-     loaded by useMushafPage(); .p{N}-v1 is the font-family class.
-
-     Font-size scales with the *page container's* width (cqi). At 600px the
-     word is ~30px (the canonical KFGQPC v1 size); at 320px it's ~16px.
-     This is what keeps every printed line on a single visual row at any
-     viewport — no flex-wrap, no overflow. */
   display: inline-block;
   font-size: clamp(15px, 5cqi, 32px);
   color: inherit;
@@ -118,27 +104,17 @@ function markClass(mark: MarkType | undefined): string | null {
 }
 
 .mushaf-word--marker {
-  /* Ayah-end markers (the ornate circles with numbers) read better with a
-     hair of side padding so they don't kiss neighbouring words. */
   margin: 0 0.1em;
 }
 
 .mushaf-word--dim {
-  /* Words outside the range the teacher is supposed to mark — kept legible
-     but visually demoted so the eye lands on the in-range block. */
   opacity: 0.25;
 }
 
 .mushaf-word--tappable {
   cursor: pointer;
-  /* Vertical hit area sized for touch — Apple HIG suggests ~44px, Material
-     ~48px. At the mobile font size of ~1.6em × 15px ≈ 24px, padding-block
-     of 0.4em gives ~24 + 19 = 43px. */
   padding: 0.4em 3px;
-  /* Disable double-tap-to-zoom on iOS — every word would otherwise feel
-     laggy because the browser waits 300ms to confirm it's not a zoom. */
   touch-action: manipulation;
-  /* Hide blue tap highlight on Android */
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
@@ -151,7 +127,6 @@ function markClass(mark: MarkType | undefined): string | null {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-/* Mark tints — semi-transparent so the underlying glyph stays sharp. */
 .mushaf-word--mistake {
   background-color: rgba(220, 38, 38, 0.22);
 }

@@ -29,8 +29,6 @@ function formatDate(iso: string | null) {
   })
 }
 
-// ── Query + state ────────────────────────────────────────────────────────────
-
 const page = ref(1)
 const limit = ref(20)
 const search = ref('')
@@ -103,8 +101,6 @@ onMounted(async () => {
   await load()
 })
 
-// ── Modals + actions ─────────────────────────────────────────────────────────
-
 const formOpen = ref(false)
 const formMode = ref<'add' | 'edit'>('add')
 const editingUser = ref<ManagedUser | null>(null)
@@ -159,8 +155,6 @@ function onResetDone() {
   resetOpen.value = false
   resetTarget.value = null
 }
-
-// ── Table ────────────────────────────────────────────────────────────────────
 
 const columns = computed<TableColumn<ManagedUser>[]>(() => [
   { accessorKey: 'name', header: t('pages.users.columns.user') },

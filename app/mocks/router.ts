@@ -71,7 +71,6 @@ export async function tryMock(
     if (params === null) continue
     await delay(80 + Math.random() * 120)
     const data = await route.handler({ params, query, body: opts.body })
-    // Mirror the real backend's success envelope so useApi can unwrap uniformly.
     return { matched: true, data: { code: 200, data } }
   }
   return { matched: false }

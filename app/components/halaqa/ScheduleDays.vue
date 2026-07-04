@@ -64,7 +64,6 @@ function dayLabel(day: number) {
   return key ? t(`pages.halaqat.dayLong.${key}`) : ''
 }
 
-// ── Quick fill: set common prayer/time values once, push to all selected days
 const quickFill = reactive<{
   prayer_slot: PrayerSlot | null
   start_time: string
@@ -91,8 +90,7 @@ function applyQuickFill() {
   }))
 }
 
-// ── Quick day-set presets (Arab school week is Sat → Wed)
-const SCHOOL_DAYS = [0, 1, 2, 3, 4] // Sat, Sun, Mon, Tue, Wed
+const SCHOOL_DAYS = [0, 1, 2, 3, 4]
 
 function selectSchoolDays() {
   if (props.readOnly) return
@@ -111,7 +109,6 @@ function clearAllDays() {
 
 <template>
   <div class="space-y-4">
-    <!-- Day toggle row -->
     <div class="flex flex-wrap gap-2">
       <UButton
         v-for="d in HALAQA_DAY_ORDER"
@@ -127,7 +124,6 @@ function clearAllDays() {
       </UButton>
     </div>
 
-    <!-- Quick actions: presets + bulk-fill, only visible when editing -->
     <div
       v-if="!readOnly"
       class="rounded-lg border border-dashed border-default bg-elevated/40 p-3 space-y-3"
@@ -192,7 +188,6 @@ function clearAllDays() {
       </div>
     </div>
 
-    <!-- Per-day cards -->
     <div v-if="orderedRows.length === 0" class="text-sm text-muted">
       {{ t('pages.halaqat.scheduleNoEntries') }}
     </div>

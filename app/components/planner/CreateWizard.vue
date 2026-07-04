@@ -1,10 +1,4 @@
 <script setup lang="ts">
-/**
- * Plan creation wizard. Configure each of the three tracks once (start ayah,
- * daily amount, and unit) and generate the whole week — either into the editable
- * matrix for the current student, or fanned out to every / selected student in
- * the halaqa in one step.
- */
 import { expandPlan, type PlanUnit } from '~/utils/quran-structure'
 import { TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
 import { PLAN_TRACKS, type CreatePlanItemDto } from '~/composables/useWeeklyPlan'
@@ -39,7 +33,6 @@ const config = reactive<Record<TrackType, TrackConfig>>({
   Far: defaults(false)
 })
 
-// ── Target (who gets this plan) ───────────────────────────────────────────────
 const target = ref<Target>('this')
 const targetStudentIds = ref<number[]>([])
 const policy = ref<Policy>('skip')
@@ -55,14 +48,12 @@ const policyOptions = computed(() => [
   { value: 'replace' as Policy, label: t('pages.planner.wizard.conflict.replace') }
 ])
 
-/** Resolved list of student ids the plan will be applied to. */
 const resolvedStudentIds = computed<number[]>(() => {
   if (target.value === 'this') return selectedStudentId.value ? [selectedStudentId.value] : []
   if (target.value === 'all') return students.value.map(s => s.id)
   return targetStudentIds.value
 })
 
-// Reset everything each time the wizard opens.
 watch(wizardOpen, (v) => {
   if (v) {
     Object.assign(config.Hifz, defaults(true))
@@ -97,7 +88,6 @@ const submitLabel = computed(() =>
     : t('pages.planner.wizard.generate')
 )
 
-/** Expand the track configs into flat plan items for the whole week. */
 function buildItems(): CreatePlanItemDto[] {
   const days = activeDays.value
   const items: CreatePlanItemDto[] = []
@@ -129,7 +119,6 @@ async function submit() {
     return
   }
 
-  // Single student → fill the editable matrix (review, then Save draft).
   if (!isMulti.value) {
     if (!selectedStudentId.value) {
       toast.add({ title: t('pages.planner.selectStudent'), color: 'warning' })
@@ -154,7 +143,6 @@ async function submit() {
     return
   }
 
-  // Many students → create a plan per student straight away.
   const ids = resolvedStudentIds.value
   if (ids.length === 0) {
     toast.add({ title: t('pages.planner.wizard.noStudents'), color: 'warning' })
@@ -189,7 +177,6 @@ async function submit() {
   >
     <template #body>
       <div class="space-y-4">
-        <!-- Who gets this plan -->
         <div class="rounded-xl border border-default p-4 space-y-3">
           <UFormField :label="t('pages.planner.wizard.target.label')">
             <div class="flex gap-1 rounded-md border border-default p-0.5">
@@ -236,14 +223,12 @@ async function submit() {
           </UFormField>
         </div>
 
-        <!-- Per-track config -->
         <section
           v-for="track in (PLAN_TRACKS as TrackType[])"
           :key="track"
           class="rounded-xl border border-default overflow-hidden"
           :class="config[track].enabled ? 'bg-default' : 'bg-elevated'"
         >
-          <!-- Track header + enable -->
           <div class="flex items-center justify-between gap-2 px-4 py-3">
             <span class="inline-flex items-center gap-2 font-semibold">
               <UIcon :name="TRACK_ICON[track as AchievementTrack]" class="w-5 h-5 text-primary" />
@@ -252,7 +237,6 @@ async function submit() {
             <USwitch v-model="config[track].enabled" />
           </div>
 
-          <!-- Config (collapses when disabled) -->
           <div v-if="config[track].enabled" class="px-4 pb-4 space-y-4 border-t border-default pt-4">
             <UFormField :label="t('pages.planner.wizard.startAyah')">
               <PlannerAyahSelect v-model:surah="config[track].surah" v-model:verse="config[track].verse" />

@@ -57,7 +57,6 @@ function hydrate() {
     state.start_verse = src.start_verse
     state.end_surah = src.end_surah
     state.end_verse = src.end_verse
-    // A duplicate starts the error counts fresh; an edit keeps them.
     state.mistakes_count = editing.value ? (src.mistakes_count ?? 0) : 0
     state.warnings_count = editing.value ? (src.warnings_count ?? 0) : 0
     state.tajweed_errors_count = editing.value ? (src.tajweed_errors_count ?? 0) : 0
@@ -111,7 +110,6 @@ const studentNameWhenEditing = computed(() =>
   students.value.find(s => s.id === state.student_id)?.name ?? `#${state.student_id}`
 )
 
-// ── Date popover ──────────────────────────────────────────────────────────────
 const calendarOpen = ref(false)
 const calendarValue = computed(() => {
   const [y, m, d] = state.date.split('-').map(Number)
@@ -136,7 +134,6 @@ function onCalendarPick(value: unknown) {
   calendarOpen.value = false
 }
 
-// ── Validation + submit ───────────────────────────────────────────────────────
 const schema = computed(() => z.object({
   student_id: z.number().optional(),
   date: z.string().min(1),
@@ -207,7 +204,6 @@ defineExpose({ saving: isSaving })
     class="space-y-5"
     @submit="onSubmit"
   >
-    <!-- Student -->
     <UFormField :label="t('pages.achievements.table.student')" name="student_id" required>
       <div v-if="isEdit" class="flex items-center h-9 px-3 rounded-md border border-default bg-elevated text-sm text-muted">
         {{ studentNameWhenEditing }}
@@ -224,7 +220,6 @@ defineExpose({ saving: isSaving })
     </UFormField>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <!-- Date -->
       <UFormField :label="t('pages.achievements.table.date')" name="date">
         <UPopover v-model:open="calendarOpen">
           <UButton
@@ -248,13 +243,11 @@ defineExpose({ saving: isSaving })
         </UPopover>
       </UFormField>
 
-      <!-- Track -->
       <UFormField :label="t('pages.achievements.table.track')" name="track_type">
         <USelect v-model="state.track_type" :items="trackItems" value-key="value" class="w-full" />
       </UFormField>
     </div>
 
-    <!-- Verse range -->
     <UFormField :label="t('pages.achievements.table.range')" name="end_verse">
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
         <USelectMenu v-model="state.start_surah" :items="surahItems" value-key="value" searchable class="w-full" />
@@ -267,7 +260,6 @@ defineExpose({ saving: isSaving })
       </p>
     </UFormField>
 
-    <!-- Error counters -->
     <div class="grid grid-cols-3 gap-3">
       <UFormField :label="t('pages.achievements.mistakes')" name="mistakes_count">
         <UInput v-model.number="state.mistakes_count" type="number" :min="0" class="w-full" />
@@ -280,13 +272,11 @@ defineExpose({ saving: isSaving })
       </UFormField>
     </div>
 
-    <!-- Score preview -->
     <div class="flex items-center justify-between rounded-lg border border-default bg-elevated px-4 py-2.5">
       <span class="text-sm font-medium text-muted">{{ t('pages.achievements.computedScore') }}</span>
       <span class="text-xl font-bold tabular-nums" :class="scoreColor">{{ scorePreview }}%</span>
     </div>
 
-    <!-- Notes -->
     <UFormField :label="t('pages.achievements.notes')" name="teacher_notes">
       <UTextarea v-model="state.teacher_notes" :rows="3" :placeholder="t('pages.achievements.notesPlaceholder')" class="w-full" />
     </UFormField>

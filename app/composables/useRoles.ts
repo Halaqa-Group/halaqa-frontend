@@ -6,9 +6,6 @@ export interface RoleEntry {
   level: number
 }
 
-// Module-scoped cache: roles are seeded and never change at runtime, so we
-// fetch once per session. Each component that calls ensureLoaded() awaits the
-// same in-flight promise instead of issuing parallel requests.
 let inflight: Promise<RoleEntry[]> | null = null
 
 export function useRoles() {

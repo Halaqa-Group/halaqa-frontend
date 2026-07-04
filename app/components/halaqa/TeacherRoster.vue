@@ -44,8 +44,6 @@ const teacherOptions = ref<ApiTeacherOption[]>([])
 const teachersLoading = ref(false)
 const teachersError = ref<string | null>(null)
 
-// Lazy-load real teachers from the backend each time the assign modal opens —
-// keeps the dropdown current after teacher CRUD on the users page.
 async function loadTeacherOptions() {
   teachersLoading.value = true
   teachersError.value = null
@@ -64,7 +62,6 @@ function toIsoDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// ── Assign modal ──────────────────────────────────────────────────────────
 const assignSchema = computed(() => z.object({
   teacher_user_id: z.number({ error: () => t('pages.halaqat.validationTeacher') })
     .int()
@@ -130,7 +127,6 @@ async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
   }
 }
 
-// ── End assignment modal ──────────────────────────────────────────────────
 const END_REASONS: EndReason[] = ['reassigned', 'left_school', 'vacation', 'retired', 'other']
 
 const endSchema = computed(() => z.object({
@@ -191,7 +187,6 @@ async function submitEnd(event: FormSubmitEvent<EndSchema>) {
   }
 }
 
-// ── Set acting modal (Workflow A) ─────────────────────────────────────────
 const actingSchema = computed(() => z.object({
   acting_starts_at: z.string({ error: () => t('validation.required') })
     .min(1, t('validation.required')),
@@ -249,7 +244,6 @@ async function submitActing(event: FormSubmitEvent<ActingSchema>) {
   }
 }
 
-// ── Update role ───────────────────────────────────────────────────────────
 async function changeRole(assignment: ApiTeacherAssignment, role: 'main' | 'assistant') {
   try {
     await updateAssignment(props.halaqaId, assignment.id, { role })
@@ -355,7 +349,6 @@ function roleColor(role: TeacherRole) {
     </ul>
   </UCard>
 
-  <!-- Assign modal -->
   <UModal
     v-model:open="assignOpen"
     :title="t('pages.halaqat.teachers.addTitle')"
@@ -424,7 +417,6 @@ function roleColor(role: TeacherRole) {
     </template>
   </UModal>
 
-  <!-- End assignment modal -->
   <UModal
     v-model:open="endOpen"
     :title="t('pages.halaqat.teachers.endTitle')"
@@ -467,7 +459,6 @@ function roleColor(role: TeacherRole) {
     </template>
   </UModal>
 
-  <!-- Set acting modal (Workflow A) -->
   <UModal
     v-model:open="actingOpen"
     :title="t('pages.halaqat.teachers.setActing')"

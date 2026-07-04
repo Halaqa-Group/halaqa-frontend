@@ -1,10 +1,4 @@
 <script setup lang="ts">
-/**
- * Segmented 4-state attendance control (present / late / absent / excused).
- * Touch-first: full-width equal segments with large tap targets on mobile;
- * a `compact` icon-only variant fits inside the desktop table cell.
- * Direct selection (not tap-to-cycle) so every status is one tap away.
- */
 import type { AttendanceStatus } from '~/types'
 
 defineProps<{
@@ -16,8 +10,6 @@ defineProps<{
 const { t } = useI18n()
 const { setStatus } = useAttendance()
 
-// Active classes are literal strings so Tailwind's scanner emits them
-// (a dynamic `bg-${color}` would be dropped).
 const STATUSES: { value: AttendanceStatus, icon: string, active: string, labelKey: string }[] = [
   { value: 'present', icon: 'i-lucide-check', active: 'bg-success-500 text-white', labelKey: 'attendance.status.present' },
   { value: 'late', icon: 'i-lucide-clock', active: 'bg-warning-500 text-white', labelKey: 'attendance.status.late' },

@@ -26,7 +26,6 @@ const roleLabels = computed(() => (user.value?.roles ?? []).map(r => t(`roles.${
 
 <template>
   <div class="max-w-4xl mx-auto w-full px-4 py-6 space-y-6">
-    <!-- Page header -->
     <div class="space-y-1">
       <h2 class="display-lg text-on-surface">
         {{ $t('pages.profile.title') }}
@@ -36,7 +35,6 @@ const roleLabels = computed(() => (user.value?.roles ?? []).map(r => t(`roles.${
       </p>
     </div>
 
-    <!-- Identity strip -->
     <div class="flex items-center gap-4 p-4 rounded-2xl bg-elevated">
       <UAvatar v-bind="avatar" size="xl" />
       <div>

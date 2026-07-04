@@ -24,7 +24,6 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
     {{ loadError }}
   </div>
 
-  <!-- No students in halaqa -->
   <div v-else-if="attendanceRows.length === 0" class="flex flex-col items-center justify-center gap-3 py-14">
     <UIcon name="i-lucide-users" class="w-10 h-10 text-muted" />
     <p class="text-sm text-muted">
@@ -32,7 +31,6 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
     </p>
   </div>
 
-  <!-- No match for filters -->
   <div v-else-if="filteredRows.length === 0" class="flex flex-col items-center justify-center gap-3 py-14">
     <UIcon name="i-lucide-search-x" class="w-8 h-8 text-muted" />
     <p class="text-sm text-muted">
@@ -51,7 +49,6 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
   </div>
 
   <template v-else>
-    <!-- Mobile: always a single-column card list (touch-first, no horizontal scroll) -->
     <div class="md:hidden flex flex-col gap-3 p-3">
       <AttendanceCard
         v-for="row in filteredRows"
@@ -64,9 +61,7 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
       />
     </div>
 
-    <!-- Desktop: respect the view toggle -->
     <div class="hidden md:block">
-      <!-- Grid -->
       <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6">
         <AttendanceCard
           v-for="row in filteredRows"
@@ -79,7 +74,6 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
         />
       </div>
 
-      <!-- Table -->
       <div v-else class="overflow-x-auto">
         <UTable :data="filteredRows" :columns="columns" :loading="isLoading" class="min-w-[640px]">
           <template #name-cell="{ row }">

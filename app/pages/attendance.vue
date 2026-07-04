@@ -85,7 +85,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col gap-6 pb-24">
-    <!-- Header -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div class="space-y-1">
         <h1 class="text-2xl font-bold">
@@ -104,7 +103,6 @@ onBeforeUnmount(() => {
       </UButton>
     </div>
 
-    <!-- No halaqa selected -->
     <div
       v-if="!hasHalaqa"
       class="flex flex-col items-center gap-3 py-12 rounded-xl border border-default bg-default"
@@ -122,7 +120,6 @@ onBeforeUnmount(() => {
       <AttendanceResults />
     </UCard>
 
-    <!-- Sticky save bar -->
     <AttendanceStickyBar
       :is-saving="isSaving"
       @save="handleSaveAttendance"

@@ -106,9 +106,6 @@ export function useHalaqat() {
   }
 
   async function fetchTeachers(): Promise<ApiTeacherOption[]> {
-    // Only active users with the `teacher` role slug — same school is implicit
-    // from the bearer token. Backend caps page size at 100; pull in batches if
-    // a school ever exceeds that.
     const response = await api<UsersListResponse<ApiTeacher>>(
       '/users?role=teacher&status=active&limit=100'
     )

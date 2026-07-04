@@ -7,9 +7,6 @@ import type {
 import { db } from './db'
 import { MockError, register } from './router'
 
-// Auth endpoints are real (POST /auth/login, GET /auth/me, POST /auth/logout, …);
-// the absence of mock handlers here makes them fall through to $fetch in useApi.
-
 function currentSchool(): ApiSchool {
   const school = db.schools[0]
   if (!school) throw new MockError(404, 'School not found')
@@ -44,8 +41,6 @@ register('PATCH', '/school', ({ body }) => {
   }
   return school
 })
-
-// All /halaqat* paths are owned by the real backend — no mock handlers here.
 
 function serializeTeacher(u: (typeof db.users)[number]): ApiTeacher {
   return {
@@ -162,7 +157,6 @@ register('DELETE', '/teachers/:id', ({ params }) => {
   const id = Number(params.id)
   const idx = db.users.findIndex(u => u.id === id && u.role === 'teacher')
   if (idx === -1) throw new MockError(404, 'Teacher not found')
-  // Halaqa assignment check is enforced server-side by the real backend.
   db.users.splice(idx, 1)
   return { success: true }
 })
@@ -253,10 +247,6 @@ register('DELETE', '/parents/:id', ({ params }) => {
   return { success: true }
 })
 
-// Halaqat write paths fall through to the real backend.
-
-// ── Attendance ──────────────────────────────────────────────────────────────
-
 register('GET', '/attendance', ({ query }) => {
   let list = db.attendance
   if (query.halaqaId) list = list.filter(a => a.halaqa_id === Number(query.halaqaId))
@@ -295,24 +285,9 @@ register('PATCH', '/attendance/:id', ({ params, body }) => {
   return db.attendance[idx]
 })
 
-// ── Students ────────────────────────────────────────────────────────────────
-// GET /students is owned by the real backend (paginated, snake_case halaqa_id).
-// GET /students/:id is mocked here only because /recite uses it for a single
-// name lookup and we need dev-without-backend to keep working.
 register('GET', '/students/:id', ({ params }) => {
   const id = Number(params.id)
   const found = db.students.find(s => s.id === id)
   if (!found) throw new MockError(404, 'Student not found')
   return found
 })
-
-// ── Achievements & Weekly plans ──────────────────────────────────────────────
-//
-// These endpoints are served by the real NestJS backend (achievements module):
-//   /achievements, /achievements/:id(/approve|/unapprove)
-//   /weekly-plans, /weekly-plans/:id(/approve|/unapprove), /weekly-plans/:id/items
-//   /weekly-plan-items/:id
-// No mock handlers are registered for them, so they fall through to $fetch in
-// useApi. (The earlier mock contract diverged from the backend — paginated
-// envelopes, snake_case params, server-computed percentage_score and approval
-// state machine — so it was removed during the backend integration.)

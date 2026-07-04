@@ -1,7 +1,3 @@
-// Flattens the backend's HttpExceptionFilter envelope (`{ code, message, details? }`)
-// — including class-validator's `message: string[]` shape — into a single human
-// string, falling back to the caller's i18n message for network errors and the
-// 500 case.
 export function useApiError() {
   function format(e: unknown, fallback: string): string {
     const data = (e as { data?: unknown } | null)?.data

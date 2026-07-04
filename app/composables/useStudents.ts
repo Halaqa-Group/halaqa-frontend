@@ -15,9 +15,6 @@ const searchQuery = ref('')
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const totalStudents = ref(0)
-// Snapshot of the unfiltered list summary. Captured on the most recent
-// no-filter fetch so the SummaryStats cards don't shift when the user filters.
-// The backend has no dedicated stats endpoint — this snapshot is the source of truth.
 const summarySnapshot = ref<{ total: number, active: number, inactive: number, graduated: number } | null>(null)
 const PAGE_LIMIT = 20
 const currentPage = ref(1)
@@ -90,10 +87,6 @@ export function useStudents() {
     }
   }
 
-  // Capture the summary cards' values once per session from a dedicated
-  // unfiltered request. Stats stay frozen for the rest of the session
-  // regardless of filters or CRUD actions. No-op if the snapshot already
-  // exists (survives across page navigations since the ref is module-level).
   async function fetchSummarySnapshot() {
     if (summarySnapshot.value) return
     try {
@@ -108,7 +101,6 @@ export function useStudents() {
         graduated: mapped.filter(s => s.status === 'graduated').length
       }
     } catch {
-      // Non-fatal: summary cards just stay blank/fall back to loaded counts.
     }
   }
 
@@ -137,7 +129,6 @@ export function useStudents() {
   const hasMoreStudents = computed(() => students.value.length < totalStudents.value)
 
   async function createStudent(dto: Record<string, any>) {
-    // Backend forces school_id from the authenticated user; we don't send it.
     const data = await api<ApiStudent>('/students', {
       method: 'POST',
       body: dto
@@ -190,8 +181,6 @@ export function useStudents() {
     return apiToStudent(data)
   }
 
-  /** Refresh a single student's detail in the in-memory list. Used after
-   *  guardian mutations so the modal & list stay in sync. */
   async function refetchStudent(id: number | string): Promise<Student> {
     const data = await api<ApiStudent>(`/students/${id}`)
     const mapped = apiToStudent(data)

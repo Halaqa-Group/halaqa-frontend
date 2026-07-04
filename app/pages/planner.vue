@@ -110,7 +110,6 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <!-- Header -->
     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div class="space-y-1">
         <h1 class="text-2xl font-bold">
@@ -139,7 +138,6 @@ onMounted(async () => {
         >
           {{ t('pages.planner.unapprove') }}
         </UButton>
-        <!-- Matrix mode: generate wizard + save draft -->
         <UButton
           v-if="canModify && viewMode === 'matrix'"
           icon="i-lucide-wand-sparkles"
@@ -156,7 +154,6 @@ onMounted(async () => {
         >
           {{ t('pages.planner.saveDraft') }}
         </UButton>
-        <!-- Table/grid mode: single-item add -->
         <UButton
           v-if="canModify && viewMode !== 'matrix'"
           icon="i-lucide-plus"
@@ -170,7 +167,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- No halaqa -->
     <div
       v-if="!hasHalaqa"
       class="flex flex-col items-center gap-3 py-12 rounded-xl border border-default bg-default"
@@ -188,7 +184,6 @@ onMounted(async () => {
       <PlannerResults />
     </UCard>
 
-    <!-- Week summary (matrix mode) -->
     <div
       v-if="hasHalaqa && selectedStudentId && viewMode === 'matrix'"
       class="grid grid-cols-2 sm:grid-cols-4 gap-3"
@@ -229,7 +224,6 @@ onMounted(async () => {
 
     <PlannerCreateWizard />
 
-    <!-- Add / edit item modal -->
     <UModal
       v-model:open="formOpen"
       :title="editing ? t('pages.planner.form.editTitle') : t('pages.planner.form.addTitle')"

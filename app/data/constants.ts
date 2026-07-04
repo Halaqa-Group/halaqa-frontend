@@ -1,11 +1,9 @@
-// Track types for achievements (mirrors backend TrackType enum)
 export const TRACK_TYPES = [
   { value: 'Hifz', label: 'حفظ جديد', colorVar: '--color-track-hifz', bgVar: '--color-track-hifz-bg' },
   { value: 'Near', label: 'مراجعة قريبة', colorVar: '--color-track-near', bgVar: '--color-track-near-bg' },
   { value: 'Far', label: 'مراجعة بعيدة', colorVar: '--color-track-far', bgVar: '--color-track-far-bg' }
 ] as const
 
-// All 114 Quranic surahs indexed by number
 export const SURAH_NAMES: Record<number, string> = {
   1: 'الفاتحة', 2: 'البقرة', 3: 'آل عمران', 4: 'النساء', 5: 'المائدة',
   6: 'الأنعام', 7: 'الأعراف', 8: 'الأنفال', 9: 'التوبة', 10: 'يونس',
@@ -32,7 +30,6 @@ export const SURAH_NAMES: Record<number, string> = {
   111: 'المسد', 112: 'الإخلاص', 113: 'الفلق', 114: 'الناس'
 }
 
-// Flat list for selectors (short juz-based list used in attendance UI)
 export const SURAHS = Object.values(SURAH_NAMES)
 
 export const STATUS_CYCLE = [

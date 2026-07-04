@@ -26,7 +26,6 @@ const show = ref(false)
 </template>
 
 <style>
-/* Hide the password reveal button in Edge */
 ::-ms-reveal {
   display: none;
 }

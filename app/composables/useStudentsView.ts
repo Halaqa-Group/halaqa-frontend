@@ -2,9 +2,6 @@ import type { Student } from '~/types'
 
 type SortKey = 'newest' | 'nameAsc' | 'joinDateDesc'
 type ViewMode = 'grid' | 'table'
-// "deleted" is a frontend-only filter value: backend has no status='deleted'
-// enum, just an `include_deleted=true` flag. We translate it at the request
-// layer and filter client-side.
 type StatusFilter = Student['status'] | 'deleted' | null
 
 const filterStatus = ref<StatusFilter>(null)
@@ -23,10 +20,6 @@ export function useStudentsView() {
   } = useStudents()
   const { selectedHalaqaId } = useGlobalHalaqa()
 
-  // Search, status, and halaqa filters are applied server-side. The "deleted"
-  // pseudo-status is the exception — we ask the server for include_deleted and
-  // filter to soft-deleted rows here so the rest of the loaded page is hidden.
-  // Sort stays client-side (only re-orders the loaded page).
   const sortedStudents = computed(() => {
     const arr = filterStatus.value === 'deleted'
       ? students.value.filter(s => !!s.deletedAt)
@@ -42,10 +35,6 @@ export function useStudentsView() {
     }
   })
 
-  // Stats are intentionally decoupled from active filters. Backend has no
-  // dedicated stats endpoint; we capture a frozen snapshot from the first
-  // unfiltered fetch (fetchSummarySnapshot). Live counts of the loaded set
-  // are the last-resort fallback when the snapshot hasn't been taken yet.
   const summary = computed(() => {
     if (summarySnapshot.value) return summarySnapshot.value
     return {
@@ -56,7 +45,6 @@ export function useStudentsView() {
     }
   })
 
-  // How much of the server-side total we've loaded — drives the footer bar.
   const loadProgress = computed(() => {
     const denom = Math.max(totalStudents.value, 1)
     return Math.round((students.value.length / denom) * 100)

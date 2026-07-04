@@ -53,7 +53,6 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
 
 <template>
   <div class="flex flex-col gap-6">
-    <!-- Header + controls -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div class="space-y-1">
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
@@ -102,12 +101,10 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       </div>
     </div>
 
-    <!-- Loading -->
     <div v-if="isLoading" class="flex justify-center py-16">
       <LucideLoaderCircle class="w-10 h-10 animate-spin" style="color: var(--color-primary);" />
     </div>
 
-    <!-- No halaqa -->
     <div
       v-else-if="!selectedHalaqaId"
       class="flex flex-col items-center gap-3 py-16 rounded-2xl"
@@ -120,9 +117,7 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
     </div>
 
     <template v-else-if="warnings">
-      <!-- Summary cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Unplanned -->
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-warning-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-status-warning);">{{ $t('pages.analytics.unplanned.label') }}</span>
@@ -136,7 +131,6 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
           </p>
         </div>
 
-        <!-- Conflicts -->
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-conflict-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-status-conflict);">{{ $t('pages.analytics.conflicts.label') }}</span>
@@ -150,7 +144,6 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
           </p>
         </div>
 
-        <!-- Overdue -->
         <div class="rounded-2xl p-5" style="background-color: var(--color-status-overdue-bg); box-shadow: var(--shadow-card);">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-semibold leading-tight tracking-wide" style="color: var(--color-status-overdue);">{{ $t('pages.analytics.overdue.label') }}</span>
@@ -165,7 +158,6 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         </div>
       </div>
 
-      <!-- Unplanned achievements list -->
       <div
         v-if="warnings.unplannedAchievements.length > 0"
         class="rounded-2xl p-6"
@@ -207,7 +199,6 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         </div>
       </div>
 
-      <!-- Conflicts list -->
       <div
         v-if="warnings.flaggedConflicts.length > 0"
         class="rounded-2xl p-6"
@@ -249,7 +240,6 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
         </div>
       </div>
 
-      <!-- All clear -->
       <div
         v-if="warnings.unplannedAchievements.length === 0 && warnings.flaggedConflicts.length === 0 && warnings.overdueItems.length === 0"
         class="flex flex-col items-center gap-3 py-16 rounded-2xl"
@@ -265,7 +255,6 @@ watch([selectedHalaqaId, selectedWeekStart], () => loadWarnings())
       </div>
     </template>
 
-    <!-- Error -->
     <div v-else-if="error" class="rounded-2xl p-6 text-center" style="background-color: var(--color-status-conflict-bg);">
       <p style="color: var(--color-status-conflict);">
         {{ error }}

@@ -41,8 +41,6 @@ const currentWeekday = computed(() =>
   new Date().toLocaleDateString(dateLocale.value, { weekday: 'long' })
 )
 
-// --- Mock data for new sections ---
-
 const mockStatTrends = {
   students: [8, 8, 9, 9, 10, 10, 12],
   halaqat: [1, 1, 1, 1, 1, 1, 1],
@@ -98,7 +96,6 @@ const mockAbsenceAlerts = [
   { name: 'طارق حسين', halaqa: 'حلقة الظهر', missedCount: 2 }
 ]
 
-// Sparkline helper
 function sparklinePath(data: number[], width = 80, height = 24): string {
   if (!data.length) return ''
   const max = Math.max(...data)
@@ -112,7 +109,6 @@ function sparklinePath(data: number[], width = 80, height = 24): string {
   }).join(' ')
 }
 
-// Quick actions
 const quickActions = computed(() => [
   {
     label: t('nav.attendance'),
@@ -179,7 +175,6 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <!-- Page header -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
       <div class="space-y-1">
         <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
@@ -204,15 +199,12 @@ onMounted(async () => {
 
     <SchoolSummaryCard />
 
-    <!-- Loading -->
     <div v-if="isLoading" class="flex justify-center py-16">
       <LucideLoaderCircle class="w-10 h-10 animate-spin" style="color: var(--color-primary);" />
     </div>
 
     <template v-else>
-      <!-- Stats row -->
       <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <!-- Total Students -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
@@ -252,7 +244,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Active Halaqat -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
@@ -281,7 +272,6 @@ onMounted(async () => {
           <div class="h-5" />
         </div>
 
-        <!-- Attendance Today -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
@@ -325,7 +315,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Current Day -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
@@ -345,7 +334,6 @@ onMounted(async () => {
           <div class="h-5" />
         </div>
 
-        <!-- Pending Reviews (NEW) -->
         <div
           class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
@@ -386,9 +374,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Two-column layout: Schedule + Attendance Chart -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Today's Schedule -->
         <div
           class="rounded-2xl p-6 ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
@@ -427,7 +413,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Weekly Attendance Chart -->
         <div
           class="rounded-2xl p-6 ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
@@ -480,9 +465,7 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Two-column layout: Top Performers + Absence Alerts -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Top Performers -->
         <div
           class="rounded-2xl p-6 ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
@@ -532,7 +515,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Absence Alerts -->
         <div
           class="rounded-2xl p-6 ring ring-card-border"
           style="background-color: var(--color-surface-container-lowest);">
@@ -581,7 +563,6 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Recent Activity Feed -->
       <div
         class="rounded-2xl p-6 ring ring-card-border"
         style="background-color: var(--color-surface-container-lowest);">
@@ -614,7 +595,6 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Quick actions -->
       <div>
         <div class="flex items-center gap-2 mb-4">
           <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
@@ -646,7 +626,6 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- Empty state for new users -->
       <div v-if="students.length === 0 || true" class="flex flex-col items-center gap-4 py-16 rounded-2xl ring-1 ring-card-border">
         <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-primary-container">
           <LucideBookOpenText class="w-8 h-8 text-primary" />

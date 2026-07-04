@@ -1,10 +1,4 @@
 <script setup lang="ts">
-/**
- * Weekly plan matrix (جدول): 7 day rows × 3 track columns. Desktop renders a
- * grid; mobile stacks into per-day cards (mobile-first). Each cell opens the
- * CellDialog. Rows can be copied to all days, columns applied to all days, and
- * a copied cell can be pasted straight onto any target cell.
- */
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { SURAH_NAMES } from '~/data/constants'
 import { formatVerseRange } from '~/utils/quran'
@@ -31,7 +25,7 @@ const days = computed(() =>
     try {
       label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long' })
       short = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { day: 'numeric', month: 'short' })
-    } catch { /* keep numeric */ }
+    } catch { }
     return { index: i, label, short, isRest: restDays.has(i) }
   })
 )
@@ -43,7 +37,6 @@ function rangeLabel(day: number, track: TrackType) {
   return c ? formatVerseRange(c.start_surah, c.start_verse, c.end_surah, c.end_verse, SURAH_NAMES) : ''
 }
 
-// ── Cell dialog ────────────────────────────────────────────────────────────────
 const dialogOpen = ref(false)
 const active = ref<{ day: number, track: TrackType }>({ day: 0, track: 'Hifz' })
 function openCell(day: number, track: TrackType) {
@@ -56,7 +49,6 @@ function onPaste(day: number, track: TrackType) {
   toast.add({ title: t('pages.planner.cellPastedToast'), color: 'success' })
 }
 
-// ── Bulk menus ───────────────────────────────────────────────────────────────
 function rowMenu(day: number): DropdownMenuItem[][] {
   return [[
     {
@@ -93,10 +85,8 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
 
 <template>
   <div class="p-3 sm:p-5">
-    <!-- ── Desktop grid ── -->
     <div class="hidden md:block overflow-x-auto">
       <div class="min-w-[720px]">
-        <!-- Header -->
         <div class="grid grid-cols-[10rem_repeat(3,1fr)] gap-2 pb-2">
           <div />
           <div v-for="track in tracks" :key="track" class="flex items-center justify-between gap-1 px-2">
@@ -110,14 +100,12 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
           </div>
         </div>
 
-        <!-- Rows -->
         <div
           v-for="day in days"
           :key="day.index"
           class="grid grid-cols-[10rem_repeat(3,1fr)] gap-2 py-1"
           :class="day.isRest && 'opacity-60'"
         >
-          <!-- Day label + row menu -->
           <div class="flex items-center justify-between gap-1 px-2 py-2 rounded-lg bg-elevated">
             <div class="min-w-0">
               <p class="text-sm font-medium truncate">
@@ -132,7 +120,6 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
             </UDropdownMenu>
           </div>
 
-          <!-- Cells -->
           <div v-for="track in tracks" :key="track" class="relative">
             <template v-if="day.isRest">
               <div class="h-full min-h-[3.25rem] flex items-center justify-center rounded-lg border border-dashed border-default text-xs text-muted">
@@ -164,7 +151,6 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
               <UIcon name="i-lucide-plus" class="w-4 h-4" />
             </button>
 
-            <!-- Quick paste affordance -->
             <UButton
               v-if="editable && copiedCell && !day.isRest"
               icon="i-lucide-clipboard-paste"
@@ -181,7 +167,6 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
       </div>
     </div>
 
-    <!-- ── Mobile day cards ── -->
     <div class="md:hidden space-y-3">
       <div
         v-for="day in days"

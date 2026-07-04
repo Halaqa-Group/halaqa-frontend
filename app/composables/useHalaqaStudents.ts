@@ -39,8 +39,6 @@ export function useHalaqaStudents() {
     })
   }
 
-  // The :id path param is ignored by the backend — both halaqa ids come from the body —
-  // but the route still requires *some* numeric segment. Use to_halaqa_id by convention.
   async function transferStudent(payload: TransferStudentPayload) {
     return api<{ message: string }>(`/halaqat/${payload.to_halaqa_id}/students/transfer`, {
       method: 'POST',

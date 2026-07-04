@@ -40,7 +40,6 @@ const canManage = computed(() =>
   activeRole.value === 'principal' || activeRole.value === 'vice_principal'
 )
 
-// ── Filters ────────────────────────────────────────────────────────────────
 const filters = reactive<{
   type: HalaqaType | null
   status: HalaqaStatus | null
@@ -91,7 +90,6 @@ const hasActiveFilters = computed(() =>
   || filters.search.trim() !== ''
 )
 
-// ── Form modal (create / edit) ────────────────────────────────────────────
 const formOpen = ref(false)
 const editing = ref<ApiHalaqaListItem | null>(null)
 const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
@@ -113,7 +111,6 @@ async function onFormSaved() {
   await initializeHalaqa()
 }
 
-// ── Lifecycle confirmations ───────────────────────────────────────────────
 type LifecycleAction = 'archive' | 'complete' | 'restore'
 const lifecycleOpen = ref(false)
 const lifecycleAction = ref<LifecycleAction>('archive')
@@ -175,7 +172,6 @@ async function onLifecycleConfirm() {
   }
 }
 
-// ── Row actions ───────────────────────────────────────────────────────────
 function rowActions(row: ApiHalaqaListItem) {
   const items: Array<{ label: string, icon: string, color?: 'error', onSelect: () => void }> = [
     {
@@ -214,7 +210,6 @@ function rowActions(row: ApiHalaqaListItem) {
   return [items]
 }
 
-// ── Table columns ────────────────────────────────────────────────────────
 const columns = computed<TableColumn<ApiHalaqaListItem>[]>(() => [
   { accessorKey: 'name', header: t('pages.halaqat.table.name') },
   { accessorKey: 'type', header: t('pages.halaqat.table.type') },

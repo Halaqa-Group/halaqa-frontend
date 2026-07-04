@@ -83,8 +83,6 @@ function buildSeed(): MockDB {
     photo_url: null
   }))
 
-  // Halaqat are owned by the real backend — see /halaqat endpoints.
-
   const enrollments: Enrollment[] = []
   for (let id = 1; id <= 4; id++) enrollments.push({ studentId: id, halaqaId: 1 })
   for (let id = 5; id <= 7; id++) enrollments.push({ studentId: id, halaqaId: 2 })
@@ -234,13 +232,9 @@ function buildSeed(): MockDB {
   }
 }
 
-// Seeds an approved weekly plan for student 1 in halaqa 1 covering the
-// current week. day_of_week uses Sat=0..Fri=6 to match halaqa_schedules.
-// We add a Hifz item AND a Near item for today so the /recite page can
-// demonstrate the "pick a track" chips.
 function buildSeedPlans(): ApiWeeklyPlan[] {
   const today = new Date()
-  const dow = (today.getDay() + 1) % 7 // Sat=0..Fri=6
+  const dow = (today.getDay() + 1) % 7
   const sat = new Date(today)
   sat.setDate(today.getDate() - dow)
   const weekStart =

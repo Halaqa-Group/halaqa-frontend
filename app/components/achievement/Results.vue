@@ -26,7 +26,6 @@ const {
   unapproveAchievement
 } = useAchievements()
 
-// Role visibility mirrors the backend rules; the server stays the source of truth.
 const isParent = computed(() => activeRole.value === 'parent')
 const canApprove = computed(() => ['principal', 'vice_principal', 'supervisor', 'teacher'].includes(activeRole.value ?? ''))
 const canUnapprove = computed(() => ['principal', 'vice_principal'].includes(activeRole.value ?? ''))
@@ -116,7 +115,6 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
     <LucideLoaderCircle class="w-8 h-8 animate-spin text-primary" />
   </div>
 
-  <!-- Empty: nothing recorded for this day -->
   <div v-else-if="achievements.length === 0" class="flex flex-col items-center justify-center gap-3 py-14">
     <UIcon name="i-lucide-award" class="w-10 h-10 text-muted" />
     <p class="text-sm text-muted">
@@ -127,7 +125,6 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
     </UButton>
   </div>
 
-  <!-- No match for current filters -->
   <div v-else-if="filteredAchievements.length === 0" class="flex flex-col items-center justify-center gap-3 py-14">
     <UIcon name="i-lucide-search-x" class="w-8 h-8 text-muted" />
     <p class="text-sm text-muted">
@@ -146,7 +143,6 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
   </div>
 
   <template v-else>
-    <!-- Grid -->
     <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6">
       <AchievementCard
         v-for="a in filteredAchievements"
@@ -159,7 +155,6 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
       />
     </div>
 
-    <!-- Table -->
     <div v-else class="overflow-x-auto">
       <UTable :data="filteredAchievements" :columns="columns" :loading="isLoading" class="min-w-[760px]">
         <template #student_id-cell="{ row }">

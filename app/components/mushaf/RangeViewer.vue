@@ -21,9 +21,6 @@ const pages = computed(() => {
   const s = startPage.value
   const e = endPage.value
   if (!s || !e || e < s) return []
-  // Cap to a sane upper bound — a teacher's daily assignment shouldn't
-  // span more than ~10 pages, but Surah Al-Baqarah does cover ~48 pages
-  // if a teacher really wants to see the whole thing. Render them all.
   const out: number[] = []
   for (let p = s; p <= e; p++) out.push(p)
   return out
@@ -33,11 +30,6 @@ const highlight = computed(() =>
   makeRangePredicate(props.startSurah, props.startVerse, props.endSurah, props.endVerse)
 )
 
-// Range-aware prefetch — when we know the user is about to render N pages,
-// kick off every page's JSON + font in parallel right away. Without this,
-// MushafPage's per-instance load runs sequentially as each <MushafPage>
-// component mounts; the staircase wait you see on Surah Yaseen is ~50ms × 6.
-// Pages already cached are no-ops.
 watch(pages, (list) => {
   for (const p of list) prefetchMushafPage(p)
 }, { immediate: true })

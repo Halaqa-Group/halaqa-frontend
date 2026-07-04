@@ -1,11 +1,6 @@
 import type { ApiWeeklyPlan, ApiWeeklyPlanItem } from '~/types'
 import { unwrapList } from '~/utils/api/list'
 
-// ── Calendar helpers ────────────────────────────────────────────────────────
-//
-// Backend uses Sat=0..Fri=6 (matches halaqa_schedules.day_of_week).
-// JS Date#getDay() uses Sun=0..Sat=6. Map between them with (jsDay + 1) % 7.
-
 function todayYmd(): string {
   const d = new Date()
   return ymd(d)
@@ -20,12 +15,10 @@ function parseYmd(s: string): Date {
   return new Date(y!, (m ?? 1) - 1, d ?? 1)
 }
 
-/** Day-of-week as the backend stores it: Sat=0..Fri=6. */
 export function backendDayOfWeek(d: Date): number {
   return (d.getDay() + 1) % 7
 }
 
-/** Returns the Saturday on/before the given date. */
 export function startOfWeekSat(d: Date): Date {
   const offset = backendDayOfWeek(d)
   const sat = new Date(d)
@@ -33,14 +26,6 @@ export function startOfWeekSat(d: Date): Date {
   return sat
 }
 
-// ── Composable ──────────────────────────────────────────────────────────────
-
-/**
- * Loads the weekly plan that covers the given date and returns the plan
- * items scheduled for that day. Re-runs whenever any input changes.
- *
- * date defaults to today's local-time date (YYYY-MM-DD).
- */
 export function useTodayPlanItems(
   studentId: MaybeRefOrGetter<number | null>,
   halaqaId: MaybeRefOrGetter<number | null>,

@@ -1,23 +1,14 @@
 import * as z from 'zod'
 
-// Permissive email check (matches existing FormModal patterns).
 export const EMAIL_PATTERN = /^\S[^\s@]*@\S[^\s.]*\.\S+$/
 
-// International phone: leading +, country code, total 7-19 digits with optional spaces/dashes.
 export const PHONE_PATTERN = /^\+\d{1,3}[\d\s-]{6,18}$/
 
-// Palestinian national ID: exactly 9 digits.
-// Bad checksums are surfaced by the backend as warnings, not rejections, so the
-// frontend only checks length/shape.
 export const PALESTINIAN_ID_PATTERN = /^\d{9}$/
 
-const ARABIC_INDIC_OFFSET = 0x0660 - 0x30 // ٠ → 0
-const PERSIAN_OFFSET = 0x06f0 - 0x30 // ۰ → 0
+const ARABIC_INDIC_OFFSET = 0x0660 - 0x30
+const PERSIAN_OFFSET = 0x06f0 - 0x30
 
-/** Mirrors the backend's PalestinianIdValidator.normalize: strips spaces/dashes
- * and converts Arabic-Indic / Persian digits to ASCII so users can paste IDs in
- * any script. Call this before sending to the API or matching against
- * PALESTINIAN_ID_PATTERN. */
 export function normalizeDigits(input: string): string {
   return [...input.trim()]
     .filter(ch => !/\s|-/.test(ch))
@@ -34,9 +25,6 @@ interface FieldOpts {
   required?: boolean
 }
 
-/** Field-level Zod schemas keyed off the i18n catalog. Call these inside a
- * `computed(() => z.object({...}))` so error messages re-resolve when the
- * locale changes. */
 export function useValidation() {
   const { t } = useI18n()
 

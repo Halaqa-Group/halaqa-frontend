@@ -1,19 +1,3 @@
-/**
- * Client-side mirror of the backend AchievementScoreService.compute().
- *
- * The backend requires `percentage_score` in the create/update body and derives
- * it from the halaqa's `evaluation_settings` JSON. We compute the same value here
- * so the value we send matches what the backend would have computed.
- *
- * Formula:
- *   score = max(min_score,
- *               base_score
- *                 - mistakes_count       * mistake_weight
- *                 - warnings_count       * warning_weight
- *                 - tajweed_errors_count * tajweed_weight)
- * then rounded to 2 decimal places.
- */
-
 export interface EvaluationSettings {
   base_score: number
   mistake_weight: number
@@ -28,7 +12,6 @@ export interface ScoreCounts {
   tajweed_errors_count: number
 }
 
-/** Defaults the halaqat module enforces when settings are absent. */
 export const DEFAULT_EVALUATION_SETTINGS: EvaluationSettings = {
   base_score: 100,
   mistake_weight: 2,
@@ -42,7 +25,6 @@ function num(value: unknown, fallback: number): number {
   return typeof n === 'number' && Number.isFinite(n) ? n : fallback
 }
 
-/** Coerce a loose `evaluation_settings` JSON blob into a complete settings object. */
 export function normalizeEvaluationSettings(raw: Record<string, unknown> | null | undefined): EvaluationSettings {
   const d = DEFAULT_EVALUATION_SETTINGS
   if (!raw) return { ...d }

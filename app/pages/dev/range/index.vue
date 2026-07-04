@@ -7,7 +7,6 @@ definePageMeta({ layout: 'none' })
 const route = useRoute()
 const router = useRouter()
 
-// Driven by query so we can deep-link to a specific range from /dev/range?...
 function parseQ(key: string, fallback: number): number {
   const raw = route.query[key]
   const n = Number(Array.isArray(raw) ? raw[0] : raw)
@@ -19,7 +18,6 @@ const startVerse = ref(parseQ('sv', 1))
 const endSurah = ref(parseQ('es', 1))
 const endVerse = ref(parseQ('ev', 7))
 
-// Refs → URL (so the URL always reflects current state for deep linking).
 watch(
   [startSurah, startVerse, endSurah, endVerse],
   ([ss, sv, es, ev]) => {
@@ -29,9 +27,6 @@ watch(
   }
 )
 
-// URL → refs (lets us deep-link, or change query via router.push from a test
-// without the watch above immediately stomping our change). Only update when
-// the value actually differs to avoid an infinite loop.
 watch(
   () => route.query,
   (q) => {
@@ -56,11 +51,9 @@ const surahOptions = computed(() =>
 const maxStartVerse = computed(() => VERSE_COUNTS[startSurah.value] ?? 1)
 const maxEndVerse = computed(() => VERSE_COUNTS[endSurah.value] ?? 1)
 
-// Snap verse refs back into the valid range when surah changes
 watch(maxStartVerse, (m) => { if (startVerse.value > m) startVerse.value = m })
 watch(maxEndVerse, (m) => { if (endVerse.value > m) endVerse.value = m })
 
-// Quick test cases for the four interesting topologies.
 const PRESETS = [
   { label: 'الفاتحة كاملة', ss: 1, sv: 1, es: 1, ev: 7 },
   { label: 'آية الكرسي', ss: 2, sv: 255, es: 2, ev: 255 },

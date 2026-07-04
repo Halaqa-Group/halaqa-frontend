@@ -68,7 +68,6 @@ const tabs = computed<TabsItem[]>(() => [
   { value: 'activity', label: t('pages.halaqat.details.tabs.activity'), icon: 'i-lucide-activity' }
 ])
 
-// ── Lifecycle confirmations ───────────────────────────────────────────────
 type LifecycleAction = 'archive' | 'complete' | 'restore'
 const lifecycleOpen = ref(false)
 const lifecycleAction = ref<LifecycleAction>('archive')
@@ -160,7 +159,6 @@ function formatDate(iso: string) {
     </div>
 
     <template v-else-if="halaqa">
-      <!-- Page header -->
       <div class="flex flex-col gap-2">
         <UButton
           to="/halaqat"
@@ -198,10 +196,8 @@ function formatDate(iso: string) {
         </div>
       </div>
 
-      <!-- Tabs -->
       <UTabs v-model="tab" :items="tabs" variant="link" class="w-full">
         <template #content="{ item }">
-          <!-- Overview -->
           <div v-if="item.value === 'overview'" class="grid gap-4 md:grid-cols-3 mt-4">
             <UCard>
               <p class="text-sm text-muted">
@@ -236,7 +232,6 @@ function formatDate(iso: string) {
             </UCard>
           </div>
 
-          <!-- Schedule -->
           <div v-else-if="item.value === 'schedule'" class="mt-4">
             <UCard>
               <HalaqaScheduleEditor
@@ -248,7 +243,6 @@ function formatDate(iso: string) {
             </UCard>
           </div>
 
-          <!-- Teachers -->
           <div v-else-if="item.value === 'teachers'" class="space-y-4 mt-4">
             <HalaqaActingPanel
               :halaqa-id="halaqa.id"
@@ -264,7 +258,6 @@ function formatDate(iso: string) {
             />
           </div>
 
-          <!-- Students -->
           <div v-else-if="item.value === 'students'" class="mt-4">
             <HalaqaStudentRoster
               :halaqa-id="halaqa.id"
@@ -273,7 +266,6 @@ function formatDate(iso: string) {
             />
           </div>
 
-          <!-- Supervisors -->
           <div v-else-if="item.value === 'supervisors'" class="mt-4">
             <HalaqaSupervisorRoster
               :halaqa-id="halaqa.id"
@@ -283,7 +275,6 @@ function formatDate(iso: string) {
             />
           </div>
 
-          <!-- Activity -->
           <div v-else-if="item.value === 'activity'" class="mt-4">
             <HalaqaActivityTimeline :halaqa-id="halaqa.id" />
           </div>

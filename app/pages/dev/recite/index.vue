@@ -50,9 +50,6 @@ const maxEndVerse = computed(() => VERSE_COUNTS[endSurah.value] ?? 1)
 watch(maxStartVerse, (m) => { if (startVerse.value > m) startVerse.value = m })
 watch(maxEndVerse, (m) => { if (endVerse.value > m) endVerse.value = m })
 
-// In Phase 4 this will be `${studentId}:${date}:${planItemId}` from the
-// plan item the teacher opened. For the sandbox we key by the range itself
-// so different ranges keep separate autosaves.
 const sessionId = computed(() =>
   `dev:${startSurah.value}-${startVerse.value}_${endSurah.value}-${endVerse.value}`
 )
@@ -61,7 +58,6 @@ const { mode, marks, counts, tap, clearAll } = useRecitationSession(sessionId)
 
 const toast = useToast()
 function onSubmit() {
-  // No backend yet — confirm the data we'd send.
   const c = counts.value
   toast.add({
     title: 'حُفظ التقييم محلياً',
@@ -168,8 +164,6 @@ function applyPreset(p: typeof PRESETS[number]) {
 
 .dev-recite__inputs {
   display: grid;
-  /* Pairs (from surah + verse, to surah + verse) — keep them together,
-     stack the two pairs on mobile. */
   grid-template-columns: 1.4fr 0.8fr 1.4fr 0.8fr;
   gap: 0.4rem;
 }

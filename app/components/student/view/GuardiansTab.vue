@@ -53,7 +53,6 @@ const guardianCount = computed(() => {
     : props.student.guardians.length
 })
 
-// ── Link dialog ─────────────────────────────────────────────────────────
 const GUARDIAN_RELATIONS = ['father', 'mother', 'grandfather', 'grandmother', 'uncle', 'aunt', 'sibling', 'other'] as const
 type GuardianRelation = typeof GUARDIAN_RELATIONS[number]
 
@@ -130,7 +129,7 @@ async function submitLink(_event: FormSubmitEvent<LinkSchema>) {
     }
     await linkGuardian(props.student.id, body)
     await reloadGuardians()
-    refetchStudent(props.student.id).catch(() => { /* non-fatal */ })
+    refetchStudent(props.student.id).catch(() => { })
     linkOpen.value = false
     toast.add({ title: t('pages.students.guardians.toasts.linked'), color: 'success' })
   } catch (e: any) {
@@ -141,12 +140,11 @@ async function submitLink(_event: FormSubmitEvent<LinkSchema>) {
   }
 }
 
-// ── Mutations ───────────────────────────────────────────────────────────
 async function patchGuardian(g: ApiGuardian, body: Record<string, any>, successKey: string) {
   try {
     await updateGuardian(props.student.id, g.user.id, body)
     await reloadGuardians()
-    refetchStudent(props.student.id).catch(() => { /* non-fatal */ })
+    refetchStudent(props.student.id).catch(() => { })
     toast.add({ title: t(successKey), color: 'success' })
   } catch (e: any) {
     const raw = e?.data?.message
@@ -164,7 +162,6 @@ function togglePickup(g: ApiGuardian) {
   patchGuardian(g, { can_pickup: !g.can_pickup }, 'pages.students.guardians.toasts.pickupToggled')
 }
 
-// ── Inline relation edit ────────────────────────────────────────────────
 const editingRelationFor = ref<number | null>(null)
 const relationDraft = ref<GuardianRelation>('father')
 
@@ -180,7 +177,6 @@ async function commitRelation(g: ApiGuardian) {
   await patchGuardian(g, { relation: newRel }, 'pages.students.guardians.toasts.relationUpdated')
 }
 
-// ── Unlink confirm ──────────────────────────────────────────────────────
 const unlinkOpen = ref(false)
 const unlinkSaving = ref(false)
 const pendingUnlink = ref<ApiGuardian | null>(null)
@@ -205,7 +201,7 @@ async function confirmUnlink() {
   try {
     await unlinkGuardian(props.student.id, g.user.id)
     await reloadGuardians()
-    refetchStudent(props.student.id).catch(() => { /* non-fatal */ })
+    refetchStudent(props.student.id).catch(() => { })
     toast.add({ title: t('pages.students.guardians.toasts.unlinked'), color: 'success' })
     unlinkOpen.value = false
     pendingUnlink.value = null
@@ -365,7 +361,6 @@ function rowMenu(g: ApiGuardian): DropdownMenuItem[][] {
       </ul>
     </UCard>
 
-    <!-- Link guardian modal -->
     <UModal
       v-model:open="linkOpen"
       :title="t('pages.students.guardians.linkTitle')"
@@ -447,7 +442,6 @@ function rowMenu(g: ApiGuardian): DropdownMenuItem[][] {
       </template>
     </UModal>
 
-    <!-- Unlink confirm -->
     <CommonConfirmDialog
       v-model:open="unlinkOpen"
       :title="t('pages.students.guardians.unlinkConfirmTitle')"

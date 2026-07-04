@@ -30,7 +30,6 @@ export default defineAppConfig({
         ]
       },
       defaultVariants: {
-        // variant: 'subtle'
       }
     },
 
@@ -39,13 +38,11 @@ export default defineAppConfig({
         root: 'relative flex items-center'
       },
       defaultVariants: {
-        // variant: 'subtle'
       }
     },
 
     radioGroup: {
       defaultVariants: {
-        // variant: 'subtle'
       }
     },
 
@@ -54,7 +51,6 @@ export default defineAppConfig({
         root: 'relative flex items-center'
       },
       defaultVariants: {
-        // variant: 'subtle'
       }
     },
 
@@ -65,7 +61,6 @@ export default defineAppConfig({
         itemLabel: 'ltr:first-letter:uppercase'
       },
       defaultVariants: {
-        // variant: 'subtle'
       }
     },
 

@@ -13,16 +13,8 @@ const overlay = useOverlay()
 const { activeRole } = useAuth()
 const { loadEvaluationSettings } = useAchievements()
 
-// Parent role gets a read-only experience: prior recitations are visible
-// (without mistake counters) but the toolbar + tap interactions are hidden.
-// A user with multiple roles (e.g. principal + parent) only enters read-only
-// when they're *actively* in the parent role — checking the user's role
-// array would lock principals out of editing.
 const isParentReadOnly = computed(() => activeRole.value === 'parent')
 
-// ── URL state ───────────────────────────────────────────────────────────────
-// Driven by the query so a teacher can deep-link from /achievements, share
-// a screen between devices, or refresh without losing context.
 const halaqaId = computed(() => {
   const v = Number(route.query.halaqa_id)
   return Number.isFinite(v) && v > 0 ? v : null
@@ -39,7 +31,6 @@ const dateStr = computed(() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 })
 
-// ── Student details ─────────────────────────────────────────────────────────
 const student = ref<ApiStudent | null>(null)
 const studentLoading = ref(false)
 
@@ -50,9 +41,6 @@ async function loadStudent() {
   }
   studentLoading.value = true
   try {
-    // Single-record fetch — used to be `GET /students?halaqa_id=N` which
-    // returns the whole halaqa just to read one name. Direct lookup is one
-    // tiny payload instead of ~30 ApiStudent records.
     student.value = await api<ApiStudent>(`/students/${studentId.value}`)
   } catch {
     student.value = null
@@ -62,13 +50,10 @@ async function loadStudent() {
 }
 watch([studentId, halaqaId], loadStudent, { immediate: true })
 
-// ── Today's plan items ──────────────────────────────────────────────────────
 const { items: todayItems, plan, loading: planLoading, error: planError }
   = useTodayPlanItems(studentId, halaqaId, dateStr)
 
 const selectedItemId = ref<number | null>(null)
-// Default to the first item whenever the list changes (e.g. on student switch).
-// Preserve the selection if it's still in the list.
 watch(todayItems, (items) => {
   if (!items.length) {
     selectedItemId.value = null
@@ -116,9 +101,6 @@ useHead(() => {
   }
 })
 
-// ── Prior achievements for this student + halaqa + date (Phase 5 item 1) ───
-// Shows the teacher what's already been recorded so they don't double-submit,
-// and gives the parent role context for the day.
 const priorAchievements = ref<ApiAchievement[]>([])
 const priorLoading = ref(false)
 
@@ -141,9 +123,6 @@ async function loadPrior() {
 }
 watch([studentId, halaqaId, dateStr], loadPrior, { immediate: true })
 
-// ── Marking session ─────────────────────────────────────────────────────────
-// One autosave bucket per (student, date, plan item) so a teacher can
-// switch students mid-session and come back without losing marks.
 const sessionId = computed(() =>
   selectedItem.value && studentId.value
     ? `${studentId.value}:${dateStr.value}:${selectedItem.value.id}`
@@ -151,14 +130,11 @@ const sessionId = computed(() =>
 )
 const { mode, marks, counts, tap, clearAll } = useRecitationSession(sessionId)
 
-// ── Submit with confirmation (Phase 5 item 3) ──────────────────────────────
 const submitting = ref(false)
 
 function onSubmitRequest() {
   const item = selectedItem.value
   if (!item || !studentId.value || !halaqaId.value) return
-  // A clean recitation (zero marks → 100%) is a valid achievement, so we do
-  // NOT gate submission on counts.total.
 
   const c = counts.value
   const modal = overlay.create(LazyCommonConfirmDialog, {
@@ -179,9 +155,6 @@ function onSubmitRequest() {
         try {
           modal.patch({ loading: true })
           await postAchievement(item, studentId.value!, halaqaId.value!)
-          // close() destroys the overlay outright — patching `open: false`
-          // first races with the dialog's own v-model sync and can leave
-          // the backdrop visible until the next interaction.
           modal.close()
         } catch (e) {
           modal.patch({ loading: false })
@@ -196,7 +169,6 @@ function onSubmitRequest() {
       }
     }
   })
-  // overlay.create() merely registers the modal — open() actually mounts it.
   modal.open()
 }
 
@@ -204,8 +176,6 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
   submitting.value = true
   try {
     const c = counts.value
-    // Backend requires percentage_score; compute it from the halaqa's
-    // evaluation_settings (same formula/cache as the achievements page).
     const settings = await loadEvaluationSettings(hid)
     const dto: CreateAchievementDto = {
       student_id: sid,
@@ -225,8 +195,6 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
       )
     }
     const created = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
-    // Optimistically prepend to the prior list so it's visible immediately
-    // without a second round-trip.
     priorAchievements.value = [created, ...priorAchievements.value]
     clearAll()
     toast.add({
@@ -240,7 +208,6 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
   }
 }
 
-// ── Pretty labels ───────────────────────────────────────────────────────────
 function rangeLabel(item: Pick<ApiWeeklyPlanItem, 'start_surah' | 'start_verse' | 'end_surah' | 'end_verse'>): string {
   const ss = SURAH_NAMES[item.start_surah] ?? `${item.start_surah}`
   if (item.start_surah === item.end_surah) {
@@ -254,13 +221,11 @@ function trackLabel(track: ApiWeeklyPlanItem['track_type']): string {
   return TRACK_TYPES.find(t => t.value === track)?.label ?? track
 }
 
-// Missing args → guide the user back to /achievements where they can pick.
 const missingArgs = computed(() => !halaqaId.value || !studentId.value)
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 max-w-3xl mx-auto w-full pb-24">
-    <!-- ── Empty state: nothing selected yet ──────────────────────────── -->
+  <div class="flex flex-col gap-4 max-w-[640px] mx-auto w-full pb-24">
     <div
       v-if="missingArgs"
       class="mx-auto my-8 max-w-sm w-full flex flex-col items-center gap-3 text-center px-6 py-10 rounded-2xl border border-default bg-default"
@@ -278,7 +243,6 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
     </div>
 
     <template v-else>
-      <!-- ── Header: student + date + back ────────────────────────────── -->
       <div class="flex items-center gap-3 rounded-xl border border-default bg-default px-3 py-2.5">
         <UButton
           icon="i-lucide-arrow-right"
@@ -301,7 +265,6 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
         </UBadge>
       </div>
 
-      <!-- ── Prior achievements strip ─────────────────────────────────── -->
       <div
         v-if="priorAchievements.length || priorLoading"
         class="rounded-xl border border-default bg-default p-3"
@@ -322,8 +285,6 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
           >
             <span class="font-bold">{{ trackLabel(a.track_type) }}</span>
             <span class="opacity-80">{{ rangeLabel(a) }}</span>
-            <!-- Mistake counters are hidden from parents per the backend's
-                 own role-based redaction policy. -->
             <span v-if="!isParentReadOnly" class="tabular-nums opacity-70">
               · {{ a.mistakes_count }}خ {{ a.warnings_count }}ت {{ a.tajweed_errors_count }}ج
             </span>
@@ -331,7 +292,6 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
         </div>
       </div>
 
-      <!-- ── Plan items: pick a track for today ──────────────────────── -->
       <div v-if="planLoading" class="flex items-center justify-center gap-2 py-6 text-sm text-muted">
         <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
         جارٍ تحميل خطة اليوم…
@@ -369,7 +329,6 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
       </div>
 
       <template v-else>
-        <!-- Track chips when multiple items exist for today -->
         <div v-if="todayItems.length > 1" class="flex flex-wrap gap-2" dir="rtl">
           <UButton
             v-for="item in todayItems"
@@ -384,7 +343,6 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
           </UButton>
         </div>
 
-        <!-- Sticky mark toolbar — hidden for parent -->
         <div v-if="!isParentReadOnly" class="sticky top-2 z-10">
           <MushafMarkToolbar
             :mode="mode"
@@ -397,8 +355,6 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
           />
         </div>
 
-        <!-- The mushaf, sized to the assigned range -->
-        <!-- Parent role: no tap handler so words aren't tappable -->
         <MushafRangeViewer
           v-if="selectedItem"
           :start-surah="selectedItem.start_surah"

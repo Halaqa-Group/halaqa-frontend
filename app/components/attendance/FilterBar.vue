@@ -92,7 +92,6 @@ function onCalendarPick(value: unknown) {
       {{ t('pages.attendance.filters.clear') }}
     </UButton>
 
-    <!-- Slim count summary + view toggle -->
     <div class="lg:ms-auto flex items-center gap-2 flex-wrap">
       <div class="flex items-center gap-1.5 text-xs flex-wrap">
         <UBadge color="success" variant="subtle">
@@ -108,7 +107,6 @@ function onCalendarPick(value: unknown) {
           {{ excusedCount }} {{ t('pages.attendance.filters.excused') }}
         </UBadge>
       </div>
-      <!-- View toggle is desktop-only; mobile always uses the card list -->
       <div class="hidden md:flex items-center gap-1 rounded-md border border-default p-0.5">
         <UButton
           :variant="viewMode === 'table' ? 'soft' : 'ghost'"

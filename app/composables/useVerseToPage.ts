@@ -1,5 +1,3 @@
-// 6,236-entry map { "2:255": 42, ... } — keyed by verse_key, value is the
-// mushaf page that verse appears on. Built once by scripts/build-quran-assets.mjs.
 type VerseToPageMap = Record<string, number>
 
 let cache: VerseToPageMap | null = null

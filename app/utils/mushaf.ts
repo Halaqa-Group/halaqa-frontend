@@ -1,20 +1,10 @@
 import type { MushafPageData, RenderedLine } from '~/types/mushaf'
 
-/**
- * Convert a verse_key like "2:255" into a sortable integer so we can do
- * cheap range comparisons across surahs. surah * 1000 + verse works because
- * no surah has more than 286 verses (Al-Baqarah).
- */
 export function verseKeyOrder(verseKey: string): number {
   const [s, v] = verseKey.split(':')
   return Number(s) * 1000 + Number(v)
 }
 
-/**
- * Build a predicate that tells whether a given verse_key falls within the
- * supplied range (inclusive on both ends). Used by RangeViewer to dim
- * words outside the assigned recitation range.
- */
 export function makeRangePredicate(
   startSurah: number,
   startVerse: number,
@@ -29,16 +19,6 @@ export function makeRangePredicate(
   }
 }
 
-// Quran.com's per-page response only contains ayah words. Lines holding a
-// surah header (the decorative "سُورَةُ X" cartouche) or a basmala show up
-// as gaps in the line_number sequence. Reconstruct them here so the renderer
-// gets a complete 1..N line list.
-//
-// Rule for filling the gap above a surah's first ayah:
-//   2 empty lines → [surah_name, basmala]   (the common case)
-//   1 empty line  → [surah_name]            (Al-Fatiha — basmala IS verse 1;
-//                                            At-Tawbah — no basmala at all)
-//   0 empty lines → no header                (continuation from previous page)
 export function synthesizeLines(page: MushafPageData): RenderedLine[] {
   const apiByLine = new Map<number, MushafPageData['lines'][number]>()
   for (const line of page.lines) apiByLine.set(line.n, line)
@@ -46,9 +26,7 @@ export function synthesizeLines(page: MushafPageData): RenderedLine[] {
   const apiLineNos = page.lines.map(l => l.n).sort((a, b) => a - b)
   const maxApiLine = apiLineNos[apiLineNos.length - 1] ?? 15
 
-  // For each surah that *begins* on this page, find the line number where
-  // its first ayah lives — we'll fill the gap immediately above it.
-  const surahStartLine = new Map<number, number>() // surah → ayah line
+  const surahStartLine = new Map<number, number>()
   for (const surah of page.surahs) {
     const firstKey = `${surah}:1`
     if (!page.verses.includes(firstKey)) continue
@@ -58,8 +36,6 @@ export function synthesizeLines(page: MushafPageData): RenderedLine[] {
     if (startLine) surahStartLine.set(surah, startLine.n)
   }
 
-  // For each starting surah, count consecutive empty lines directly above
-  // the first-ayah line and emit the right header sequence.
   const headersByLine = new Map<number, RenderedLine>()
   for (const [surah, ayahLine] of surahStartLine) {
     let gap = 0
@@ -84,7 +60,6 @@ export function synthesizeLines(page: MushafPageData): RenderedLine[] {
     }
     const header = headersByLine.get(n)
     if (header) result.push(header)
-    // unexplained gaps stay empty
   }
 
   return result

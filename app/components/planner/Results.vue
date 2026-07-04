@@ -55,7 +55,6 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
     <LucideLoaderCircle class="w-8 h-8 animate-spin text-primary" />
   </div>
 
-  <!-- No student picked -->
   <div v-else-if="!selectedStudentId" class="flex flex-col items-center justify-center gap-3 py-14">
     <UIcon name="i-lucide-user-round" class="w-10 h-10 text-muted" />
     <p class="text-sm text-muted">
@@ -63,10 +62,8 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
     </p>
   </div>
 
-  <!-- Matrix (day × track) — always renders the grid so empty weeks are fillable -->
   <PlannerMatrix v-else-if="viewMode === 'matrix'" :editable="canModify" />
 
-  <!-- No plan / no items yet -->
   <div v-else-if="items.length === 0" class="flex flex-col items-center justify-center gap-3 py-14">
     <UIcon name="i-lucide-book-open" class="w-10 h-10 text-muted" />
     <p class="text-sm text-muted">
@@ -77,7 +74,6 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
     </UButton>
   </div>
 
-  <!-- No match -->
   <div v-else-if="filteredItems.length === 0" class="flex flex-col items-center justify-center gap-3 py-14">
     <UIcon name="i-lucide-search-x" class="w-8 h-8 text-muted" />
     <p class="text-sm text-muted">
@@ -96,7 +92,6 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
   </div>
 
   <template v-else>
-    <!-- Grid -->
     <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6">
       <PlannerCard
         v-for="it in filteredItems"
@@ -107,7 +102,6 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
       />
     </div>
 
-    <!-- Table -->
     <div v-else class="overflow-x-auto">
       <UTable :data="filteredItems" :columns="columns" :loading="isLoading" class="min-w-[700px]">
         <template #day-cell="{ row }">

@@ -1,9 +1,4 @@
 <script setup lang="ts">
-/**
- * Surah + ayah picker that flags ayahs which BEGIN a mushaf page (KFGQPC v1),
- * so page-aligned starts are obvious at a glance (PDF requirement). Page lookup
- * is an O(1) read against the preloaded verse-to-page map.
- */
 import { SURAH_NAMES } from '~/data/constants'
 import { VERSE_COUNTS } from '~/utils/quran'
 import { verseToGlobal, globalToVerse } from '~/utils/quran-structure'
@@ -17,7 +12,6 @@ const surahItems = computed(() =>
   Object.entries(SURAH_NAMES).map(([n, name]) => ({ value: Number(n), label: name }))
 )
 
-/** True when this ayah is the first ayah shown on its mushaf page. */
 function isPageStart(s: number, v: number): boolean {
   const page = pageFor(`${s}:${v}`)
   if (page === undefined) return false
@@ -36,7 +30,6 @@ const verseItems = computed(() => {
   return out
 })
 
-// Keep the ayah in range when the surah changes.
 watch(surah, () => {
   const max = VERSE_COUNTS[surah.value] || 1
   if (verse.value > max || verse.value < 1) verse.value = 1

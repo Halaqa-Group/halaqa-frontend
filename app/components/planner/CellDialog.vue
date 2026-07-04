@@ -1,10 +1,4 @@
 <script setup lang="ts">
-/**
- * Per-cell dialog (one day × one track). Shows the planned range + progress,
- * lets you edit/copy/clear the cell, and lists the "completion operations"
- * (achievements) recorded for that student on that date & track — the PDF's
- * "reach the achievements linked to a cell, possibly more than one".
- */
 import { SURAH_NAMES } from '~/data/constants'
 import { formatVerseRange, isValidVerseRange, totalVersesInRange } from '~/utils/quran'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
@@ -53,7 +47,6 @@ const progressPct = computed(() => {
   return Math.round(((c.achieved_verses ?? 0) / c.total_verses) * 100)
 })
 
-// ── Edit range ────────────────────────────────────────────────────────────────
 const editing = ref(false)
 const form = reactive({ start_surah: 1, start_verse: 1, end_surah: 1, end_verse: 7 })
 function beginEdit() {
@@ -87,7 +80,6 @@ function onClear() {
   open.value = false
 }
 
-// ── Linked achievements (completion operations) ───────────────────────────────
 const achievements = ref<ApiAchievement[]>([])
 const loadingAch = ref(false)
 async function loadAchievements() {
@@ -112,7 +104,6 @@ function achRange(a: ApiAchievement) {
 }
 
 function recordAchievement() {
-  // Hand off to the full achievements flow with the date preselected.
   const { selectedDate } = useAchievements()
   selectedDate.value = isoDate.value
   open.value = false
@@ -133,7 +124,6 @@ watch(open, (v) => {
   >
     <template #body>
       <div class="space-y-5">
-        <!-- Header: date + track -->
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <span class="text-sm font-medium">{{ dateLabel }}</span>
           <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[track as AchievementTrack]">
@@ -141,7 +131,6 @@ watch(open, (v) => {
           </UBadge>
         </div>
 
-        <!-- Range + progress (view) -->
         <div v-if="!editing" class="rounded-xl border border-default bg-elevated p-4 space-y-3">
           <template v-if="cell">
             <div class="flex items-center justify-between gap-2">
@@ -161,7 +150,6 @@ watch(open, (v) => {
             {{ t('pages.planner.cellDialog.empty') }}
           </p>
 
-          <!-- Cell actions -->
           <div v-if="editable" class="flex flex-wrap gap-2 pt-1">
             <UButton size="sm" variant="soft" icon="i-lucide-pencil" @click="beginEdit">
               {{ cell ? t('pages.planner.cell.edit') : t('pages.planner.cell.addLabel') }}
@@ -199,7 +187,6 @@ watch(open, (v) => {
           </div>
         </div>
 
-        <!-- Range editor -->
         <div v-else class="rounded-xl border border-default p-4 space-y-4">
           <div class="space-y-2">
             <span class="text-xs font-medium text-muted">{{ t('pages.planner.cell.startLabel') }}</span>
@@ -225,7 +212,6 @@ watch(open, (v) => {
           </div>
         </div>
 
-        <!-- Linked achievements -->
         <div class="space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium">{{ t('pages.planner.cellDialog.achievements') }}</span>

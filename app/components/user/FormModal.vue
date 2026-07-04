@@ -8,13 +8,11 @@ type Mode = 'add' | 'edit'
 const props = defineProps<{
   open: boolean
   mode: Mode
-  // Required when mode === 'edit'.
   user?: ManagedUser | null
 }>()
 
 const emit = defineEmits<{
   'update:open': [value: boolean]
-  // Fired after a successful create or update — caller refreshes its list.
   'saved': []
 }>()
 
@@ -34,8 +32,6 @@ watch(isOpen, (v) => {
   if (v) ensureRolesLoaded()
 })
 
-// Permissive international phone: leading +, 7-15 digits total, optional spaces/dashes
-// between digits. Empty string is allowed (phone is optional).
 const PHONE_PATTERN = /^\+\d{1,3}[\d\s-]{6,18}$/
 
 interface FormState {
@@ -52,17 +48,11 @@ function emptyState(): FormState {
 
 const state = reactive<FormState>(emptyState())
 
-// Roles live outside the form schema in both modes — driven by the checkbox
-// picker. `originalRoles` is the snapshot taken when the modal opens so
-// edit-mode submit can diff and call assign/remove for each delta.
 const selectedRoles = ref<string[]>([])
 const originalRoles = ref<string[]>([])
 const hasTeacherRole = computed(() => selectedRoles.value.includes('teacher'))
 const hasParentRole = computed(() => selectedRoles.value.includes('parent'))
 
-// Self-edit guards: a principal editing their own row must not be able to
-// strip their own principal access or set themselves inactive/suspended.
-// Without this, one mis-click locks them out of the management UI entirely.
 const isSelf = computed(() =>
   props.mode === 'edit' && !!props.user && !!authUser.value && props.user.id === authUser.value.id
 )
@@ -126,7 +116,6 @@ watch(
   { immediate: true }
 )
 
-// Dirty tracking — used to gate accidental close.
 const isDirty = computed(() => {
   if (props.mode === 'add') {
     return !!state.name || !!state.email || !!state.password || !!state.phone
@@ -150,8 +139,6 @@ async function onSubmit() {
     return
   }
 
-  // Self-lock backstops — UI disables the controls, but a stale binding could
-  // theoretically still produce a forbidden value. Guard at submit too.
   if (isSelf.value) {
     if (originalRoles.value.includes('principal') && !selectedRoles.value.includes('principal')) {
       error.value = t('pages.users.form.cannotRemoveOwnPrincipal')
@@ -168,8 +155,6 @@ async function onSubmit() {
     if (props.mode === 'add') {
       await usersApi.create({
         name: state.name.trim(),
-        // Normalize email to avoid trivial duplicate-account collisions
-        // (whitespace + casing).
         email: state.email.trim().toLowerCase(),
         password: state.password,
         phone: state.phone.trim() || null,
@@ -183,12 +168,6 @@ async function onSubmit() {
         phone: state.phone.trim() || null,
         status: state.status
       })
-      // Roles can't ride the PATCH payload — diff against the snapshot and
-      // fire assign/remove sequentially. If a single call fails, update the
-      // snapshot to reflect what was actually applied so the user can retry
-      // and only the remaining deltas re-run (no double-removes).
-      // Order: remove first, then add (cheap insurance against any future
-      // "max roles" rule rejecting the add before the remove lands).
       const toRemove = originalRoles.value.filter(s => !selectedRoles.value.includes(s))
       const toAdd = selectedRoles.value.filter(s => !originalRoles.value.includes(s))
       const appliedRemove: string[] = []
@@ -235,10 +214,6 @@ function isRoleLocked(slug: string): boolean {
   return slug === 'principal' && lockPrincipalRole.value
 }
 
-// ── Discard-changes flow ────────────────────────────────────────────────────
-// UModal closes on backdrop/Escape by default. Disable that and route every
-// close request through requestClose so the dirty check can intervene.
-
 const discardOpen = ref(false)
 
 function requestClose() {
@@ -254,8 +229,6 @@ function confirmDiscard() {
   discardOpen.value = false
   isOpen.value = false
 }
-
-// ── Display helpers ─────────────────────────────────────────────────────────
 
 const statusOptions = computed<{ label: string, value: UserStatus }[]>(() => [
   { value: 'active', label: t('pages.users.status.active') },

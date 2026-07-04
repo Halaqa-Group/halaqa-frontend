@@ -99,11 +99,8 @@ export function useAuth() {
     try {
       await api('/auth/logout', { method: 'POST' })
     } catch {
-      // Best-effort: clear local state regardless of server outcome.
     }
     token.value = null
-    // Keep auth_active_role_{userId} in localStorage so the same preference
-    // is restored on the next login for this account.
     user.value = null
     activeRole.value = null
     return navigateTo('/auth/login')
@@ -125,8 +122,6 @@ export function useAuth() {
   }
 
   async function updateMe(payload: UpdateMePayload): Promise<AuthUser> {
-    // PATCH /me returns the full UserView; merge the bits we keep in state
-    // so the dashboard avatar / name update without a second round-trip.
     const updated = await api<AuthUser & { photoUrl: string | null }>('/me', {
       method: 'PATCH',
       body: payload
@@ -158,7 +153,6 @@ export function useAuth() {
     try {
       await api('/auth/logout-all', { method: 'POST' })
     } catch {
-      // Best-effort; clear local state anyway.
     }
     token.value = null
     user.value = null

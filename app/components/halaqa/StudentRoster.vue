@@ -48,7 +48,6 @@ function toIsoDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// ── Enroll modal ──────────────────────────────────────────────────────────
 const enrollSchema = computed(() => z.object({
   student_id: z.number({ error: () => t('common.selectStudent') })
     .int()
@@ -99,7 +98,6 @@ async function submitEnroll(event: FormSubmitEvent<EnrollSchema>) {
   }
 }
 
-// ── Remove modal ──────────────────────────────────────────────────────────
 const removeSchema = computed(() => z.object({
   outcome: z.enum(['completed', 'unenrolled']),
   notes: z.string().optional()
@@ -151,7 +149,6 @@ async function submitRemove(event: FormSubmitEvent<RemoveSchema>) {
   }
 }
 
-// ── Transfer modal ────────────────────────────────────────────────────────
 const transferSchema = computed(() => z.object({
   to_halaqa_id: z.number({ error: () => t('pages.halaqat.validationToHalaqa') })
     .int()
@@ -284,7 +281,6 @@ function rowActions(e: ApiStudentEnrollment) {
     </ul>
   </UCard>
 
-  <!-- Enroll modal -->
   <UModal
     v-model:open="enrollOpen"
     :title="t('pages.halaqat.students.addTitle')"
@@ -325,7 +321,6 @@ function rowActions(e: ApiStudentEnrollment) {
     </template>
   </UModal>
 
-  <!-- Remove modal -->
   <UModal
     v-model:open="removeOpen"
     :title="t('pages.halaqat.students.removeTitle')"
@@ -365,7 +360,6 @@ function rowActions(e: ApiStudentEnrollment) {
     </template>
   </UModal>
 
-  <!-- Transfer modal -->
   <UModal
     v-model:open="transferOpen"
     :title="t('pages.halaqat.students.transferTitle')"

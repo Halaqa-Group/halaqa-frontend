@@ -1,14 +1,12 @@
 import { ref, computed } from 'vue'
 import type { ApiHalaqaListItem } from '~/types'
 
-// Global state for selected halaqa (persists across all pages)
 const selectedHalaqa = ref<ApiHalaqaListItem | null>(null)
 const viewAllHalaqat = ref(false)
 
 export function useGlobalHalaqa() {
   const { halaqat, fetchHalaqat, isLoading } = useHalaqat()
 
-  /** Loads halaqat and keeps the selected halaqa in sync with the list (after CRUD or refresh). */
   async function initializeHalaqa() {
     await fetchHalaqat({ status: 'active', limit: 100 })
     const list = halaqat.value
@@ -46,7 +44,6 @@ export function useGlobalHalaqa() {
   })
 
   return {
-    // State
     selectedHalaqa,
     selectedHalaqaId,
     selectedHalaqaName,
@@ -55,7 +52,6 @@ export function useGlobalHalaqa() {
     halaqat,
     isLoading,
 
-    // Methods
     initializeHalaqa,
     selectHalaqa,
     selectAllHalaqat

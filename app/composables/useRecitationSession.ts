@@ -6,15 +6,6 @@ function storageKey(sessionId: string) {
   return `${STORAGE_PREFIX}${sessionId}`
 }
 
-/**
- * Holds the local state for one "marking session" — a teacher sitting with
- * one student to review one assigned range.
- *
- * The session is keyed by an opaque sessionId (in Phase 4 this will be
- * `${studentId}:${date}:${planItemId}`; for the dev sandbox it's a hash
- * of the range). State auto-persists to localStorage on every change so a
- * page refresh during the session doesn't lose work.
- */
 export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
   const mode = ref<MarkType>('mistake')
   const marks = ref<RecitationMarks>({})
@@ -37,8 +28,6 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
     try {
       localStorage.setItem(storageKey(id), JSON.stringify(m))
     } catch {
-      // localStorage can throw in private mode or when over quota — silently
-      // accept the loss of autosave rather than blocking the teacher's work.
     }
   }
 
@@ -50,12 +39,6 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
     { deep: true }
   )
 
-  /**
-   * Apply or toggle the current mode on a word.
-   *   - if the word already carries the same mode → clear it
-   *   - if it carries a different mode → replace
-   *   - if it has no mark → set to current mode
-   */
   function tap(wordKey: WordKey) {
     const current = marks.value[wordKey]
     if (current === mode.value) {

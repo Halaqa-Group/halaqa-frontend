@@ -54,7 +54,6 @@ function toIsoDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-// ── Substitute (Workflow B) ──────────────────────────────────────────────
 const subSchema = computed(() => z.object({
   teacher_user_id: z.number({ error: () => t('pages.halaqat.validationTeacher') })
     .int()
@@ -121,7 +120,6 @@ async function submitSub(event: FormSubmitEvent<SubSchema>) {
   }
 }
 
-// ── Extend ────────────────────────────────────────────────────────────────
 const extSchema = computed(() => z.object({
   acting_ends_at: z.string({ error: () => t('validation.required') })
     .min(1, t('validation.required'))
@@ -153,7 +151,6 @@ async function submitExt(event: FormSubmitEvent<ExtSchema>) {
   }
 }
 
-// ── End acting ────────────────────────────────────────────────────────────
 async function endNow() {
   try {
     await endActing(props.halaqaId)
@@ -215,7 +212,6 @@ async function endNow() {
     </div>
   </UCard>
 
-  <!-- Substitute modal -->
   <UModal
     v-model:open="subOpen"
     :title="t('pages.halaqat.acting.substituteTitle')"
@@ -279,7 +275,6 @@ async function endNow() {
     </template>
   </UModal>
 
-  <!-- Extend modal -->
   <UModal
     v-model:open="extOpen"
     :title="t('pages.halaqat.acting.extendTitle')"

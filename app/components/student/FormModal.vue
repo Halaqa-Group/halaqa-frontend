@@ -26,15 +26,12 @@ const api = useApi()
 const toast = useToast()
 const { t, locale } = useI18n()
 
-// Capacity ranges enforced server-side: hifz 0–20, near 0–50, far 0–100.
 const CAPACITY = {
   hifz: { min: 0, max: 20 },
   near: { min: 0, max: 50 },
   far: { min: 0, max: 100 }
 } as const
 
-// Backend rejects bio edits from teachers (UpdateStudentByTeacherDto restricts
-// to capacity + notes). Lock the inputs so the UX matches.
 const isTeacherOnly = computed(() => {
   const roles = user.value?.roles ?? []
   return roles.includes('teacher')
@@ -296,7 +293,6 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       return
     }
 
-    // ── Create mode ────────────────────────────────────────────────────
     const created = await createStudent({
       name: state.name.trim(),
       gender: state.gender,
@@ -389,7 +385,6 @@ watch(modalOpen, (open) => {
           :title="t('pages.students.addModal.guardiansEditHint')"
         />
 
-        <!-- Halaqa enrollment (add mode only) -->
         <UFormField
           v-if="!isEditMode"
           :label="t('pages.students.addModal.halaqaLabel')"
@@ -409,7 +404,6 @@ watch(modalOpen, (open) => {
           />
         </UFormField>
 
-        <!-- Basic info -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <UFormField :label="t('pages.students.addModal.fullName')" name="name" class="sm:col-span-2" required>
             <UInput
@@ -495,7 +489,6 @@ watch(modalOpen, (open) => {
           </UFormField>
         </div>
 
-        <!-- Guardians (add mode only) -->
         <div v-if="!isEditMode" class="space-y-3">
           <div class="flex items-center justify-between">
             <h4 class="font-semibold text-sm">
@@ -559,7 +552,6 @@ watch(modalOpen, (open) => {
           </div>
         </div>
 
-        <!-- Daily capacity -->
         <div class="space-y-3">
           <h4 class="font-semibold text-sm">
             {{ t('pages.students.addModal.metricsTitle') }}
@@ -582,7 +574,6 @@ watch(modalOpen, (open) => {
           </div>
         </div>
 
-        <!-- Notes -->
         <UFormField :label="t('pages.students.addModal.notesLabel')" name="notes">
           <UTextarea
             v-model="state.notes"

@@ -4,8 +4,6 @@ import type { MarkCounts, MarkType } from '~/types/recitation'
 const props = defineProps<{
   mode: MarkType
   counts: MarkCounts
-  // When true, the Save button is enabled and emits `submit`. The actual
-  // submit-to-backend behaviour is the parent's responsibility (Phase 4).
   canSubmit?: boolean
   submitting?: boolean
 }>()
@@ -104,14 +102,12 @@ function countFor(m: MarkType): number {
   max-width: 720px;
   margin: 0 auto;
   width: 100%;
-  /* Wrap when the row can't hold all chips + actions side-by-side. */
   flex-wrap: wrap;
 }
 
 .mark-toolbar__modes {
   display: flex;
   gap: 0.3rem;
-  /* Allow chips to flex within available space */
   flex: 1 1 auto;
   min-width: 0;
   flex-wrap: wrap;
@@ -131,7 +127,6 @@ function countFor(m: MarkType): number {
   font-family: 'Thmanyah Sans', serif;
   cursor: pointer;
   transition: background-color 0.12s, border-color 0.12s, color 0.12s;
-  /* Min touch target on mobile */
   min-height: 40px;
 }
 
@@ -157,7 +152,6 @@ function countFor(m: MarkType): number {
   font-weight: 600;
 }
 
-/* Selected-state colourings — match the in-mushaf word tints. */
 .mark-toolbar__mode--mistake.mark-toolbar__mode--active {
   background: rgba(220, 38, 38, 0.12);
   border-color: rgba(220, 38, 38, 0.55);
@@ -238,9 +232,6 @@ function countFor(m: MarkType): number {
   to { transform: rotate(360deg); }
 }
 
-/* Narrow viewports (small phones) — hide the text labels on mode chips
-   and action buttons; rely on icons + colour + count badges. Avoids the
-   "Save button cropped off-screen" problem at 320–414px widths. */
 @media (max-width: 480px) {
   .mark-toolbar {
     padding: 0.45rem 0.5rem;
@@ -257,7 +248,6 @@ function countFor(m: MarkType): number {
   .mark-toolbar__btn {
     padding: 0.45rem 0.55rem;
   }
-  /* The count badge stays — it's the most useful info per chip. */
   .mark-toolbar__mode-count {
     margin-inline-start: 0.1rem;
   }

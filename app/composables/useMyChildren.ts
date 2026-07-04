@@ -1,13 +1,5 @@
 import type { ApiStudent, Student } from '~/types'
 
-// Parent-only feed. Backed by GET /me/children (and /me/children/:id), which
-// is the only endpoint in the system that returns students from multiple
-// schools — a parent's children may be enrolled at different schools.
-//
-// We keep this composable separate from useStudents because:
-//   - the endpoint is different (/me/children vs /students)
-//   - it returns ALL children (no pagination, no filters)
-//   - parent-only role gate is enforced server-side
 const children = ref<Student[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
@@ -43,8 +35,6 @@ export function useMyChildren() {
     isLoading.value = true
     error.value = null
     try {
-      // /me/children returns the same envelope shape as the list endpoint
-      // ({ items, total, page, limit }). Unwrap the items array.
       const data = await api<{ items: ApiStudent[] } | ApiStudent[]>('/me/children')
       const items = Array.isArray(data) ? data : data.items
       children.value = items.map(apiToStudent)

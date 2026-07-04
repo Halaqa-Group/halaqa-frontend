@@ -5,8 +5,6 @@ const PUBLIC_ROUTES = new Set([
 ])
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Dev sandbox routes (mushaf renderer playground etc.) — no auth required,
-  // and no redirect away if you happen to be logged in.
   if (to.path.startsWith('/dev/')) return
 
   const token = useCookie('auth_token')
@@ -27,8 +25,6 @@ export default defineNuxtRouteMiddleware(async (to) => {
     await fetchMe()
   }
 
-  // Parents can additionally view today's recitation in read-only mode — the
-  // /recite page enforces the read-only contract via its own role check.
   const PARENT_EXTRA = new Set(['/parent', '/recite'])
   if (activeRole.value === 'parent' && !PARENT_EXTRA.has(to.path)) {
     return navigateTo('/parent')

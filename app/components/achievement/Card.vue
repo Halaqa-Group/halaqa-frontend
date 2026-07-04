@@ -25,7 +25,6 @@ const totalErrors = computed(() => (props.achievement.mistakes_count ?? 0) + (pr
 
 <template>
   <div class="rounded-xl border border-default bg-default p-4 flex flex-col gap-3">
-    <!-- Header: student + actions -->
     <div class="flex items-center gap-3">
       <img :src="studentAvatar" :alt="studentName" class="w-9 h-9 rounded-full object-cover border border-default shrink-0">
       <div class="min-w-0 flex-1">
@@ -45,7 +44,6 @@ const totalErrors = computed(() => (props.achievement.mistakes_count ?? 0) + (pr
       </UDropdownMenu>
     </div>
 
-    <!-- Badges -->
     <div class="flex flex-wrap items-center gap-2">
       <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[achievement.track_type as AchievementTrack]">
         {{ t(`pages.achievements.tracks.${achievement.track_type}`) }}
@@ -55,13 +53,11 @@ const totalErrors = computed(() => (props.achievement.mistakes_count ?? 0) + (pr
       </UBadge>
     </div>
 
-    <!-- Range -->
     <div class="flex items-center gap-2 text-sm text-muted">
       <UIcon name="i-lucide-book-open" class="w-4 h-4 shrink-0" />
       <span class="truncate">{{ range }}</span>
     </div>
 
-    <!-- Footer: score + errors -->
     <div class="flex items-center justify-between border-t border-default pt-3">
       <div>
         <p class="text-xs text-muted">
@@ -81,7 +77,6 @@ const totalErrors = computed(() => (props.achievement.mistakes_count ?? 0) + (pr
       </div>
     </div>
 
-    <!-- Notes -->
     <p v-if="achievement.teacher_notes" class="text-xs text-muted line-clamp-2">
       {{ achievement.teacher_notes }}
     </p>

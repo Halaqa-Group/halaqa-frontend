@@ -4,12 +4,8 @@ import type { RecitationMarks, WordKey } from '~/types/recitation'
 
 const props = defineProps<{
   pageNumber: number
-  // Optional — forwarded to MushafLine to dim words outside the active range.
   highlight?: (verseKey: string) => boolean
-  // Forwarded to MushafLine: tint state for individual words.
   marks?: RecitationMarks
-  // Forwarded to MushafLine: tap handler. When provided, in-range words
-  // become clickable and the handler receives the WordKey + verseKey.
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
 }>()
 
@@ -20,10 +16,6 @@ const renderedLines = computed(() => {
   return synthesizeLines(page.value)
 })
 
-// Defer the skeleton so it never flashes for loads that finish quickly
-// (prefetched/warm-cache cases land in ~30–60 ms). Showing loading UI for
-// sub-100 ms waits feels like jank — the eye registers it as a flicker
-// rather than a useful affordance.
 const SKELETON_DELAY_MS = 120
 const showSkeleton = ref(false)
 let skeletonTimer: ReturnType<typeof setTimeout> | null = null
@@ -72,10 +64,6 @@ onBeforeUnmount(clearSkeletonTimer)
       </template>
 
       <template v-else-if="page">
-        <!-- Render the page even when loading=true for a NEW page — keeping
-             stale content on screen during nav is less jarring than a skeleton
-             flash. The composable's fast-path will avoid loading=true entirely
-             for prefetched pages, so this only kicks in on truly cold loads. -->
         <MushafLine
           v-for="line in renderedLines"
           :key="line.n"
@@ -94,10 +82,6 @@ onBeforeUnmount(clearSkeletonTimer)
       </template>
 
       <template v-else>
-        <!-- Quiet pre-skeleton state: reserve the page's vertical space so
-             layout doesn't jump when content arrives, but show nothing. For
-             prefetched / warm-cache pages this is the only state ever seen,
-             which is what makes navigation feel instant. -->
         <div class="mushaf-page__placeholder" aria-hidden="true" />
       </template>
     </div>
@@ -138,8 +122,6 @@ onBeforeUnmount(clearSkeletonTimer)
 }
 
 .mushaf-page__placeholder {
-  /* Roughly matches a full 15-line page so the surrounding layout (header,
-     stack gap) doesn't reflow when the real content lands. */
   min-height: calc(15 * 2.4em + 14 * 0.25rem);
 }
 

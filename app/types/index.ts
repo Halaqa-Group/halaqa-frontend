@@ -1,19 +1,10 @@
 import type { FetchOptions } from 'ofetch'
 import type { Ref } from 'vue'
 
-// ── API client ──────────────────────────────────────────────────────────────
-
 export type ApiClient = {
   <T = unknown>(url: string, opts?: FetchOptions): Promise<T>
-  /**
-   * Warnings array from the most recent envelope (e.g. `id_number.checksum_invalid`).
-   *  Reset to [] on every request that returns no warnings. Single-flight only —
-   *  for concurrent calls, only the latest is observable.
-   */
   lastWarnings: Ref<string[]>
 }
-
-// ── UI types (used by existing components) ──────────────────────────────────
 
 export interface LessonItem {
   id: string
@@ -62,14 +53,6 @@ export interface AttendanceEntry {
   notes: string
 }
 
-// ── API types (backend entity shapes) ───────────────────────────────────────
-
-/**
- * Backend StudentResponse shape — fields the API actually returns.
- *  Note: progress/attendance/current_surah/halaqat etc. live in other
- *  modules (attendance, achievements, weekly-plans) and are NOT on this
- *  endpoint.
- */
 export interface ApiStudent {
   id: number
   name: string
@@ -84,7 +67,6 @@ export interface ApiStudent {
   daily_far_pages_capacity: number | string
   notes: string | null
   photo_url: string | null
-  /** Present on detail (GET /students/:id) and as eager-loaded on create response. */
   guardians?: ApiGuardian[]
 }
 
@@ -107,7 +89,6 @@ export interface ApiGuardian {
   can_pickup: boolean
 }
 
-/** Current school profile (principal dashboard / settings). */
 export interface ApiSchool {
   id: number
   name: string
@@ -115,8 +96,6 @@ export interface ApiSchool {
   phone: string | null
   status: 'active' | 'inactive'
 }
-
-// ── Halaqat domain types (mirror halaqa-backend dto/halaqa.responses.ts) ────
 
 export type HalaqaType = 'Memorization' | 'Tajweed' | 'Aqeedah'
 export type HalaqaStatus = 'active' | 'archived' | 'completed'
@@ -272,8 +251,6 @@ export interface ApiStudentHalaqaItem {
   enrollment_status: StudentHalaqaStatus
 }
 
-// Backwards-compatible alias used by existing code paths (selector, etc.).
-// New code should import ApiHalaqaListItem or ApiHalaqaDetail directly.
 export type ApiHalaqa = ApiHalaqaListItem
 
 export interface ApiTeacherOption {
@@ -282,7 +259,6 @@ export interface ApiTeacherOption {
   email: string
 }
 
-/** Full teacher row for school management (list + forms). */
 export interface ApiTeacher extends ApiTeacherOption {
   identity_number: string
   phone: string | null
@@ -290,7 +266,6 @@ export interface ApiTeacher extends ApiTeacherOption {
   assigned_halaqat: string
 }
 
-/** Parent/guardian record for school management (list + forms). */
 export interface ApiParent {
   id: number
   school_id: number
@@ -323,13 +298,11 @@ export interface ApiAchievement {
   start_verse: number
   end_surah: number
   end_verse: number
-  /** Omitted from the response for the parent role (side-channel prevention). */
   mistakes_count?: number
   warnings_count?: number
   tajweed_errors_count?: number
   percentage_score: number | string
   status: 'approved' | 'unapproved'
-  /** Resolved actor names; omitted for the parent role. */
   recorded_by_name?: string | null
   approved_by_name?: string | null
   approved_at?: string | null
@@ -365,7 +338,6 @@ export interface ApiWeeklyPlanListResult {
 
 export interface ApiWeeklyPlanItem {
   id: number
-  /** Not returned by the backend item mapper; present only in mock/local shapes. */
   weekly_plan_id?: number
   day_of_week: number
   track_type: 'Hifz' | 'Near' | 'Far'
@@ -404,7 +376,6 @@ export interface ApiProgress {
   }[]
 }
 
-// ── Achievement creation DTO ───────────────────────────────────────────────
 export interface CreateAchievementDto {
   student_id: number
   halaqa_id: number
@@ -417,13 +388,11 @@ export interface CreateAchievementDto {
   mistakes_count?: number
   warnings_count?: number
   tajweed_errors_count?: number
-  /** Required by the backend; computed client-side from the halaqa's evaluation_settings. */
   percentage_score: number
   teacher_notes?: string
   approve?: boolean
 }
 
-// ── Student with attendance status (for achievements page) ──────────────────
 export interface StudentWithAttendance {
   id: number
   name: string

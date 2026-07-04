@@ -59,7 +59,6 @@ function onCalendarPick(value: unknown) {
 
 <template>
   <div class="flex flex-wrap items-center gap-2">
-    <!-- Student -->
     <USelectMenu
       v-model="selectedStudentId"
       :items="studentItems"
@@ -69,7 +68,6 @@ function onCalendarPick(value: unknown) {
       class="flex-1 min-w-40 sm:flex-none sm:w-52"
     />
 
-    <!-- Week control -->
     <div class="flex items-center gap-1">
       <UButton
         variant="outline"
@@ -103,9 +101,7 @@ function onCalendarPick(value: unknown) {
       />
     </div>
 
-    <!-- Right cluster: filters + coverage + view toggle -->
     <div class="ms-auto flex items-center gap-2">
-      <!-- Track/status filters live in a popover (they only apply to the list views) -->
       <UPopover v-if="viewMode !== 'matrix'" v-model:open="filtersOpen">
         <UButton
           variant="outline"

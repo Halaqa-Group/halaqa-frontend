@@ -1,9 +1,3 @@
-/**
- * Quran utilities for verse validation and range formatting
- * Mirrors backend validation logic from halaqa-nestjs/src/common/quran.utils.ts
- */
-
-// Total verse count for each of the 114 surahs (indexed 1-114)
 export const VERSE_COUNTS: Record<number, number> = {
   1: 7, 2: 286, 3: 200, 4: 176, 5: 120, 6: 165, 7: 206, 8: 75, 9: 129, 10: 109,
   11: 123, 12: 111, 13: 43, 14: 52, 15: 99, 16: 128, 17: 111, 18: 110, 19: 98, 20: 135,
@@ -24,17 +18,12 @@ export interface ValidationResult {
   error?: string
 }
 
-/**
- * Validates a Quran verse range
- * @returns {ValidationResult} Object with valid flag and optional error message in Arabic
- */
 export function isValidVerseRange(
   startSurah: number,
   startVerse: number,
   endSurah: number,
   endVerse: number
 ): ValidationResult {
-  // Validate surah numbers (1-114)
   if (startSurah < 1 || startSurah > 114) {
     return { valid: false, error: 'سورة البداية غير صحيحة (1-114)' }
   }
@@ -42,7 +31,6 @@ export function isValidVerseRange(
     return { valid: false, error: 'سورة النهاية غير صحيحة (1-114)' }
   }
 
-  // Validate verse numbers against surah verse counts
   const startSurahVerseCount = VERSE_COUNTS[startSurah]
   const endSurahVerseCount = VERSE_COUNTS[endSurah]
 
@@ -53,7 +41,6 @@ export function isValidVerseRange(
     return { valid: false, error: `آية النهاية خارج نطاق السورة (1-${endSurahVerseCount})` }
   }
 
-  // Ensure end is not before start
   if (endSurah < startSurah) {
     return { valid: false, error: 'سورة النهاية يجب أن تكون بعد سورة البداية' }
   }
@@ -64,11 +51,6 @@ export function isValidVerseRange(
   return { valid: true }
 }
 
-/**
- * Formats a verse range for display
- * @example formatVerseRange(1, 1, 1, 7) => "الفاتحة 1-7"
- * @example formatVerseRange(2, 1, 2, 10) => "البقرة 1-10"
- */
 export function formatVerseRange(
   startSurah: number,
   startVerse: number,
@@ -82,9 +64,6 @@ export function formatVerseRange(
   return `${surahNames[startSurah]}:${startVerse} - ${surahNames[endSurah]}:${endVerse}`
 }
 
-/**
- * Calculates total verses in a range (approximation using position encoding)
- */
 export function totalVersesInRange(
   startSurah: number,
   startVerse: number,

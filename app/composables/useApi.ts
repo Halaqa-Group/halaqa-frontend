@@ -1,6 +1,5 @@
 import type { FetchOptions } from 'ofetch'
 import type { Ref } from 'vue'
-import { tryMock } from '~/mocks'
 import type { ApiClient } from '~/types'
 
 const SKIP_REFRESH_FOR = new Set(['/auth/login', '/auth/refresh'])
@@ -56,9 +55,6 @@ function createClient(): ApiClient {
   }
 
   async function api<T = unknown>(url: string, opts: FetchOptions = {}): Promise<T> {
-    const mocked = await tryMock(url, opts)
-    if (mocked.matched) return unwrap<T>(mocked.data, lastWarnings)
-
     try {
       return unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
     } catch (e: unknown) {

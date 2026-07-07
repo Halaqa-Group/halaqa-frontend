@@ -1,62 +1,43 @@
 <script setup lang="ts">
-import type { MarkCounts, MarkType } from '~/types/recitation'
+import type { MarkCounts, Severity } from '~/types/recitation'
+import { SEVERITY_LEVELS } from '~/types/recitation'
 
 const props = defineProps<{
-  mode: MarkType
   counts: MarkCounts
   canSubmit?: boolean
   submitting?: boolean
 }>()
 
 const emit = defineEmits<{
-  'update:mode': [MarkType]
   clear: []
   submit: []
 }>()
 
-type Mode = {
-  key: MarkType
-  label: string
-  icon: string
-  classToken: string
-}
+// Tap a word on the mushaf to cycle its severity down the spectrum
+// (red → orange → yellow → green → clear). The toolbar is a live legend of
+// how many words sit at each level, not a mode selector.
+const levels = SEVERITY_LEVELS
 
-const MODES: Mode[] = [
-  { key: 'mistake', label: 'خطأ', icon: 'i-lucide-x', classToken: 'mark-toolbar__mode--mistake' },
-  { key: 'warning', label: 'تنبيه', icon: 'i-lucide-alert-triangle', classToken: 'mark-toolbar__mode--warning' },
-  { key: 'tajweed', label: 'تجويد', icon: 'i-lucide-music-2', classToken: 'mark-toolbar__mode--tajweed' }
-]
-
-function pick(m: MarkType) {
-  emit('update:mode', m)
-}
-
-function countFor(m: MarkType): number {
-  if (m === 'mistake') return props.counts.mistake
-  if (m === 'warning') return props.counts.warning
-  return props.counts.tajweed
+function countFor(key: Severity): number {
+  return props.counts[key]
 }
 </script>
 
 <template>
   <div class="mark-toolbar" dir="rtl">
-    <div class="mark-toolbar__modes">
-      <button
-        v-for="m in MODES"
-        :key="m.key"
-        type="button"
-        :class="[
-          'mark-toolbar__mode',
-          m.classToken,
-          { 'mark-toolbar__mode--active': mode === m.key }
-        ]"
-        :aria-pressed="mode === m.key"
-        @click="pick(m.key)"
+    <div class="mark-toolbar__legend">
+      <span
+        v-for="lvl in levels"
+        :key="lvl.key"
+        class="mark-toolbar__level"
+        :class="{ 'mark-toolbar__level--empty': countFor(lvl.key) === 0 }"
+        :style="{ '--level-rgb': lvl.rgb }"
+        :title="lvl.label"
       >
-        <UIcon :name="m.icon" class="mark-toolbar__mode-icon" />
-        <span class="mark-toolbar__mode-label">{{ m.label }}</span>
-        <span v-if="countFor(m.key) > 0" class="mark-toolbar__mode-count">{{ countFor(m.key) }}</span>
-      </button>
+        <span class="mark-toolbar__swatch" />
+        <span class="mark-toolbar__level-label">{{ lvl.label }}</span>
+        <span v-if="countFor(lvl.key) > 0" class="mark-toolbar__level-count">{{ countFor(lvl.key) }}</span>
+      </span>
     </div>
 
     <div class="mark-toolbar__actions">
@@ -105,7 +86,7 @@ function countFor(m: MarkType): number {
   flex-wrap: wrap;
 }
 
-.mark-toolbar__modes {
+.mark-toolbar__legend {
   display: flex;
   gap: 0.3rem;
   flex: 1 1 auto;
@@ -113,33 +94,35 @@ function countFor(m: MarkType): number {
   flex-wrap: wrap;
 }
 
-.mark-toolbar__mode {
+.mark-toolbar__level {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.5rem 0.7rem;
+  padding: 0.5rem 0.6rem;
   border-radius: 8px;
-  border: 1.5px solid transparent;
-  background: transparent;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #57534e;
+  border: 1.5px solid rgb(var(--level-rgb) / 0.45);
+  background: rgb(var(--level-rgb) / 0.1);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgb(var(--level-rgb));
   font-family: 'Thmanyah Sans', serif;
-  cursor: pointer;
-  transition: background-color 0.12s, border-color 0.12s, color 0.12s;
   min-height: 40px;
+  transition: opacity 0.12s;
 }
 
-.mark-toolbar__mode:hover {
-  background: rgba(0, 0, 0, 0.03);
+.mark-toolbar__level--empty {
+  opacity: 0.5;
 }
 
-.mark-toolbar__mode-icon {
-  width: 16px;
-  height: 16px;
+.mark-toolbar__swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: rgb(var(--level-rgb));
+  flex-shrink: 0;
 }
 
-.mark-toolbar__mode-count {
+.mark-toolbar__level-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -147,39 +130,11 @@ function countFor(m: MarkType): number {
   height: 18px;
   padding: 0 5px;
   border-radius: 9px;
-  background: rgba(0, 0, 0, 0.08);
+  background: rgb(var(--level-rgb) / 0.22);
   font-size: 0.7rem;
-  font-weight: 600;
-}
-
-.mark-toolbar__mode--mistake.mark-toolbar__mode--active {
-  background: rgba(220, 38, 38, 0.12);
-  border-color: rgba(220, 38, 38, 0.55);
-  color: #b91c1c;
-}
-.mark-toolbar__mode--mistake.mark-toolbar__mode--active .mark-toolbar__mode-count {
-  background: rgba(220, 38, 38, 0.22);
-  color: #991b1b;
-}
-
-.mark-toolbar__mode--warning.mark-toolbar__mode--active {
-  background: rgba(234, 88, 12, 0.12);
-  border-color: rgba(234, 88, 12, 0.55);
-  color: #c2410c;
-}
-.mark-toolbar__mode--warning.mark-toolbar__mode--active .mark-toolbar__mode-count {
-  background: rgba(234, 88, 12, 0.22);
-  color: #9a3412;
-}
-
-.mark-toolbar__mode--tajweed.mark-toolbar__mode--active {
-  background: rgba(22, 163, 74, 0.12);
-  border-color: rgba(22, 163, 74, 0.55);
-  color: #15803d;
-}
-.mark-toolbar__mode--tajweed.mark-toolbar__mode--active .mark-toolbar__mode-count {
-  background: rgba(22, 163, 74, 0.22);
-  color: #166534;
+  font-weight: 700;
+  tab-size: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .mark-toolbar__actions {
@@ -232,24 +187,26 @@ function countFor(m: MarkType): number {
   to { transform: rotate(360deg); }
 }
 
+@media (max-width: 560px) {
+  .mark-toolbar__level-label {
+    display: none;
+  }
+  .mark-toolbar__level {
+    padding: 0.45rem 0.5rem;
+    gap: 0.3rem;
+  }
+}
+
 @media (max-width: 480px) {
   .mark-toolbar {
     padding: 0.45rem 0.5rem;
     gap: 0.3rem;
   }
-  .mark-toolbar__mode-label,
   .mark-toolbar__btn-label {
     display: none;
   }
-  .mark-toolbar__mode {
-    padding: 0.45rem 0.55rem;
-    gap: 0.25rem;
-  }
   .mark-toolbar__btn {
     padding: 0.45rem 0.55rem;
-  }
-  .mark-toolbar__mode-count {
-    margin-inline-start: 0.1rem;
   }
 }
 </style>

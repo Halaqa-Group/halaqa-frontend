@@ -4,6 +4,8 @@ import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
 import { computePercentageScore } from '~/utils/score'
 import { TRACK_BADGE_COLOR, TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
 import type { ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto } from '~/types'
+import type { MarkCounts } from '~/types/recitation'
+import { toScoreCounts } from '~/types/recitation'
 
 const route = useRoute()
 const router = useRouter()
@@ -128,7 +130,13 @@ const sessionId = computed(() =>
     ? `${studentId.value}:${dateStr.value}:${selectedItem.value.id}`
     : ''
 )
-const { mode, marks, counts, tap, clearAll } = useRecitationSession(sessionId)
+const { marks, counts, tap, clearAll } = useRecitationSession(sessionId)
+
+// One-line breakdown of the four severity levels, reused in the confirm dialog
+// and the success toasts.
+function countsSummary(c: MarkCounts): string {
+  return `${c.severe} جسيم، ${c.medium} متوسط، ${c.light} خفيف، ${c.minor} تنبيه`
+}
 
 const submitting = ref(false)
 
@@ -158,7 +166,7 @@ function onSubmitRequest() {
         `هل تريد ${verb} إنجاز ${trackLabel(item.track_type)} لـ${rangeLabel(item)}؟`
         + (c.total === 0
           ? '\nتلاوة تامة بدون أخطاء ✓'
-          : `\n${c.mistake} خطأ، ${c.warning} تنبيه، ${c.tajweed} تجويد.`),
+          : `\n${countsSummary(c)}.`),
       'confirmLabel': verb,
       'cancelLabel': 'إلغاء',
       'loading': false,
@@ -188,11 +196,9 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
   submitting.value = true
   try {
     const c = counts.value
+    const scoreCounts = toScoreCounts(c)
     const settings = await loadEvaluationSettings(hid)
-    const score = computePercentageScore(
-      { mistakes_count: c.mistake, warnings_count: c.warning, tajweed_errors_count: c.tajweed },
-      settings
-    )
+    const score = computePercentageScore(scoreCounts, settings)
     const existing = findExistingAchievement(item)
 
     if (existing) {
@@ -208,9 +214,9 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
           start_verse: item.start_verse,
           end_surah: item.end_surah,
           end_verse: item.end_verse,
-          mistakes_count: c.mistake,
-          warnings_count: c.warning,
-          tajweed_errors_count: c.tajweed,
+          mistakes_count: scoreCounts.mistakes_count,
+          warnings_count: scoreCounts.warnings_count,
+          tajweed_errors_count: scoreCounts.tajweed_errors_count,
           percentage_score: score
         }
       })
@@ -218,7 +224,7 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
       clearAll()
       toast.add({
         title: 'تم تحديث الجلسة ✓',
-        description: `${c.mistake} خطأ، ${c.warning} تنبيه، ${c.tajweed} تجويد`,
+        description: countsSummary(c),
         color: 'success',
         icon: 'i-lucide-check-circle'
       })
@@ -234,9 +240,9 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
       start_verse: item.start_verse,
       end_surah: item.end_surah,
       end_verse: item.end_verse,
-      mistakes_count: c.mistake,
-      warnings_count: c.warning,
-      tajweed_errors_count: c.tajweed,
+      mistakes_count: scoreCounts.mistakes_count,
+      warnings_count: scoreCounts.warnings_count,
+      tajweed_errors_count: scoreCounts.tajweed_errors_count,
       percentage_score: score
     }
     const created = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
@@ -244,7 +250,7 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
     clearAll()
     toast.add({
       title: 'تم حفظ الإنجاز ✓',
-      description: `${c.mistake} خطأ، ${c.warning} تنبيه، ${c.tajweed} تجويد`,
+      description: countsSummary(c),
       color: 'success',
       icon: 'i-lucide-check-circle'
     })
@@ -417,11 +423,9 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
            of the sidebar). -->
       <div v-if="showToolbar" class="sticky bottom-3 z-30 mt-1">
         <MushafMarkToolbar
-          :mode="mode"
           :counts="counts"
           :can-submit="!!selectedItem"
           :submitting="submitting"
-          @update:mode="mode = $event"
           @clear="clearAll"
           @submit="onSubmitRequest"
         />

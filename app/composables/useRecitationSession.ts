@@ -1,4 +1,5 @@
-import type { MarkCounts, MarkType, RecitationMarks, WordKey } from '~/types/recitation'
+import type { MarkCounts, RecitationMarks, Severity, WordKey } from '~/types/recitation'
+import { SEVERITY_ORDER } from '~/types/recitation'
 
 const STORAGE_PREFIX = 'recitation:'
 
@@ -7,7 +8,6 @@ function storageKey(sessionId: string) {
 }
 
 export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
-  const mode = ref<MarkType>('mistake')
   const marks = ref<RecitationMarks>({})
 
   function load(id: string) {
@@ -28,6 +28,7 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
     try {
       localStorage.setItem(storageKey(id), JSON.stringify(m))
     } catch {
+      // best-effort persistence; ignore quota/serialization failures
     }
   }
 
@@ -39,14 +40,20 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
     { deep: true }
   )
 
+  // Each tap steps the word one notch down the severity spectrum
+  //   (unmarked) → severe → medium → light → minor → (unmarked)
+  // matching Tarteel's red→orange→yellow→green highlighting.
   function tap(wordKey: WordKey) {
     const current = marks.value[wordKey]
-    if (current === mode.value) {
-      const next = { ...marks.value }
-      delete next[wordKey]
-      marks.value = next
+    const nextIndex = current ? SEVERITY_ORDER.indexOf(current) + 1 : 0
+    const next = SEVERITY_ORDER[nextIndex] as Severity | undefined
+    if (next) {
+      marks.value = { ...marks.value, [wordKey]: next }
     } else {
-      marks.value = { ...marks.value, [wordKey]: mode.value }
+      // stepped past the last level → unmark (rebuild without this key)
+      marks.value = Object.fromEntries(
+        Object.entries(marks.value).filter(([k]) => k !== wordKey)
+      ) as RecitationMarks
     }
   }
 
@@ -55,19 +62,15 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
   }
 
   const counts = computed<MarkCounts>(() => {
-    let mistake = 0
-    let warning = 0
-    let tajweed = 0
+    const c: MarkCounts = { severe: 0, medium: 0, light: 0, minor: 0, total: 0 }
     for (const v of Object.values(marks.value)) {
-      if (v === 'mistake') mistake++
-      else if (v === 'warning') warning++
-      else if (v === 'tajweed') tajweed++
+      c[v]++
+      c.total++
     }
-    return { mistake, warning, tajweed, total: mistake + warning + tajweed }
+    return c
   })
 
   return {
-    mode,
     marks: readonly(marks),
     counts,
     tap,

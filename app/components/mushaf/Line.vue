@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SURAH_HEADER_GLYPHS } from '~/data/surah-header-glyphs'
 import type { RenderedLine } from '~/types/mushaf'
-import type { MarkType, RecitationMarks, WordKey } from '~/types/recitation'
+import type { RecitationMarks, Severity, WordKey } from '~/types/recitation'
 
 const props = defineProps<{
   line: RenderedLine
@@ -17,7 +17,7 @@ function wordKey(verseKey: string, position: number): WordKey {
   return `${verseKey}:${position}`
 }
 
-function markClass(mark: MarkType | undefined): string | null {
+function markClass(mark: Severity | undefined): string | null {
   if (!mark) return null
   return `mushaf-word--${mark}`
 }
@@ -129,24 +129,33 @@ function markClass(mark: MarkType | undefined): string | null {
   background-color: rgba(0, 0, 0, 0.08);
 }
 
-.mushaf-word--mistake {
+/* Tarteel-style severity spectrum: red → orange → yellow → green.
+   Yellow needs a touch more alpha to read against the page. */
+.mushaf-word--severe {
   background-color: rgba(220, 38, 38, 0.22);
 }
-.mushaf-word--mistake:hover {
+.mushaf-word--severe:hover {
   background-color: rgba(220, 38, 38, 0.32);
 }
 
-.mushaf-word--warning {
+.mushaf-word--medium {
   background-color: rgba(234, 88, 12, 0.22);
 }
-.mushaf-word--warning:hover {
+.mushaf-word--medium:hover {
   background-color: rgba(234, 88, 12, 0.32);
 }
 
-.mushaf-word--tajweed {
+.mushaf-word--light {
+  background-color: rgba(234, 179, 8, 0.30);
+}
+.mushaf-word--light:hover {
+  background-color: rgba(234, 179, 8, 0.42);
+}
+
+.mushaf-word--minor {
   background-color: rgba(22, 163, 74, 0.22);
 }
-.mushaf-word--tajweed:hover {
+.mushaf-word--minor:hover {
   background-color: rgba(22, 163, 74, 0.32);
 }
 </style>

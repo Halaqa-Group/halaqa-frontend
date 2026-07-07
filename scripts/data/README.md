@@ -1,7 +1,11 @@
 # Mushaf layout data
 
-QUL splits the layout and the words into two resources. Download both (free login),
-save them here with these exact names, then run the converter.
+These two `.sqlite` files **are committed** (~2.7 MB total) so the whole mushaf
+can be rebuilt with `pnpm setup:quran` and **no qul.tarteel.ai login**. You only
+need to touch this folder if you're refreshing the layout from a newer QUL export.
+
+QUL splits the layout and the words into two resources. To refresh them, download
+both (free login) and overwrite the files here with these exact names:
 
 | File | QUL resource |
 |---|---|
@@ -22,4 +26,5 @@ It reads both (Node's built-in `node:sqlite`), takes the authoritative line layo
 from #15, maps the word ranges via #57, reuses our existing `code_v1` glyphs, and
 rewrites `public/quran/pages/*.json` + `public/quran/meta/pages-all.json`.
 
-Both `.sqlite` files are large binary exports — keep them out of git (ignored).
+> Note: `build:mushaf-layout` runs *after* `build:quran` — it refines the base
+> layout that step downloads. `pnpm setup:quran` chains them in the right order.

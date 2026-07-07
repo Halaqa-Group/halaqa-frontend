@@ -35,6 +35,19 @@ Make sure to install the dependencies:
 pnpm install
 ```
 
+### Mushaf (Quran) assets
+
+The mushaf page data and fonts (~46 MB) are **not committed** — build them once
+after cloning with a single command (no login needed):
+
+```bash
+pnpm setup:quran
+```
+
+This downloads all page data + per-page fonts from public sources and applies the
+KFGQPC print layout from the committed `scripts/data/*.sqlite`. Details in
+[`public/quran/README.md`](public/quran/README.md).
+
 ## Development Server
 
 Start the development server on `http://localhost:3000`:

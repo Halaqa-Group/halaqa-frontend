@@ -1,12 +1,27 @@
 # Mushaf assets
 
-Static data the in-app mushaf renderer needs. Regenerate with:
+Static data the in-app mushaf renderer needs. **Most of this folder is generated
+and git-ignored** — after a fresh clone, build it with one command:
 
 ```bash
-pnpm build:quran          # idempotent; pass --force to re-fetch
+pnpm setup:quran          # downloads pages + fonts, then applies the KFGQPC layout
 ```
 
-The build script lives at [`scripts/build-quran-assets.mjs`](../../scripts/build-quran-assets.mjs).
+No login required: page data comes from api.quran.com, fonts from Tarteel's CDN,
+and the layout correction runs off the committed `scripts/data/*.sqlite`.
+
+Only two files here are committed by hand (not generated): this README and
+`fonts/surah-name/surah-header.woff2`.
+
+Sub-commands, if you need them individually:
+
+```bash
+pnpm build:quran            # just the public download (pages + fonts); --force to re-fetch
+pnpm build:mushaf-layout    # just the KFGQPC layout refinement (needs build:quran first)
+```
+
+The build scripts live at [`scripts/build-quran-assets.mjs`](../../scripts/build-quran-assets.mjs)
+and [`scripts/build-mushaf-layout.mjs`](../../scripts/build-mushaf-layout.mjs).
 
 ## What's here
 

@@ -10,6 +10,7 @@
     "typecheck": "nuxt typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "setup:quran": "node scripts/build-quran-assets.mjs && node --experimental-sqlite scripts/build-mushaf-layout.mjs",
     "build:quran": "node scripts/build-quran-assets.mjs",
     "build:mushaf-layout": "node --experimental-sqlite scripts/build-mushaf-layout.mjs"
   },

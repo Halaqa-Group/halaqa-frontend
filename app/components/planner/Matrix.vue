@@ -28,7 +28,6 @@ function onDragStart(day: number, track: TrackType, e: DragEvent) {
   if (!props.editable || !getCell(day, track)) return
   dragSource.value = { day, track }
   e.dataTransfer!.effectAllowed = 'move'
-  // Firefox requires data to be set for the drag to start.
   e.dataTransfer!.setData('text/plain', `${day}:${track}`)
 }
 

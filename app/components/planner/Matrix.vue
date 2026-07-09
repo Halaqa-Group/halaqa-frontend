@@ -8,14 +8,47 @@ import { PLAN_TRACKS } from '~/composables/useWeeklyPlan'
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
 
-defineProps<{ editable: boolean }>()
+const props = defineProps<{ editable: boolean }>()
 
 const { t, locale } = useI18n()
 const toast = useToast()
 const {
   restDays, copiedCell, dateOfDay, getCell,
-  toggleRestDay, copyRowToAllDays, applyColumnToAllDays, pasteCell
+  toggleRestDay, copyRowToAllDays, applyColumnToAllDays, pasteCell, moveCell
 } = useWeeklyPlan()
+
+type CellRef = { day: number, track: TrackType }
+const dragSource = ref<CellRef | null>(null)
+const dragOver = ref<CellRef | null>(null)
+
+const isDragOver = (day: number, track: TrackType) =>
+  dragOver.value?.day === day && dragOver.value?.track === track
+
+function onDragStart(day: number, track: TrackType, e: DragEvent) {
+  if (!props.editable || !getCell(day, track)) return
+  dragSource.value = { day, track }
+  e.dataTransfer!.effectAllowed = 'move'
+  // Firefox requires data to be set for the drag to start.
+  e.dataTransfer!.setData('text/plain', `${day}:${track}`)
+}
+
+function onDragEnter(day: number, track: TrackType) {
+  if (!dragSource.value || restDays.has(day)) return
+  dragOver.value = { day, track }
+}
+
+function onDrop(day: number, track: TrackType) {
+  const src = dragSource.value
+  dragSource.value = null
+  dragOver.value = null
+  if (!src) return
+  moveCell(src.day, src.track, day, track)
+}
+
+function onDragEnd() {
+  dragSource.value = null
+  dragOver.value = null
+}
 
 const days = computed(() =>
   Array.from({ length: 7 }, (_, i) => {
@@ -120,7 +153,14 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
             </UDropdownMenu>
           </div>
 
-          <div v-for="track in tracks" :key="track" class="relative">
+          <div
+            v-for="track in tracks"
+            :key="track"
+            class="relative"
+            @dragover.prevent
+            @dragenter.prevent="editable && onDragEnter(day.index, track)"
+            @drop.prevent="editable && onDrop(day.index, track)"
+          >
             <template v-if="day.isRest">
               <div class="h-full min-h-[3.25rem] flex items-center justify-center rounded-lg border border-dashed border-default text-xs text-muted">
                 {{ t('pages.planner.row.restDay') }}
@@ -129,8 +169,16 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
             <button
               v-else-if="getCell(day.index, track)"
               type="button"
-              class="w-full h-full min-h-[3.25rem] flex flex-col items-start justify-center gap-1 rounded-lg border border-default bg-default px-3 py-2 text-start transition hover:border-primary hover:bg-elevated"
+              :draggable="editable"
+              class="w-full h-full min-h-[3.25rem] flex flex-col items-start justify-center gap-1 rounded-lg border bg-default px-3 py-2 text-start transition hover:border-primary hover:bg-elevated"
+              :class="[
+                editable && 'cursor-grab active:cursor-grabbing',
+                isDragOver(day.index, track) ? 'border-primary ring-2 ring-primary/40' : 'border-default',
+                dragSource?.day === day.index && dragSource?.track === track && 'opacity-40'
+              ]"
               @click="openCell(day.index, track)"
+              @dragstart="onDragStart(day.index, track, $event)"
+              @dragend="onDragEnd"
             >
               <span class="text-sm font-medium leading-tight">{{ rangeLabel(day.index, track) }}</span>
               <span
@@ -144,7 +192,8 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
             <button
               v-else
               type="button"
-              class="w-full h-full min-h-[3.25rem] flex items-center justify-center rounded-lg border border-dashed border-default text-muted transition hover:border-primary hover:text-primary"
+              class="w-full h-full min-h-[3.25rem] flex items-center justify-center rounded-lg border border-dashed text-muted transition hover:border-primary hover:text-primary"
+              :class="isDragOver(day.index, track) ? 'border-primary text-primary ring-2 ring-primary/40' : 'border-default'"
               :disabled="!editable"
               @click="openCell(day.index, track)"
             >

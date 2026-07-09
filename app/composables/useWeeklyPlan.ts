@@ -187,6 +187,21 @@ export function useWeeklyPlan() {
     return true
   }
 
+  function moveCell(fromDay: number, fromTrack: TrackType, toDay: number, toTrack: TrackType) {
+    if (fromDay === toDay && fromTrack === toTrack) return
+    if (restDays.has(toDay)) return
+    const src = getCell(fromDay, fromTrack)
+    if (!src) return
+    const dest = getCell(toDay, toTrack)
+    const srcRange = { start_surah: src.start_surah, start_verse: src.start_verse, end_surah: src.end_surah, end_verse: src.end_verse }
+    setCell(toDay, toTrack, srcRange)
+    if (dest) {
+      setCell(fromDay, fromTrack, { start_surah: dest.start_surah, start_verse: dest.start_verse, end_surah: dest.end_surah, end_verse: dest.end_verse })
+    } else {
+      clearCell(fromDay, fromTrack)
+    }
+  }
+
   function copyCell(day: number, track: TrackType) {
     const c = getCell(day, track)
     if (c) copiedCell.value = { start_surah: c.start_surah, start_verse: c.start_verse, end_surah: c.end_surah, end_verse: c.end_verse }
@@ -504,6 +519,7 @@ export function useWeeklyPlan() {
     applyColumnToAllDays,
     copyCell,
     pasteCell,
+    moveCell,
     saveDraft,
     clearWeek,
     applyPlanToStudents

@@ -1,5 +1,16 @@
 import type { BadgeColor } from '~/utils/halaqa'
 
+export function backendDayOfWeek(d: Date): number {
+  return (d.getDay() + 1) % 7
+}
+
+export function startOfWeekSat(d: Date): Date {
+  const r = new Date(d)
+  r.setHours(0, 0, 0, 0)
+  r.setDate(r.getDate() - backendDayOfWeek(r))
+  return r
+}
+
 export function planItemStatusColor(status: string): BadgeColor {
   switch (status) {
     case 'completed': return 'success'

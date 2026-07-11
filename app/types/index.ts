@@ -281,11 +281,49 @@ export interface ApiParent {
 export interface ApiAttendance {
   id: number
   student_id: number
-  halaqa_id: number
   date: string
-  status: 'Present' | 'Late' | 'Excused' | 'Absent'
-  notes: string | null
+  status: AttendanceStatus
+  excuse_note: string | null
+  recorded_by?: number | null
+  modified_by?: number | null
+  modification_reason?: string | null
+  original_status?: string | null
+  created_at?: string
   student?: ApiStudent
+}
+
+export interface ApiAttendanceListResult {
+  items: ApiAttendance[]
+  total: number
+  page: number
+  limit: number
+}
+
+// POST /attendance/students/sync — idempotent bulk write (create + correct).
+export interface AttendanceSyncEntry {
+  student_id: number
+  date: string
+  status: AttendanceStatus
+  excuse_note?: string
+  client_uuid?: string
+  client_recorded_at?: string
+  device_id?: string
+}
+
+export interface AttendanceSyncResultRow {
+  student_id: number
+  date: string
+  client_uuid: string | null
+  outcome: 'created' | 'updated' | 'duplicate' | 'forbidden'
+  attendance_id: number | null
+}
+
+export interface AttendanceSyncResult {
+  created: number
+  updated: number
+  duplicate: number
+  forbidden: number
+  results: AttendanceSyncResultRow[]
 }
 
 export interface ApiAchievement {
@@ -397,5 +435,5 @@ export interface StudentWithAttendance {
   id: number
   name: string
   avatar: string
-  attendanceStatus: 'Present' | 'Late' | 'Excused' | 'Absent' | null
+  attendanceStatus: AttendanceStatus | null
 }

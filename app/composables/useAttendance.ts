@@ -1,5 +1,13 @@
 import { computed, ref } from 'vue'
-import type { ApiAttendance, ApiStudent, ApiStudentListResult, AttendanceStatus } from '~/types'
+import type {
+  ApiAttendance,
+  ApiAttendanceListResult,
+  ApiStudent,
+  ApiStudentListResult,
+  AttendanceStatus,
+  AttendanceSyncEntry,
+  AttendanceSyncResult
+} from '~/types'
 import { unwrapList } from '~/utils/api/list'
 
 export interface AttendanceRow {
@@ -13,7 +21,7 @@ export interface AttendanceRow {
 
 interface ExistingRecord {
   id: number
-  status: string
+  status: AttendanceStatus
   notes: string
 }
 
@@ -47,20 +55,6 @@ function isoOf(d: Date): string {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 }
 
-function backendToStatus(status: string): AttendanceStatus {
-  if (status === 'Present') return 'present'
-  if (status === 'Late') return 'late'
-  if (status === 'Excused') return 'excused'
-  return 'absent'
-}
-
-function statusToBackend(status: AttendanceStatus): string {
-  if (status === 'present') return 'Present'
-  if (status === 'late') return 'Late'
-  if (status === 'excused') return 'Excused'
-  return 'Absent'
-}
-
 function snapshotCurrentRows() {
   const snap = new Map<string, RowSnapshot>()
   attendanceRows.value.forEach((row) => {
@@ -72,35 +66,42 @@ function snapshotCurrentRows() {
 export function useAttendance() {
   const api = useApi()
 
+  async function fetchAttendanceByDate(date: string): Promise<ApiAttendance[]> {
+    const raw = await api<ApiAttendanceListResult | ApiAttendance[]>(
+      `/attendance/students?date=${date}&limit=100`
+    )
+    return unwrapList<ApiAttendance>(raw)
+  }
+
+  function indexByStudent(rows: ApiAttendance[]): Map<string, ExistingRecord> {
+    const map = new Map<string, ExistingRecord>()
+    rows.forEach((a) => {
+      map.set(String(a.student_id), { id: a.id, status: a.status, notes: a.excuse_note || '' })
+    })
+    return map
+  }
+
   async function loadSession(halaqaId: number, date: string) {
     selectedHalaqaId.value = halaqaId
     selectedDate.value = date
     isLoading.value = true
     loadError.value = null
     try {
-      const sessionDate = new Date(date)
-      const fromDate = new Date(sessionDate)
-      fromDate.setDate(fromDate.getDate() - 14)
+      const yesterday = new Date(date)
+      yesterday.setDate(yesterday.getDate() - 1)
 
-      const [studentsRaw, existingData, historyData] = await Promise.all([
+      const [studentsRaw, existingData, yesterdayData] = await Promise.all([
         api<ApiStudentListResult | ApiStudent[]>(`/students?halaqa_id=${halaqaId}&limit=100`),
-        api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&date=${date}`),
-        api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&from=${isoOf(fromDate)}&to=${date}`)
+        fetchAttendanceByDate(date),
+        fetchAttendanceByDate(isoOf(yesterday))
       ])
       const studentsData = unwrapList<ApiStudent>(studentsRaw)
 
-      const recMap = new Map<string, ExistingRecord>()
-      existingData.forEach((a) => {
-        recMap.set(String(a.student_id), { id: a.id, status: a.status, notes: a.notes || '' })
-      })
+      const recMap = indexByStudent(existingData)
       existingRecords.value = recMap
 
       const histMap = new Map<string, ApiAttendance[]>()
-      for (const r of historyData) {
-        const bucket = histMap.get(r.date) ?? []
-        bucket.push(r)
-        histMap.set(r.date, bucket)
-      }
+      histMap.set(isoOf(yesterday), yesterdayData)
       historyByDate.value = histMap
 
       attendanceRows.value = studentsData.map((s) => {
@@ -110,7 +111,7 @@ export function useAttendance() {
           name: s.name,
           avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
           currentSurah: '—',
-          status: ex ? backendToStatus(ex.status) : 'present' as AttendanceStatus,
+          status: ex ? ex.status : 'present' as AttendanceStatus,
           notes: ex?.notes || ''
         }
       })
@@ -127,40 +128,27 @@ export function useAttendance() {
     isSaving.value = true
     saveError.value = null
     try {
-      await Promise.all(
-        attendanceRows.value.map((row) => {
-          const existing = existingRecords.value.get(row.studentId)
-          const newStatus = statusToBackend(row.status)
-          const newNotes = row.notes || null
-
-          if (!existing) {
-            return api('/attendance', {
-              method: 'POST',
-              body: {
-                student_id: Number(row.studentId),
-                halaqa_id: selectedHalaqaId.value,
-                date: selectedDate.value,
-                status: newStatus,
-                notes: newNotes
-              }
-            }).then((created: any) => {
-              existingRecords.value.set(row.studentId, { id: created.id, status: newStatus, notes: row.notes || '' })
-            })
-          }
-
-          const statusChanged = existing.status !== newStatus
-          const notesChanged = existing.notes !== (row.notes || '')
-          if (!statusChanged && !notesChanged) return Promise.resolve()
-
-          return api(`/attendance/${existing.id}`, {
-            method: 'PATCH',
-            body: { status: newStatus, notes: newNotes }
-          }).then(() => {
-            existing.status = newStatus
-            existing.notes = row.notes || ''
-          })
+      const records: AttendanceSyncEntry[] = []
+      for (const row of attendanceRows.value) {
+        const snap = originalSnapshot.value.get(row.studentId)
+        const changed = !snap || snap.status !== row.status || snap.notes !== row.notes
+        if (!changed) continue
+        records.push({
+          student_id: Number(row.studentId),
+          date: selectedDate.value,
+          status: row.status,
+          excuse_note: row.notes || undefined
         })
-      )
+      }
+
+      if (records.length > 0) {
+        await api<AttendanceSyncResult>('/attendance/students/sync', {
+          method: 'POST',
+          body: { records }
+        })
+        // Re-pull the day's rows so ids/statuses reflect what the server stored.
+        existingRecords.value = indexByStudent(await fetchAttendanceByDate(selectedDate.value))
+      }
       snapshotCurrentRows()
     } catch (e: any) {
       saveError.value = e?.data?.message || 'حدث خطأ أثناء حفظ الحضور'
@@ -238,7 +226,7 @@ export function useAttendance() {
     const yesterday = new Date(selectedDate.value)
     yesterday.setDate(yesterday.getDate() - 1)
     const recs = historyByDate.value.get(isoOf(yesterday)) ?? []
-    return recs.some(r => String(r.student_id) === studentId && r.status === 'Absent')
+    return recs.some(r => String(r.student_id) === studentId && r.status === 'absent')
   }
 
   const presentCount = computed(() => attendanceRows.value.filter(r => r.status === 'present').length)

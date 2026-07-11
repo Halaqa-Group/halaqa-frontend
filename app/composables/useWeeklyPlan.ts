@@ -48,13 +48,6 @@ function ymd(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export function startOfWeekSat(d: Date): Date {
-  const r = new Date(d)
-  r.setHours(0, 0, 0, 0)
-  r.setDate(r.getDate() - ((r.getDay() + 1) % 7))
-  return r
-}
-
 const students = ref<StudentWithAttendance[]>([])
 const selectedStudentId = ref<number | undefined>(undefined)
 const selectedWeekStart = ref<string>(ymd(startOfWeekSat(new Date())))

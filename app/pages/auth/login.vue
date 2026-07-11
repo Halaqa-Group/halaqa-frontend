@@ -7,6 +7,7 @@ definePageMeta({ layout: 'auth' })
 const { t } = useI18n()
 const { login } = useAuth()
 const apiError = useApiError()
+const toast = useToast()
 
 const schema = z.object({
   email: z.email({ error: () => t('validation.email') }),
@@ -25,16 +26,17 @@ const state = reactive<Partial<Schema>>({
 })
 
 const isLoading = ref(false)
-const error = ref('')
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
-  error.value = ''
   isLoading.value = true
   try {
     await login(event.data.email, event.data.password, event.data.remember_me ?? false)
     await navigateTo('/')
   } catch (e: unknown) {
-    error.value = apiError.format(e, t('auth.invalidCredentials'))
+    toast.add({
+      title: apiError.format(e, t('auth.invalidCredentials')),
+      color: 'error'
+    })
   } finally {
     isLoading.value = false
   }

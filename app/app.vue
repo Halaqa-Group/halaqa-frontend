@@ -6,12 +6,10 @@ const { locale } = useI18n()
 const lang = computed(() => locales[locale.value].code)
 const dir = computed(() => locales[locale.value].dir)
 
-const toaster = computed(() => {
-  return {
-    expand: false,
-    position: dir.value === 'rtl' ? 'bottom-left' : 'bottom-right'
-  } as const
-})
+const toaster = {
+  expand: false,
+  position: 'top-center'
+} as const
 
 useHead({
   htmlAttrs: {

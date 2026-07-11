@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { ApiAttendance, ApiAttendanceListResult } from '~/types'
+import { unwrapList } from '~/utils/api/list'
+
 definePageMeta({
   breadcrumb: [
     { label: 'home' }
@@ -11,7 +14,7 @@ const { user, activeRole } = useAuth()
 const { selectedHalaqaId, halaqat, initializeHalaqa } = useGlobalHalaqa()
 const { students, fetchStudents } = useStudents()
 
-const todayAttendance = ref<any[]>([])
+const todayAttendance = ref<ApiAttendance[]>([])
 const isLoading = ref(true)
 const attendanceError = ref(false)
 
@@ -22,7 +25,7 @@ const userRoleLabel = computed(() => {
 })
 
 const presentToday = computed(() =>
-  todayAttendance.value.filter(a => a.status === 'Present').length
+  todayAttendance.value.filter(a => a.status === 'present').length
 )
 
 const attendanceRate = computed(() =>
@@ -150,7 +153,9 @@ async function loadDashboard(halaqaId: number) {
   try {
     await fetchStudents(halaqaId)
     try {
-      todayAttendance.value = await api<any[]>(`/attendance?halaqaId=${halaqaId}&date=${today}`)
+      todayAttendance.value = unwrapList<ApiAttendance>(
+        await api<ApiAttendanceListResult | ApiAttendance[]>(`/attendance/students?date=${today}&limit=100`)
+      )
     } catch {
       attendanceError.value = true
     }

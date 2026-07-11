@@ -1,7 +1,7 @@
 import { computed, reactive, ref } from 'vue'
 import type {
-  ApiAchievement, ApiAttendance, ApiHalaqaDetail, ApiStudent, ApiStudentListResult,
-  StudentWithAttendance, CreateAchievementDto
+  ApiAchievement, ApiAttendance, ApiAttendanceListResult, ApiHalaqaDetail, ApiStudent,
+  ApiStudentListResult, StudentWithAttendance, CreateAchievementDto
 } from '~/types'
 import { unwrapList } from '~/utils/api/list'
 import { computePercentageScore } from '~/utils/score'
@@ -62,15 +62,15 @@ export function useAchievements() {
   }
 
   async function loadStudents(halaqaId: number) {
-    const [studentsData, attendanceData] = await Promise.all([
+    const [studentsData, attendanceRaw] = await Promise.all([
       api<ApiStudentListResult | ApiStudent[]>(`/students?halaqa_id=${halaqaId}&limit=100`),
-      api<ApiAttendance[]>(`/attendance?halaqaId=${halaqaId}&date=${selectedDate.value}`).catch(() => []),
+      api<ApiAttendanceListResult | ApiAttendance[]>(`/attendance/students?date=${selectedDate.value}&limit=100`).catch(() => []),
       loadEvaluationSettings(halaqaId)
     ])
 
     const studentItems = unwrapList<ApiStudent>(studentsData)
     const attendanceMap = new Map<number, ApiAttendance>(
-      attendanceData.map(a => [a.student_id, a])
+      unwrapList<ApiAttendance>(attendanceRaw).map(a => [a.student_id, a])
     )
 
     students.value = studentItems.map(s => ({

@@ -15,17 +15,6 @@ function parseYmd(s: string): Date {
   return new Date(y!, (m ?? 1) - 1, d ?? 1)
 }
 
-export function backendDayOfWeek(d: Date): number {
-  return (d.getDay() + 1) % 7
-}
-
-export function startOfWeekSat(d: Date): Date {
-  const offset = backendDayOfWeek(d)
-  const sat = new Date(d)
-  sat.setDate(d.getDate() - offset)
-  return sat
-}
-
 export function useTodayPlanItems(
   studentId: MaybeRefOrGetter<number | null>,
   halaqaId: MaybeRefOrGetter<number | null>,

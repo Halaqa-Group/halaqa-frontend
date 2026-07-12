@@ -49,6 +49,77 @@ function onDragEnd() {
   dragOver.value = null
 }
 
+// Pointer-based drag for touch devices — the native HTML5 drag events above
+// don't fire on mobile, so the card layout uses a drag handle driven by pointer events.
+const dragging = ref(false)
+let ghostEl: HTMLElement | null = null
+let activePointerId: number | null = null
+
+function cellFromPoint(x: number, y: number): CellRef | null {
+  const el = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest('[data-cell]') as HTMLElement | null
+  const raw = el?.dataset.cell
+  if (!raw) return null
+  const idx = raw.indexOf(':')
+  return { day: Number(raw.slice(0, idx)), track: raw.slice(idx + 1) as TrackType }
+}
+
+function positionGhost(x: number, y: number) {
+  if (!ghostEl) return
+  ghostEl.style.left = `${x}px`
+  ghostEl.style.top = `${y}px`
+}
+
+function onCellPointerDown(day: number, track: TrackType, e: PointerEvent) {
+  if (!props.editable || !getCell(day, track)) return
+  e.preventDefault()
+  activePointerId = e.pointerId
+  dragSource.value = { day, track }
+  dragOver.value = null
+  dragging.value = true
+
+  const ghost = document.createElement('div')
+  ghost.textContent = rangeLabel(day, track)
+  ghost.style.cssText = 'position:fixed;z-index:9999;pointer-events:none;padding:6px 10px;'
+    + 'border-radius:8px;font-size:13px;font-weight:500;background:#111827;color:#f9fafb;'
+    + 'box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:60vw;white-space:nowrap;overflow:hidden;'
+    + 'text-overflow:ellipsis;transform:translate(-50%,-140%);'
+  document.body.appendChild(ghost)
+  ghostEl = ghost
+  positionGhost(e.clientX, e.clientY)
+
+  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+}
+
+function onCellPointerMove(e: PointerEvent) {
+  if (!dragging.value || e.pointerId !== activePointerId) return
+  e.preventDefault()
+  positionGhost(e.clientX, e.clientY)
+  const target = cellFromPoint(e.clientX, e.clientY)
+  dragOver.value = target && !restDays.has(target.day) ? target : null
+}
+
+function onCellPointerUp(e: PointerEvent) {
+  if (!dragging.value || e.pointerId !== activePointerId) return
+  const src = dragSource.value
+  const target = e.type === 'pointerup' ? dragOver.value : null
+  cleanupPointerDrag()
+  if (src && target) {
+    moveCell(src.day, src.track, target.day, target.track)
+    toast.add({ title: t('pages.planner.cell.cellMovedToast'), color: 'success' })
+  }
+}
+
+function cleanupPointerDrag() {
+  dragging.value = false
+  activePointerId = null
+  dragSource.value = null
+  dragOver.value = null
+  if (ghostEl) {
+    ghostEl.remove()
+    ghostEl = null
+  }
+}
+
 const days = computed(() =>
   Array.from({ length: 7 }, (_, i) => {
     const d = dateOfDay(i)
@@ -57,7 +128,7 @@ const days = computed(() =>
     try {
       label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long' })
       short = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { day: 'numeric', month: 'short' })
-    } catch { }
+    } catch { /* fall back to numeric labels */ }
     return { index: i, label, short, isRest: restDays.has(i) }
   })
 )
@@ -243,8 +314,23 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
           <div
             v-for="track in tracks"
             :key="track"
-            class="flex items-center gap-2 px-3 py-2.5"
+            :data-cell="`${day.index}:${track}`"
+            class="flex items-center gap-2 px-3 py-2.5 transition-colors"
+            :class="isDragOver(day.index, track) && 'bg-primary/10 ring-1 ring-inset ring-primary/40'"
           >
+            <button
+              v-if="editable && getCell(day.index, track)"
+              type="button"
+              class="shrink-0 touch-none cursor-grab active:cursor-grabbing text-muted hover:text-default -ms-1"
+              :aria-label="t('pages.planner.cell.dragHandle')"
+              @pointerdown="onCellPointerDown(day.index, track, $event)"
+              @pointermove="onCellPointerMove"
+              @pointerup="onCellPointerUp"
+              @pointercancel="onCellPointerUp"
+              @click.stop
+            >
+              <UIcon name="i-lucide-grip-vertical" class="w-4 h-4" />
+            </button>
             <UBadge variant="subtle" size="sm" :color="TRACK_BADGE_COLOR[track as AchievementTrack]" class="shrink-0">
               {{ t(`pages.achievements.tracks.${track}`) }}
             </UBadge>

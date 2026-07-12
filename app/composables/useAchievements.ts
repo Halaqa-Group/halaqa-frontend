@@ -32,6 +32,9 @@ const filters = reactive<{ search: string, trackType: TrackType | null, status: 
 
 const editing = ref<ApiAchievement | null>(null)
 const duplicateFrom = ref<ApiAchievement | null>(null)
+// Pre-selects the student when recording a fresh achievement (e.g. launched
+// from the planner's cell dialog). Cleared by openRecord for the plain "+" flow.
+const prefillStudentId = ref<number | null>(null)
 const deleteOpen = ref(false)
 const deleteTarget = ref<ApiAchievement | null>(null)
 
@@ -224,6 +227,7 @@ export function useAchievements() {
   function openRecord() {
     editing.value = null
     duplicateFrom.value = null
+    prefillStudentId.value = null
     navigateTo('/achievements/record')
   }
   function openEdit(a: ApiAchievement) {
@@ -257,6 +261,7 @@ export function useAchievements() {
     filters,
     editing,
     duplicateFrom,
+    prefillStudentId,
     deleteOpen,
     deleteTarget,
 

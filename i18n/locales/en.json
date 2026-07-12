@@ -1192,7 +1192,9 @@
         "confirm": "Confirm",
         "cancel": "Cancel",
         "startLabel": "From (surah/ayah)",
-        "endLabel": "To (surah/ayah)"
+        "endLabel": "To (surah/ayah)",
+        "dragHandle": "Drag to move",
+        "cellMovedToast": "Session moved"
       },
       "row": {
         "restDay": "Rest day",

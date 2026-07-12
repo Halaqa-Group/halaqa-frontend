@@ -14,7 +14,7 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
-  students, editing, duplicateFrom, selectedDate, currentEvaluationSettings,
+  students, editing, duplicateFrom, prefillStudentId, selectedDate, currentEvaluationSettings,
   isSaving, addAchievement, updateAchievement, loadEvaluationSettings
 } = useAchievements()
 
@@ -76,7 +76,9 @@ function hydrate() {
     state.teacher_notes = editing.value ? (src.teacher_notes ?? '') : ''
     if (duplicateFrom.value) state.date = selectedDate.value
   } else {
-    state.student_id = undefined
+    // A fresh record may be launched with a student already chosen (e.g. from
+    // the planner's session-details dialog); fall back to an empty picker.
+    state.student_id = prefillStudentId.value ?? undefined
     state.date = selectedDate.value
     state.track_type = 'Hifz'
     state.start_surah = 1

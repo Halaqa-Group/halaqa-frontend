@@ -104,10 +104,14 @@ function achRange(a: ApiAchievement) {
 }
 
 function recordAchievement() {
-  const { selectedDate } = useAchievements()
+  // Open the create form with this cell's student and date already filled in.
+  const { selectedDate, editing, duplicateFrom, prefillStudentId } = useAchievements()
+  editing.value = null
+  duplicateFrom.value = null
   selectedDate.value = isoDate.value
+  prefillStudentId.value = selectedStudentId.value ?? null
   open.value = false
-  router.push('/achievements')
+  router.push('/achievements/record')
 }
 
 watch(open, (v) => {

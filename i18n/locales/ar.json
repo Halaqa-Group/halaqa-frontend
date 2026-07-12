@@ -1192,7 +1192,9 @@
         "confirm": "تأكيد",
         "cancel": "إلغاء",
         "startLabel": "من (السورة/الآية)",
-        "endLabel": "إلى (السورة/الآية)"
+        "endLabel": "إلى (السورة/الآية)",
+        "dragHandle": "اسحب للنقل",
+        "cellMovedToast": "تم نقل الجلسة"
       },
       "row": {
         "restDay": "يوم راحة",

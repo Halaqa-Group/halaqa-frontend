@@ -17,14 +17,6 @@ export interface DragSelectRequest {
   y: number
 }
 
-/**
- * Press-and-drag word selection over the mushaf page. Dragging horizontally
- * across a run of words highlights the contiguous range (in reading order)
- * between the start word and the word under the pointer; on release the range
- * is handed to `onRequest` so the caller can apply one severity to all of them.
- * A press that never leaves its start word falls through to the native word
- * `@click` (single-tap severity cycle); a vertical drag is left to scroll.
- */
 export function useWordDragSelect(options: {
   container: Ref<HTMLElement | null>
   enabled: () => boolean

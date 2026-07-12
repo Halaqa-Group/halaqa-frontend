@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { SURAH_NAMES } from '~/data/constants'
 import { makeRangePredicate } from '~/utils/mushaf'
-import type { RecitationMarks, WordKey } from '~/types/recitation'
+import { SEVERITY_LEVELS } from '~/types/recitation'
+import type { RecitationMarks, Severity, WordKey } from '~/types/recitation'
+import type { DragSelectRequest } from '~/composables/useWordDragSelect'
 
 const props = defineProps<{
   startSurah: number
@@ -10,7 +12,11 @@ const props = defineProps<{
   endVerse: number
   marks?: RecitationMarks
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
+  /** Apply one severity (or unmark, when null) to a drag-selected run of words. */
+  onWordsMark?: (keys: WordKey[], severity: Severity | null) => void
 }>()
+
+const severityLevels = SEVERITY_LEVELS
 
 const { pageFor, loading: metaLoading, error: metaError } = useVerseToPage()
 
@@ -49,9 +55,44 @@ watch(pages, (list) => {
 }, { immediate: true })
 
 const pageEl = ref<HTMLElement | null>(null)
+
+// ── Drag-to-select word marking ───────────────────────────────────────────────
+// Press-and-drag across a run of words to mark them all at one severity. The
+// picker floats at the release point; a plain tap still cycles a single word.
+const picker = ref<{ keys: WordKey[], left: number, top: number } | null>(null)
+
+const MENU_W = 208
+const MENU_H = 248
+
+function openPicker(req: DragSelectRequest) {
+  if (!props.onWordsMark) return
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  let left = req.x - MENU_W / 2
+  let top = req.y + 12
+  if (top + MENU_H > vh) top = req.y - MENU_H - 12
+  left = Math.min(Math.max(8, left), vw - MENU_W - 8)
+  top = Math.max(8, top)
+  picker.value = { keys: req.keys, left, top }
+}
+
+function applyPicker(severity: Severity | null) {
+  if (picker.value) props.onWordsMark?.(picker.value.keys, severity)
+  picker.value = null
+}
+
+const { startedOnWord } = useWordDragSelect({
+  container: pageEl,
+  enabled: () => !!props.onWordsMark,
+  onRequest: openPicker
+})
+
 useSwipe(pageEl, {
   threshold: 40,
   onSwipeEnd(_e, direction) {
+    // A horizontal gesture that began on a word is a range-selection, not a
+    // page swipe — don't navigate.
+    if (startedOnWord.value) return
     if (direction === 'left') next()
     else if (direction === 'right') prev()
   }
@@ -127,6 +168,41 @@ const rangeLabel = computed(() => {
         اسحب يمينًا أو يسارًا للتنقل بين الصفحات
       </p>
     </template>
+
+    <!-- Severity picker for a drag-selected run of words -->
+    <Teleport to="body">
+      <div v-if="picker">
+        <div class="mushaf-picker__backdrop" @click="picker = null" />
+        <div
+          class="mushaf-picker"
+          dir="rtl"
+          :style="{ left: `${picker.left}px`, top: `${picker.top}px` }"
+        >
+          <p class="mushaf-picker__title">
+            طبّق على {{ picker.keys.length }} كلمة
+          </p>
+          <button
+            v-for="lvl in severityLevels"
+            :key="lvl.key"
+            type="button"
+            class="mushaf-picker__item"
+            :style="{ '--level-rgb': lvl.rgb }"
+            @click="applyPicker(lvl.key)"
+          >
+            <span class="mushaf-picker__swatch" />
+            <span class="mushaf-picker__label">{{ lvl.label }}</span>
+          </button>
+          <button
+            type="button"
+            class="mushaf-picker__item mushaf-picker__item--clear"
+            @click="applyPicker(null)"
+          >
+            <UIcon name="i-lucide-eraser" class="size-4" />
+            <span class="mushaf-picker__label">إزالة العلامة</span>
+          </button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -195,5 +271,75 @@ const rangeLabel = computed(() => {
 
 .mushaf-range-viewer__error {
   color: #b91c1c;
+}
+
+/* ── Drag-select severity picker ─────────────────────────────────────────── */
+.mushaf-picker__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.mushaf-picker {
+  position: fixed;
+  z-index: 61;
+  width: 208px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.4rem;
+  background: white;
+  border: 1px solid #e7e5e4;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  font-family: 'Thmanyah Sans', serif;
+}
+
+.mushaf-picker__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #78716c;
+  padding: 0.35rem 0.5rem 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mushaf-picker__item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.55rem 0.6rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgb(var(--level-rgb, 87 83 78));
+  text-align: right;
+  transition: background-color 0.12s;
+}
+
+.mushaf-picker__item:hover {
+  background: rgb(var(--level-rgb, 0 0 0) / 0.1);
+}
+
+.mushaf-picker__item--clear {
+  color: #57534e;
+  border-top: 1px solid #f5f5f4;
+  border-radius: 0 0 8px 8px;
+  margin-top: 0.15rem;
+}
+
+.mushaf-picker__item--clear:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.mushaf-picker__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: rgb(var(--level-rgb));
+  flex-shrink: 0;
 }
 </style>

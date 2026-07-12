@@ -57,6 +57,20 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
     }
   }
 
+  function setMarks(keys: WordKey[], severity: Severity | null) {
+    if (!keys.length) return
+    if (severity) {
+      const next: RecitationMarks = { ...marks.value }
+      for (const k of keys) next[k] = severity
+      marks.value = next
+    } else {
+      const drop = new Set(keys)
+      marks.value = Object.fromEntries(
+        Object.entries(marks.value).filter(([k]) => !drop.has(k))
+      ) as RecitationMarks
+    }
+  }
+
   function clearAll() {
     marks.value = {}
   }
@@ -74,6 +88,7 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
     marks: readonly(marks),
     counts,
     tap,
+    setMarks,
     clearAll
   }
 }

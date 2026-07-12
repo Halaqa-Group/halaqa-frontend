@@ -26,7 +26,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:3000/)",
       "PowerShell(Get-NetTCPConnection *)",
       "Bash(grep -rnE \"i-lucide-\\\\\\\\\\\\$\\\\{|lucide:\\\\\\\\\\\\$\\\\{|icon.*\\\\`|\\\\`i-lucide|\\\\`lucide:\" app)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(echo \"exit: $?\")"
     ]
   }
 }

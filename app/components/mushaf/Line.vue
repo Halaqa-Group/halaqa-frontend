@@ -116,7 +116,10 @@ function markClass(mark: Severity | undefined): string | null {
 .mushaf-word--tappable {
   cursor: pointer;
   padding: 0.4em 3px;
-  touch-action: manipulation;
+  /* pan-y keeps native vertical scrolling while reserving horizontal movement
+     for drag-to-select (see useWordDragSelect); it also drops the double-tap
+     zoom delay the way `manipulation` did. */
+  touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
@@ -127,6 +130,12 @@ function markClass(mark: Severity | undefined): string | null {
 
 .mushaf-word--tappable:active {
   background-color: rgba(0, 0, 0, 0.08);
+}
+
+.mushaf-word--selecting,
+.mushaf-word--selecting:hover {
+  background-color: rgba(37, 99, 235, 0.22);
+  box-shadow: inset 0 0 0 1.5px rgba(37, 99, 235, 0.45);
 }
 
 /* Tarteel-style severity spectrum: red → orange → yellow → green.

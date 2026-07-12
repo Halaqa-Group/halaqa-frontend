@@ -130,7 +130,7 @@ const sessionId = computed(() =>
     ? `${studentId.value}:${dateStr.value}:${selectedItem.value.id}`
     : ''
 )
-const { marks, counts, tap, clearAll } = useRecitationSession(sessionId)
+const { marks, counts, tap, setMarks, clearAll } = useRecitationSession(sessionId)
 
 // One-line breakdown of the four severity levels, reused in the confirm dialog
 // and the success toasts.
@@ -414,6 +414,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
           :end-verse="selectedItem.end_verse"
           :marks="isParentReadOnly ? undefined : marks"
           :on-word-tap="isParentReadOnly ? undefined : tap"
+          :on-words-mark="isParentReadOnly ? undefined : setMarks"
         />
       </template>
 

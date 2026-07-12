@@ -80,15 +80,6 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
 
     <div class="sm:ms-auto flex items-center gap-1 rounded-md border border-default p-0.5">
       <UButton
-        :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
-        color="primary"
-        icon="i-lucide-layout-grid"
-        size="sm"
-        square
-        :aria-label="t('pages.students.view.grid')"
-        @click="viewMode = 'grid'"
-      />
-      <UButton
         :variant="viewMode === 'table' ? 'soft' : 'ghost'"
         color="primary"
         icon="i-lucide-table-2"
@@ -96,6 +87,15 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
         square
         :aria-label="t('pages.students.view.table')"
         @click="viewMode = 'table'"
+      />
+      <UButton
+        :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
+        color="primary"
+        icon="i-lucide-layout-grid"
+        size="sm"
+        square
+        :aria-label="t('pages.students.view.grid')"
+        @click="viewMode = 'grid'"
       />
     </div>
   </div>

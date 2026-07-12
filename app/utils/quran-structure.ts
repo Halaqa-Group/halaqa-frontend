@@ -2,6 +2,17 @@ import { VERSE_COUNTS } from '~/utils/quran'
 
 export type PlanUnit = 'page' | 'juz' | 'hizb' | 'quarter' | 'surah'
 
+// Whole-Quran totals per unit — the upper bound for a daily amount of each
+// نوع المقدار. A daily amount is only meaningful up to the number of units the
+// Quran holds (e.g. at most 30 juz, 240 quarters).
+export const UNIT_TOTALS: Record<PlanUnit, number> = {
+  page: 614,
+  juz: 30,
+  hizb: 60,
+  quarter: 240,
+  surah: 114
+}
+
 export interface VerseRange {
   start_surah: number
   start_verse: number

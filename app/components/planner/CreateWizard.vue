@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { expandPlan, type PlanUnit } from '~/utils/quran-structure'
+import { expandPlan, UNIT_TOTALS, type PlanUnit } from '~/utils/quran-structure'
 import { TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
 import { PLAN_TRACKS, type CreatePlanItemDto } from '~/composables/useWeeklyPlan'
 
@@ -65,10 +65,19 @@ watch(wizardOpen, (v) => {
   }
 })
 
-const amountItems = [
-  { label: '1', value: 1 },
-  { label: '2', value: 2 }
-]
+function unitMax(unit: PlanUnit): number {
+  return UNIT_TOTALS[unit]
+}
+
+watch(config, () => {
+  for (const track of PLAN_TRACKS as TrackType[]) {
+    const cfg = config[track]
+    const max = unitMax(cfg.unit)
+    if (!Number.isFinite(cfg.amount) || cfg.amount < 1) cfg.amount = 1
+    else if (cfg.amount > max) cfg.amount = max
+  }
+}, { deep: true })
+
 const unitItems = computed(() =>
   UNITS.map(u => ({
     label: t(`pages.planner.units.${u}`),
@@ -243,8 +252,16 @@ async function submit() {
             </UFormField>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <UFormField :label="t('pages.planner.wizard.dailyAmount')">
-                <USelect v-model="config[track].amount" :items="amountItems" value-key="value" class="w-full" />
+              <UFormField
+                :label="t('pages.planner.wizard.dailyAmount')"
+                :hint="t('pages.planner.wizard.maxAmount', { count: unitMax(config[track].unit) })"
+              >
+                <UInputNumber
+                  v-model="config[track].amount"
+                  :min="1"
+                  :max="unitMax(config[track].unit)"
+                  class="w-full"
+                />
               </UFormField>
               <UFormField :label="t('pages.planner.wizard.unit')">
                 <USelect v-model="config[track].unit" :items="unitItems" value-key="value" class="w-full" />

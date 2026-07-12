@@ -78,7 +78,8 @@
     "analytics": "Analytics",
     "planner": "Planner",
     "tasks": "Tasks",
-    "profile": "Profile"
+    "profile": "Profile",
+    "schoolCalendar": "School Calendar"
   },
   "attendance": {
     "status": {
@@ -723,7 +724,8 @@
       },
       "table": {
         "student": "Student",
-        "note": "Note"
+        "note": "Note",
+        "staff": "Staff member"
       },
       "markAllPresent": "Mark all present",
       "markedAllPresent": "All students marked present",
@@ -748,7 +750,13 @@
         "studentUnit": "students",
         "ofTotal": "{present} / {total} students"
       },
-      "cycleStatusHint": "Click to cycle status"
+      "cycleStatusHint": "Click to cycle status",
+      "tabs": {
+        "students": "Students",
+        "staff": "Staff"
+      },
+      "searchStaffPlaceholder": "Search for a staff member...",
+      "noStaff": "No staff members found"
     },
     "students": {
       "communityRecord": "Community record",
@@ -1271,6 +1279,55 @@
         "applyToN": "Apply to {count} students",
         "applyResult": "Created {created} · skipped {skipped} · replaced {replaced} · failed {failed}",
         "noStudents": "No target students"
+      }
+    },
+    "schoolCalendar": {
+      "title": "School Calendar",
+      "subtitle": "Manage operating days and holidays that drive attendance seeding",
+      "loadError": "Failed to load the school calendar",
+      "days": {
+        "sat": "Saturday",
+        "sun": "Sunday",
+        "mon": "Monday",
+        "tue": "Tuesday",
+        "wed": "Wednesday",
+        "thu": "Thursday",
+        "fri": "Friday"
+      },
+      "schedule": {
+        "title": "Operating days",
+        "hint": "Attendance is only seeded on weekdays the school operates.",
+        "addButton": "Add day",
+        "day": "Day",
+        "from": "Effective from",
+        "to": "Effective to",
+        "toOptional": "Effective to (optional)",
+        "openEnded": "Open-ended",
+        "notes": "Notes",
+        "notesOptional": "Notes (optional)",
+        "notesPlaceholder": "e.g. Morning shift",
+        "empty": "No operating days defined yet",
+        "addedToast": "Operating day added",
+        "addError": "Failed to add the operating day",
+        "deletedToast": "Operating day deleted",
+        "deleteError": "Failed to delete the operating day",
+        "deleteTitle": "Delete operating day",
+        "deleteMessage": "Are you sure you want to delete this operating day?"
+      },
+      "holiday": {
+        "title": "Holidays",
+        "hint": "No attendance is seeded on holidays.",
+        "addButton": "Add holiday",
+        "date": "Date",
+        "description": "Description",
+        "descriptionPlaceholder": "e.g. National holiday",
+        "empty": "No holidays defined yet",
+        "addedToast": "Holiday added",
+        "addError": "Failed to add the holiday",
+        "deletedToast": "Holiday deleted",
+        "deleteError": "Failed to delete the holiday",
+        "deleteTitle": "Delete holiday",
+        "deleteMessage": "Are you sure you want to delete this holiday?"
       }
     }
   },

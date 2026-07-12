@@ -1,14 +1,13 @@
 <script setup lang="ts">
 defineProps<{
   isSaving?: boolean
+  isDirty?: boolean
 }>()
 
 defineEmits<{
   save: []
   discard: []
 }>()
-
-const { isDirty } = useAttendance()
 </script>
 
 <template>

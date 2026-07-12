@@ -1,12 +1,15 @@
 <script setup lang="ts">
 const props = defineProps<{
-  studentId: string
   name: string
   notes: string
+  disabled?: boolean
+}>()
+
+const emit = defineEmits<{
+  save: [notes: string]
 }>()
 
 const { t } = useI18n()
-const { setNote } = useAttendance()
 
 const open = ref(false)
 const local = ref(props.notes)
@@ -15,7 +18,7 @@ watch(() => props.notes, (v) => {
 })
 
 function commit() {
-  setNote(props.studentId, local.value)
+  emit('save', local.value)
   open.value = false
 }
 </script>
@@ -28,6 +31,7 @@ function commit() {
       :icon="notes ? 'i-lucide-sticky-note' : 'i-lucide-message-square-plus'"
       size="sm"
       square
+      :disabled="disabled"
       :aria-label="t('pages.attendance.addNote')"
     />
     <template #content>

@@ -5,7 +5,7 @@ import type { AttendanceRow } from '~/composables/useAttendance'
 const { t } = useI18n()
 const {
   attendanceRows, filteredRows, isLoading, loadError, viewMode,
-  hasActiveFilters, clearFilters, wasAbsentYesterday
+  hasActiveFilters, clearFilters, wasAbsentYesterday, setStatus, setNote
 } = useAttendance()
 
 const columns = computed<TableColumn<AttendanceRow>[]>(() => [
@@ -97,11 +97,19 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
           </template>
 
           <template #status-cell="{ row }">
-            <AttendanceStatusToggle :student-id="row.original.studentId" :status="row.original.status" compact />
+            <AttendanceStatusToggle
+              :status="row.original.status"
+              compact
+              @set="(s) => setStatus(row.original.studentId, s)"
+            />
           </template>
 
           <template #note-cell="{ row }">
-            <AttendanceNotePopover :student-id="row.original.studentId" :name="row.original.name" :notes="row.original.notes" />
+            <AttendanceNotePopover
+              :name="row.original.name"
+              :notes="row.original.notes"
+              @save="(v) => setNote(row.original.studentId, v)"
+            />
           </template>
         </UTable>
       </div>

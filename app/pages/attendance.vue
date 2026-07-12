@@ -15,7 +15,21 @@ const {
   loadSession, submitSession, markAllPresent, applyUndoSnapshot, discardChanges
 } = useAttendance()
 
+// Staff attendance dirty state, so the unsaved-changes guards cover both tabs.
+const { isDirty: staffIsDirty } = useTeacherAttendance()
+
 const canMark = computed(() => activeRole.value !== 'parent')
+const canManageStaff = computed(() =>
+  activeRole.value === 'principal' || activeRole.value === 'vice_principal'
+)
+
+const tab = ref<'students' | 'staff'>('staff')
+const tabItems = computed(() => [
+  { label: t('pages.attendance.tabs.staff'), icon: 'i-lucide-briefcase', value: 'staff', slot: 'staff' as const },
+  { label: t('pages.attendance.tabs.students'), icon: 'i-lucide-graduation-cap', value: 'students', slot: 'students' as const }
+])
+
+const anyDirty = computed(() => isDirty.value || staffIsDirty.value)
 
 async function reload() {
   if (selectedHalaqaId.value && selectedDate.value) {
@@ -62,14 +76,14 @@ function handleMarkAllPresent() {
 }
 
 function handleBeforeUnload(e: BeforeUnloadEvent) {
-  if (isDirty.value) {
+  if (anyDirty.value) {
     e.preventDefault()
     e.returnValue = ''
   }
 }
 
 onBeforeRouteLeave(() => {
-  if (!isDirty.value) return true
+  if (!anyDirty.value) return true
   return window.confirm(t('pages.attendance.unsavedConfirmLeave'))
 })
 
@@ -91,37 +105,40 @@ onBeforeUnmount(() => {
           {{ t('pages.attendance.title') }}
         </h1>
       </div>
-      <UButton
-        v-if="canMark && hasHalaqa && attendanceRows.length > 0"
-        icon="i-lucide-check-check"
-        color="primary"
-        variant="soft"
-        class="shrink-0"
-        @click="handleMarkAllPresent"
-      >
-        {{ t('pages.attendance.markAllPresent') }}
-      </UButton>
     </div>
 
-    <div
-      v-if="!hasHalaqa"
-      class="flex flex-col items-center gap-3 py-12 rounded-xl border border-default bg-default"
+    <UTabs
+      v-if="canManageStaff"
+      v-model="tab"
+      :items="tabItems"
+      variant="link"
+      class="w-full"
     >
-      <UIcon name="i-lucide-layers" class="w-10 h-10 text-muted" />
-      <p class="text-sm text-muted">
-        {{ t('common.selectHalaqaPrompt') }}
-      </p>
-    </div>
-
-    <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <AttendanceFilterBar />
+      <template #students>
+        <AttendanceStudentsSection
+          :can-mark="canMark"
+          :has-halaqa="hasHalaqa"
+          :has-rows="attendanceRows.length > 0"
+          @mark-all="handleMarkAllPresent"
+        />
       </template>
-      <AttendanceResults />
-    </UCard>
+      <template #staff>
+        <AttendanceStaffPanel />
+      </template>
+    </UTabs>
+
+    <AttendanceStudentsSection
+      v-else
+      :can-mark="canMark"
+      :has-halaqa="hasHalaqa"
+      :has-rows="attendanceRows.length > 0"
+      @mark-all="handleMarkAllPresent"
+    />
 
     <AttendanceStickyBar
+      v-if="tab === 'students' || !canManageStaff"
       :is-saving="isSaving"
+      :is-dirty="isDirty"
       @save="handleSaveAttendance"
       @discard="discardChanges"
     />

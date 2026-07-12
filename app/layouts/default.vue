@@ -44,6 +44,10 @@ const links = computed<NavigationMenuItem[][]>(() => {
     mainLinks.push({ label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' })
   }
 
+  if (activeRole.value === 'principal' || activeRole.value === 'vice_principal') {
+    mainLinks.push({ label: t('nav.schoolCalendar'), icon: 'i-lucide-calendar-days', to: '/school-calendar' })
+  }
+
   return [mainLinks]
 })
 

@@ -78,7 +78,8 @@
     "analytics": "التحليلات",
     "planner": "المخطط",
     "tasks": "المهام",
-    "profile": "الملف الشخصي"
+    "profile": "الملف الشخصي",
+    "schoolCalendar": "تقويم المدرسة"
   },
   "attendance": {
     "status": {
@@ -723,7 +724,8 @@
       },
       "table": {
         "student": "الطالب",
-        "note": "ملاحظة"
+        "note": "ملاحظة",
+        "staff": "عضو الطاقم"
       },
       "markAllPresent": "تحديد الكل حاضر",
       "markedAllPresent": "تم تحديد جميع الطلاب كحاضرين",
@@ -748,7 +750,13 @@
         "studentUnit": "طالب",
         "ofTotal": "{present} / {total} طالب"
       },
-      "cycleStatusHint": "اضغط لتبديل الحالة"
+      "cycleStatusHint": "اضغط لتبديل الحالة",
+      "tabs": {
+        "students": "الطلاب",
+        "staff": "الطاقم"
+      },
+      "searchStaffPlaceholder": "ابحث عن أحد الطاقم...",
+      "noStaff": "لا يوجد أعضاء طاقم"
     },
     "students": {
       "communityRecord": "سجل المجتمع",
@@ -1271,6 +1279,55 @@
         "applyToN": "تطبيق على {count} طالب",
         "applyResult": "أُنشئت {created} · تُخطّيت {skipped} · استُبدلت {replaced} · فشل {failed}",
         "noStudents": "لا يوجد طلاب مستهدفون"
+      }
+    },
+    "schoolCalendar": {
+      "title": "تقويم المدرسة",
+      "subtitle": "إدارة أيام الدوام والعطلات التي يعتمد عليها إنشاء سجلات الحضور",
+      "loadError": "تعذّر تحميل تقويم المدرسة",
+      "days": {
+        "sat": "السبت",
+        "sun": "الأحد",
+        "mon": "الإثنين",
+        "tue": "الثلاثاء",
+        "wed": "الأربعاء",
+        "thu": "الخميس",
+        "fri": "الجمعة"
+      },
+      "schedule": {
+        "title": "أيام الدوام",
+        "hint": "يتم إنشاء سجلات الحضور فقط في الأيام التي تدوام فيها المدرسة.",
+        "addButton": "إضافة يوم",
+        "day": "اليوم",
+        "from": "ساري من",
+        "to": "ساري حتى",
+        "toOptional": "ساري حتى (اختياري)",
+        "openEnded": "غير محدد",
+        "notes": "ملاحظات",
+        "notesOptional": "ملاحظات (اختياري)",
+        "notesPlaceholder": "مثال: دوام صباحي",
+        "empty": "لم يتم تحديد أيام دوام بعد",
+        "addedToast": "تمت إضافة يوم الدوام",
+        "addError": "تعذّر إضافة يوم الدوام",
+        "deletedToast": "تم حذف يوم الدوام",
+        "deleteError": "تعذّر حذف يوم الدوام",
+        "deleteTitle": "حذف يوم الدوام",
+        "deleteMessage": "هل أنت متأكد من حذف يوم الدوام هذا؟"
+      },
+      "holiday": {
+        "title": "العطلات",
+        "hint": "لا يتم إنشاء سجلات حضور في أيام العطل.",
+        "addButton": "إضافة عطلة",
+        "date": "التاريخ",
+        "description": "الوصف",
+        "descriptionPlaceholder": "مثال: عطلة رسمية",
+        "empty": "لم يتم تحديد عطلات بعد",
+        "addedToast": "تمت إضافة العطلة",
+        "addError": "تعذّر إضافة العطلة",
+        "deletedToast": "تم حذف العطلة",
+        "deleteError": "تعذّر حذف العطلة",
+        "deleteTitle": "حذف العطلة",
+        "deleteMessage": "هل أنت متأكد من حذف هذه العطلة؟"
       }
     }
   },

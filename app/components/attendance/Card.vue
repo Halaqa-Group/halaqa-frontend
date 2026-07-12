@@ -9,7 +9,7 @@ const props = defineProps<{
   notes: string
 }>()
 
-const { wasAbsentYesterday } = useAttendance()
+const { wasAbsentYesterday, setStatus, setNote } = useAttendance()
 const absentYesterday = computed(() => wasAbsentYesterday(props.studentId))
 </script>
 
@@ -32,9 +32,9 @@ const absentYesterday = computed(() => wasAbsentYesterday(props.studentId))
           {{ $t('pages.attendance.absentYesterday') }}
         </UBadge>
       </div>
-      <AttendanceNotePopover :student-id="studentId" :name="name" :notes="notes" />
+      <AttendanceNotePopover :name="name" :notes="notes" @save="(v) => setNote(studentId, v)" />
     </div>
 
-    <AttendanceStatusToggle :student-id="studentId" :status="status" />
+    <AttendanceStatusToggle :status="status" @set="(s) => setStatus(studentId, s)" />
   </div>
 </template>

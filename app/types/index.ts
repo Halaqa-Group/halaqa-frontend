@@ -326,6 +326,89 @@ export interface AttendanceSyncResult {
   results: AttendanceSyncResultRow[]
 }
 
+// PATCH /attendance/students/:id and /attendance/teachers/:id — single-row correction.
+export interface AttendanceCorrectionPayload {
+  status: AttendanceStatus
+  excuse_note?: string
+  modification_reason?: string
+}
+
+// ─── Staff (teacher/admin) attendance — /attendance/teachers ──────────────────
+
+export interface ApiTeacherAttendance {
+  id: number
+  user_id: number
+  date: string
+  status: AttendanceStatus
+  excuse_note: string | null
+  recorded_by?: number | null
+  modified_by?: number | null
+  modification_reason?: string | null
+  original_status?: string | null
+  created_at?: string
+}
+
+export interface ApiTeacherAttendanceListResult {
+  items: ApiTeacherAttendance[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface TeacherAttendanceSyncEntry {
+  user_id: number
+  date: string
+  status: AttendanceStatus
+  excuse_note?: string
+  client_uuid?: string
+  client_recorded_at?: string
+  device_id?: string
+}
+
+export interface TeacherAttendanceSyncResultRow {
+  user_id: number
+  date: string
+  client_uuid: string | null
+  outcome: 'created' | 'updated' | 'duplicate' | 'forbidden'
+  attendance_id: number | null
+}
+
+export interface TeacherAttendanceSyncResult {
+  created: number
+  updated: number
+  duplicate: number
+  forbidden: number
+  results: TeacherAttendanceSyncResultRow[]
+}
+
+// ─── School calendar — /attendance/schedules and /attendance/holidays ─────────
+
+export interface ApiSchoolSchedule {
+  id: number
+  day_of_week: number // 0=Saturday … 6=Friday
+  effective_from: string
+  effective_to: string | null
+  notes: string | null
+}
+
+export interface CreateSchoolSchedulePayload {
+  day_of_week: number
+  effective_from: string
+  effective_to?: string
+  notes?: string
+}
+
+export interface ApiHoliday {
+  id: number
+  holiday_date: string
+  description: string
+}
+
+export interface CreateHolidayPayload {
+  holiday_date: string
+  description: string
+}
+
 export interface ApiAchievement {
   id: number
   student_id: number

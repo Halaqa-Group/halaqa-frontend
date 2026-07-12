@@ -2,13 +2,16 @@
 import type { AttendanceStatus } from '~/types'
 
 defineProps<{
-  studentId: string
   status: AttendanceStatus
   compact?: boolean
+  disabled?: boolean
+}>()
+
+const emit = defineEmits<{
+  set: [status: AttendanceStatus]
 }>()
 
 const { t } = useI18n()
-const { setStatus } = useAttendance()
 
 const STATUSES: { value: AttendanceStatus, icon: string, active: string, labelKey: string }[] = [
   { value: 'present', icon: 'i-lucide-check', active: 'bg-success-500 text-white', labelKey: 'attendance.status.present' },
@@ -21,7 +24,7 @@ const STATUSES: { value: AttendanceStatus, icon: string, active: string, labelKe
 <template>
   <div
     class="rounded-lg border border-default bg-elevated p-0.5 flex gap-0.5"
-    :class="compact ? 'inline-flex' : 'w-full'"
+    :class="[compact ? 'inline-flex' : 'w-full', disabled ? 'opacity-60' : '']"
     role="group"
   >
     <button
@@ -31,12 +34,14 @@ const STATUSES: { value: AttendanceStatus, icon: string, active: string, labelKe
       class="flex items-center justify-center gap-1.5 rounded-md text-xs font-medium transition-colors min-h-9"
       :class="[
         compact ? 'px-2.5' : 'flex-1 py-2',
-        status === s.value ? s.active : 'text-muted hover:text-highlighted hover:bg-default'
+        status === s.value ? s.active : 'text-muted hover:text-highlighted hover:bg-default',
+        disabled ? 'cursor-not-allowed' : ''
       ]"
       :title="t(s.labelKey)"
       :aria-label="t(s.labelKey)"
       :aria-pressed="status === s.value"
-      @click="setStatus(studentId, s.value)"
+      :disabled="disabled"
+      @click="emit('set', s.value)"
     >
       <UIcon :name="s.icon" class="w-4 h-4 shrink-0" />
       <span v-if="!compact" class="truncate">{{ t(s.labelKey) }}</span>

@@ -158,6 +158,40 @@ export function useAttendance() {
     }
   }
 
+  // Single-row correction via the dedicated PATCH endpoint. Unlike the bulk /sync
+  // path, this records a modification_reason and preserves original_status server-side.
+  async function correct(
+    attendanceId: number,
+    payload: { status: AttendanceStatus, excuseNote?: string, modificationReason?: string }
+  ): Promise<ApiAttendance> {
+    const updated = await api<ApiAttendance>(`/attendance/students/${attendanceId}`, {
+      method: 'PATCH',
+      body: {
+        status: payload.status,
+        excuse_note: payload.excuseNote,
+        modification_reason: payload.modificationReason
+      }
+    })
+    // Reflect the corrected row into local state.
+    const studentId = String(updated.student_id)
+    existingRecords.value.set(studentId, {
+      id: updated.id,
+      status: updated.status,
+      notes: updated.excuse_note || ''
+    })
+    const row = attendanceRows.value.find(r => r.studentId === studentId)
+    if (row) {
+      row.status = updated.status
+      row.notes = updated.excuse_note || ''
+    }
+    const snap = originalSnapshot.value.get(studentId)
+    if (snap) {
+      snap.status = updated.status
+      snap.notes = updated.excuse_note || ''
+    }
+    return updated
+  }
+
   function setStatus(studentId: string, status: AttendanceStatus) {
     const row = attendanceRows.value.find(r => r.studentId === studentId)
     if (row) row.status = status
@@ -286,6 +320,7 @@ export function useAttendance() {
     isDirty,
     loadSession,
     submitSession,
+    correct,
     setStatus,
     cycleStatus,
     setNote,

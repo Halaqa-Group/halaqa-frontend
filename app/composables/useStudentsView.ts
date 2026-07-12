@@ -6,7 +6,7 @@ type StatusFilter = Student['status'] | 'deleted' | null
 
 const filterStatus = ref<StatusFilter>(null)
 const sortKey = ref<SortKey>('newest')
-const viewMode = ref<ViewMode>('grid')
+const viewMode = ref<ViewMode>('table')
 
 export function useStudentsView() {
   const {

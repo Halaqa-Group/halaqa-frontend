@@ -598,6 +598,27 @@
       "stats": {
         "childrenCount": "Children count",
         "activeCount": "Active"
+      },
+      "child": {
+        "backToChildren": "Back to children",
+        "tabs": {
+          "achievements": "Achievements",
+          "weeklyPlan": "Weekly plan",
+          "attendance": "Attendance"
+        },
+        "achievements": {
+          "empty": "No achievements recorded yet."
+        },
+        "weeklyPlan": {
+          "empty": "No weekly plans yet.",
+          "weekOf": "Week of {date}",
+          "approved": "Approved",
+          "draft": "Draft",
+          "noItems": "No items in this plan."
+        },
+        "attendance": {
+          "empty": "No attendance records yet."
+        }
       }
     },
     "home": {

@@ -25,12 +25,14 @@ export default defineNuxtRouteMiddleware(async (to) => {
     await fetchMe()
   }
 
-  const PARENT_EXTRA = new Set(['/parent', '/recite'])
-  if (activeRole.value === 'parent' && !PARENT_EXTRA.has(to.path)) {
+  const isParentRoute = to.path === '/parent'
+    || to.path.startsWith('/parent/')
+    || to.path === '/recite'
+  if (activeRole.value === 'parent' && !isParentRoute) {
     return navigateTo('/parent')
   }
 
-  if (activeRole.value !== 'parent' && to.path === '/parent') {
+  if (activeRole.value !== 'parent' && (to.path === '/parent' || to.path.startsWith('/parent/'))) {
     return navigateTo('/')
   }
 })

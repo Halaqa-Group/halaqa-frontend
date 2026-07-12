@@ -10,7 +10,10 @@ definePageMeta({
 
 const { t, locale } = useI18n()
 const { children, isLoading, error, fetchChildren } = useMyChildren()
-const { openView } = useStudents()
+
+function openChild(student: Student) {
+  return navigateTo(`/parent/children/${student.id}`)
+}
 
 const dateFormatter = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
@@ -99,7 +102,7 @@ onMounted(fetchChildren)
             :key="student.id"
             type="button"
             class="w-full rounded-lg border border-default p-4 text-start transition-colors hover:bg-surface-container-low"
-            @click="openView(student)"
+            @click="openChild(student)"
           >
             <div class="flex items-center gap-4">
               <img

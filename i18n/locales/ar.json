@@ -598,6 +598,27 @@
       "stats": {
         "childrenCount": "عدد الأبناء",
         "activeCount": "النشطون"
+      },
+      "child": {
+        "backToChildren": "العودة إلى الأبناء",
+        "tabs": {
+          "achievements": "الإنجازات",
+          "weeklyPlan": "الخطة الأسبوعية",
+          "attendance": "الحضور"
+        },
+        "achievements": {
+          "empty": "لا توجد إنجازات مسجّلة بعد."
+        },
+        "weeklyPlan": {
+          "empty": "لا توجد خطط أسبوعية بعد.",
+          "weekOf": "أسبوع {date}",
+          "approved": "معتمدة",
+          "draft": "مسودة",
+          "noItems": "لا توجد بنود في هذه الخطة."
+        },
+        "attendance": {
+          "empty": "لا توجد سجلات حضور بعد."
+        }
       }
     },
     "home": {

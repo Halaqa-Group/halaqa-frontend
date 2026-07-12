@@ -70,7 +70,16 @@ export function totalVersesInRange(
   endSurah: number,
   endVerse: number
 ): number {
-  const start = startSurah * 10000 + startVerse
-  const end = endSurah * 10000 + endVerse
-  return Math.max(0, end - start + 1)
+  if (endSurah < startSurah || (endSurah === startSurah && endVerse < startVerse)) {
+    return 0
+  }
+  if (startSurah === endSurah) {
+    return endVerse - startVerse + 1
+  }
+  let total = (VERSE_COUNTS[startSurah] ?? 0) - startVerse + 1
+  for (let s = startSurah + 1; s < endSurah; s++) {
+    total += VERSE_COUNTS[s] ?? 0
+  }
+  total += endVerse
+  return Math.max(0, total)
 }

@@ -9,6 +9,7 @@ const { t } = useI18n()
 const { user } = useAuth()
 const toast = useToast()
 const { fetchGuardians, linkGuardian, updateGuardian, unlinkGuardian, refetchStudent } = useStudents()
+const { parents, isLoading: isLoadingParents, fetchParents } = useSchoolParents()
 
 const isPrincipalOrVP = computed(() => {
   const roles = user.value?.roles ?? []
@@ -86,6 +87,19 @@ const linkModeItems = computed(() => [
   { value: 'email', label: t('pages.students.guardians.linkByEmail') },
   { value: 'userId', label: t('pages.students.guardians.linkByUserId') }
 ])
+
+const parentUserItems = computed(() =>
+  parents.value.map(p => ({
+    value: String(p.id),
+    label: p.email ? `${p.name} — ${p.email}` : p.name
+  }))
+)
+
+watch(() => linkState.mode, (mode) => {
+  if (mode === 'userId' && parents.value.length === 0) {
+    fetchParents().catch(() => { })
+  }
+})
 
 function openLinkDialog() {
   linkState.mode = 'email'
@@ -401,7 +415,16 @@ function rowMenu(g: ApiGuardian): DropdownMenuItem[][] {
             name="userId"
             required
           >
-            <UInput v-model="linkState.userId" type="number" inputmode="numeric" dir="ltr" class="w-full" />
+            <USelectMenu
+              v-model="linkState.userId"
+              :items="parentUserItems"
+              value-key="value"
+              searchable
+              :loading="isLoadingParents"
+              :placeholder="t('pages.students.guardians.userIdPlaceholder')"
+              icon="i-lucide-user"
+              class="w-full"
+            />
           </UFormField>
 
           <UFormField :label="t('pages.students.guardians.relation')" name="relation" required>

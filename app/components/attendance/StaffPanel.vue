@@ -18,7 +18,7 @@ const {
 const calendarOpen = ref(false)
 
 const statusItems = computed(() => [
-  { label: t('pages.attendance.filters.all'), value: 'all' },
+  { label: t('pages.attendance.filters.allStaff'), value: 'all' },
   { label: t('pages.attendance.filters.present'), value: 'present' },
   { label: t('pages.attendance.filters.late'), value: 'late' },
   { label: t('pages.attendance.filters.absent'), value: 'absent' },

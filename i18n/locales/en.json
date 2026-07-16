@@ -732,6 +732,7 @@
       },
       "filters": {
         "all": "All students",
+        "allStaff": "All staff",
         "present": "Present",
         "absent": "Absent",
         "late": "Late",

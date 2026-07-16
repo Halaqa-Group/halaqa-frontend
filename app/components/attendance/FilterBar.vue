@@ -52,6 +52,8 @@ function onCalendarPick(value: unknown) {
       class="w-full sm:w-56"
     />
 
+    <HalaqaFilter />
+
     <UPopover v-model:open="calendarOpen">
       <UButton
         variant="outline"

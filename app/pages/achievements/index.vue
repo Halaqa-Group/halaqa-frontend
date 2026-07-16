@@ -47,7 +47,7 @@ watch([selectedDate, () => filters.trackType, () => filters.status], () => {
 })
 
 onMounted(() => {
-  if (selectedHalaqaId.value) loadAll()
+  loadAll()
 })
 </script>
 

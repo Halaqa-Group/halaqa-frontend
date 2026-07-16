@@ -147,11 +147,12 @@ const quickActions = computed(() => [
   }
 ])
 
-async function loadDashboard(halaqaId: number) {
+// halaqaId null = every student the caller may see (the whole school for a principal).
+async function loadDashboard(halaqaId: number | null) {
   isLoading.value = true
   attendanceError.value = false
   try {
-    await fetchStudents(halaqaId)
+    await fetchStudents({ halaqaId: halaqaId ?? undefined })
     try {
       todayAttendance.value = unwrapList<ApiAttendance>(
         await api<ApiAttendanceListResult | ApiAttendance[]>(`/attendance/students?date=${today}&limit=100`)
@@ -164,17 +165,11 @@ async function loadDashboard(halaqaId: number) {
   }
 }
 
-watch(selectedHalaqaId, async (newId) => {
-  if (newId) await loadDashboard(newId)
-})
+watch(selectedHalaqaId, async newId => await loadDashboard(newId))
 
 onMounted(async () => {
   await initializeHalaqa()
-  if (selectedHalaqaId.value) {
-    await loadDashboard(selectedHalaqaId.value)
-  } else {
-    isLoading.value = false
-  }
+  await loadDashboard(selectedHalaqaId.value)
 })
 </script>
 

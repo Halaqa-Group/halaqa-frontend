@@ -25,6 +25,9 @@
     "no": "No",
     "tryAgain": "Try again",
     "selectHalaqaPrompt": "Use the halaqa icon in the sidebar to select a halaqa",
+    "allHalaqat": "All halaqat",
+    "selectHalaqa": "Select halaqa",
+    "selectHalaqaToContinue": "Select a halaqa to continue",
     "selectStudent": "Select a student",
     "callPhoneAria": "Call {phone}"
   },

@@ -59,6 +59,8 @@ function onCalendarPick(value: unknown) {
 
 <template>
   <div class="flex flex-wrap items-center gap-2">
+    <HalaqaFilter required class="sm:!w-44" />
+
     <USelectMenu
       v-model="selectedStudentId"
       :items="studentItems"

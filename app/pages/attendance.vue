@@ -32,7 +32,8 @@ const tabItems = computed(() => [
 const anyDirty = computed(() => isDirty.value || staffIsDirty.value)
 
 async function reload() {
-  if (selectedHalaqaId.value && selectedDate.value) {
+  // A null halaqa is the unscoped roster, not a missing selection.
+  if (hasHalaqa.value && selectedDate.value) {
     await loadSession(selectedHalaqaId.value, selectedDate.value)
   }
 }

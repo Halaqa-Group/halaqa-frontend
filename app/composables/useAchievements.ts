@@ -43,7 +43,16 @@ const currentEvaluationSettings = ref<Record<string, unknown> | null>(null)
 
 export function useAchievements() {
   const api = useApi()
-  const { selectedHalaqaId } = useGlobalHalaqa()
+  const { selectedHalaqaId, halaqat, selectHalaqa } = useGlobalHalaqa()
+
+  // The record form writes halaqa_id from the global scope, so editing a row while
+  // unscoped (principal viewing all halaqat) has to pin the scope to that row's
+  // own halaqa first.
+  function pinHalaqa(halaqaId: number) {
+    if (selectedHalaqaId.value === halaqaId) return
+    const halaqa = halaqat.value.find(h => h.id === halaqaId)
+    if (halaqa) selectHalaqa(halaqa)
+  }
 
   async function loadEvaluationSettings(halaqaId: number): Promise<Record<string, unknown> | null> {
     if (settingsCache.has(halaqaId)) {
@@ -86,19 +95,16 @@ export function useAchievements() {
 
   async function loadAchievements() {
     const halaqaId = selectedHalaqaId.value
-    if (!halaqaId) {
-      achievements.value = []
-      total.value = 0
-      return
-    }
     isLoading.value = true
     try {
+      // halaqa_id is an additive filter server-side: omitting it returns every
+      // achievement the caller may see.
       const params = new URLSearchParams({
-        halaqa_id: String(halaqaId),
         date: selectedDate.value,
         page: String(page.value),
         limit: String(limit.value)
       })
+      if (halaqaId) params.set('halaqa_id', String(halaqaId))
       if (filters.trackType) params.set('track_type', filters.trackType)
       if (filters.status) params.set('status', filters.status)
 
@@ -114,10 +120,11 @@ export function useAchievements() {
 
   async function loadAll() {
     const halaqaId = selectedHalaqaId.value
+    // The student roster and evaluation settings are per-halaqa and only feed the
+    // record form, which demands a halaqa of its own. Unscoped, just list.
     if (!halaqaId) {
       students.value = []
-      achievements.value = []
-      total.value = 0
+      await loadAchievements()
       return
     }
     await Promise.all([loadStudents(halaqaId), loadAchievements()])
@@ -233,11 +240,13 @@ export function useAchievements() {
   function openEdit(a: ApiAchievement) {
     duplicateFrom.value = null
     editing.value = a
+    pinHalaqa(a.halaqa_id)
     navigateTo('/achievements/record')
   }
   function openDuplicate(a: ApiAchievement) {
     editing.value = null
     duplicateFrom.value = a
+    pinHalaqa(a.halaqa_id)
     navigateTo('/achievements/record')
   }
   function requestDelete(a: ApiAchievement) {

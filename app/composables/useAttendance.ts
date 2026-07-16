@@ -81,7 +81,10 @@ export function useAttendance() {
     return map
   }
 
-  async function loadSession(halaqaId: number, date: string) {
+  // halaqaId null loads every student the caller may see — the school-wide roster
+  // for a principal. Attendance itself is stored per (student, date), so the
+  // sync payload never carries a halaqa.
+  async function loadSession(halaqaId: number | null, date: string) {
     selectedHalaqaId.value = halaqaId
     selectedDate.value = date
     isLoading.value = true
@@ -90,8 +93,9 @@ export function useAttendance() {
       const yesterday = new Date(date)
       yesterday.setDate(yesterday.getDate() - 1)
 
+      const studentsQuery = halaqaId !== null ? `?halaqa_id=${halaqaId}&limit=100` : '?limit=100'
       const [studentsRaw, existingData, yesterdayData] = await Promise.all([
-        api<ApiStudentListResult | ApiStudent[]>(`/students?halaqa_id=${halaqaId}&limit=100`),
+        api<ApiStudentListResult | ApiStudent[]>(`/students${studentsQuery}`),
         fetchAttendanceByDate(date),
         fetchAttendanceByDate(isoOf(yesterday))
       ])
@@ -124,7 +128,6 @@ export function useAttendance() {
   }
 
   async function submitSession() {
-    if (!selectedHalaqaId.value) return
     isSaving.value = true
     saveError.value = null
     try {

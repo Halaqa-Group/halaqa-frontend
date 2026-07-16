@@ -3,7 +3,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { t } = useI18n()
 const { user, activeRole } = useAuth()
-const { initializeHalaqa } = useGlobalHalaqa()
+const { initializeHalaqa, isHalaqaScoped } = useGlobalHalaqa()
 const route = useRoute()
 const localePath = useLocalePath()
 
@@ -62,6 +62,9 @@ watch(activeRole, async (role) => {
   if (!role) return
 
   await refreshNuxtData()
+  // Roles differ in how they scope: re-resolve so a teacher's pinned halaqa does
+  // not leak into an unscoped principal view (and vice versa).
+  await initializeHalaqa()
 
   if (role === 'parent' && route.path !== '/parent') {
     await navigateTo('/parent')
@@ -153,7 +156,7 @@ onMounted(async () => {
           <template #left>
             <div class="flex items-center gap-3">
               <UDashboardSidebarCollapse :icon="isCollapsed ? 'i-lucide-panel-left-close' : 'i-lucide-panel-left-open'" />
-              <HalaqaMenu class="w-56" />
+              <HalaqaMenu v-if="isHalaqaScoped" class="w-56" />
             </div>
           </template>
 

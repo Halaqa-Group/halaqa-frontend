@@ -9,7 +9,7 @@ definePageMeta({
 
 const { t, locale } = useI18n()
 const { activeRole } = useAuth()
-const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
+const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 const { editing, hasStudents, loadStudents } = useAchievements()
 
 const isEdit = computed(() => editing.value != null)
@@ -32,9 +32,17 @@ function setContinueToRecite(value: boolean) {
   formRef.value?.setContinueToRecite(value)
 }
 
+// POST /achievements requires a halaqa_id, so an unscoped role must pick one here
+// before the form can render.
+watch(selectedHalaqaId, async (id) => {
+  if (id) await loadStudents(id)
+})
+
 onMounted(async () => {
   if (!selectedHalaqaId.value) {
-    navigateTo('/achievements')
+    // A scoped role with no halaqa has nothing to record against; unscoped roles
+    // get the picker below instead.
+    if (isHalaqaScoped.value) navigateTo('/achievements')
     return
   }
   // The student picker needs the roster; load it if we arrived here directly.
@@ -64,19 +72,25 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- No halaqa -->
+    <!-- No halaqa: unscoped roles choose one here, scoped roles were redirected -->
     <div
-      v-if="!hasHalaqa"
+      v-if="!selectedHalaqaId"
       class="flex flex-col items-center gap-3 py-12 rounded-xl border border-default bg-default"
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10 text-muted" />
       <p class="text-sm text-muted">
-        {{ t('common.selectHalaqaPrompt') }}
+        {{ isHalaqaScoped ? t('common.selectHalaqaPrompt') : t('common.selectHalaqaToContinue') }}
       </p>
+      <HalaqaFilter required />
     </div>
 
     <template v-else>
       <UCard>
+        <div v-if="!isHalaqaScoped" class="mb-4">
+          <UFormField :label="t('common.selectHalaqa')">
+            <HalaqaFilter required />
+          </UFormField>
+        </div>
         <AchievementForm ref="formRef" @saved="onSaved" />
       </UCard>
 

@@ -25,6 +25,9 @@
     "no": "لا",
     "tryAgain": "إعادة المحاولة",
     "selectHalaqaPrompt": "استخدم أيقونة الحلقات في الشريط الجانبي لاختيار حلقة",
+    "allHalaqat": "كل الحلقات",
+    "selectHalaqa": "اختر الحلقة",
+    "selectHalaqaToContinue": "اختر حلقة للمتابعة",
     "selectStudent": "اختر طالباً",
     "callPhoneAria": "الاتصال على {phone}"
   },

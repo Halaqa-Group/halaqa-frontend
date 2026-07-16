@@ -56,6 +56,7 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
       :placeholder="t('pages.students.searchByName')"
       class="w-full sm:w-64"
     />
+    <HalaqaFilter />
     <USelect
       v-model="filterStatus"
       :items="statusFilters"

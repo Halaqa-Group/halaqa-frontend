@@ -12,7 +12,7 @@ definePageMeta({
 const { t } = useI18n()
 const toast = useToast()
 const { activeRole } = useAuth()
-const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
+const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 const {
   selectedStudentId, selectedWeekStart, plan, planStatus, viewMode,
   formOpen, editing, deleteOpen, deleteTarget,
@@ -124,7 +124,7 @@ onMounted(async () => {
         </p>
       </div>
 
-      <div v-if="hasHalaqa && selectedStudentId" class="flex items-center gap-2 flex-wrap">
+      <div v-if="selectedHalaqaId && selectedStudentId" class="flex items-center gap-2 flex-wrap">
         <UBadge v-if="plan" variant="subtle" :color="statusBadgeColor" size="lg">
           {{ statusLabel }}
         </UBadge>
@@ -174,14 +174,17 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- Weekly plans are written per halaqa, so a halaqa is mandatory here even for
+         roles that browse the rest of the app unscoped. -->
     <div
-      v-if="!hasHalaqa"
+      v-if="!selectedHalaqaId"
       class="flex flex-col items-center gap-3 py-12 rounded-xl border border-default bg-default"
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10 text-muted" />
       <p class="text-sm text-muted">
-        {{ t('common.selectHalaqaPrompt') }}
+        {{ isHalaqaScoped ? t('common.selectHalaqaPrompt') : t('common.selectHalaqaToContinue') }}
       </p>
+      <HalaqaFilter required />
     </div>
 
     <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
@@ -192,7 +195,7 @@ onMounted(async () => {
     </UCard>
 
     <div
-      v-if="hasHalaqa && selectedStudentId && viewMode === 'matrix'"
+      v-if="selectedHalaqaId && selectedStudentId && viewMode === 'matrix'"
       class="grid grid-cols-2 sm:grid-cols-4 gap-3"
     >
       <div class="rounded-xl border border-default bg-default p-3 text-center">

@@ -12,6 +12,9 @@ const props = defineProps<{
   day: number
   track: TrackType
   editable: boolean
+  // Which view to open in: null/undefined = session list, -1 = add form,
+  // >= 0 = edit that session's form directly.
+  editSession?: number | null
 }>()
 const open = defineModel<boolean>('open', { required: true })
 
@@ -126,8 +129,17 @@ function recordAchievement() {
 }
 
 watch(open, (v) => {
-  editIndex.value = null
-  if (v) loadAchievements()
+  if (v) {
+    // Open directly into the requested view: edit a session, add a new one, or
+    // the session list.
+    if (props.editSession == null) editIndex.value = null
+    else if (props.editSession < 0) beginAdd()
+    else if (props.editSession < sessions.value.length) beginEdit(props.editSession)
+    else editIndex.value = null
+    loadAchievements()
+  } else {
+    editIndex.value = null
+  }
 }, { immediate: true })
 </script>
 

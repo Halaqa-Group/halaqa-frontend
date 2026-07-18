@@ -141,10 +141,22 @@ function rangeLabel(day: number, track: TrackType) {
 }
 
 const dialogOpen = ref(false)
-const active = ref<{ day: number, track: TrackType }>({ day: 0, track: 'Hifz' })
-function openCell(day: number, track: TrackType) {
-  active.value = { day, track }
+// edit: null = session list, -1 = add form, >= 0 = edit that session directly.
+const active = ref<{ day: number, track: TrackType, edit: number | null }>({ day: 0, track: 'Hifz', edit: null })
+
+function openDialog(day: number, track: TrackType, edit: number | null) {
+  active.value = { day, track, edit }
   dialogOpen.value = true
+}
+// Clicking a session goes straight to its edit form; clicking an empty cell goes
+// to the add form; the "list" view is reached by cancelling out of the form.
+const openSession = (day: number, track: TrackType, index: number) => openDialog(day, track, index)
+const openAdd = (day: number, track: TrackType) => openDialog(day, track, -1)
+function openCell(day: number, track: TrackType) {
+  // A tapped multi-session cell (mobile) opens its list so the user can pick one;
+  // a single-session cell edits it directly.
+  const list = getCells(day, track)
+  openDialog(day, track, list.length === 1 ? 0 : list.length ? null : -1)
 }
 
 function onPaste(day: number, track: TrackType) {
@@ -236,25 +248,25 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
                 {{ t('pages.planner.row.restDay') }}
               </div>
             </template>
-            <button
+            <div
               v-else-if="getCells(day.index, track).length"
-              type="button"
               :draggable="editable"
-              class="w-full h-full min-h-[3.25rem] flex flex-col items-stretch justify-center gap-1 rounded-lg border bg-default px-3 py-2 text-start transition hover:border-primary hover:bg-elevated"
+              class="w-full h-full min-h-[3.25rem] flex flex-col items-stretch justify-center gap-1 rounded-lg border bg-default px-2 py-1.5 transition hover:border-primary"
               :class="[
                 editable && 'cursor-grab active:cursor-grabbing',
                 isDragOver(day.index, track) ? 'border-primary ring-2 ring-primary/40' : 'border-default',
                 dragSource?.day === day.index && dragSource?.track === track && 'opacity-40'
               ]"
-              @click="openCell(day.index, track)"
               @dragstart="onDragStart(day.index, track, $event)"
               @dragend="onDragEnd"
             >
-              <div
+              <button
                 v-for="(s, i) in getCells(day.index, track)"
                 :key="s.id ?? `new-${i}`"
-                class="flex flex-col items-start gap-0.5"
+                type="button"
+                class="flex flex-col items-start gap-0.5 rounded-md px-1 py-0.5 text-start transition hover:bg-elevated"
                 :class="i > 0 && 'border-t border-default pt-1 mt-0.5'"
+                @click="openSession(day.index, track, i)"
               >
                 <span class="text-sm font-medium leading-tight">
                   {{ formatVerseRange(s.start_surah, s.start_verse, s.end_surah, s.end_verse, SURAH_NAMES) }}
@@ -266,8 +278,18 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
                   <span class="w-2 h-2 rounded-full" :class="planItemStatusDot(s.status)" />
                   {{ s.achieved_verses }}/{{ s.total_verses }}
                 </span>
-              </div>
-            </button>
+              </button>
+              <button
+                v-if="editable"
+                type="button"
+                class="mt-0.5 inline-flex items-center gap-1 self-start rounded-md px-1 py-0.5 text-[11px] text-muted transition hover:text-primary"
+                :aria-label="t('pages.planner.cell.popoverTitleNew')"
+                @click="openAdd(day.index, track)"
+              >
+                <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" />
+                {{ t('pages.planner.cell.popoverTitleNew') }}
+              </button>
+            </div>
             <button
               v-else
               type="button"
@@ -389,6 +411,7 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
       :day="active.day"
       :track="active.track"
       :editable="editable"
+      :edit-session="active.edit"
     />
   </div>
 </template>

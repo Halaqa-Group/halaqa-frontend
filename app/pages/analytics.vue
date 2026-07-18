@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { ApiWarnings } from '~/types'
 
+// Analytics is hidden for now: block direct navigation to /analytics.
+// Remove this definePageMeta to re-enable the page.
+definePageMeta({
+  middleware: [() => navigateTo('/')]
+})
+
 const { t } = useI18n()
 const api = useApi()
 const { halaqat, fetchHalaqat } = useHalaqat()

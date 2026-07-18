@@ -40,9 +40,10 @@ const links = computed<NavigationMenuItem[][]>(() => {
     { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' }
   )
 
-  if (activeRole.value !== 'teacher') {
-    mainLinks.push({ label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' })
-  }
+  // Analytics nav link hidden for now — restore this block to bring it back.
+  // if (activeRole.value !== 'teacher') {
+  //   mainLinks.push({ label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' })
+  // }
 
   if (activeRole.value === 'principal' || activeRole.value === 'vice_principal') {
     mainLinks.push({ label: t('nav.schoolCalendar'), icon: 'i-lucide-calendar-days', to: '/school-calendar' })

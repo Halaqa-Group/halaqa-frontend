@@ -136,15 +136,8 @@ const quickActions = computed(() => [
     href: '/achievements',
     color: 'var(--color-status-warning)',
     bg: 'var(--color-status-warning-bg)'
-  },
-  {
-    label: t('nav.analytics'),
-    description: t('pages.home.quickActions.analytics'),
-    icon: 'i-lucide-bar-chart-3',
-    href: '/analytics',
-    color: 'var(--color-status-overdue)',
-    bg: 'var(--color-status-overdue-bg)'
   }
+  // Analytics quick action hidden for now — re-add alongside /analytics when ready.
 ])
 
 // halaqaId null = every student the caller may see (the whole school for a principal).

@@ -1,37 +1,39 @@
+import quranStructure from '~/data/quran-structure.json'
+import { verseKeyToGlobal } from '~/utils/quran-structure'
+
 type VerseToPageMap = Record<string, number>
 
-let cache: VerseToPageMap | null = null
-let inflight: Promise<VerseToPageMap> | null = null
+const PAGE_START_GLOBALS: number[] = (quranStructure.pageStarts as string[]).map(verseKeyToGlobal)
 
-async function loadMap(): Promise<VerseToPageMap> {
-  if (cache) return cache
-  if (inflight) return inflight
-  // `cache: 'reload'` bypasses the browser HTTP cache — a stale copy from a
-  // previous (truncated) asset build would otherwise silently break page-unit
-  // planning long after the files on disk are rebuilt.
-  inflight = $fetch<VerseToPageMap>('/quran/meta/verse-to-page.json', { cache: 'reload' }).then((m) => {
-    cache = m
-    inflight = null
-    return m
-  })
-  return inflight
+function pageForGlobal(global: number): number | undefined {
+  const starts = PAGE_START_GLOBALS
+  if (!starts.length || global < starts[0]!) return undefined
+  let lo = 0
+  let hi = starts.length - 1
+  let ans = 0
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1
+    if (starts[mid]! <= global) {
+      ans = mid
+      lo = mid + 1
+    } else {
+      hi = mid - 1
+    }
+  }
+  return ans + 1
 }
 
 export function useVerseToPage() {
-  const data = ref<VerseToPageMap | null>(cache)
-  const loading = ref(!cache)
-  const error = ref<Error | null>(null)
-
-  if (!cache) {
-    loadMap()
-      .then((m) => { data.value = m })
-      .catch((e) => { error.value = e as Error })
-      .finally(() => { loading.value = false })
-  }
-
   function pageFor(verseKey: string): number | undefined {
-    return data.value?.[verseKey]
+    const [s, v] = verseKey.split(':').map(Number)
+    if (!s || !v) return undefined
+    return pageForGlobal(verseKeyToGlobal(verseKey))
   }
 
-  return { data: readonly(data), loading: readonly(loading), error: readonly(error), pageFor }
+  return {
+    data: readonly(ref<VerseToPageMap | null>(null)),
+    loading: readonly(ref(false)),
+    error: readonly(ref<Error | null>(null)),
+    pageFor
+  }
 }

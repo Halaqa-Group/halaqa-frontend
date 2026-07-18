@@ -516,6 +516,7 @@ export interface ApiWeeklyPlanItem {
   id: number
   weekly_plan_id?: number
   day_of_week: number
+  order?: number
   track_type: 'Hifz' | 'Near' | 'Far'
   start_surah: number
   start_verse: number

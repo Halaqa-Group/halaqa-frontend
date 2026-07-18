@@ -1231,6 +1231,7 @@
         "addLabel": "إضافة",
         "edit": "تعديل",
         "clear": "إزالة",
+        "removeSession": "حذف الجلسة",
         "fromAyahShort": "من الآية",
         "toAyahShort": "إلى الآية",
         "rangeShort": "من آية {from} إلى {to}",

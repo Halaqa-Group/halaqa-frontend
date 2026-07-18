@@ -21,10 +21,12 @@ const api = useApi()
 const router = useRouter()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
-  dateOfDay, selectedStudentId, getCell, setCell, clearCell, copyCell, pasteCell, copiedCell
+  dateOfDay, selectedStudentId, getCells,
+  addSession, updateSession, removeSession, clearCell, copyCell, pasteCell, copiedCell
 } = useWeeklyPlan()
 
-const cell = computed(() => getCell(props.day, props.track))
+const sessions = computed(() => getCells(props.day, props.track))
+
 const isoDate = computed(() => {
   const d = dateOfDay(props.day)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -37,23 +39,28 @@ const dateLabel = computed(() => {
     return isoDate.value
   }
 })
-const rangeLabel = computed(() => {
-  const c = cell.value
-  return c ? formatVerseRange(c.start_surah, c.start_verse, c.end_surah, c.end_verse, SURAH_NAMES) : ''
-})
-const progressPct = computed(() => {
-  const c = cell.value
-  if (!c || !c.total_verses) return null
-  return Math.round(((c.achieved_verses ?? 0) / c.total_verses) * 100)
-})
 
-const editing = ref(false)
+function sessionRange(c: { start_surah: number, start_verse: number, end_surah: number, end_verse: number }) {
+  return formatVerseRange(c.start_surah, c.start_verse, c.end_surah, c.end_verse, SURAH_NAMES)
+}
+function sessionProgress(c: { achieved_verses?: number, total_verses?: number }): number | null {
+  if (!c.total_verses) return null
+  return Math.round(((c.achieved_verses ?? 0) / c.total_verses) * 100)
+}
+
+// ── Add / edit one session ──────────────────────────────────────────────────
+// editIndex: null = not editing, -1 = adding a new session, >=0 = editing that session.
+const editIndex = ref<number | null>(null)
 const form = reactive({ start_surah: 1, start_verse: 1, end_surah: 1, end_verse: 7 })
-function beginEdit() {
-  const c = cell.value
+
+function beginAdd() {
+  Object.assign(form, { start_surah: 1, start_verse: 1, end_surah: 1, end_verse: 7 })
+  editIndex.value = -1
+}
+function beginEdit(index: number) {
+  const c = sessions.value[index]
   if (c) Object.assign(form, { start_surah: c.start_surah, start_verse: c.start_verse, end_surah: c.end_surah, end_verse: c.end_verse })
-  else Object.assign(form, { start_surah: 1, start_verse: 1, end_surah: 1, end_verse: 7 })
-  editing.value = true
+  editIndex.value = index
 }
 const rangeValid = computed(() => isValidVerseRange(form.start_surah, form.start_verse, form.end_surah, form.end_verse))
 const editCount = computed(() =>
@@ -64,10 +71,14 @@ function saveEdit() {
     toast.add({ title: rangeValid.value.error, color: 'error' })
     return
   }
-  setCell(props.day, props.track, { ...form })
-  editing.value = false
+  if (editIndex.value === -1) addSession(props.day, props.track, { ...form })
+  else if (editIndex.value !== null) updateSession(props.day, props.track, editIndex.value, { ...form })
+  editIndex.value = null
 }
 
+function onRemove(index: number) {
+  removeSession(props.day, props.track, index)
+}
 function onCopy() {
   copyCell(props.day, props.track)
   toast.add({ title: t('pages.planner.cellCopiedToast'), color: 'success' })
@@ -115,7 +126,7 @@ function recordAchievement() {
 }
 
 watch(open, (v) => {
-  editing.value = false
+  editIndex.value = null
   if (v) loadAchievements()
 }, { immediate: true })
 </script>
@@ -135,31 +146,54 @@ watch(open, (v) => {
           </UBadge>
         </div>
 
-        <div v-if="!editing" class="rounded-xl border border-default bg-elevated p-4 space-y-3">
-          <template v-if="cell">
-            <div class="flex items-center justify-between gap-2">
-              <span class="font-semibold">{{ rangeLabel }}</span>
-              <UBadge v-if="cell.status" variant="subtle" size="sm" :color="planItemStatusColor(cell.status)">
-                {{ t(`pages.planner.itemStatus.${cell.status}`) }}
-              </UBadge>
-            </div>
-            <div v-if="progressPct !== null" class="flex items-center gap-2">
-              <div class="flex-1 h-1.5 rounded-full bg-default overflow-hidden">
-                <div class="h-full rounded-full bg-primary" :style="{ width: `${progressPct}%` }" />
-              </div>
-              <span class="text-xs text-muted tabular-nums">{{ cell.achieved_verses }}/{{ cell.total_verses }}</span>
-            </div>
-          </template>
-          <p v-else class="text-sm text-muted text-center py-2">
+        <!-- Session list -->
+        <div v-if="editIndex === null" class="space-y-3">
+          <p v-if="!sessions.length" class="text-sm text-muted text-center py-3 rounded-xl border border-default bg-elevated">
             {{ t('pages.planner.cellDialog.empty') }}
           </p>
 
-          <div v-if="editable" class="flex flex-wrap gap-2 pt-1">
-            <UButton size="sm" variant="soft" icon="i-lucide-pencil" @click="beginEdit">
-              {{ cell ? t('pages.planner.cell.edit') : t('pages.planner.cell.addLabel') }}
+          <ul v-else class="space-y-2">
+            <li
+              v-for="(s, i) in sessions"
+              :key="s.id ?? `new-${i}`"
+              class="rounded-xl border border-default bg-elevated p-3 space-y-2"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-semibold">{{ sessionRange(s) }}</span>
+                <UBadge v-if="s.status" variant="subtle" size="sm" :color="planItemStatusColor(s.status)">
+                  {{ t(`pages.planner.itemStatus.${s.status}`) }}
+                </UBadge>
+              </div>
+              <div v-if="sessionProgress(s) !== null" class="flex items-center gap-2">
+                <div class="flex-1 h-1.5 rounded-full bg-default overflow-hidden">
+                  <div class="h-full rounded-full bg-primary" :style="{ width: `${sessionProgress(s)}%` }" />
+                </div>
+                <span class="text-xs text-muted tabular-nums">{{ s.achieved_verses }}/{{ s.total_verses }}</span>
+              </div>
+              <div v-if="editable" class="flex gap-2 pt-0.5">
+                <UButton size="xs" variant="soft" icon="i-lucide-pencil" @click="beginEdit(i)">
+                  {{ t('pages.planner.cell.edit') }}
+                </UButton>
+                <UButton
+                  size="xs"
+                  variant="soft"
+                  color="error"
+                  icon="i-lucide-trash-2"
+                  :aria-label="t('pages.planner.cell.removeSession')"
+                  @click="onRemove(i)"
+                >
+                  {{ t('pages.planner.cell.removeSession') }}
+                </UButton>
+              </div>
+            </li>
+          </ul>
+
+          <div v-if="editable" class="flex flex-wrap gap-2">
+            <UButton size="sm" variant="soft" icon="i-lucide-plus" @click="beginAdd">
+              {{ t('pages.planner.cell.popoverTitleNew') }}
             </UButton>
             <UButton
-              v-if="cell"
+              v-if="sessions.length"
               size="sm"
               variant="soft"
               color="neutral"
@@ -169,17 +203,17 @@ watch(open, (v) => {
               {{ t('pages.planner.copy') }}
             </UButton>
             <UButton
-              v-if="copiedCell"
+              v-if="copiedCell?.length"
               size="sm"
               variant="soft"
               color="neutral"
               icon="i-lucide-clipboard-paste"
               @click="onPaste"
             >
-              {{ t('pages.planner.paste', { count: 1 }) }}
+              {{ t('pages.planner.paste', { count: copiedCell.length }) }}
             </UButton>
             <UButton
-              v-if="cell"
+              v-if="sessions.length"
               size="sm"
               variant="soft"
               color="error"
@@ -191,6 +225,7 @@ watch(open, (v) => {
           </div>
         </div>
 
+        <!-- Add / edit range form -->
         <div v-else class="rounded-xl border border-default p-4 space-y-4">
           <div class="space-y-2">
             <span class="text-xs font-medium text-muted">{{ t('pages.planner.cell.startLabel') }}</span>
@@ -207,7 +242,7 @@ watch(open, (v) => {
             {{ t('pages.achievements.versesCount', { count: editCount }) }}
           </p>
           <div class="flex justify-end gap-2">
-            <UButton size="sm" variant="soft" color="neutral" @click="editing = false">
+            <UButton size="sm" variant="soft" color="neutral" @click="editIndex = null">
               {{ t('common.cancel') }}
             </UButton>
             <UButton size="sm" icon="i-lucide-check" :disabled="!rangeValid.valid" @click="saveEdit">

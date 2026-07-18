@@ -13,7 +13,7 @@ const props = defineProps<{ editable: boolean }>()
 const { t, locale } = useI18n()
 const toast = useToast()
 const {
-  restDays, copiedCell, dateOfDay, getCell,
+  restDays, copiedCell, dateOfDay, getCell, getCells,
   toggleRestDay, copyRowToAllDays, applyColumnToAllDays, pasteCell, moveCell
 } = useWeeklyPlan()
 
@@ -237,10 +237,10 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
               </div>
             </template>
             <button
-              v-else-if="getCell(day.index, track)"
+              v-else-if="getCells(day.index, track).length"
               type="button"
               :draggable="editable"
-              class="w-full h-full min-h-[3.25rem] flex flex-col items-start justify-center gap-1 rounded-lg border bg-default px-3 py-2 text-start transition hover:border-primary hover:bg-elevated"
+              class="w-full h-full min-h-[3.25rem] flex flex-col items-stretch justify-center gap-1 rounded-lg border bg-default px-3 py-2 text-start transition hover:border-primary hover:bg-elevated"
               :class="[
                 editable && 'cursor-grab active:cursor-grabbing',
                 isDragOver(day.index, track) ? 'border-primary ring-2 ring-primary/40' : 'border-default',
@@ -250,14 +250,23 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
               @dragstart="onDragStart(day.index, track, $event)"
               @dragend="onDragEnd"
             >
-              <span class="text-sm font-medium leading-tight">{{ rangeLabel(day.index, track) }}</span>
-              <span
-                v-if="getCell(day.index, track)?.status"
-                class="inline-flex items-center gap-1 text-[11px] text-muted"
+              <div
+                v-for="(s, i) in getCells(day.index, track)"
+                :key="s.id ?? `new-${i}`"
+                class="flex flex-col items-start gap-0.5"
+                :class="i > 0 && 'border-t border-default pt-1 mt-0.5'"
               >
-                <span class="w-2 h-2 rounded-full" :class="planItemStatusDot(getCell(day.index, track)!.status!)" />
-                {{ getCell(day.index, track)!.achieved_verses }}/{{ getCell(day.index, track)!.total_verses }}
-              </span>
+                <span class="text-sm font-medium leading-tight">
+                  {{ formatVerseRange(s.start_surah, s.start_verse, s.end_surah, s.end_verse, SURAH_NAMES) }}
+                </span>
+                <span
+                  v-if="s.status"
+                  class="inline-flex items-center gap-1 text-[11px] text-muted"
+                >
+                  <span class="w-2 h-2 rounded-full" :class="planItemStatusDot(s.status)" />
+                  {{ s.achieved_verses }}/{{ s.total_verses }}
+                </span>
+              </div>
             </button>
             <button
               v-else
@@ -339,7 +348,18 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
               class="flex-1 min-w-0 flex items-center justify-between gap-2 text-start"
               @click="openCell(day.index, track)"
             >
-              <span v-if="getCell(day.index, track)" class="text-sm truncate">{{ rangeLabel(day.index, track) }}</span>
+              <span v-if="getCells(day.index, track).length" class="min-w-0 flex items-center gap-1.5">
+                <span class="text-sm truncate">{{ rangeLabel(day.index, track) }}</span>
+                <UBadge
+                  v-if="getCells(day.index, track).length > 1"
+                  variant="subtle"
+                  size="sm"
+                  color="neutral"
+                  class="shrink-0 tabular-nums"
+                >
+                  +{{ getCells(day.index, track).length - 1 }}
+                </UBadge>
+              </span>
               <span v-else class="text-xs text-muted inline-flex items-center gap-1">
                 <UIcon name="i-lucide-plus" class="w-3.5 h-3.5" /> {{ t('pages.planner.cell.addLabel') }}
               </span>

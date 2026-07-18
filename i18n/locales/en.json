@@ -1231,6 +1231,7 @@
         "addLabel": "Add",
         "edit": "Edit",
         "clear": "Clear",
+        "removeSession": "Remove session",
         "fromAyahShort": "from",
         "toAyahShort": "to",
         "rangeShort": "ayah {from} to {to}",

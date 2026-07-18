@@ -14,6 +14,7 @@ export const PLAN_TRACKS: TrackType[] = ['Hifz', 'Near', 'Far']
 export interface CreatePlanItemDto {
   day_of_week: number
   track_type: TrackType
+  order?: number
   start_surah: number
   start_verse: number
   end_surah: number
@@ -66,9 +67,9 @@ const editing = ref<ApiWeeklyPlanItem | null>(null)
 const deleteOpen = ref(false)
 const deleteTarget = ref<ApiWeeklyPlanItem | null>(null)
 
-const draft = reactive(new Map<string, DraftCell>())
+const draft = reactive(new Map<string, DraftCell[]>())
 const restDays = reactive(new Set<number>())
-const copiedCell = ref<DraftCell | null>(null)
+const copiedCell = ref<DraftCell[] | null>(null)
 const wizardOpen = ref(false)
 
 export function useWeeklyPlan() {
@@ -107,10 +108,14 @@ export function useWeeklyPlan() {
   function hydrateDraft() {
     draft.clear()
     restDays.clear()
-    for (const it of plan.value?.items ?? []) {
+    // Group every item under its cell, ordered by `order` (then id) so a session's
+    // array index matches its stored order — keeps re-saves from looking dirty.
+    const items = [...(plan.value?.items ?? [])].sort(
+      (a, b) => (a.order ?? 0) - (b.order ?? 0) || a.id - b.id
+    )
+    for (const it of items) {
       const k = cellKey(it.day_of_week, it.track_type)
-      if (draft.has(k)) continue
-      draft.set(k, {
+      draft.set(k, [...(draft.get(k) ?? []), {
         id: it.id,
         start_surah: it.start_surah,
         start_verse: it.start_verse,
@@ -119,17 +124,61 @@ export function useWeeklyPlan() {
         status: it.status,
         achieved_verses: it.achieved_verses,
         total_verses: it.total_verses
-      })
+      }])
     }
   }
 
-  const getCell = (day: number, track: TrackType) => draft.get(cellKey(day, track))
+  const getCells = (day: number, track: TrackType): DraftCell[] => draft.get(cellKey(day, track)) ?? []
+  // First session only — kept for callers that need a single representative range
+  // (drag ghost label, presence check).
+  const getCell = (day: number, track: TrackType): DraftCell | undefined => getCells(day, track)[0]
 
-  function setCell(day: number, track: TrackType, r: VerseRange) {
+  function makeSession(r: VerseRange, extra: Partial<DraftCell> = {}): DraftCell {
+    return { start_surah: r.start_surah, start_verse: r.start_verse, end_surah: r.end_surah, end_verse: r.end_verse, ...extra }
+  }
+  function toRange(c: DraftCell): VerseRange {
+    return { start_surah: c.start_surah, start_verse: c.start_verse, end_surah: c.end_surah, end_verse: c.end_verse }
+  }
+
+  // Replace every session in a cell with a fresh set (new items, no ids). Used by
+  // the wizard's per-day generation, paste, and row/column copy.
+  function setCellSessions(day: number, track: TrackType, ranges: VerseRange[]) {
     const k = cellKey(day, track)
-    const id = draft.get(k)?.id
+    if (!ranges.length) {
+      draft.delete(k)
+      return
+    }
     restDays.delete(day)
-    draft.set(k, { id, start_surah: r.start_surah, start_verse: r.start_verse, end_surah: r.end_surah, end_verse: r.end_verse })
+    draft.set(k, ranges.map(r => makeSession(r)))
+  }
+  function setCell(day: number, track: TrackType, r: VerseRange) {
+    setCellSessions(day, track, [r])
+  }
+
+  // Append a session to a cell.
+  function addSession(day: number, track: TrackType, r: VerseRange) {
+    const k = cellKey(day, track)
+    restDays.delete(day)
+    draft.set(k, [...(draft.get(k) ?? []), makeSession(r)])
+  }
+  // Replace one session's range in place, preserving its id/status so a saved item
+  // is PATCHed rather than recreated.
+  function updateSession(day: number, track: TrackType, index: number, r: VerseRange) {
+    const k = cellKey(day, track)
+    const list = draft.get(k)
+    const cur = list?.[index]
+    if (!list || !cur) return
+    const next = [...list]
+    next[index] = { ...cur, start_surah: r.start_surah, start_verse: r.start_verse, end_surah: r.end_surah, end_verse: r.end_verse }
+    draft.set(k, next)
+  }
+  function removeSession(day: number, track: TrackType, index: number) {
+    const k = cellKey(day, track)
+    const list = draft.get(k)
+    if (!list) return
+    const next = list.filter((_, i) => i !== index)
+    if (next.length) draft.set(k, next)
+    else draft.delete(k)
   }
 
   function clearCell(day: number, track: TrackType) {
@@ -156,51 +205,49 @@ export function useWeeklyPlan() {
   }
 
   function copyRowToAllDays(day: number) {
-    const src = PLAN_TRACKS.map(t => [t, getCell(day, t)] as const)
+    const src = PLAN_TRACKS.map(t => [t, getCells(day, t).map(toRange)] as const)
     for (let d = 0; d < 7; d++) {
       if (d === day || restDays.has(d)) continue
-      for (const [t, cell] of src) {
-        if (cell) setCell(d, t, cell)
-        else clearCell(d, t)
-      }
+      for (const [t, ranges] of src) setCellSessions(d, t, ranges)
     }
   }
 
   function applyColumnToAllDays(track: TrackType): boolean {
-    let source: DraftCell | undefined
+    let source: VerseRange[] | undefined
     for (let d = 0; d < 7; d++) {
-      const c = getCell(d, track)
-      if (c) {
-        source = c
+      const list = getCells(d, track)
+      if (list.length) {
+        source = list.map(toRange)
         break
       }
     }
     if (!source) return false
-    for (const d of activeDays.value) setCell(d, track, source)
+    for (const d of activeDays.value) setCellSessions(d, track, source)
     return true
   }
 
   function moveCell(fromDay: number, fromTrack: TrackType, toDay: number, toTrack: TrackType) {
     if (fromDay === toDay && fromTrack === toTrack) return
     if (restDays.has(toDay)) return
-    const src = getCell(fromDay, fromTrack)
-    if (!src) return
-    const dest = getCell(toDay, toTrack)
-    const srcRange = { start_surah: src.start_surah, start_verse: src.start_verse, end_surah: src.end_surah, end_verse: src.end_verse }
-    setCell(toDay, toTrack, srcRange)
-    if (dest) {
-      setCell(fromDay, fromTrack, { start_surah: dest.start_surah, start_verse: dest.start_verse, end_surah: dest.end_surah, end_verse: dest.end_verse })
-    } else {
-      clearCell(fromDay, fromTrack)
-    }
+    const fromK = cellKey(fromDay, fromTrack)
+    const toK = cellKey(toDay, toTrack)
+    const src = draft.get(fromK)
+    if (!src?.length) return
+    // Move the whole session list, preserving ids (saved items are re-homed via a
+    // PATCH of day_of_week/track_type). Swap with the destination if it's occupied.
+    const dest = draft.get(toK)
+    restDays.delete(toDay)
+    draft.set(toK, src)
+    if (dest?.length) draft.set(fromK, dest)
+    else draft.delete(fromK)
   }
 
   function copyCell(day: number, track: TrackType) {
-    const c = getCell(day, track)
-    if (c) copiedCell.value = { start_surah: c.start_surah, start_verse: c.start_verse, end_surah: c.end_surah, end_verse: c.end_verse }
+    const list = getCells(day, track)
+    if (list.length) copiedCell.value = list.map(c => makeSession(toRange(c)))
   }
   function pasteCell(day: number, track: TrackType) {
-    if (copiedCell.value) setCell(day, track, copiedCell.value)
+    if (copiedCell.value?.length) setCellSessions(day, track, copiedCell.value.map(toRange))
   }
 
   async function saveDraft() {
@@ -210,33 +257,46 @@ export function useWeeklyPlan() {
     isSaving.value = true
     try {
       if (!plan.value) {
-        const items = Array.from(draft.entries()).map(([k, c]) => {
+        const items: CreatePlanItemDto[] = []
+        for (const [k, list] of draft) {
           const { day, track } = splitCellKey(k)
-          return { day_of_week: day, track_type: track, start_surah: c.start_surah, start_verse: c.start_verse, end_surah: c.end_surah, end_verse: c.end_verse }
-        })
+          list.forEach((c, i) => items.push({
+            day_of_week: day, track_type: track, order: i,
+            start_surah: c.start_surah, start_verse: c.start_verse, end_surah: c.end_surah, end_verse: c.end_verse
+          }))
+        }
         if (items.length === 0) return
         await api<ApiWeeklyPlan>('/weekly-plans', {
           method: 'POST',
           body: { student_id: studentId, halaqa_id: halaqaId, week_start_date: selectedWeekStart.value, items }
         })
       } else {
-        const persisted = new Map<string, ApiWeeklyPlanItem>()
-        for (const it of plan.value.items) {
-          const k = cellKey(it.day_of_week, it.track_type)
-          if (!persisted.has(k)) persisted.set(k, it)
-        }
-        for (const [k, c] of draft) {
+        // Diff by item id: PATCH moved/edited sessions, POST new ones, DELETE the
+        // persisted items no draft session still maps to. `order` = array index.
+        const persistedById = new Map<number, ApiWeeklyPlanItem>()
+        for (const it of plan.value.items) persistedById.set(it.id, it)
+        const seen = new Set<number>()
+        for (const [k, list] of draft) {
           const { day, track } = splitCellKey(k)
-          const body = { day_of_week: day, track_type: track, start_surah: c.start_surah, start_verse: c.start_verse, end_surah: c.end_surah, end_verse: c.end_verse }
-          const p = persisted.get(k)
-          if (p) {
-            if (!sameRange(c, p)) await api(`/weekly-plan-items/${p.id}`, { method: 'PATCH', body })
-          } else {
-            await api(`/weekly-plans/${plan.value.id}/items`, { method: 'POST', body })
+          for (let i = 0; i < list.length; i++) {
+            const c = list[i]!
+            const body = {
+              day_of_week: day, track_type: track, order: i,
+              start_surah: c.start_surah, start_verse: c.start_verse, end_surah: c.end_surah, end_verse: c.end_verse
+            }
+            const p = c.id != null ? persistedById.get(c.id) : undefined
+            if (p) {
+              seen.add(p.id)
+              if (!sameRange(c, p) || p.day_of_week !== day || p.track_type !== track || (p.order ?? 0) !== i) {
+                await api(`/weekly-plan-items/${p.id}`, { method: 'PATCH', body })
+              }
+            } else {
+              await api(`/weekly-plans/${plan.value.id}/items`, { method: 'POST', body })
+            }
           }
         }
-        for (const [k, p] of persisted) {
-          if (!draft.has(k)) await api(`/weekly-plan-items/${p.id}`, { method: 'DELETE' })
+        for (const it of plan.value.items) {
+          if (!seen.has(it.id)) await api(`/weekly-plan-items/${it.id}`, { method: 'DELETE' })
         }
       }
       await loadPlan()
@@ -246,28 +306,35 @@ export function useWeeklyPlan() {
   }
 
   const matrixDirty = computed(() => {
-    const persisted = new Map<string, ApiWeeklyPlanItem>()
-    for (const it of plan.value?.items ?? []) {
-      const k = cellKey(it.day_of_week, it.track_type)
-      if (!persisted.has(k)) persisted.set(k, it)
+    const persistedById = new Map<number, ApiWeeklyPlanItem>()
+    for (const it of plan.value?.items ?? []) persistedById.set(it.id, it)
+    const seen = new Set<number>()
+    for (const [k, list] of draft) {
+      const { day, track } = splitCellKey(k)
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i]!
+        const p = c.id != null ? persistedById.get(c.id) : undefined
+        if (!p) return true
+        seen.add(p.id)
+        if (!sameRange(c, p) || p.day_of_week !== day || p.track_type !== track || (p.order ?? 0) !== i) return true
+      }
     }
-    for (const [k, c] of draft) {
-      const p = persisted.get(k)
-      if (!p || !sameRange(c, p)) return true
-    }
-    for (const k of persisted.keys()) if (!draft.has(k)) return true
+    for (const it of plan.value?.items ?? []) if (!seen.has(it.id)) return true
     return false
   })
 
   const matrixSummary = computed(() => {
     let hifzAyahs = 0
     let reviewSessions = 0
-    for (const [k, c] of draft) {
-      const { track } = splitCellKey(k)
-      if (track === 'Hifz') hifzAyahs += totalVersesInRange(c.start_surah, c.start_verse, c.end_surah, c.end_verse)
-      else reviewSessions += 1
+    const plannedDays = new Set<number>()
+    for (const [k, list] of draft) {
+      const { day, track } = splitCellKey(k)
+      if (list.length) plannedDays.add(day)
+      for (const c of list) {
+        if (track === 'Hifz') hifzAyahs += totalVersesInRange(c.start_surah, c.start_verse, c.end_surah, c.end_verse)
+        else reviewSessions += 1
+      }
     }
-    const plannedDays = new Set(Array.from(draft.keys()).map(k => splitCellKey(k).day))
     return { hifzAyahs, reviewSessions, restDays: restDays.size, plannedDays: plannedDays.size }
   })
 
@@ -295,7 +362,9 @@ export function useWeeklyPlan() {
         try {
           const raw = await api<unknown>(`/weekly-plans?student_id=${studentId}&halaqa_id=${halaqaId}&week_start_date=${week}`)
           existingId = unwrapList<ApiWeeklyPlan>(raw)[0]?.id ?? null
-        } catch {}
+        } catch {
+          // No existing plan (or lookup failed) — treat as "none" and try to create.
+        }
 
         if (existingId && policy === 'skip') {
           result.skipped++
@@ -504,7 +573,11 @@ export function useWeeklyPlan() {
     requestDelete,
 
     getCell,
+    getCells,
     setCell,
+    addSession,
+    updateSession,
+    removeSession,
     clearCell,
     toggleRestDay,
     applyTrackGeneration,

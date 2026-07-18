@@ -14,7 +14,7 @@ const toast = useToast()
 const { activeRole } = useAuth()
 const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 const {
-  selectedStudentId, selectedWeekStart, plan, planStatus, viewMode, isSaving,
+  selectedStudentId, selectedWeekStart, plan, planStatus, viewMode,
   formOpen, editing, deleteOpen, deleteTarget,
   wizardOpen, matrixDirty, matrixSummary, saveDraft,
   loadStudents, loadPlan, approvePlan, unapprovePlan, deletePlan, deleteItem, openAdd
@@ -47,22 +47,33 @@ function onSaved() {
   formOpen.value = false
 }
 
+// Per-action loading so saving the draft doesn't spin the approve button (both
+// go through the shared isSaving under the hood).
+const savingDraft = ref(false)
+const approving = ref(false)
+
 async function onSaveDraft() {
+  savingDraft.value = true
   try {
     await saveDraft()
     toast.add({ title: t('pages.planner.savedDraftToast'), color: 'success' })
   } catch (e: any) {
     toast.add({ title: t('pages.planner.saveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+  } finally {
+    savingDraft.value = false
   }
 }
 
 async function onApprove() {
+  approving.value = true
   try {
     if (viewMode.value === 'matrix' && matrixDirty.value) await saveDraft()
     await approvePlan()
     toast.add({ title: t('pages.planner.approvedToast'), color: 'success' })
   } catch (e: any) {
     toast.add({ title: t('pages.planner.approveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+  } finally {
+    approving.value = false
   }
 }
 
@@ -133,7 +144,8 @@ onMounted(async () => {
           v-if="canApprove && planStatus !== 'approved' && (planStatus === 'draft' || (viewMode === 'matrix' && matrixDirty))"
           icon="i-lucide-check-check"
           color="primary"
-          :loading="isSaving"
+          :loading="approving"
+          :disabled="savingDraft"
           @click="onApprove"
         >
           {{ t('pages.planner.approvePlan') }}
@@ -158,7 +170,8 @@ onMounted(async () => {
         <UButton
           v-if="canModify && viewMode === 'matrix'"
           icon="i-lucide-save"
-          :disabled="!matrixDirty"
+          :loading="savingDraft"
+          :disabled="!matrixDirty || approving"
           @click="onSaveDraft"
         >
           {{ t('pages.planner.saveDraft') }}

@@ -6,7 +6,10 @@ let inflight: Promise<VerseToPageMap> | null = null
 async function loadMap(): Promise<VerseToPageMap> {
   if (cache) return cache
   if (inflight) return inflight
-  inflight = $fetch<VerseToPageMap>('/quran/meta/verse-to-page.json').then((m) => {
+  // `cache: 'reload'` bypasses the browser HTTP cache — a stale copy from a
+  // previous (truncated) asset build would otherwise silently break page-unit
+  // planning long after the files on disk are rebuilt.
+  inflight = $fetch<VerseToPageMap>('/quran/meta/verse-to-page.json', { cache: 'reload' }).then((m) => {
     cache = m
     inflight = null
     return m

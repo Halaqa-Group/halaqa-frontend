@@ -31,7 +31,10 @@ const ROOT = resolve(__dirname, '..')
 const DB_PATH = resolve(__dirname, 'data/qpc-v1-layout-15.sqlite')
 const WORDS_DB_PATH = resolve(__dirname, 'data/qpc-v1-words.sqlite')
 const PAGES_DIR = resolve(ROOT, 'public/quran/pages')
-const PAGES_ALL = resolve(ROOT, 'public/quran/meta/pages-all.json')
+const META_DIR = resolve(ROOT, 'public/quran/meta')
+const PAGES_ALL = resolve(META_DIR, 'pages-all.json')
+const VERSE_TO_PAGE = resolve(META_DIR, 'verse-to-page.json')
+const QURAN_STRUCTURE = resolve(META_DIR, 'quran-structure.json')
 const TOTAL_PAGES = 604
 
 async function fileExists(p) {
@@ -247,12 +250,44 @@ async function main() {
   layoutDb.close()
   if (wordsDb !== layoutDb) wordsDb.close()
 
-  // Keep the startup bundle in sync — the client primes its cache from this, so
-  // a stale bundle would mask the freshly-written per-page files.
   await writeFile(PAGES_ALL, JSON.stringify(allPages))
+
+  await writeBoundaryMeta(allPages)
 
   console.log(`✓ Wrote ${written} pages + refreshed pages-all.json.`
     + (missingGlyphs ? ` (${missingGlyphs} words had no matching glyph — check word_key alignment)` : ''))
+}
+
+async function writeBoundaryMeta(allPages) {
+  const pages = [...allPages].sort((a, b) => a.page - b.page)
+
+  const verseToPage = {}
+  const pageStarts = []
+  for (const pg of pages) {
+    const verses = pg.verses ?? []
+    if (verses.length) pageStarts.push(verses[0])
+    for (const vk of verses) {
+      if (!(vk in verseToPage)) verseToPage[vk] = pg.page
+    }
+  }
+
+  await writeFile(VERSE_TO_PAGE, JSON.stringify(verseToPage))
+
+  let structure = { pageStarts: [], juzStarts: [], hizbStarts: [], rubStarts: [] }
+  if (await fileExists(QURAN_STRUCTURE)) {
+    try {
+      structure = { ...structure, ...JSON.parse(await readFile(QURAN_STRUCTURE, 'utf8')) }
+    } catch {
+      // corrupt/partial file — fall back to empty juz/hizb/rub
+    }
+  }
+  structure.pageStarts = pageStarts
+  await writeFile(QURAN_STRUCTURE, JSON.stringify(structure))
+
+  console.log(`✓ verse-to-page.json (${Object.keys(verseToPage).length} verses)`
+    + ` + quran-structure.json (${pageStarts.length} page starts`
+    + (structure.juzStarts?.length ? `, ${structure.juzStarts.length} juz preserved` : '')
+    + `).`)
 }
 
 main().catch((err) => {

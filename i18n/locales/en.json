@@ -1307,6 +1307,7 @@
         "willSchedule": "The plan will be spread across {days} days",
         "noTrack": "Enable at least one track",
         "noData": "Unit data unavailable for this track",
+        "assetsIncomplete": "Quran page data is incomplete — rebuild the Quran assets (pnpm setup:quran) and try again.",
         "generatedToast": "Weekly schedule generated",
         "target": {
           "label": "Apply to",

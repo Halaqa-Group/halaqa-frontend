@@ -69,6 +69,11 @@ function unitMax(unit: PlanUnit): number {
   return UNIT_TOTALS[unit]
 }
 
+const MIN_BOUNDARY_RATIO = 0.9
+function boundariesReady(unit: PlanUnit): boolean {
+  return boundariesFor(unit).length >= Math.floor(UNIT_TOTALS[unit] * MIN_BOUNDARY_RATIO)
+}
+
 watch(config, () => {
   for (const track of PLAN_TRACKS as TrackType[]) {
     const cfg = config[track]
@@ -103,8 +108,8 @@ function buildItems(): CreatePlanItemDto[] {
   for (const track of PLAN_TRACKS as TrackType[]) {
     const cfg = config[track]
     if (!cfg.enabled) continue
+    if (!boundariesReady(cfg.unit)) continue
     const boundaries = boundariesFor(cfg.unit)
-    if (!boundaries.length) continue
     const ranges = expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundaries, days.length)
     ranges.forEach((r, i) => {
       const day = days[i]
@@ -134,17 +139,24 @@ async function submit() {
       return
     }
     let generatedAny = false
+    let incomplete = false
     for (const track of PLAN_TRACKS as TrackType[]) {
       const cfg = config[track]
       if (!cfg.enabled) continue
+      if (!boundariesReady(cfg.unit)) {
+        incomplete = true
+        continue
+      }
       const boundaries = boundariesFor(cfg.unit)
-      if (!boundaries.length) continue
       const ranges = expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundaries, dayCount.value)
       applyTrackGeneration(track, ranges)
       generatedAny = true
     }
     if (!generatedAny) {
-      toast.add({ title: t('pages.planner.wizard.noData'), color: 'warning' })
+      toast.add({
+        title: incomplete ? t('pages.planner.wizard.assetsIncomplete') : t('pages.planner.wizard.noData'),
+        color: 'warning'
+      })
       return
     }
     wizardOpen.value = false
@@ -159,7 +171,11 @@ async function submit() {
   }
   const items = buildItems()
   if (items.length === 0) {
-    toast.add({ title: t('pages.planner.wizard.noData'), color: 'warning' })
+    const incomplete = (PLAN_TRACKS as TrackType[]).some(tk => config[tk].enabled && !boundariesReady(config[tk].unit))
+    toast.add({
+      title: incomplete ? t('pages.planner.wizard.assetsIncomplete') : t('pages.planner.wizard.noData'),
+      color: 'warning'
+    })
     return
   }
   try {

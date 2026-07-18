@@ -340,30 +340,30 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         {{ t('common.loading') }}
       </div>
       <template v-else>
-        <div v-if="planItems.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div v-if="planItems.length" class="grid grid-cols-3 gap-1.5">
           <button
             v-for="it in planItems"
             :key="it.id"
             type="button"
-            class="flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-start transition"
+            class="flex flex-col gap-1 rounded-lg border p-2 text-start transition"
             :class="!manualRange && selectedPlanItemId === it.id
               ? 'border-primary bg-primary/5 ring-1 ring-primary'
               : 'border-default hover:border-primary/60 hover:bg-elevated'"
             @click="pickPlanItem(it)"
           >
-            <UIcon
-              :name="!manualRange && selectedPlanItemId === it.id ? 'i-lucide-circle-check-big' : 'i-lucide-circle'"
-              class="w-5 h-5 shrink-0"
-              :class="!manualRange && selectedPlanItemId === it.id ? 'text-primary' : 'text-muted'"
-            />
-            <div class="min-w-0 flex-1">
-              <UBadge size="sm" variant="subtle" :color="TRACK_BADGE_COLOR[it.track_type as AchievementTrack]">
+            <div class="flex items-center justify-between gap-1">
+              <UBadge size="sm" variant="subtle" :color="TRACK_BADGE_COLOR[it.track_type as AchievementTrack]" class="min-w-0 truncate">
                 {{ t(`pages.achievements.tracks.${it.track_type}`) }}
               </UBadge>
-              <p class="text-sm mt-1 truncate">
-                {{ planItemRange(it) }}
-              </p>
+              <UIcon
+                :name="!manualRange && selectedPlanItemId === it.id ? 'i-lucide-circle-check-big' : 'i-lucide-circle'"
+                class="w-4 h-4 shrink-0"
+                :class="!manualRange && selectedPlanItemId === it.id ? 'text-primary' : 'text-muted'"
+              />
             </div>
+            <p class="text-xs leading-tight">
+              {{ planItemRange(it) }}
+            </p>
           </button>
         </div>
         <p v-else class="text-xs text-muted">

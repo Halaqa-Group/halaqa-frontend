@@ -17,6 +17,8 @@ const {
   students, editing, duplicateFrom, prefillStudentId, selectedDate, currentEvaluationSettings,
   isSaving, addAchievement, updateAchievement, loadEvaluationSettings
 } = useAchievements()
+// Warm the QUL word-id / juz / hizb lookup used to synthesize errors[] on submit.
+useQuranWords()
 
 type TrackKey = 'Hifz' | 'Near' | 'Far'
 
@@ -36,6 +38,7 @@ const state = reactive<{
   mistakes_count: number
   warnings_count: number
   tajweed_errors_count: number
+  harakat_errors_count: number
   teacher_notes: string
 }>({
   student_id: undefined,
@@ -48,6 +51,7 @@ const state = reactive<{
   mistakes_count: 0,
   warnings_count: 0,
   tajweed_errors_count: 0,
+  harakat_errors_count: 0,
   teacher_notes: ''
 })
 
@@ -73,6 +77,7 @@ function hydrate() {
     state.mistakes_count = editing.value ? (src.mistakes_count ?? 0) : 0
     state.warnings_count = editing.value ? (src.warnings_count ?? 0) : 0
     state.tajweed_errors_count = editing.value ? (src.tajweed_errors_count ?? 0) : 0
+    state.harakat_errors_count = editing.value ? (src.harakat_errors_count ?? 0) : 0
     state.teacher_notes = editing.value ? (src.teacher_notes ?? '') : ''
     if (duplicateFrom.value) state.date = selectedDate.value
   } else {
@@ -88,6 +93,7 @@ function hydrate() {
     state.mistakes_count = 0
     state.warnings_count = 0
     state.tajweed_errors_count = 0
+    state.harakat_errors_count = 0
     state.teacher_notes = ''
   }
 }
@@ -145,7 +151,8 @@ const scorePreview = computed(() => computePercentageScore(
   {
     mistakes_count: state.mistakes_count,
     warnings_count: state.warnings_count,
-    tajweed_errors_count: state.tajweed_errors_count
+    tajweed_errors_count: state.tajweed_errors_count,
+    harakat_errors_count: state.harakat_errors_count
   },
   currentEvaluationSettings.value
 ))
@@ -188,6 +195,7 @@ const schema = computed(() => z.object({
   mistakes_count: z.number().min(0),
   warnings_count: z.number().min(0),
   tajweed_errors_count: z.number().min(0),
+  harakat_errors_count: z.number().min(0),
   teacher_notes: z.string().optional()
 }).superRefine((val, ctx) => {
   if (val.student_id == null) {
@@ -211,18 +219,30 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
   if (!halaqaId || studentId == null) return
   await loadEvaluationSettings(halaqaId)
 
+  // The quick form captures error counts, not per-word locations; synthesize
+  // itemized errors at the range's start word so the backend accepts them.
+  const errors = await buildErrorsFromCounts(
+    {
+      mistakes_count: state.mistakes_count,
+      warnings_count: state.warnings_count,
+      tajweed_errors_count: state.tajweed_errors_count,
+      harakat_errors_count: state.harakat_errors_count
+    },
+    state
+  )
+
   const dto: CreateAchievementDto = {
     student_id: studentId,
     halaqa_id: halaqaId,
     date: state.date,
     track_type: state.track_type,
+    completion_method: 'quick',
+    recitation_method: 'full',
     start_surah: state.start_surah,
     start_verse: state.start_verse,
     end_surah: state.end_surah,
     end_verse: state.end_verse,
-    mistakes_count: state.mistakes_count,
-    warnings_count: state.warnings_count,
-    tajweed_errors_count: state.tajweed_errors_count,
+    errors,
     percentage_score: scorePreview.value,
     teacher_notes: state.teacher_notes || undefined
   }
@@ -374,7 +394,7 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       <span v-if="rangeSummary" class="text-xs text-muted">{{ rangeSummary }}</span>
     </div>
 
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <UFormField :label="t('pages.achievements.mistakes')" name="mistakes_count">
         <UInput v-model.number="state.mistakes_count" type="number" :min="0" class="w-full" />
       </UFormField>
@@ -383,6 +403,9 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </UFormField>
       <UFormField :label="t('pages.achievements.tajweedErrors')" name="tajweed_errors_count">
         <UInput v-model.number="state.tajweed_errors_count" type="number" :min="0" class="w-full" />
+      </UFormField>
+      <UFormField :label="t('pages.achievements.harakat')" name="harakat_errors_count">
+        <UInput v-model.number="state.harakat_errors_count" type="number" :min="0" class="w-full" />
       </UFormField>
     </div>
 

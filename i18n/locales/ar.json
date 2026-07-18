@@ -380,6 +380,7 @@
         },
         "back": "رجوع",
         "evaluationSettings": "إعدادات التقييم",
+        "evaluationSettingsHint": "الدرجة المخصومة عن كل خطأ من كل نوع (من ١٠٠).",
         "noEvaluationSettings": "لا توجد إعدادات",
         "studentsCount": "عدد الطلاب",
         "createdAt": "تاريخ الإنشاء",
@@ -1027,6 +1028,7 @@
       "mistakes": "أخطاء",
       "warnings": "تنبيهات",
       "tajweedErrors": "أخطاء التجويد",
+      "harakat": "أخطاء الحركات",
       "notes": "ملاحظات المعلم",
       "notesPlaceholder": "أضف ملاحظاتك على أداء الطالب... (اختياري)",
       "table": {
@@ -1359,6 +1361,8 @@
   },
   "label": {
     "email_address": "البريد الإلكتروني",
+    "email_or_id": "البريد الإلكتروني أو رقم الهوية",
+    "id_number": "رقم الهوية",
     "password": "كلمة المرور",
     "remember_me": "تذكرني",
     "new_password": "كلمة المرور الجديدة",
@@ -1371,7 +1375,9 @@
   "placeholder": {
     "password": "أدخل كلمة المرور",
     "new_password": "٨ أحرف على الأقل",
-    "password_confirmation": "أعد إدخال كلمة المرور"
+    "password_confirmation": "أعد إدخال كلمة المرور",
+    "email_or_id": "you{'@'}email.com أو رقم الهوية",
+    "id_number": "٩ أرقام"
   },
   "action": {
     "sign_in": "تسجيل الدخول",

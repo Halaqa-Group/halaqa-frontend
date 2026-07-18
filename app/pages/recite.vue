@@ -14,6 +14,8 @@ const api = useApi()
 const overlay = useOverlay()
 const { activeRole } = useAuth()
 const { loadEvaluationSettings } = useAchievements()
+// Warm the QUL word-id / juz / hizb lookup so building errors[] on submit is instant.
+useQuranWords()
 
 const isParentReadOnly = computed(() => activeRole.value === 'parent')
 
@@ -199,6 +201,8 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
     const scoreCounts = toScoreCounts(c)
     const settings = await loadEvaluationSettings(hid)
     const score = computePercentageScore(scoreCounts, settings)
+    // Each marked word becomes a precisely-located itemized error.
+    const errors = await buildErrorsFromMarks(marks.value)
     const existing = findExistingAchievement(item)
 
     if (existing) {
@@ -210,13 +214,13 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
         method: 'PATCH',
         body: {
           track_type: item.track_type,
+          completion_method: 'mushaf',
+          recitation_method: 'full',
           start_surah: item.start_surah,
           start_verse: item.start_verse,
           end_surah: item.end_surah,
           end_verse: item.end_verse,
-          mistakes_count: scoreCounts.mistakes_count,
-          warnings_count: scoreCounts.warnings_count,
-          tajweed_errors_count: scoreCounts.tajweed_errors_count,
+          errors,
           percentage_score: score
         }
       })
@@ -236,13 +240,13 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
       halaqa_id: hid,
       date: dateStr.value,
       track_type: item.track_type,
+      completion_method: 'mushaf',
+      recitation_method: 'full',
       start_surah: item.start_surah,
       start_verse: item.start_verse,
       end_surah: item.end_surah,
       end_verse: item.end_verse,
-      mistakes_count: scoreCounts.mistakes_count,
-      warnings_count: scoreCounts.warnings_count,
-      tajweed_errors_count: scoreCounts.tajweed_errors_count,
+      errors,
       percentage_score: score
     }
     const created = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
@@ -334,7 +338,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                     <span class="font-bold">{{ trackLabel(a.track_type) }}</span>
                     <span class="opacity-80">{{ rangeLabel(a) }}</span>
                     <span v-if="!isParentReadOnly" class="tabular-nums opacity-70">
-                      · {{ a.mistakes_count }}خ {{ a.warnings_count }}ت {{ a.tajweed_errors_count }}ج
+                      · {{ a.mistakes_count }}خ {{ a.warnings_count }}ت {{ a.tajweed_errors_count }}ج {{ a.harakat_errors_count ?? 0 }}ح
                     </span>
                   </UBadge>
                 </li>

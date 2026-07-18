@@ -380,6 +380,7 @@
         },
         "back": "Back",
         "evaluationSettings": "Evaluation settings",
+        "evaluationSettingsHint": "Points deducted per single error of each type (out of 100).",
         "noEvaluationSettings": "No settings",
         "studentsCount": "Students",
         "createdAt": "Created",
@@ -1027,6 +1028,7 @@
       "mistakes": "Mistakes",
       "warnings": "Warnings",
       "tajweedErrors": "Tajweed errors",
+      "harakat": "Harakat errors",
       "notes": "Teacher notes",
       "notesPlaceholder": "Add notes on the student's performance... (optional)",
       "table": {
@@ -1359,6 +1361,8 @@
   },
   "label": {
     "email_address": "Email address",
+    "email_or_id": "Email or national ID",
+    "id_number": "National ID",
     "password": "Password",
     "remember_me": "Remember me",
     "new_password": "New password",
@@ -1371,7 +1375,9 @@
   "placeholder": {
     "password": "Enter your password",
     "new_password": "At least 8 characters",
-    "password_confirmation": "Re-enter your password"
+    "password_confirmation": "Re-enter your password",
+    "email_or_id": "you{'@'}email.com or national ID",
+    "id_number": "9 digits"
   },
   "action": {
     "sign_in": "Sign in",

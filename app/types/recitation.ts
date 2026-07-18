@@ -45,9 +45,11 @@ export const SEVERITY_LEVELS: readonly SeverityMeta[] = [
 export const SEVERITY_ORDER: readonly Severity[] = SEVERITY_LEVELS.map(l => l.key)
 
 /**
- * Collapse the four severity counts onto the three weighted score buckets the
- * backend expects. Green (`minor`) is intentionally dropped — it carries no
- * penalty.
+ * Collapse the four severity counts onto the weighted score buckets the backend
+ * expects. Green (`minor`) is intentionally dropped — it carries no penalty.
+ * The mushaf severity spectrum has no `harakat` concept (that error type is only
+ * captured via the numeric quick-entry form), so `harakat_errors_count` is 0
+ * from this flow.
  */
 export function toScoreCounts(counts: MarkCounts): ScoreCounts {
   let mistakes_count = 0
@@ -59,5 +61,5 @@ export function toScoreCounts(counts: MarkCounts): ScoreCounts {
     else if (lvl.scoreSlot === 'warning') warnings_count += n
     else if (lvl.scoreSlot === 'tajweed') tajweed_errors_count += n
   }
-  return { mistakes_count, warnings_count, tajweed_errors_count }
+  return { mistakes_count, warnings_count, tajweed_errors_count, harakat_errors_count: 0 }
 }

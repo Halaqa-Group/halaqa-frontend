@@ -20,7 +20,12 @@ const range = computed(() => formatVerseRange(
   props.achievement.end_surah, props.achievement.end_verse, SURAH_NAMES
 ))
 const isApproved = computed(() => props.achievement.status === 'approved')
-const totalErrors = computed(() => (props.achievement.mistakes_count ?? 0) + (props.achievement.warnings_count ?? 0))
+const totalErrors = computed(() =>
+  (props.achievement.mistakes_count ?? 0)
+  + (props.achievement.warnings_count ?? 0)
+  + (props.achievement.tajweed_errors_count ?? 0)
+  + (props.achievement.harakat_errors_count ?? 0)
+)
 </script>
 
 <template>

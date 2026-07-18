@@ -9,8 +9,11 @@ const { login } = useAuth()
 const apiError = useApiError()
 const toast = useToast()
 
+// The backend accepts email OR national ID; a single free-text field takes
+// either and useAuth.login() decides which based on the "@".
 const schema = z.object({
-  email: z.email({ error: () => t('validation.email') }),
+  identifier: z.string({ error: () => t('validation.required') })
+    .min(1, t('validation.required')),
   password: z.string({ error: () => t('validation.required') })
     .min(1, t('validation.required'))
     .min(6, t('validation.min', { min: 6 })),
@@ -20,7 +23,7 @@ const schema = z.object({
 type Schema = z.output<typeof schema>
 
 const state = reactive<Partial<Schema>>({
-  email: undefined,
+  identifier: undefined,
   password: undefined,
   remember_me: false
 })
@@ -30,7 +33,7 @@ const isLoading = ref(false)
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   isLoading.value = true
   try {
-    await login(event.data.email, event.data.password, event.data.remember_me ?? false)
+    await login(event.data.identifier, event.data.password, event.data.remember_me ?? false)
     await navigateTo('/')
   } catch (e: unknown) {
     toast.add({
@@ -54,8 +57,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       </p>
     </div>
     <UForm ref="form" :schema="schema" :state="state" class="space-y-5" @submit="onSubmit">
-      <UFormField :label="$t('label.email_address')" name="email">
-        <UInput v-model="state.email" placeholder="john.doe@email.com" />
+      <UFormField :label="$t('label.email_or_id')" name="identifier">
+        <UInput v-model="state.identifier" dir="ltr" :placeholder="$t('placeholder.email_or_id')" />
       </UFormField>
       <UFormField :label="$t('label.password')" name="password">
         <CommonPasswordToggle v-model:password="state.password" :placeholder="$t('placeholder.password')" />

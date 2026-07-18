@@ -409,12 +409,26 @@ export interface CreateHolidayPayload {
   description: string
 }
 
-export interface ApiAchievement {
-  id: number
-  student_id: number
-  halaqa_id: number
-  date: string
-  track_type: 'Hifz' | 'Near' | 'Far'
+export type AchievementErrorType = 'mistake' | 'warning' | 'tajweed' | 'harakat'
+export type CompletionMethod = 'quick' | 'mushaf'
+export type RecitationMethod = 'full' | 'test'
+
+// A single itemized error occurrence at a QUL word span. surah/ayah/juz/hizb are
+// supplied by the client from QUL at capture time; the backend denormalizes the
+// rest from the parent achievement.
+export interface PositionError {
+  error_type: AchievementErrorType
+  start_word_id: number
+  end_word_id: number
+  surah: number
+  ayah: number
+  juz: number
+  hizb: number
+}
+
+// A recited/tested position on an achievement (response shape). Derived counts +
+// errors are hidden for the parent role.
+export interface RecitationPosition {
   start_surah: number
   start_verse: number
   end_surah: number
@@ -422,6 +436,28 @@ export interface ApiAchievement {
   mistakes_count?: number
   warnings_count?: number
   tajweed_errors_count?: number
+  harakat_errors_count?: number
+  errors?: PositionError[]
+}
+
+export interface ApiAchievement {
+  id: number
+  student_id: number
+  halaqa_id: number
+  date: string
+  track_type: 'Hifz' | 'Near' | 'Far'
+  completion_method?: CompletionMethod
+  recitation_method?: RecitationMethod
+  recitation_positions?: RecitationPosition[]
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+  // Top-level totals — derived from errors[] by the backend, hidden for parents.
+  mistakes_count?: number
+  warnings_count?: number
+  tajweed_errors_count?: number
+  harakat_errors_count?: number
   percentage_score: number | string
   status: 'approved' | 'unapproved'
   recorded_by_name?: string | null
@@ -502,13 +538,15 @@ export interface CreateAchievementDto {
   halaqa_id: number
   date: string
   track_type: 'Hifz' | 'Near' | 'Far'
+  completion_method?: CompletionMethod
+  recitation_method?: RecitationMethod
   start_surah: number
   start_verse: number
   end_surah: number
   end_verse: number
-  mistakes_count?: number
-  warnings_count?: number
-  tajweed_errors_count?: number
+  // Itemized errors (recitation_method='full' → attached to the single position).
+  // Replaces the old raw-count inputs; the backend derives all counts from this.
+  errors?: PositionError[]
   percentage_score: number
   teacher_notes?: string
   approve?: boolean

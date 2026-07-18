@@ -2,6 +2,7 @@
 import type { TabsItem } from '@nuxt/ui'
 import type { ApiHalaqaDetail } from '~/types'
 import { HALAQA_STATUS_COLOR, HALAQA_TYPE_ICON } from '~/utils/halaqa'
+import { normalizeEvaluationSettings } from '~/utils/score'
 import HalaqaScheduleEditor from '~/components/halaqa/ScheduleEditor.vue'
 import HalaqaTeacherRoster from '~/components/halaqa/TeacherRoster.vue'
 import HalaqaActingPanel from '~/components/halaqa/ActingPanel.vue'
@@ -35,6 +36,18 @@ const { getHalaqa, archiveHalaqa, completeHalaqa, restoreHalaqa } = useHalaqat()
 const halaqaId = computed(() => Number(route.params.id))
 const halaqa = ref<ApiHalaqaDetail | null>(null)
 const loading = ref(false)
+
+// The backend serves a closed 4-weight object; normalize so all four always
+// show even if the halaqa was never explicitly configured.
+const evaluationWeights = computed(() => {
+  const w = normalizeEvaluationSettings(halaqa.value?.evaluation_settings ?? null)
+  return [
+    { key: 'mistake', label: t('pages.achievements.mistakes'), value: w.mistake_weight },
+    { key: 'warning', label: t('pages.achievements.warnings'), value: w.warning_weight },
+    { key: 'tajweed', label: t('pages.achievements.tajweedErrors'), value: w.tajweed_weight },
+    { key: 'harakat', label: t('pages.achievements.harakat'), value: w.harakat_weight }
+  ]
+})
 
 const canManage = computed(() =>
   activeRole.value === 'principal' || activeRole.value === 'vice_principal'
@@ -177,7 +190,9 @@ function formatDate(iso: string) {
               <UIcon :name="HALAQA_TYPE_ICON[halaqa.type]" class="text-primary size-5" />
             </div>
             <div class="space-y-1.5 min-w-0">
-              <h1 class="text-xl sm:text-2xl font-bold truncate">{{ halaqa.name }}</h1>
+              <h1 class="text-xl sm:text-2xl font-bold truncate">
+                {{ halaqa.name }}
+              </h1>
               <div class="flex items-center gap-1.5 flex-wrap">
                 <UBadge variant="subtle" color="neutral" size="sm">
                   {{ t(`pages.halaqat.types.${halaqa.type}`) }}
@@ -203,32 +218,48 @@ function formatDate(iso: string) {
               <p class="text-sm text-muted">
                 {{ t('pages.halaqat.details.studentsCount') }}
               </p>
-              <p class="text-2xl font-bold mt-1">{{ halaqa.students_count }}</p>
+              <p class="text-2xl font-bold mt-1">
+                {{ halaqa.students_count }}
+              </p>
             </UCard>
             <UCard>
               <p class="text-sm text-muted">
                 {{ t('pages.halaqat.details.createdAt') }}
               </p>
-              <p class="text-sm font-medium mt-1">{{ formatDate(halaqa.created_at) }}</p>
+              <p class="text-sm font-medium mt-1">
+                {{ formatDate(halaqa.created_at) }}
+              </p>
             </UCard>
             <UCard>
               <p class="text-sm text-muted">
                 {{ t('pages.halaqat.details.updatedAt') }}
               </p>
-              <p class="text-sm font-medium mt-1">{{ formatDate(halaqa.updated_at) }}</p>
+              <p class="text-sm font-medium mt-1">
+                {{ formatDate(halaqa.updated_at) }}
+              </p>
             </UCard>
 
             <UCard class="md:col-span-3">
-              <h3 class="font-semibold mb-2">
+              <h3 class="font-semibold mb-1">
                 {{ t('pages.halaqat.details.evaluationSettings') }}
               </h3>
-              <pre
-                v-if="halaqa.evaluation_settings"
-                class="text-xs bg-elevated p-3 rounded overflow-x-auto"
-              >{{ JSON.stringify(halaqa.evaluation_settings, null, 2) }}</pre>
-              <p v-else class="text-sm text-muted">
-                {{ t('pages.halaqat.details.noEvaluationSettings') }}
+              <p class="text-xs text-muted mb-3">
+                {{ t('pages.halaqat.details.evaluationSettingsHint') }}
               </p>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div
+                  v-for="w in evaluationWeights"
+                  :key="w.key"
+                  class="rounded-lg border border-default bg-elevated px-3 py-2.5"
+                >
+                  <p class="text-xs text-muted truncate">
+                    {{ w.label }}
+                  </p>
+                  <p class="text-xl font-bold tabular-nums mt-0.5">
+                    −{{ w.value }}
+                  </p>
+                </div>
+              </div>
             </UCard>
           </div>
 

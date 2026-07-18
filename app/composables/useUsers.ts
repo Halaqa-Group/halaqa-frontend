@@ -30,6 +30,9 @@ export interface ListUsersQuery {
 
 export interface CreateUserPayload {
   name: string
+  // National ID — required by the backend on user creation, unique per school,
+  // and usable as a login identifier. A bad checksum is stored with a warning.
+  id_number: string
   email: string
   password: string
   phone?: string | null

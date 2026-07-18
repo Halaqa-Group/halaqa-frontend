@@ -1,10 +1,75 @@
 import { computed, reactive, ref } from 'vue'
 import type {
   ApiAchievement, ApiAttendance, ApiAttendanceListResult, ApiHalaqaDetail, ApiStudent,
-  ApiStudentListResult, StudentWithAttendance, CreateAchievementDto
+  ApiStudentListResult, StudentWithAttendance, CreateAchievementDto,
+  AchievementErrorType, PositionError
 } from '~/types'
+import type { RecitationMarks } from '~/types/recitation'
+import { SEVERITY_LEVELS } from '~/types/recitation'
 import { unwrapList } from '~/utils/api/list'
-import { computePercentageScore } from '~/utils/score'
+import { computePercentageScore, type ScoreCounts } from '~/utils/score'
+import { ensureQuranWordData, locateError } from '~/utils/quran-words'
+
+interface VerseRangeLike {
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+}
+
+// Tally the four error types from an itemized errors[] list — the backend
+// derives the same counts server-side; we mirror it to compute the score and to
+// hydrate the numeric quick-entry form.
+export function tallyErrors(errors: PositionError[] | undefined | null): ScoreCounts {
+  const c: ScoreCounts = {
+    mistakes_count: 0, warnings_count: 0, tajweed_errors_count: 0, harakat_errors_count: 0
+  }
+  for (const e of errors ?? []) {
+    if (e.error_type === 'mistake') c.mistakes_count++
+    else if (e.error_type === 'warning') c.warnings_count++
+    else if (e.error_type === 'tajweed') c.tajweed_errors_count++
+    else if (e.error_type === 'harakat') c.harakat_errors_count++
+  }
+  return c
+}
+
+// Quick-entry form: the teacher types how many of each error type occurred, with
+// no per-word location. We synthesize one error row per occurrence, all located
+// at the range's start word — enough to satisfy the backend (the (surah,ayah)
+// falls within the achievement range and end_word_id >= start_word_id).
+export async function buildErrorsFromCounts(
+  counts: ScoreCounts,
+  range: VerseRangeLike
+): Promise<PositionError[]> {
+  await ensureQuranWordData()
+  const loc = locateError(range.start_surah, range.start_verse)
+  const errors: PositionError[] = []
+  const push = (type: AchievementErrorType, n: number) => {
+    for (let i = 0; i < n; i++) errors.push({ error_type: type, ...loc })
+  }
+  push('mistake', counts.mistakes_count)
+  push('warning', counts.warnings_count)
+  push('tajweed', counts.tajweed_errors_count)
+  push('harakat', counts.harakat_errors_count)
+  return errors
+}
+
+// Mushaf flow: each marked word becomes one precisely-located error. The marking
+// spectrum has no harakat notion, so this only emits mistake/warning/tajweed
+// (green `minor` carries no penalty and is dropped).
+export async function buildErrorsFromMarks(marks: Readonly<RecitationMarks>): Promise<PositionError[]> {
+  await ensureQuranWordData()
+  const errors: PositionError[] = []
+  for (const [key, severity] of Object.entries(marks)) {
+    const slot = SEVERITY_LEVELS.find(l => l.key === severity)?.scoreSlot
+    if (!slot || slot === 'none') continue
+    // key = "surah:ayah:position"
+    const [s, a, p] = key.split(':').map(Number)
+    if (!s || !a || !p) continue
+    errors.push({ error_type: slot as AchievementErrorType, ...locateError(s, a, p) })
+  }
+  return errors
+}
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
 
@@ -162,23 +227,23 @@ export function useAchievements() {
 
   const totalPages = computed(() => (limit.value > 0 ? Math.ceil(total.value / limit.value) : 1))
 
+  // percentage_score is computed on the frontend from the error counts (derived
+  // from the itemized errors[]) and the halaqa's weights, then stored as-is.
   async function withComputedScore(data: CreateAchievementDto): Promise<CreateAchievementDto> {
     const settings = await loadEvaluationSettings(data.halaqa_id)
-    const percentage_score = computePercentageScore(
-      {
-        mistakes_count: data.mistakes_count ?? 0,
-        warnings_count: data.warnings_count ?? 0,
-        tajweed_errors_count: data.tajweed_errors_count ?? 0
-      },
-      settings
-    )
+    const percentage_score = computePercentageScore(tallyErrors(data.errors), settings)
     return { ...data, percentage_score }
   }
 
   async function addAchievement(data: CreateAchievementDto) {
     isSaving.value = true
     try {
-      const body = await withComputedScore(data)
+      const full = await withComputedScore(data)
+      const body: CreateAchievementDto = {
+        ...full,
+        recitation_method: full.recitation_method ?? 'full',
+        errors: full.errors ?? []
+      }
       const created = await api<ApiAchievement>('/achievements', { method: 'POST', body })
       await loadAchievements()
       return created
@@ -193,16 +258,17 @@ export function useAchievements() {
       const full = await withComputedScore(data)
       // The update endpoint only accepts mutable fields — student_id, halaqa_id
       // and date are immutable for an existing record and are rejected by the
-      // backend's whitelist ("property student_id should not exist").
+      // backend's whitelist ("property student_id should not exist"). Sending
+      // errors[] + recitation_method regenerates the positions wholesale.
       const body = {
         track_type: full.track_type,
+        completion_method: full.completion_method,
+        recitation_method: full.recitation_method ?? 'full',
         start_surah: full.start_surah,
         start_verse: full.start_verse,
         end_surah: full.end_surah,
         end_verse: full.end_verse,
-        mistakes_count: full.mistakes_count,
-        warnings_count: full.warnings_count,
-        tajweed_errors_count: full.tajweed_errors_count,
+        errors: full.errors ?? [],
         percentage_score: full.percentage_score,
         teacher_notes: full.teacher_notes
       }

@@ -42,6 +42,7 @@ function formatScore(a: ApiAchievement) {
 }
 function totalErrors(a: ApiAchievement) {
   return (a.mistakes_count ?? 0) + (a.warnings_count ?? 0)
+    + (a.tajweed_errors_count ?? 0) + (a.harakat_errors_count ?? 0)
 }
 
 async function onApprove(a: ApiAchievement) {

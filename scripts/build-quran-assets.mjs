@@ -157,6 +157,48 @@ async function fetchPageMeta(pageNumber, attempt = 1) {
   return json.verses ?? []
 }
 
+// Per-ayah word-entry counts, in mushaf order (index 0 = Al-Fatihah:1). The
+// frontend prefix-sums this to turn a (surah, ayah, position) mark into a stable,
+// monotonic QUL-order word id for achievement error locations. We count every
+// word entry (real words + end/pause markers) so the id lines up with QUL's
+// 1-based per-verse `position` exactly.
+async function buildWordCounts() {
+  const out = resolve(META_DIR, 'word-counts.json')
+  const { readFile } = await import('node:fs/promises')
+  const perVerse = new Map()
+  for (let p = 1; p <= TOTAL_PAGES; p++) {
+    const path = resolve(PAGES_DIR, `${p}.json`)
+    if (!(await fileExists(path))) continue
+    const page = JSON.parse(await readFile(path, 'utf8'))
+    for (const line of page.lines ?? []) {
+      const words = line.w ?? []
+      if (line.k !== undefined) {
+        // Same-verse line: every entry belongs to line.k.
+        perVerse.set(line.k, (perVerse.get(line.k) ?? 0) + words.length)
+      } else {
+        // Mixed line: each entry carries its own verse key at index 1.
+        for (const w of words) {
+          const vk = w[1]
+          perVerse.set(vk, (perVerse.get(vk) ?? 0) + 1)
+        }
+      }
+    }
+  }
+
+  const keys = [...perVerse.keys()].sort((a, b) => {
+    const [as, av] = a.split(':').map(Number)
+    const [bs, bv] = b.split(':').map(Number)
+    return as - bs || av - bv
+  })
+  const wordCounts = keys.map(k => perVerse.get(k))
+  await writeFile(out, JSON.stringify({ wordCounts }))
+  const total = wordCounts.reduce((a, b) => a + b, 0)
+  console.log(`✓ word-counts.json (${wordCounts.length} ayat, ${total} word entries)`)
+  if (wordCounts.length !== 6236) {
+    console.warn(`  ⚠ expected 6236 ayat, got ${wordCounts.length} — pages may be incomplete.`)
+  }
+}
+
 async function buildQuranStructure() {
   const out = resolve(META_DIR, 'quran-structure.json')
   if (!FORCE && (await fileExists(out))) {
@@ -271,6 +313,7 @@ async function main() {
     console.log(`\nPages JSON → ${PAGES_DIR}`)
     allErrors.push(...await runQueue('json', buildOnePage))
     await buildVerseToPage()
+    await buildWordCounts()
     console.log(`\nStructure (page/juz/hizb/rub boundaries) → ${META_DIR}`)
     allErrors.push(...await buildQuranStructure())
   }

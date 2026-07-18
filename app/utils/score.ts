@@ -1,23 +1,30 @@
+// Per-halaqa evaluation weights. Mirrors the backend's closed, typed
+// `evaluation_settings` object: exactly four per-error-type weights, each the
+// number of points deducted per single error of that type. There is no stored
+// `base_score`/`min_score` — the 100-point base and 0 floor are frontend
+// conventions (see score-formula.md in the backend).
 export interface EvaluationSettings {
-  base_score: number
   mistake_weight: number
   warning_weight: number
   tajweed_weight: number
-  min_score: number
+  harakat_weight: number
 }
 
 export interface ScoreCounts {
   mistakes_count: number
   warnings_count: number
   tajweed_errors_count: number
+  harakat_errors_count: number
 }
 
+const BASE_SCORE = 100
+const MIN_SCORE = 0
+
 export const DEFAULT_EVALUATION_SETTINGS: EvaluationSettings = {
-  base_score: 100,
-  mistake_weight: 2,
-  warning_weight: 1,
-  tajweed_weight: 1.5,
-  min_score: 0
+  mistake_weight: 4,
+  warning_weight: 2,
+  tajweed_weight: 1,
+  harakat_weight: 2
 }
 
 function num(value: unknown, fallback: number): number {
@@ -25,27 +32,31 @@ function num(value: unknown, fallback: number): number {
   return typeof n === 'number' && Number.isFinite(n) ? n : fallback
 }
 
+// Merges stored weights over the defaults (per-key fallback), so a partially
+// configured halaqa still resolves to all four weights — matching the backend's
+// `resolveEvaluationSettings()`.
 export function normalizeEvaluationSettings(raw: Record<string, unknown> | null | undefined): EvaluationSettings {
   const d = DEFAULT_EVALUATION_SETTINGS
   if (!raw) return { ...d }
   return {
-    base_score: num(raw.base_score, d.base_score),
     mistake_weight: num(raw.mistake_weight, d.mistake_weight),
     warning_weight: num(raw.warning_weight, d.warning_weight),
     tajweed_weight: num(raw.tajweed_weight, d.tajweed_weight),
-    min_score: num(raw.min_score, d.min_score)
+    harakat_weight: num(raw.harakat_weight, d.harakat_weight)
   }
 }
 
+// score = max(0, 100 − Σ countᵢ·weightᵢ), rounded to 2 decimal places.
 export function computePercentageScore(
   counts: ScoreCounts,
   settings: Record<string, unknown> | EvaluationSettings | null | undefined
 ): number {
   const s = normalizeEvaluationSettings(settings as Record<string, unknown> | null | undefined)
-  const raw = s.base_score
+  const raw = BASE_SCORE
     - counts.mistakes_count * s.mistake_weight
     - counts.warnings_count * s.warning_weight
     - counts.tajweed_errors_count * s.tajweed_weight
-  const clamped = Math.max(s.min_score, raw)
+    - counts.harakat_errors_count * s.harakat_weight
+  const clamped = Math.max(MIN_SCORE, raw)
   return Math.round(clamped * 100) / 100
 }

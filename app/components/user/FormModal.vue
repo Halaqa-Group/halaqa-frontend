@@ -18,6 +18,7 @@ const emit = defineEmits<{
 
 const { t, locale } = useI18n()
 const toast = useToast()
+const api = useApi()
 const usersApi = useUsers()
 const { roles: rolesCatalog, ensureLoaded: ensureRolesLoaded } = useRoles()
 const apiError = useApiError()
@@ -36,6 +37,7 @@ const PHONE_PATTERN = /^\+\d{1,3}[\d\s-]{6,18}$/
 
 interface FormState {
   name: string
+  id_number: string
   email: string
   password: string
   phone: string
@@ -43,7 +45,7 @@ interface FormState {
 }
 
 function emptyState(): FormState {
-  return { name: '', email: '', password: '', phone: '', status: 'active' }
+  return { name: '', id_number: '', email: '', password: '', phone: '', status: 'active' }
 }
 
 const state = reactive<FormState>(emptyState())
@@ -83,6 +85,9 @@ const schema = computed(() => {
   if (props.mode === 'add') {
     return z.object({
       ...base,
+      id_number: z.string({ error: () => t('validation.required') })
+        .min(1, t('validation.required'))
+        .max(20),
       email: z.email({ error: () => t('validation.email') }),
       password: z.string({ error: () => t('validation.required') }).min(8, t('validation.min', { min: 8 }))
     })
@@ -118,7 +123,7 @@ watch(
 
 const isDirty = computed(() => {
   if (props.mode === 'add') {
-    return !!state.name || !!state.email || !!state.password || !!state.phone
+    return !!state.name || !!state.id_number || !!state.email || !!state.password || !!state.phone
       || selectedRoles.value.length > 0
   }
   if (!props.user) return false
@@ -155,6 +160,7 @@ async function onSubmit() {
     if (props.mode === 'add') {
       await usersApi.create({
         name: state.name.trim(),
+        id_number: state.id_number.trim(),
         email: state.email.trim().toLowerCase(),
         password: state.password,
         phone: state.phone.trim() || null,
@@ -162,6 +168,11 @@ async function onSubmit() {
         roles: selectedRoles.value
       })
       toast.add({ title: t('pages.users.addModal.savedToast'), color: 'success' })
+      // The backend stores an id_number with a bad checksum but returns a
+      // warning in the response envelope — surface it without blocking.
+      for (const w of api.lastWarnings.value) {
+        toast.add({ title: w, color: 'warning' })
+      }
     } else if (props.user) {
       await usersApi.update(props.user.id, {
         name: state.name.trim(),
@@ -285,6 +296,10 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
             <UInput v-model="state.name" />
           </UFormField>
 
+          <UFormField v-if="mode === 'add'" :label="$t('label.id_number')" name="id_number" required>
+            <UInput v-model="state.id_number" dir="ltr" :placeholder="$t('placeholder.id_number')" />
+          </UFormField>
+
           <UFormField :label="$t('label.email_address')" name="email" :required="mode === 'add'">
             <UInput
               v-model="state.email"
@@ -351,8 +366,9 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
               <div class="flex-1 font-medium text-sm">
                 {{ locale === 'ar' ? r.nameAr : r.nameEn }}
               </div>
-              <UIcon name="i-lucide-lock"
+              <UIcon
                 v-if="isRoleLocked(r.slug)"
+                name="i-lucide-lock"
 
                 class="size-4 text-muted"
                 :aria-label="$t('pages.users.form.cannotRemoveOwnPrincipal')"

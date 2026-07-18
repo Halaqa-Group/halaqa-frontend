@@ -77,6 +77,25 @@ export interface ApiStudentListResult {
   limit: number
 }
 
+// ─── Memorization — /students/:id/memorization ────────────────────────────────
+export interface ApiMemorization {
+  memorized_ayah_count: number
+  bitmap_base64: string
+}
+
+/** A verse range in the snake_case shape the memorization edit endpoint expects. */
+export interface MemorizationRangeInput {
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+}
+
+export interface EditMemorizationInput {
+  set?: MemorizationRangeInput[]
+  clear?: MemorizationRangeInput[]
+}
+
 export interface ApiGuardian {
   user: {
     id: number

@@ -981,7 +981,23 @@
         "guardianCanPickup": "Can pick up",
         "tabs": {
           "overview": "Overview",
-          "guardians": "Guardians"
+          "guardians": "Guardians",
+          "memorization": "Memorization"
+        },
+        "memorization": {
+          "progressTitle": "Memorization progress",
+          "ayatUnit": "memorized ayat",
+          "rangesTitle": "Memorized ranges",
+          "none": "No memorized ayat recorded yet.",
+          "view": "View",
+          "editTitle": "Adjust memorization",
+          "markMemorized": "Mark memorized",
+          "unmark": "Unmark",
+          "from": "From",
+          "to": "To",
+          "recomputeHint": "Manual edits may be overwritten when a Hifz achievement is approved, unapproved, or deleted (the bitmap is rebuilt from approved achievements).",
+          "saved": "Memorization updated",
+          "saveFailed": "Could not save the change"
         }
       },
       "empty": {

@@ -6,10 +6,11 @@ defineProps<{ student: Student }>()
 const emit = defineEmits<{ close: [] }>()
 
 const { t } = useI18n()
-const activeTab = ref<'overview' | 'guardians'>('overview')
+const activeTab = ref<'overview' | 'memorization' | 'guardians'>('overview')
 
 const tabs = computed<TabsItem[]>(() => [
   { value: 'overview', label: t('pages.students.viewModal.tabs.overview'), icon: 'i-lucide-layout-dashboard' },
+  { value: 'memorization', label: t('pages.students.viewModal.tabs.memorization'), icon: 'i-lucide-book-open' },
   { value: 'guardians', label: t('pages.students.viewModal.tabs.guardians'), icon: 'i-lucide-users' }
 ])
 
@@ -40,6 +41,7 @@ watch(modalOpen, (open) => {
           >
             <template #content="{ item }">
               <StudentViewOverviewTab v-if="item.value === 'overview'" :student="student" />
+              <StudentViewMemorizationTab v-else-if="item.value === 'memorization'" :student="student" />
               <StudentViewGuardiansTab v-else-if="item.value === 'guardians'" :student="student" />
             </template>
           </UTabs>

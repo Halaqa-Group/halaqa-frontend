@@ -14,7 +14,7 @@ const toast = useToast()
 const { activeRole } = useAuth()
 const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 const {
-  selectedStudentId, selectedWeekStart, plan, planStatus, viewMode,
+  selectedStudentId, selectedWeekStart, plan, planStatus, viewMode, isSaving,
   formOpen, editing, deleteOpen, deleteTarget,
   wizardOpen, matrixDirty, matrixSummary, saveDraft,
   loadStudents, loadPlan, approvePlan, unapprovePlan, deletePlan, deleteItem, openAdd
@@ -58,6 +58,7 @@ async function onSaveDraft() {
 
 async function onApprove() {
   try {
+    if (viewMode.value === 'matrix' && matrixDirty.value) await saveDraft()
     await approvePlan()
     toast.add({ title: t('pages.planner.approvedToast'), color: 'success' })
   } catch (e: any) {
@@ -129,9 +130,10 @@ onMounted(async () => {
           {{ statusLabel }}
         </UBadge>
         <UButton
-          v-if="canApprove && planStatus === 'draft'"
+          v-if="canApprove && planStatus !== 'approved' && (planStatus === 'draft' || (viewMode === 'matrix' && matrixDirty))"
           icon="i-lucide-check-check"
           color="primary"
+          :loading="isSaving"
           @click="onApprove"
         >
           {{ t('pages.planner.approvePlan') }}

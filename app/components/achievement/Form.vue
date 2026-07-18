@@ -340,17 +340,31 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         {{ t('common.loading') }}
       </div>
       <template v-else>
-        <div v-if="planItems.length" class="flex flex-wrap gap-2">
-          <UButton
+        <div v-if="planItems.length" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
             v-for="it in planItems"
             :key="it.id"
-            size="sm"
-            :variant="!manualRange && selectedPlanItemId === it.id ? 'solid' : 'soft'"
-            :color="TRACK_BADGE_COLOR[it.track_type as AchievementTrack]"
+            type="button"
+            class="flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-start transition"
+            :class="!manualRange && selectedPlanItemId === it.id
+              ? 'border-primary bg-primary/5 ring-1 ring-primary'
+              : 'border-default hover:border-primary/60 hover:bg-elevated'"
             @click="pickPlanItem(it)"
           >
-            {{ t(`pages.achievements.tracks.${it.track_type}`) }} · {{ planItemRange(it) }}
-          </UButton>
+            <UIcon
+              :name="!manualRange && selectedPlanItemId === it.id ? 'i-lucide-circle-check-big' : 'i-lucide-circle'"
+              class="w-5 h-5 shrink-0"
+              :class="!manualRange && selectedPlanItemId === it.id ? 'text-primary' : 'text-muted'"
+            />
+            <div class="min-w-0 flex-1">
+              <UBadge size="sm" variant="subtle" :color="TRACK_BADGE_COLOR[it.track_type as AchievementTrack]">
+                {{ t(`pages.achievements.tracks.${it.track_type}`) }}
+              </UBadge>
+              <p class="text-sm mt-1 truncate">
+                {{ planItemRange(it) }}
+              </p>
+            </div>
+          </button>
         </div>
         <p v-else class="text-xs text-muted">
           {{ t('pages.achievements.noPlanForDay') }}

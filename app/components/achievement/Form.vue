@@ -395,18 +395,10 @@ defineExpose({ saving: isSaving, setContinueToRecite })
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <UFormField :label="t('pages.achievements.mistakes')" name="mistakes_count">
-        <UInput v-model.number="state.mistakes_count" type="number" :min="0" class="w-full" />
-      </UFormField>
-      <UFormField :label="t('pages.achievements.warnings')" name="warnings_count">
-        <UInput v-model.number="state.warnings_count" type="number" :min="0" class="w-full" />
-      </UFormField>
-      <UFormField :label="t('pages.achievements.tajweedErrors')" name="tajweed_errors_count">
-        <UInput v-model.number="state.tajweed_errors_count" type="number" :min="0" class="w-full" />
-      </UFormField>
-      <UFormField :label="t('pages.achievements.harakat')" name="harakat_errors_count">
-        <UInput v-model.number="state.harakat_errors_count" type="number" :min="0" class="w-full" />
-      </UFormField>
+      <AchievementCounterField v-model="state.mistakes_count" :label="t('pages.achievements.mistakes')" />
+      <AchievementCounterField v-model="state.warnings_count" :label="t('pages.achievements.warnings')" />
+      <AchievementCounterField v-model="state.tajweed_errors_count" :label="t('pages.achievements.tajweedErrors')" />
+      <AchievementCounterField v-model="state.harakat_errors_count" :label="t('pages.achievements.harakat')" />
     </div>
 
     <div class="flex items-center justify-between rounded-lg border border-default bg-elevated px-4 py-2.5">

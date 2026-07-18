@@ -11,7 +11,7 @@ const _useDashboard = () => {
     'g-s': () => router.push('/students'),
     'g-p': () => router.push('/planner'),
     'g-c': () => router.push('/achievements'),
-    'g-y': () => router.push('/analytics'),
+    // 'g-y': () => router.push('/analytics'), // analytics hidden for now
     'n': () => isNotificationsSlideoverOpen.value = !isNotificationsSlideoverOpen.value
   })
 

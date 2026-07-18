@@ -8,6 +8,7 @@ import { verseToGlobal, verseKeyToGlobal } from '~/utils/quran-structure'
 // `/quran/meta/word-counts.json` + `/quran/meta/quran-structure.json`.
 
 interface WordCountsFile {
+  wordCounts: number[]
 }
 interface QuranStructureFile {
   juzStarts: string[]

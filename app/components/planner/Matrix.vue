@@ -281,7 +281,7 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
               <button
                 v-if="editable"
                 type="button"
-                class="mt-0.5 inline-flex items-center gap-1 self-start rounded-md px-1 py-0.5 text-[11px] text-muted transition hover:text-primary"
+                class="inline-flex items-center gap-1 self-start rounded-md px-1.5 py-0.5 text-[11px] text-muted transition hover:text-primary"
                 :aria-label="t('pages.planner.cell.popoverTitleNew')"
                 @click="openAdd(day.index, track)"
               >

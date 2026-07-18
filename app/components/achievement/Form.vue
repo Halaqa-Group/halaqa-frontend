@@ -159,6 +159,9 @@ const scorePreview = computed(() => computePercentageScore(
 const scoreColor = computed(() =>
   scorePreview.value >= 90 ? 'text-success' : scorePreview.value >= 75 ? 'text-warning' : 'text-error'
 )
+const scoreBarColor = computed(() =>
+  scorePreview.value >= 90 ? 'bg-success' : scorePreview.value >= 75 ? 'bg-warning' : 'bg-error'
+)
 
 const studentNameWhenEditing = computed(() =>
   students.value.find(s => s.id === state.student_id)?.name ?? `#${state.student_id}`
@@ -394,16 +397,29 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       <span v-if="rangeSummary" class="text-xs text-muted">{{ rangeSummary }}</span>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <AchievementCounterField v-model="state.mistakes_count" :label="t('pages.achievements.mistakes')" />
-      <AchievementCounterField v-model="state.warnings_count" :label="t('pages.achievements.warnings')" />
-      <AchievementCounterField v-model="state.tajweed_errors_count" :label="t('pages.achievements.tajweedErrors')" />
-      <AchievementCounterField v-model="state.harakat_errors_count" :label="t('pages.achievements.harakat')" />
-    </div>
-
-    <div class="flex items-center justify-between rounded-lg border border-default bg-elevated px-4 py-2.5">
-      <span class="text-sm font-medium text-muted">{{ t('pages.achievements.computedScore') }}</span>
-      <span class="text-xl font-bold tabular-nums" :class="scoreColor">{{ scorePreview }}%</span>
+    <div class="rounded-xl border border-default overflow-hidden">
+      <!-- Live result headline, computed from the error counts below it -->
+      <div class="px-4 py-3 bg-elevated space-y-1.5">
+        <div class="flex items-baseline justify-between gap-2">
+          <span class="text-sm font-medium text-muted">{{ t('pages.achievements.computedScore') }}</span>
+          <span class="text-3xl font-bold tabular-nums leading-none" :class="scoreColor">
+            {{ scorePreview }}<span class="text-base font-semibold">%</span>
+          </span>
+        </div>
+        <div class="h-1.5 rounded-full bg-default overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-300"
+            :class="scoreBarColor"
+            :style="{ width: `${scorePreview}%` }"
+          />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5">
+        <AchievementCounterField v-model="state.mistakes_count" :label="t('pages.achievements.mistakes')" />
+        <AchievementCounterField v-model="state.warnings_count" :label="t('pages.achievements.warnings')" />
+        <AchievementCounterField v-model="state.tajweed_errors_count" :label="t('pages.achievements.tajweedErrors')" />
+        <AchievementCounterField v-model="state.harakat_errors_count" :label="t('pages.achievements.harakat')" />
+      </div>
     </div>
 
     <UFormField :label="t('pages.achievements.notes')" name="teacher_notes">

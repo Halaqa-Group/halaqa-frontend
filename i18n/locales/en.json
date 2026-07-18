@@ -1097,7 +1097,12 @@
       "usePlan": "Choose from plan",
       "saveAndRecite": "Save & recite",
       "fromLabel": "From",
-      "toLabel": "To"
+      "toLabel": "To",
+      "reciteResetConfirm": {
+        "title": "Error counts will be reset",
+        "message": "You entered error counts in the quick form. Continuing to recite on the Mushaf resets them to zero — errors will be counted directly on the Mushaf instead. Continue?",
+        "confirm": "Continue to recite"
+      }
     },
     "analytics": {
       "performanceLabel": "Performance",

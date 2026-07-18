@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { LazyCommonConfirmDialog } from '#components'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
 import { isValidVerseRange, totalVersesInRange, formatVerseRange, VERSE_COUNTS } from '~/utils/quran'
@@ -12,6 +13,7 @@ const emit = defineEmits<{ saved: [] }>()
 
 const { t, locale } = useI18n()
 const toast = useToast()
+const overlay = useOverlay()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
   students, editing, duplicateFrom, prefillStudentId, selectedDate, currentEvaluationSettings,
@@ -163,6 +165,47 @@ const scoreBarColor = computed(() =>
   scorePreview.value >= 90 ? 'bg-success' : scorePreview.value >= 75 ? 'bg-warning' : 'bg-error'
 )
 
+const hasErrorCounts = computed(() =>
+  state.mistakes_count + state.warnings_count + state.tajweed_errors_count + state.harakat_errors_count > 0
+)
+
+// "Save & recite" re-counts errors word-by-word on the mushaf, so any counts typed
+// into the quick form would be discarded. Warn first and only proceed (zeroing the
+// counts) if the teacher confirms.
+function confirmReciteReset(): Promise<boolean> {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (v: boolean) => {
+      if (!settled) {
+        settled = true
+        resolve(v)
+      }
+    }
+    const modal = overlay.create(LazyCommonConfirmDialog, {
+      destroyOnClose: true,
+      props: {
+        'open': true,
+        'title': t('pages.achievements.reciteResetConfirm.title'),
+        'message': t('pages.achievements.reciteResetConfirm.message'),
+        'confirmLabel': t('pages.achievements.reciteResetConfirm.confirm'),
+        'cancelLabel': t('common.cancel'),
+        'icon': 'i-lucide-triangle-alert',
+        'onUpdate:open': (v: boolean) => {
+          if (!v) {
+            modal.close()
+            finish(false)
+          }
+        },
+        'onConfirm': () => {
+          modal.close()
+          finish(true)
+        }
+      }
+    })
+    modal.open()
+  })
+}
+
 const studentNameWhenEditing = computed(() =>
   students.value.find(s => s.id === state.student_id)?.name ?? `#${state.student_id}`
 )
@@ -220,6 +263,21 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
   const halaqaId = selectedHalaqaId.value
   const studentId = state.student_id
   if (!halaqaId || studentId == null) return
+
+  // Heading into the mushaf with counts already entered? Confirm the reset, then
+  // zero them so the mushaf's word-level marking becomes the source of truth.
+  if (continueToRecite.value && hasErrorCounts.value) {
+    const ok = await confirmReciteReset()
+    if (!ok) {
+      continueToRecite.value = false
+      return
+    }
+    state.mistakes_count = 0
+    state.warnings_count = 0
+    state.tajweed_errors_count = 0
+    state.harakat_errors_count = 0
+  }
+
   await loadEvaluationSettings(halaqaId)
 
   // The quick form captures error counts, not per-word locations; synthesize

@@ -1095,7 +1095,9 @@
       "noPlanForDay": "لا توجد خطة لهذا اليوم — أدخل النطاق يدويًا",
       "enterManually": "إدخال يدوي",
       "usePlan": "اختر من الخطة",
-      "saveAndRecite": "حفظ والتلاوة في المصحف"
+      "saveAndRecite": "حفظ والتلاوة في المصحف",
+      "fromLabel": "من",
+      "toLabel": "إلى"
     },
     "analytics": {
       "performanceLabel": "رصد الأداء",

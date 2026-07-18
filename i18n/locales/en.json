@@ -1095,7 +1095,9 @@
       "noPlanForDay": "No plan for this day — enter the range manually",
       "enterManually": "Enter manually",
       "usePlan": "Choose from plan",
-      "saveAndRecite": "Save & recite"
+      "saveAndRecite": "Save & recite",
+      "fromLabel": "From",
+      "toLabel": "To"
     },
     "analytics": {
       "performanceLabel": "Performance",

@@ -292,43 +292,46 @@ defineExpose({ saving: isSaving, setContinueToRecite })
     class="space-y-5"
     @submit="onSubmit"
   >
-    <UFormField :label="t('pages.achievements.table.student')" name="student_id" required>
-      <div v-if="isEdit" class="flex items-center h-9 px-3 rounded-md border border-default bg-elevated text-sm text-muted">
-        {{ studentNameWhenEditing }}
-      </div>
-      <USelectMenu
-        v-else
-        v-model="state.student_id"
-        :items="studentItems"
-        value-key="value"
-        :placeholder="t('pages.achievements.selectStudent')"
-        searchable
-        class="w-full"
-      />
-    </UFormField>
+    <!-- Who & when -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <UFormField :label="t('pages.achievements.table.student')" name="student_id" required>
+        <div v-if="isEdit" class="flex items-center h-9 px-3 rounded-md border border-default bg-elevated text-sm text-muted">
+          {{ studentNameWhenEditing }}
+        </div>
+        <USelectMenu
+          v-else
+          v-model="state.student_id"
+          :items="studentItems"
+          value-key="value"
+          :placeholder="t('pages.achievements.selectStudent')"
+          searchable
+          class="w-full"
+        />
+      </UFormField>
 
-    <UFormField :label="t('pages.achievements.table.date')" name="date">
-      <UPopover v-model:open="calendarOpen">
-        <UButton
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-calendar-days"
-          trailing-icon="i-lucide-chevron-down"
-          class="w-full justify-between"
-        >
-          {{ formattedDate }}
-        </UButton>
-        <template #content>
-          <UCalendar
-            :model-value="calendarValue"
-            :max-value="maxCalendarValue"
-            color="primary"
-            class="p-2"
-            @update:model-value="onCalendarPick"
-          />
-        </template>
-      </UPopover>
-    </UFormField>
+      <UFormField :label="t('pages.achievements.table.date')" name="date">
+        <UPopover v-model:open="calendarOpen">
+          <UButton
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-calendar-days"
+            trailing-icon="i-lucide-chevron-down"
+            class="w-full justify-between"
+          >
+            {{ formattedDate }}
+          </UButton>
+          <template #content>
+            <UCalendar
+              :model-value="calendarValue"
+              :max-value="maxCalendarValue"
+              color="primary"
+              class="p-2"
+              @update:model-value="onCalendarPick"
+            />
+          </template>
+        </UPopover>
+      </UFormField>
+    </div>
 
     <!-- Pick the planned lesson so the range isn't re-typed -->
     <UFormField :label="t('pages.achievements.lessonFromPlan')" name="lesson">
@@ -371,11 +374,21 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </UFormField>
 
       <UFormField :label="t('pages.achievements.table.range')" name="end_verse">
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <USelectMenu v-model="state.start_surah" :items="surahItems" value-key="value" searchable class="w-full" />
-          <UInput v-model.number="state.start_verse" type="number" :min="1" :max="maxStartVerse" class="w-full" />
-          <USelectMenu v-model="state.end_surah" :items="surahItems" value-key="value" searchable class="w-full" />
-          <UInput v-model.number="state.end_verse" type="number" :min="1" :max="maxEndVerse" class="w-full" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <span class="text-xs font-medium text-muted">{{ t('pages.achievements.fromLabel') }}</span>
+            <div class="grid grid-cols-2 gap-2">
+              <USelectMenu v-model="state.start_surah" :items="surahItems" value-key="value" searchable class="w-full" />
+              <UInput v-model.number="state.start_verse" type="number" :min="1" :max="maxStartVerse" class="w-full" />
+            </div>
+          </div>
+          <div class="space-y-1">
+            <span class="text-xs font-medium text-muted">{{ t('pages.achievements.toLabel') }}</span>
+            <div class="grid grid-cols-2 gap-2">
+              <USelectMenu v-model="state.end_surah" :items="surahItems" value-key="value" searchable class="w-full" />
+              <UInput v-model.number="state.end_verse" type="number" :min="1" :max="maxEndVerse" class="w-full" />
+            </div>
+          </div>
         </div>
         <p v-if="rangeSummary" class="mt-1.5 text-xs text-muted">
           {{ rangeSummary }}

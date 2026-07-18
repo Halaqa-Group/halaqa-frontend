@@ -255,7 +255,7 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
                 v-if="getCell(day.index, track)?.status"
                 class="inline-flex items-center gap-1 text-[11px] text-muted"
               >
-                <span class="w-1.5 h-1.5 rounded-full" :class="planItemStatusDot(getCell(day.index, track)!.status!)" />
+                <span class="w-2 h-2 rounded-full" :class="planItemStatusDot(getCell(day.index, track)!.status!)" />
                 {{ getCell(day.index, track)!.achieved_verses }}/{{ getCell(day.index, track)!.total_verses }}
               </span>
             </button>

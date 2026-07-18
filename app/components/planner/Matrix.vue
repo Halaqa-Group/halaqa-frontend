@@ -264,8 +264,7 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
                 v-for="(s, i) in getCells(day.index, track)"
                 :key="s.id ?? `new-${i}`"
                 type="button"
-                class="flex flex-col items-start gap-0.5 rounded-md px-1 py-0.5 text-start transition hover:bg-elevated"
-                :class="i > 0 && 'border-t border-default pt-1 mt-0.5'"
+                class="flex flex-col items-start gap-0.5 rounded-md px-1.5 py-1 text-start transition hover:bg-elevated"
                 @click="openSession(day.index, track, i)"
               >
                 <span class="text-sm font-medium leading-tight">

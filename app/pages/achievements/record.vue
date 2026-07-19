@@ -114,10 +114,11 @@ onMounted(async () => {
         <UButton
           type="submit"
           form="achievement-form"
+          :icon="isEdit ? undefined : 'i-lucide-check-check'"
           :loading="formSaving"
           @click="setContinueToRecite(false)"
         >
-          {{ isEdit ? t('pages.achievements.update') : t('pages.achievements.save') }}
+          {{ isEdit ? t('pages.achievements.update') : t('pages.achievements.recordApprove') }}
         </UButton>
       </div>
     </template>

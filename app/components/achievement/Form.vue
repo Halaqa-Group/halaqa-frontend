@@ -17,7 +17,7 @@ const overlay = useOverlay()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
   students, editing, duplicateFrom, prefillStudentId, selectedDate, currentEvaluationSettings,
-  isSaving, addAchievement, updateAchievement, loadEvaluationSettings
+  isSaving, addAchievement, updateAchievement, approveAchievement, loadEvaluationSettings
 } = useAchievements()
 // Warm the QUL word-id / juz / hizb lookup used to synthesize errors[] on submit.
 useQuranWords()
@@ -314,15 +314,18 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
       await updateAchievement(editing.value.id, dto)
       toast.add({ title: t('pages.achievements.updatedToast'), color: 'success' })
     } else {
-      await addAchievement(dto)
-      toast.add({ title: t('pages.achievements.savedToast'), color: 'success' })
-    }
-    // "Save & recite": after a successful save, continue into the mushaf for
-    // this student/date so the teacher can mark the recitation.
-    if (continueToRecite.value) {
-      continueToRecite.value = false
-      await navigateTo({ path: '/recite', query: { student_id: studentId, halaqa_id: halaqaId, date: state.date } })
-      return
+      const created = await addAchievement(dto)
+      // "Save & recite": continue into the mushaf so the teacher can mark the
+      // recitation. The record stays pending — approving before the errors are
+      // marked would be premature.
+      if (continueToRecite.value) {
+        continueToRecite.value = false
+        await navigateTo({ path: '/recite', query: { student_id: studentId, halaqa_id: halaqaId, date: state.date } })
+        return
+      }
+      // Plain record button approves the achievement on the spot.
+      await approveAchievement(created.id)
+      toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
     }
     emit('saved')
   } catch (e: any) {

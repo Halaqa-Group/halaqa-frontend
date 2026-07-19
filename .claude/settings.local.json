@@ -32,7 +32,9 @@
       "Bash(cp \"C:/Users/hussam/Desktop/logo.png\" \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/halaqa_logo.png\" && ls -la \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/halaqa_logo.png\")",
       "Bash(command -v magick convert)",
       "Bash(command -v ffmpeg)",
-      "Bash(cp \"C:/Users/hussam/Downloads/WhatsApp Image 2026-07-18 at 11.40.53 PM \\(1\\).jpeg\" \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/favicon.jpg\" && ls -la \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/favicon.jpg\")"
+      "Bash(cp \"C:/Users/hussam/Downloads/WhatsApp Image 2026-07-18 at 11.40.53 PM \\(1\\).jpeg\" \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/favicon.jpg\" && ls -la \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/favicon.jpg\")",
+      "Bash(npx vue-tsc *)",
+      "Bash(npm run *)"
     ]
   }
 }

@@ -127,8 +127,9 @@ watch(planItems, (items) => {
 })
 
 // Show the manual track + range inputs when there's no plan, or the teacher
-// explicitly opted into manual entry.
-const showManual = computed(() => manualRange.value || planItems.value.length === 0)
+// explicitly opted into manual entry. When editing, the lesson/range is fixed —
+// it's shown read-only and can't be changed (only counts/notes are editable).
+const showManual = computed(() => !isEdit.value && (manualRange.value || planItems.value.length === 0))
 function planItemRange(it: ApiWeeklyPlanItem) {
   return formatVerseRange(it.start_surah, it.start_verse, it.end_surah, it.end_verse, SURAH_NAMES)
 }
@@ -391,8 +392,9 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </UFormField>
     </div>
 
-    <!-- Pick the planned lesson so the range isn't re-typed -->
-    <UFormField :label="t('pages.achievements.lessonFromPlan')" name="lesson">
+    <!-- Pick the planned lesson so the range isn't re-typed. On edit the lesson
+         is fixed and shown read-only below instead. -->
+    <UFormField v-if="!isEdit" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
       <div v-if="planLoading" class="flex items-center gap-2 text-xs text-muted">
         <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
         {{ t('common.loading') }}
@@ -468,19 +470,20 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </UFormField>
     </template>
 
-    <!-- Chosen lesson summary (read-only) -->
-    <div
-      v-else-if="selectedPlanItemId != null"
-      class="flex items-center justify-between gap-2 rounded-lg border border-default bg-elevated px-3 py-2.5"
-    >
-      <span class="inline-flex items-center gap-2 text-sm font-medium">
-        <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[state.track_type as AchievementTrack]">
-          {{ t(`pages.achievements.tracks.${state.track_type}`) }}
-        </UBadge>
-        {{ formatVerseRange(state.start_surah, state.start_verse, state.end_surah, state.end_verse, SURAH_NAMES) }}
-      </span>
-      <span v-if="rangeSummary" class="text-xs text-muted">{{ rangeSummary }}</span>
-    </div>
+    <!-- Chosen lesson summary (read-only) — the fixed lesson when editing, or the
+         picked plan item. Not editable. -->
+    <UFormField v-else-if="isEdit || selectedPlanItemId != null" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
+      <div class="flex items-center justify-between gap-2 rounded-lg border border-default bg-elevated px-3 py-2.5">
+        <span class="inline-flex items-center gap-2 text-sm font-medium min-w-0">
+          <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[state.track_type as AchievementTrack]" class="shrink-0">
+            {{ t(`pages.achievements.tracks.${state.track_type}`) }}
+          </UBadge>
+          <span class="truncate">{{ formatVerseRange(state.start_surah, state.start_verse, state.end_surah, state.end_verse, SURAH_NAMES) }}</span>
+        </span>
+        <UIcon v-if="isEdit" name="i-lucide-lock" class="w-4 h-4 text-muted shrink-0" />
+        <span v-else-if="rangeSummary" class="text-xs text-muted shrink-0">{{ rangeSummary }}</span>
+      </div>
+    </UFormField>
 
     <div class="rounded-xl border border-default overflow-hidden">
       <!-- Live result headline, computed from the error counts below it -->

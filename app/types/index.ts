@@ -462,6 +462,7 @@ export interface RecitationPosition {
 export interface ApiAchievement {
   id: number
   student_id: number
+  student_name?: string | null
   halaqa_id: number
   date: string
   track_type: 'Hifz' | 'Near' | 'Far'

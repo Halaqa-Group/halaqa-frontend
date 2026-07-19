@@ -16,7 +16,7 @@ const {
   viewMode,
   hasActiveFilters,
   clearFilters,
-  studentName,
+  studentDisplayName,
   studentAvatar,
   openRecord,
   openEdit,
@@ -149,7 +149,7 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
         v-for="a in filteredAchievements"
         :key="a.id"
         :achievement="a"
-        :student-name="studentName(a.student_id)"
+        :student-name="studentDisplayName(a)"
         :student-avatar="studentAvatar(a.student_id)"
         :hide-errors="isParent"
         :actions="rowActions(a)"
@@ -162,10 +162,10 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
           <div class="flex items-center gap-3 min-w-0">
             <img
               :src="studentAvatar(row.original.student_id)"
-              :alt="studentName(row.original.student_id)"
+              :alt="studentDisplayName(row.original)"
               class="w-8 h-8 rounded-full object-cover border border-default shrink-0"
             >
-            <span class="font-medium truncate">{{ studentName(row.original.student_id) }}</span>
+            <span class="font-medium truncate">{{ studentDisplayName(row.original) }}</span>
           </div>
         </template>
 

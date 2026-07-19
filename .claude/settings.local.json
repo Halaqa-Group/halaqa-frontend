@@ -27,7 +27,12 @@
       "PowerShell(Get-NetTCPConnection *)",
       "Bash(grep -rnE \"i-lucide-\\\\\\\\\\\\$\\\\{|lucide:\\\\\\\\\\\\$\\\\{|icon.*\\\\`|\\\\`i-lucide|\\\\`lucide:\" app)",
       "mcp__ide__getDiagnostics",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(ls -la \"C:/Users/hussam/Desktop/logo.png\" 2>/dev/null && echo \"---PUBLIC---\" && ls \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public\" 2>/dev/null && echo \"---ASSETS---\" && ls -R \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/app/assets\" 2>/dev/null)",
+      "Bash(cp \"C:/Users/hussam/Desktop/logo.png\" \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/halaqa_logo.png\" && ls -la \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/halaqa_logo.png\")",
+      "Bash(command -v magick convert)",
+      "Bash(command -v ffmpeg)",
+      "Bash(cp \"C:/Users/hussam/Downloads/WhatsApp Image 2026-07-18 at 11.40.53 PM \\(1\\).jpeg\" \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/favicon.jpg\" && ls -la \"C:/Users/hussam/Github/personal/halaqa/halaqa-nuxtjs/public/images/logo/favicon.jpg\")"
     ]
   }
 }

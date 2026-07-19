@@ -1,19 +1,18 @@
+import wordCountsData from '~/data/word-counts.json'
+import quranStructure from '~/data/quran-structure.json'
 import { verseToGlobal, verseKeyToGlobal } from '~/utils/quran-structure'
 
 // Turns a Quran location (surah, ayah, word position) into the stable, monotonic
 // QUL-order word id the backend stores for achievement errors, plus the juz/hizb
 // that ayah falls in. The backend has no QUL dataset, so these ids only need to
 // be consistent mushaf-order integers — which is exactly what a prefix-sum of the
-// per-ayah word-entry counts produces. Data is loaded from
-// `/quran/meta/word-counts.json` + `/quran/meta/quran-structure.json`.
-
-interface WordCountsFile {
-  wordCounts: number[]
-}
-interface QuranStructureFile {
-  juzStarts: string[]
-  hizbStarts: string[]
-}
+// per-ayah word-entry counts produces.
+//
+// The per-ayah word counts and juz/hizb boundaries are bundled as committed app
+// data (fixed canonical values), NOT fetched from the git-ignored generated
+// assets — a missing/stale/truncated `word-counts.json` used to make `wordId`
+// return NaN (serialized as `null`), which the backend rejected with
+// "start_word_id must not be less than 1".
 
 export interface ErrorLocation {
   start_word_id: number
@@ -26,47 +25,30 @@ export interface ErrorLocation {
 
 // prefix[g] = total word entries before the g-th ayah (1-based global index).
 // So the first word id of ayah g is prefix[g - 1] + 1.
-let wordPrefix: number[] | null = null
-let juzGlobals: number[] | null = null
-let hizbGlobals: number[] | null = null
-
-let inflight: Promise<boolean> | null = null
+const wordPrefix: number[] = (() => {
+  const counts = (wordCountsData as { wordCounts: number[] }).wordCounts ?? []
+  const prefix: number[] = [0]
+  for (let i = 0; i < counts.length; i++) prefix.push(prefix[i]! + counts[i]!)
+  return prefix
+})()
+const juzGlobals: number[] = ((quranStructure as { juzStarts: string[] }).juzStarts ?? []).map(verseKeyToGlobal)
+const hizbGlobals: number[] = ((quranStructure as { hizbStarts: string[] }).hizbStarts ?? []).map(verseKeyToGlobal)
 
 export function isQuranWordDataReady(): boolean {
-  return wordPrefix != null && juzGlobals != null && hizbGlobals != null
+  return true
 }
 
-export async function ensureQuranWordData(): Promise<boolean> {
-  if (isQuranWordDataReady()) return true
-  if (inflight) return inflight
-  inflight = (async () => {
-    try {
-      const [wc, st] = await Promise.all([
-        $fetch<WordCountsFile>('/quran/meta/word-counts.json'),
-        $fetch<QuranStructureFile>('/quran/meta/quran-structure.json')
-      ])
-      const counts = wc.wordCounts ?? []
-      const prefix: number[] = [0]
-      for (let i = 0; i < counts.length; i++) prefix.push(prefix[i]! + counts[i]!)
-      wordPrefix = prefix
-      juzGlobals = (st.juzStarts ?? []).map(verseKeyToGlobal)
-      hizbGlobals = (st.hizbStarts ?? []).map(verseKeyToGlobal)
-      return true
-    } catch {
-      return false
-    } finally {
-      inflight = null
-    }
-  })()
-  return inflight
+// Kept async for call-site compatibility — the data is bundled, so it resolves
+// immediately with nothing to load.
+export function ensureQuranWordData(): Promise<boolean> {
+  return Promise.resolve(true)
 }
 
 // The 1-based QUL word id of the first word of an ayah.
 export function firstWordId(surah: number, verse: number): number {
-  if (!wordPrefix) return 1
   const g = verseToGlobal(surah, verse) // 1-based global ayah index
   const idx = Math.min(Math.max(g, 1), wordPrefix.length - 1)
-  return wordPrefix[idx - 1]! + 1
+  return (wordPrefix[idx - 1] ?? 0) + 1
 }
 
 // The QUL word id of a specific word within an ayah (position is 1-based).

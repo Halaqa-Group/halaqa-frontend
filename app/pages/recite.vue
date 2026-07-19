@@ -283,7 +283,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 max-w-[640px] mx-auto w-full pb-6">
+  <div class="flex flex-col gap-3 w-full max-w-[640px] lg:max-w-5xl mx-auto pb-6">
     <div
       v-if="missingArgs"
       class="mx-auto my-8 max-w-sm w-full flex flex-col items-center gap-3 text-center px-6 py-10 rounded-2xl border border-default bg-default"
@@ -385,64 +385,74 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
       </div>
 
       <template v-else>
-        <div v-if="todayItems.length > 1" dir="rtl" class="space-y-1.5">
-          <span class="inline-flex items-center gap-1 text-xs font-medium text-muted">
-            <UIcon name="i-lucide-pointer" class="w-3.5 h-3.5" />
-            اختر الجلسة
-          </span>
-          <div class="grid grid-cols-3 gap-1.5">
-            <button
-              v-for="item in todayItems"
-              :key="item.id"
-              type="button"
-              class="flex flex-col gap-1 rounded-lg border p-2 text-start transition"
-              :class="selectedItemId === item.id
-                ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                : 'border-default hover:border-primary/60 hover:bg-elevated'"
-              @click="selectedItemId = item.id"
-            >
-              <div class="flex items-center justify-between gap-1">
-                <UBadge size="sm" variant="subtle" :color="TRACK_BADGE_COLOR[item.track_type as AchievementTrack]" class="min-w-0 truncate">
-                  {{ trackLabel(item.track_type) }}
-                </UBadge>
-                <UIcon
-                  :name="selectedItemId === item.id ? 'i-lucide-circle-check-big' : 'i-lucide-circle'"
-                  class="w-4 h-4 shrink-0"
-                  :class="selectedItemId === item.id ? 'text-primary' : 'text-muted'"
+        <!-- Mobile: session strip stacks above the mushaf. Desktop: session list
+             becomes a sticky side rail, mushaf stays a centered reading column. -->
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-5">
+          <div
+            v-if="todayItems.length > 1"
+            dir="rtl"
+            class="space-y-1.5 lg:w-56 lg:shrink-0 lg:sticky lg:top-4"
+          >
+            <span class="inline-flex items-center gap-1 text-xs font-medium text-muted">
+              <UIcon name="i-lucide-pointer" class="w-3.5 h-3.5" />
+              اختر الجلسة
+            </span>
+            <div class="grid grid-cols-3 lg:grid-cols-1 gap-1.5">
+              <button
+                v-for="item in todayItems"
+                :key="item.id"
+                type="button"
+                class="flex flex-col gap-1 rounded-lg border p-2 text-start transition"
+                :class="selectedItemId === item.id
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                  : 'border-default hover:border-primary/60 hover:bg-elevated'"
+                @click="selectedItemId = item.id"
+              >
+                <div class="flex items-center justify-between gap-1">
+                  <UBadge size="sm" variant="subtle" :color="TRACK_BADGE_COLOR[item.track_type as AchievementTrack]" class="min-w-0 truncate">
+                    {{ trackLabel(item.track_type) }}
+                  </UBadge>
+                  <UIcon
+                    :name="selectedItemId === item.id ? 'i-lucide-circle-check-big' : 'i-lucide-circle'"
+                    class="w-4 h-4 shrink-0"
+                    :class="selectedItemId === item.id ? 'text-primary' : 'text-muted'"
+                  />
+                </div>
+                <p class="text-xs leading-tight">
+                  {{ rangeLabel(item) }}
+                </p>
+              </button>
+            </div>
+          </div>
+
+          <!-- Reading column: mushaf + marking bar, centered and readable. -->
+          <div class="min-w-0 flex-1">
+            <div class="mx-auto flex w-full max-w-[640px] flex-col gap-3">
+              <MushafRangeViewer
+                v-if="selectedItem"
+                :start-surah="selectedItem.start_surah"
+                :start-verse="selectedItem.start_verse"
+                :end-surah="selectedItem.end_surah"
+                :end-verse="selectedItem.end_verse"
+                :marks="isParentReadOnly ? undefined : marks"
+                :on-word-tap="isParentReadOnly ? undefined : tap"
+                :on-words-mark="isParentReadOnly ? undefined : setMarks"
+              />
+
+              <!-- Marking controls pinned to the bottom, aligned with the mushaf. -->
+              <div v-if="showToolbar" class="sticky bottom-3 z-30">
+                <MushafMarkToolbar
+                  :counts="counts"
+                  :can-submit="!!selectedItem"
+                  :submitting="submitting"
+                  @clear="clearAll"
+                  @submit="onSubmitRequest"
                 />
               </div>
-              <p class="text-xs leading-tight">
-                {{ rangeLabel(item) }}
-              </p>
-            </button>
+            </div>
           </div>
         </div>
-
-        <MushafRangeViewer
-          v-if="selectedItem"
-          :start-surah="selectedItem.start_surah"
-          :start-verse="selectedItem.start_verse"
-          :end-surah="selectedItem.end_surah"
-          :end-verse="selectedItem.end_verse"
-          :marks="isParentReadOnly ? undefined : marks"
-          :on-word-tap="isParentReadOnly ? undefined : tap"
-          :on-words-mark="isParentReadOnly ? undefined : setMarks"
-        />
       </template>
-
-      <!-- Marking controls pinned to the bottom. `sticky` keeps it inside the
-           640px content column so it stays aligned/centered with the mushaf
-           (a `fixed` bar would center against the whole window, off to the side
-           of the sidebar). -->
-      <div v-if="showToolbar" class="sticky bottom-3 z-30 mt-1">
-        <MushafMarkToolbar
-          :counts="counts"
-          :can-submit="!!selectedItem"
-          :submitting="submitting"
-          @clear="clearAll"
-          @submit="onSubmitRequest"
-        />
-      </div>
     </template>
   </div>
 </template>

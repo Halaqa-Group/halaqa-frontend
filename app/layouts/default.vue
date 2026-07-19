@@ -111,9 +111,9 @@ onMounted(async () => {
         <NuxtLink :to="localePath('/')" class="flex items-center justify-center w-full py-2">
           <img
             v-if="collapsed"
-            src="/images/logo/halqa_icon.svg"
+            src="/images/logo/favicon.svg"
             alt="Halaqa"
-            class="h-8 w-auto"
+            class="h-9 w-auto"
           >
           <img
             v-else

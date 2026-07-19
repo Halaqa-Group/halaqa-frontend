@@ -204,6 +204,11 @@ export function useAchievements() {
   function studentName(id: number): string {
     return studentById.value.get(id)?.name ?? `#${id}`
   }
+  // Prefer the name the backend denormalizes onto the achievement (works even in
+  // the unscoped list where no per-halaqa roster is loaded); fall back to roster.
+  function studentDisplayName(a: { student_id: number, student_name?: string | null }): string {
+    return a.student_name || studentName(a.student_id)
+  }
   function studentAvatar(id: number): string {
     return studentById.value.get(id)?.avatar
       ?? `https://api.dicebear.com/9.x/notionists/svg?seed=${id}`
@@ -212,7 +217,7 @@ export function useAchievements() {
   const filteredAchievements = computed(() => {
     const q = filters.search.trim().toLowerCase()
     if (!q) return achievements.value
-    return achievements.value.filter(a => studentName(a.student_id).toLowerCase().includes(q))
+    return achievements.value.filter(a => studentDisplayName(a).toLowerCase().includes(q))
   })
 
   const hasActiveFilters = computed(() =>
@@ -342,6 +347,7 @@ export function useAchievements() {
 
     studentById,
     studentName,
+    studentDisplayName,
     studentAvatar,
     filteredAchievements,
     hasActiveFilters,

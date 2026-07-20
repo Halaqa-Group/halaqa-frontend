@@ -56,6 +56,7 @@ function snapshotCurrentRows() {
 
 export function useTeacherAttendance() {
   const api = useApi()
+  const apiError = useApiError()
 
   async function fetchAttendanceByDate(date: string): Promise<ApiTeacherAttendance[]> {
     const raw = await api<ApiTeacherAttendanceListResult | ApiTeacherAttendance[]>(
@@ -114,7 +115,7 @@ export function useTeacherAttendance() {
       staffRows.value = Array.from(byId.values())
       snapshotCurrentRows()
     } catch (e: any) {
-      loadError.value = e?.data?.message || 'حدث خطأ أثناء تحميل حضور الطاقم'
+      loadError.value = apiError.format(e, 'حدث خطأ أثناء تحميل حضور الطاقم')
     } finally {
       isLoading.value = false
     }
@@ -146,7 +147,7 @@ export function useTeacherAttendance() {
       }
       snapshotCurrentRows()
     } catch (e: any) {
-      saveError.value = e?.data?.message || 'حدث خطأ أثناء حفظ حضور الطاقم'
+      saveError.value = apiError.format(e, 'حدث خطأ أثناء حفظ حضور الطاقم')
       throw e
     } finally {
       isSaving.value = false

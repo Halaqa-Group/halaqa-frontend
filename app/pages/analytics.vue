@@ -9,6 +9,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const api = useApi()
+const apiError = useApiError()
 const { halaqat, fetchHalaqat } = useHalaqat()
 
 const selectedHalaqaId = ref<number | null>(null)
@@ -32,7 +33,7 @@ async function loadWarnings() {
       `/analytics/warnings?halaqaId=${selectedHalaqaId.value}&weekStartDate=${selectedWeekStart.value}`
     )
   } catch (e: any) {
-    error.value = e?.data?.message || t('pages.analytics.errorFallback')
+    error.value = apiError.format(e, t('pages.analytics.errorFallback'))
   } finally {
     isLoading.value = false
   }

@@ -9,6 +9,7 @@ const emit = defineEmits<{ saved: [] }>()
 
 const { t, locale } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { editing, isSaving, dateOfDay, addItem, updateItem } = useWeeklyPlan()
 
 type TrackKey = 'Hifz' | 'Near' | 'Far'
@@ -102,7 +103,7 @@ async function onSubmit(_e: FormSubmitEvent<Schema>) {
     }
     emit('saved')
   } catch (e: any) {
-    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   }
 }
 

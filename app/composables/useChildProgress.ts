@@ -25,6 +25,7 @@ function apiToStudent(s: ApiStudent): Student {
 
 export function useChildProgress(childId: MaybeRefOrGetter<number | string>) {
   const api = useApi()
+  const apiError = useApiError()
 
   const child = ref<Student | null>(null)
   const achievements = ref<ApiAchievement[]>([])
@@ -35,8 +36,7 @@ export function useChildProgress(childId: MaybeRefOrGetter<number | string>) {
   const error = ref<string | null>(null)
 
   function readError(e: any, fallback: string): string {
-    const raw = e?.data?.message
-    return Array.isArray(raw) ? raw.join('، ') : (raw || fallback)
+    return apiError.format(e, fallback)
   }
 
   async function fetchChild() {

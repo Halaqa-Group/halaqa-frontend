@@ -9,6 +9,7 @@ type Policy = 'skip' | 'replace'
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const {
   wizardOpen, activeDays, applyTrackGeneration,
   students, selectedStudentId, applyPlanToStudents, isSaving
@@ -188,7 +189,7 @@ async function submit() {
       color: res.failed > 0 ? 'warning' : 'success'
     })
   } catch (e: any) {
-    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e?.data?.message || e?.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   }
 }
 </script>

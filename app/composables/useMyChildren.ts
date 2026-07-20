@@ -30,6 +30,7 @@ function apiToStudent(s: ApiStudent): Student {
 
 export function useMyChildren() {
   const api = useApi()
+  const apiError = useApiError()
 
   async function fetchChildren() {
     isLoading.value = true
@@ -39,8 +40,7 @@ export function useMyChildren() {
       const items = Array.isArray(data) ? data : data.items
       children.value = items.map(apiToStudent)
     } catch (e: any) {
-      const raw = e?.data?.message
-      error.value = Array.isArray(raw) ? raw.join('، ') : (raw || 'حدث خطأ أثناء تحميل الأبناء')
+      error.value = apiError.format(e, 'حدث خطأ أثناء تحميل الأبناء')
     } finally {
       isLoading.value = false
     }

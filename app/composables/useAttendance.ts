@@ -65,6 +65,7 @@ function snapshotCurrentRows() {
 
 export function useAttendance() {
   const api = useApi()
+  const apiError = useApiError()
 
   async function fetchAttendanceByDate(date: string): Promise<ApiAttendance[]> {
     const raw = await api<ApiAttendanceListResult | ApiAttendance[]>(
@@ -121,7 +122,7 @@ export function useAttendance() {
       })
       snapshotCurrentRows()
     } catch (e: any) {
-      loadError.value = e?.data?.message || 'حدث خطأ أثناء تحميل الحضور'
+      loadError.value = apiError.format(e, 'حدث خطأ أثناء تحميل الحضور')
     } finally {
       isLoading.value = false
     }
@@ -154,7 +155,7 @@ export function useAttendance() {
       }
       snapshotCurrentRows()
     } catch (e: any) {
-      saveError.value = e?.data?.message || 'حدث خطأ أثناء حفظ الحضور'
+      saveError.value = apiError.format(e, 'حدث خطأ أثناء حفظ الحضور')
       throw e
     } finally {
       isSaving.value = false

@@ -11,6 +11,7 @@ definePageMeta({
 
 const route = useRoute()
 const { t, locale } = useI18n()
+const apiError = useApiError()
 const { activeRole } = useAuth()
 const { students, fetchStudent } = useStudents()
 
@@ -44,7 +45,7 @@ async function loadStudent() {
   try {
     loadedStudent.value = await fetchStudent(studentId.value)
   } catch (e: any) {
-    error.value = e?.data?.message || t('auth.genericError')
+    error.value = apiError.format(e, t('auth.genericError'))
   } finally {
     loading.value = false
   }

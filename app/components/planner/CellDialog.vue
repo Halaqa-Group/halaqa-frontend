@@ -22,7 +22,10 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const api = useApi()
 const router = useRouter()
+const { activeRole } = useAuth()
 const { selectedHalaqaId } = useGlobalHalaqa()
+
+const canApprove = computed(() => ['principal', 'vice_principal', 'supervisor', 'teacher'].includes(activeRole.value ?? ''))
 const {
   dateOfDay, selectedStudentId, getCells,
   addSession, updateSession, removeSession, clearCell, copyCell, pasteCell, copiedCell
@@ -115,6 +118,21 @@ async function loadAchievements() {
 
 function achRange(a: ApiAchievement) {
   return formatVerseRange(a.start_surah, a.start_verse, a.end_surah, a.end_verse, SURAH_NAMES)
+}
+
+// Approve a still-pending achievement in place, then refresh the list badge.
+const approvingId = ref<number | null>(null)
+async function approveAch(a: ApiAchievement) {
+  approvingId.value = a.id
+  try {
+    await api<ApiAchievement>(`/achievements/${a.id}/approve`, { method: 'POST' })
+    toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
+    await loadAchievements()
+  } catch (e: any) {
+    toast.add({ title: t('pages.achievements.approveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+  } finally {
+    approvingId.value = null
+  }
 }
 
 function todayIso(): string {
@@ -308,13 +326,26 @@ watch(open, (v) => {
                   {{ Math.round(Number(a.percentage_score)) }}%
                 </p>
               </div>
-              <UBadge
-                variant="subtle"
-                size="sm"
-                :color="a.status === 'approved' ? 'success' : 'neutral'"
-              >
-                {{ a.status === 'approved' ? t('pages.achievements.statusApproved') : t('pages.achievements.statusPending') }}
-              </UBadge>
+              <div class="flex items-center gap-2 shrink-0">
+                <UBadge
+                  variant="subtle"
+                  size="sm"
+                  :color="a.status === 'approved' ? 'success' : 'neutral'"
+                >
+                  {{ a.status === 'approved' ? t('pages.achievements.statusApproved') : t('pages.achievements.statusPending') }}
+                </UBadge>
+                <UButton
+                  v-if="canApprove && a.status !== 'approved'"
+                  size="xs"
+                  color="success"
+                  variant="soft"
+                  icon="i-lucide-check-check"
+                  :loading="approvingId === a.id"
+                  @click="approveAch(a)"
+                >
+                  {{ t('pages.achievements.approve') }}
+                </UButton>
+              </div>
             </li>
           </ul>
         </div>

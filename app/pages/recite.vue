@@ -58,6 +58,12 @@ watch([studentId, halaqaId], loadStudent, { immediate: true })
 const { items: todayItems, plan, loading: planLoading, error: planError }
   = useTodayPlanItems(studentId, halaqaId, dateStr)
 
+// The session is chosen upstream (on the achievement) and carried in as item_id;
+// there's no in-page switcher, so honour it and fall back to the first lesson.
+const preferredItemId = computed(() => {
+  const v = Number(route.query.item_id)
+  return Number.isFinite(v) && v > 0 ? v : null
+})
 const selectedItemId = ref<number | null>(null)
 watch(todayItems, (items) => {
   if (!items.length) {
@@ -65,7 +71,9 @@ watch(todayItems, (items) => {
     return
   }
   if (!selectedItemId.value || !items.some(i => i.id === selectedItemId.value)) {
-    selectedItemId.value = items[0]!.id
+    selectedItemId.value = preferredItemId.value != null && items.some(i => i.id === preferredItemId.value)
+      ? preferredItemId.value
+      : items[0]!.id
   }
 }, { immediate: true })
 
@@ -506,46 +514,9 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
       </div>
 
       <template v-else>
-        <!-- Mobile: session strip stacks above the mushaf. Desktop: session list
-             becomes a sticky side rail, mushaf stays a centered reading column. -->
+        <!-- The session is fixed by the achievement the teacher came from — no
+             in-page switcher. Just the centered reading column. -->
         <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-5">
-          <div
-            v-if="todayItems.length > 1"
-            dir="rtl"
-            class="space-y-1.5 lg:w-56 lg:shrink-0 lg:sticky lg:top-4"
-          >
-            <span class="inline-flex items-center gap-1 text-xs font-medium text-muted">
-              <UIcon name="i-lucide-pointer" class="w-3.5 h-3.5" />
-              اختر الجلسة
-            </span>
-            <div class="grid grid-cols-3 lg:grid-cols-1 gap-1.5">
-              <button
-                v-for="item in todayItems"
-                :key="item.id"
-                type="button"
-                class="flex flex-col gap-1 rounded-lg border p-2 text-start transition"
-                :class="selectedItemId === item.id
-                  ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                  : 'border-default hover:border-primary/60 hover:bg-elevated'"
-                @click="selectedItemId = item.id"
-              >
-                <div class="flex items-center justify-between gap-1">
-                  <UBadge size="sm" variant="subtle" :color="TRACK_BADGE_COLOR[item.track_type as AchievementTrack]" class="min-w-0 truncate">
-                    {{ trackLabel(item.track_type) }}
-                  </UBadge>
-                  <UIcon
-                    :name="selectedItemId === item.id ? 'i-lucide-circle-check-big' : 'i-lucide-circle'"
-                    class="w-4 h-4 shrink-0"
-                    :class="selectedItemId === item.id ? 'text-primary' : 'text-muted'"
-                  />
-                </div>
-                <p class="text-xs leading-tight">
-                  {{ rangeLabel(item) }}
-                </p>
-              </button>
-            </div>
-          </div>
-
           <!-- Reading column: mushaf + marking bar, centered and readable. -->
           <div class="min-w-0 flex-1">
             <div class="mx-auto flex w-full max-w-[640px] flex-col gap-3">

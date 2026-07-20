@@ -21,15 +21,10 @@ const loadedStudent = ref<Student | null>(null)
 
 const student = computed(() => students.value.find(s => s.id === studentId.value) ?? loadedStudent.value)
 
-// Error-heatmap insights are staff-only (parents don't see error breakdowns).
-const canSeeInsights = computed(() => !!activeRole.value && activeRole.value !== 'parent')
-
 const tabs = computed<TabsItem[]>(() => [
   { value: 'overview', label: t('pages.students.viewModal.tabs.overview'), icon: 'i-lucide-layout-dashboard' },
   { value: 'guardians', label: t('pages.students.viewModal.tabs.guardians'), icon: 'i-lucide-users' },
-  ...(canSeeInsights.value
-    ? [{ value: 'insights', label: t('pages.students.viewModal.tabs.insights'), icon: 'i-lucide-chart-column-increasing' }]
-    : [])
+  { value: 'insights', label: t('pages.students.viewModal.tabs.insights'), icon: 'i-lucide-layout-grid' }
 ])
 
 const activeTab = ref<'overview' | 'guardians' | 'insights'>('overview')

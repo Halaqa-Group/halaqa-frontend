@@ -376,7 +376,11 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
       // marked would be premature.
       if (continueToRecite.value) {
         continueToRecite.value = false
-        await navigateTo({ path: '/recite', query: { student_id: studentId, halaqa_id: halaqaId, date: state.date } })
+        // Carry the chosen lesson so the mushaf opens on that exact session (the
+        // recite page hides its session switcher and relies on this).
+        const query: Record<string, string | number> = { student_id: studentId, halaqa_id: halaqaId, date: state.date }
+        if (selectedPlanItemId.value != null) query.item_id = selectedPlanItemId.value
+        await navigateTo({ path: '/recite', query })
         return
       }
       // Plain record button approves the achievement on the spot.

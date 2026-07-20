@@ -986,13 +986,11 @@
           "insights": "رؤى"
         },
         "insights": {
-          "title": "خريطة الأخطاء",
-          "subtitle": "أكثر المواضع خطأً لدى الطالب",
-          "window4": "٤ أسابيع",
-          "window8": "٨ أسابيع",
-          "window12": "١٢ أسبوعًا",
-          "totalErrors": "{n} خطأ إجمالاً خلال الفترة",
-          "empty": "لا أخطاء مسجّلة في هذه الفترة — أحسن الطالب!"
+          "title": "خريطة الحفظ",
+          "subtitle": "نسبة الحفظ لكل سورة من القرآن",
+          "ayatMemorized": "آية محفوظة",
+          "legendNone": "لم يبدأ",
+          "legendFull": "مكتمل"
         },
         "memorization": {
           "progressTitle": "تقدّم الحفظ",

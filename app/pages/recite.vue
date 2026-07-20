@@ -543,11 +543,11 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
     // mushaf — so approve the achievement on the spot rather than leaving it
     // pending. The caller then returns to the achievements list.
     await api(`/achievements/${saved.id}/approve`, { method: 'POST' })
+    // A general message: the per-error summary can't be shown here — the marks were
+    // just cleared above — and the approve response carries no message to relay.
     toast.add({
-      title: 'تم اعتماد الإنجاز ✓',
-      description: submitSummary(),
-      color: 'success',
-      icon: 'i-lucide-check-circle'
+      description: 'تم حفظ التلاوة واعتماد الإنجاز بنجاح.',
+      color: 'success'
     })
   } finally {
     submitting.value = false

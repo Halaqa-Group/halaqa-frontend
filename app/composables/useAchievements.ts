@@ -4,7 +4,7 @@ import type {
   ApiStudentListResult, StudentWithAttendance, CreateAchievementDto,
   AchievementErrorType, AchievementTestPosition, PositionError
 } from '~/types'
-import type { MarkGroups, RecitationMarks, Severity } from '~/types/recitation'
+import type { MarkGroups, RecitationMarks, Severity, WordKey } from '~/types/recitation'
 import { SEVERITY_LEVELS } from '~/types/recitation'
 import type { TestSpot } from '~/composables/useTestSpots'
 import { unwrapList } from '~/utils/api/list'
@@ -133,6 +133,33 @@ export async function buildTestPositions(
     })
   }
   return positions
+}
+
+// Inverse of buildErrorsFromMarks: reconstruct the mushaf marking runs from a
+// saved achievement's itemized errors, so reopening a recitation shows exactly
+// the words that were marked (the local marks are cleared on submit). Each run is
+// a contiguous word span + severity, ready to feed `setMarks` (a multi-word span
+// re-forms as one drag-block). The severity is the inverse of the severity →
+// scoreSlot(error_type) map. 'harakat' has no mushaf-severity equivalent (it's
+// only produced by the numeric quick-entry form), so those errors are skipped.
+export async function buildMarkRunsFromErrors(
+  errors: readonly PositionError[]
+): Promise<Array<{ keys: WordKey[], severity: Severity }>> {
+  await ensureQuranWordData()
+  const runs: Array<{ keys: WordKey[], severity: Severity }> = []
+  for (const e of errors) {
+    const severity = SEVERITY_LEVELS.find(l => l.scoreSlot === e.error_type)?.key
+    if (!severity) continue
+    // Positions within the ayah: word ids are global, so subtract the ayah's
+    // first word id (position 1) to get the 1-based position back.
+    const first = wordId(e.surah, e.ayah, 1)
+    const startPos = Math.max(1, e.start_word_id - first + 1)
+    const endPos = Math.max(startPos, e.end_word_id - first + 1)
+    const keys: WordKey[] = []
+    for (let p = startPos; p <= endPos; p++) keys.push(`${e.surah}:${e.ayah}:${p}`)
+    if (keys.length) runs.push({ keys, severity })
+  }
+  return runs
 }
 
 type TrackType = 'Hifz' | 'Near' | 'Far'

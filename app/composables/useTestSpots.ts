@@ -127,6 +127,13 @@ export function useTestSpots(
     spots.value = spots.value.filter(s => s.id !== id)
   }
 
+  // Replace the whole spot list at once — used to restore the tested passages of
+  // an existing partial-test recitation when it's reopened on the mushaf.
+  function setSpots(list: TestSpot[]) {
+    spots.value = list
+    pendingStart.value = null
+  }
+
   function clearSpots() {
     spots.value = []
     pendingStart.value = null
@@ -141,6 +148,7 @@ export function useTestSpots(
     pickBoundary,
     cancelPending,
     removeSpot,
+    setSpots,
     clearSpots
   }
 }

@@ -70,6 +70,7 @@ function reciteLink(a: ApiAchievement) {
   return {
     path: '/recite',
     query: {
+      achievement_id: a.id,
       student_id: a.student_id,
       halaqa_id: a.halaqa_id,
       date: a.date,

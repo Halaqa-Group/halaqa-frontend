@@ -217,7 +217,7 @@ const lessonRange = computed(() =>
       }
     : null
 )
-const { spots, pendingStart, pickBoundary, removeSpot, clearSpots }
+const { spots, pendingStart, pickBoundary, removeSpot, setSpots, clearSpots }
   = useTestSpots(sessionId, lessonRange)
 
 const pendingVerseKey = computed(() =>
@@ -305,6 +305,54 @@ function findExistingAchievement(item: ApiWeeklyPlanItem): ApiAchievement | null
   ) ?? null
 }
 
+// Reopening an existing recitation from the achievements list: the achievement id
+// is carried in the query, so fetch its full detail (GET /achievements/{id}) and
+// seed the mushaf with the errors it was recorded with — the teacher sees exactly
+// what was marked. Local marks are wiped on submit, so a fresh visit would
+// otherwise start blank. Only mushaf recitations carry real word positions
+// (quick-entry errors are synthetic, all stacked at the range's start word). Seeds
+// once, and never over marks the teacher has already started this visit.
+const achievementId = computed(() => {
+  const v = Number(route.query.achievement_id)
+  return Number.isFinite(v) && v > 0 ? v : null
+})
+const hydratedFor = ref<number | null>(null)
+async function hydrateFromAchievement(id: number) {
+  if (isParentReadOnly.value || hydratedFor.value === id) return
+  hydratedFor.value = id
+  if (Object.keys(marks.value).length > 0) return
+
+  let detail: ApiAchievement
+  try {
+    detail = await api<ApiAchievement>(`/achievements/${id}`)
+  } catch {
+    hydratedFor.value = null
+    return
+  }
+  if (detail.completion_method !== 'mushaf') return
+
+  const positions = detail.recitation_positions ?? []
+  const runs = await buildMarkRunsFromErrors(positions.flatMap(p => p.errors ?? []))
+  // Restore a partial test's tested spots + method so the view matches how it was
+  // taken (marks outside a spot would otherwise be dimmed and look dropped).
+  if (detail.recitation_method === 'test' && positions.length) {
+    recitationMethod.value = 'test'
+    captureMode.value = 'mark'
+    setSpots(positions.map((p, i) => ({
+      id: `restored-${id}-${i}`,
+      startSurah: p.start_surah,
+      startVerse: p.start_verse,
+      endSurah: p.end_surah,
+      endVerse: p.end_verse
+    })))
+  }
+  for (const run of runs) setMarks(run.keys, run.severity)
+}
+watch([achievementId, selectedItem], () => {
+  const id = achievementId.value
+  if (id != null && selectedItem.value) void hydrateFromAchievement(id)
+}, { immediate: true })
+
 function onSubmitRequest() {
   const item = selectedItem.value
   if (!item || !studentId.value || !halaqaId.value) return
@@ -329,6 +377,8 @@ function onSubmitRequest() {
           modal.patch({ loading: true })
           await postAchievement(item, studentId.value!, halaqaId.value!)
           modal.close()
+          // Recitation recorded + approved — head back to the achievements list.
+          await navigateTo('/achievements')
         } catch (e) {
           modal.patch({ loading: false })
           const err = e as { data?: { message?: string }, message?: string }
@@ -369,12 +419,13 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
 
     const existing = findExistingAchievement(item)
 
+    let saved: ApiAchievement
     if (existing) {
       if (existing.status === 'approved') {
         throw new Error('هذا الإنجاز معتمد ولا يمكن تعديله. ألغِ الاعتماد أولاً.')
       }
       // Update the same session instead of creating a duplicate.
-      const updated = await api<ApiAchievement>(`/achievements/${existing.id}`, {
+      saved = await api<ApiAchievement>(`/achievements/${existing.id}`, {
         method: 'PATCH',
         body: {
           track_type: item.track_type,
@@ -388,38 +439,35 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
           percentage_score: score
         }
       })
-      priorAchievements.value = priorAchievements.value.map(a => a.id === existing.id ? updated : a)
-      clearAll()
-      if (isTest.value) clearSpots()
-      toast.add({
-        title: 'تم تحديث الجلسة ✓',
-        description: submitSummary(),
-        color: 'success',
-        icon: 'i-lucide-check-circle'
-      })
-      return
+      priorAchievements.value = priorAchievements.value.map(a => a.id === existing.id ? saved : a)
+    } else {
+      const dto: CreateAchievementDto = {
+        student_id: sid,
+        halaqa_id: hid,
+        date: dateStr.value,
+        track_type: item.track_type,
+        completion_method: 'mushaf',
+        recitation_method: recitationMethod.value,
+        start_surah: item.start_surah,
+        start_verse: item.start_verse,
+        end_surah: item.end_surah,
+        end_verse: item.end_verse,
+        ...payload,
+        percentage_score: score
+      }
+      saved = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
+      priorAchievements.value = [saved, ...priorAchievements.value]
     }
 
-    const dto: CreateAchievementDto = {
-      student_id: sid,
-      halaqa_id: hid,
-      date: dateStr.value,
-      track_type: item.track_type,
-      completion_method: 'mushaf',
-      recitation_method: recitationMethod.value,
-      start_surah: item.start_surah,
-      start_verse: item.start_verse,
-      end_surah: item.end_surah,
-      end_verse: item.end_verse,
-      ...payload,
-      percentage_score: score
-    }
-    const created = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
-    priorAchievements.value = [created, ...priorAchievements.value]
     clearAll()
     if (isTest.value) clearSpots()
+
+    // The recitation is done — the errors were just marked word-by-word on the
+    // mushaf — so approve the achievement on the spot rather than leaving it
+    // pending. The caller then returns to the achievements list.
+    await api(`/achievements/${saved.id}/approve`, { method: 'POST' })
     toast.add({
-      title: 'تم حفظ الإنجاز ✓',
+      title: 'تم اعتماد الإنجاز ✓',
       description: submitSummary(),
       color: 'success',
       icon: 'i-lucide-check-circle'

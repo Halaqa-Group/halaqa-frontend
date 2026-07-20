@@ -9,7 +9,6 @@ const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 const { activeRole } = useAuth()
-const { selectedHalaqaId } = useGlobalHalaqa()
 const {
   achievements,
   filteredAchievements,
@@ -64,9 +63,22 @@ async function onUnapprove(a: ApiAchievement) {
 }
 
 function reciteLink(a: ApiAchievement) {
+  // Use the achievement's own halaqa (not the global filter, which is null when
+  // the list is browsed unscoped — that left the recite page with no halaqa_id
+  // and stuck on its "select a student" prompt). Carry the track + range too, so
+  // recite opens on this exact session instead of falling back to the day's plan.
   return {
     path: '/recite',
-    query: { student_id: a.student_id, halaqa_id: selectedHalaqaId.value, date: a.date }
+    query: {
+      student_id: a.student_id,
+      halaqa_id: a.halaqa_id,
+      date: a.date,
+      track: a.track_type,
+      start_surah: a.start_surah,
+      start_verse: a.start_verse,
+      end_surah: a.end_surah,
+      end_verse: a.end_verse
+    }
   }
 }
 

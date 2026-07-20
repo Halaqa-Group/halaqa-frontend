@@ -25,6 +25,10 @@ useQuranWords()
 type TrackKey = 'Hifz' | 'Near' | 'Far'
 
 const isEdit = computed(() => editing.value != null)
+// Launched from the planner's cell dialog: the lesson is already chosen there, so
+// we hide the "الجلسة (من خطة اليوم)" picker and show the track + range as editable
+// inputs pre-filled from that session (the teacher can still tweak them).
+const fromPlanner = computed(() => prefillPlanItem.value != null)
 
 // Set by the "Save & recite" footer button before it submits the form.
 const continueToRecite = ref(false)
@@ -189,7 +193,9 @@ watch(() => state.student_id, (sid) => {
 // Show the manual track + range inputs when there's no plan, or the teacher
 // explicitly opted into manual entry. When editing, the lesson/range is fixed —
 // it's shown read-only and can't be changed (only counts/notes are editable).
-const showManual = computed(() => !isEdit.value && (manualRange.value || pickerItems.value.length === 0))
+// Editable track + range inputs: shown for manual entry, when there's no plan, or
+// when launched from the planner (picker hidden, but the range stays editable).
+const showManual = computed(() => !isEdit.value && (fromPlanner.value || manualRange.value || pickerItems.value.length === 0))
 function planItemRange(it: PickerItem) {
   return formatVerseRange(it.start_surah, it.start_verse, it.end_surah, it.end_verse, SURAH_NAMES)
 }
@@ -305,7 +311,8 @@ const schema = computed(() => z.object({
     ctx.addIssue({ code: 'custom', path: ['student_id'], message: t('pages.achievements.validation.student') })
   }
   // A plan exists but the teacher hasn't picked a lesson and isn't in manual mode.
-  if (planItems.value.length > 0 && !manualRange.value && selectedPlanItemId.value == null) {
+  // Skip when the lesson came from the planner (it's fixed, the picker is hidden).
+  if (planItems.value.length > 0 && !manualRange.value && !fromPlanner.value && selectedPlanItemId.value == null) {
     ctx.addIssue({ code: 'custom', path: ['lesson'], message: t('pages.achievements.validation.pickLesson') })
     return
   }
@@ -455,9 +462,10 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </UFormField>
     </div>
 
-    <!-- Pick the planned lesson so the range isn't re-typed. On edit the lesson
-         is fixed and shown read-only below instead. -->
-    <UFormField v-if="!isEdit" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
+    <!-- Pick the planned lesson so the range isn't re-typed. Hidden on edit (lesson
+         fixed, read-only below) and when launched from the planner (the session's
+         track + range show as editable inputs below instead). -->
+    <UFormField v-if="!isEdit && !fromPlanner" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
       <div v-if="planLoading" class="flex items-center gap-2 text-xs text-muted">
         <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
         {{ t('common.loading') }}

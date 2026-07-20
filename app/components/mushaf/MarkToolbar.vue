@@ -56,14 +56,14 @@ function countFor(key: Severity): number {
         type="button"
         class="mark-toolbar__btn mark-toolbar__btn--primary"
         :disabled="!canSubmit || submitting"
-        :aria-label="submitting ? 'جارٍ الحفظ' : 'حفظ'"
+        :aria-label="submitting ? 'جارٍ الاعتماد' : 'اعتماد'"
         @click="emit('submit')"
       >
         <UIcon
           :name="submitting ? 'i-lucide-loader-2' : 'i-lucide-check'"
           :class="['size-4', submitting && 'mark-toolbar__spinner']"
         />
-        <span class="mark-toolbar__btn-label">{{ submitting ? 'جارٍ الحفظ…' : 'حفظ' }}</span>
+        <span class="mark-toolbar__btn-label">{{ submitting ? 'جارٍ الاعتماد…' : 'اعتماد' }}</span>
       </button>
     </div>
   </div>

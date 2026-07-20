@@ -312,6 +312,11 @@ const existingAchievement = computed(() =>
 )
 const isApproved = computed(() => existingAchievement.value?.status === 'approved')
 
+// Marking is locked when there's nothing to edit: parents are always read-only,
+// and an approved achievement is view-only until it's unapproved (the marks stay
+// highlighted for review, but words can't be tapped/dragged and nothing cleared).
+const markingLocked = computed(() => isParentReadOnly.value || isApproved.value)
+
 // Reopening an existing recitation from the achievements list: the achievement id
 // is carried in the query, so fetch its full detail (GET /achievements/{id}) and
 // seed the mushaf with the errors it was recorded with — the teacher sees exactly
@@ -385,7 +390,9 @@ function onSubmitRequest() {
           await postAchievement(item, studentId.value!, halaqaId.value!)
           modal.close()
           // Recitation recorded + approved — head back to the achievements list.
-          await navigateTo('/achievements')
+          // Use the setup-captured router (not navigateTo): the Nuxt instance
+          // context is lost after the awaits above, so navigateTo would no-op.
+          await router.push('/achievements')
         } catch (e) {
           modal.patch({ loading: false })
           const err = e as { data?: { message?: string }, message?: string }
@@ -591,7 +598,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
         />
         <div class="flex-1 min-w-0">
           <p class="text-[11px] font-bold uppercase tracking-wide text-primary">
-            {{ isParentReadOnly ? 'تلاوة اليوم — للعرض فقط' : 'تلاوة في المصحف' }}
+            {{ isParentReadOnly ? 'تلاوة اليوم — للعرض فقط' : (isApproved ? 'تلاوة في المصحف — معتمد (للعرض)' : 'تلاوة في المصحف') }}
           </p>
           <p class="text-base font-bold truncate">
             {{ studentLoading ? '…' : (student?.name ?? `طالب #${studentId}`) }}
@@ -672,9 +679,10 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
           <!-- Reading column: mushaf + marking bar, centered and readable. -->
           <div class="min-w-0 flex-1">
             <div class="mx-auto flex w-full max-w-[640px] flex-col gap-3">
-              <!-- Recitation method: full recitation vs. partial test. -->
+              <!-- Recitation method: full recitation vs. partial test. Hidden while
+                   locked (approved view) — the method can't be changed. -->
               <div
-                v-if="showMethodSelector"
+                v-if="showMethodSelector && !markingLocked"
                 dir="rtl"
                 class="flex items-center gap-2"
               >
@@ -720,7 +728,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                 dir="rtl"
                 class="flex flex-col gap-2 rounded-xl border border-default bg-elevated/40 p-2.5"
               >
-                <div class="flex items-center gap-2">
+                <div v-if="!markingLocked" class="flex items-center gap-2">
                   <div class="inline-flex shrink-0 rounded-lg border border-default bg-default p-0.5">
                     <button
                       type="button"
@@ -753,6 +761,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                     <span class="font-bold text-primary">{{ i + 1 }}</span>
                     <span>{{ spotLabel(s) }}</span>
                     <button
+                      v-if="!markingLocked"
                       type="button"
                       class="text-muted hover:text-error"
                       :aria-label="'حذف الموضع'"
@@ -762,7 +771,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                     </button>
                   </span>
                 </div>
-                <p v-else class="text-xs text-muted">
+                <p v-else-if="!markingLocked" class="text-xs text-muted">
                   لا مواضع بعد — حدّد موضعًا واحدًا على الأقل للاختبار.
                 </p>
               </div>
@@ -777,8 +786,8 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                 :groups="isParentReadOnly ? undefined : groups"
                 :highlight-override="spotHighlight"
                 :pending-verse="isTest && captureMode === 'spot' ? pendingVerseKey : null"
-                :on-word-tap="isParentReadOnly ? undefined : onWordTap"
-                :on-words-mark="(isParentReadOnly || !canDragMark) ? undefined : onWordsMark"
+                :on-word-tap="markingLocked ? undefined : onWordTap"
+                :on-words-mark="(markingLocked || !canDragMark) ? undefined : onWordsMark"
               />
 
               <!-- Marking controls pinned to the bottom, aligned with the mushaf. -->

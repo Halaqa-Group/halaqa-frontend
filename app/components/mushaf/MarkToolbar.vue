@@ -56,7 +56,7 @@ function countFor(key: Severity): number {
       <button
         type="button"
         class="mark-toolbar__btn mark-toolbar__btn--ghost"
-        :disabled="counts.total === 0"
+        :disabled="counts.total === 0 || approved"
         :aria-label="'مسح'"
         @click="emit('clear')"
       >

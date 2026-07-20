@@ -4,7 +4,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { LazyCommonConfirmDialog } from '#components'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
-import { isValidVerseRange, totalVersesInRange, formatVerseRange, VERSE_COUNTS } from '~/utils/quran'
+import { isValidVerseRange, totalVersesInRange, formatVerseRange } from '~/utils/quran'
 import { computePercentageScore } from '~/utils/score'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import type { ApiWeeklyPlanItem, CreateAchievementDto } from '~/types'
@@ -16,7 +16,7 @@ const toast = useToast()
 const overlay = useOverlay()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
-  students, editing, duplicateFrom, prefillStudentId, selectedDate, currentEvaluationSettings,
+  students, editing, duplicateFrom, prefillStudentId, prefillPlanItem, selectedDate, currentEvaluationSettings,
   isSaving, addAchievement, updateAchievement, approveAchievement, loadEvaluationSettings
 } = useAchievements()
 // Warm the QUL word-id / juz / hizb lookup used to synthesize errors[] on submit.
@@ -83,15 +83,28 @@ function hydrate() {
     state.teacher_notes = editing.value ? (src.teacher_notes ?? '') : ''
     if (duplicateFrom.value) state.date = selectedDate.value
   } else {
-    // A fresh record may be launched with a student already chosen (e.g. from
-    // the planner's session-details dialog); fall back to an empty picker.
+    // A fresh record may be launched from the planner's session-details dialog
+    // with the student and lesson already chosen; otherwise fall back to an
+    // empty picker.
+    const pref = prefillPlanItem.value
     state.student_id = prefillStudentId.value ?? undefined
     state.date = selectedDate.value
-    state.track_type = 'Hifz'
-    state.start_surah = 1
-    state.start_verse = 1
-    state.end_surah = 1
-    state.end_verse = 7
+    if (pref) {
+      // Show the clicked session's track and range as editable inputs, pre-filled,
+      // so the teacher can see and tweak them (incl. end_verse) before saving.
+      state.track_type = pref.track_type
+      state.start_surah = pref.start_surah
+      state.start_verse = pref.start_verse
+      state.end_surah = pref.end_surah
+      state.end_verse = pref.end_verse
+      manualRange.value = true
+    } else {
+      state.track_type = 'Hifz'
+      state.start_surah = 1
+      state.start_verse = 1
+      state.end_surah = 1
+      state.end_verse = 7
+    }
     state.mistakes_count = 0
     state.warnings_count = 0
     state.tajweed_errors_count = 0
@@ -136,10 +149,6 @@ function planItemRange(it: ApiWeeklyPlanItem) {
 
 const studentItems = computed(() => students.value.map(s => ({ label: s.name, value: s.id })))
 const trackItems = computed(() => TRACK_TYPES.map(tk => ({ label: t(`pages.achievements.tracks.${tk.value}`), value: tk.value })))
-const surahItems = computed(() => Object.entries(SURAH_NAMES).map(([num, name]) => ({ value: Number(num), label: name })))
-
-const maxStartVerse = computed(() => VERSE_COUNTS[state.start_surah] || 1)
-const maxEndVerse = computed(() => VERSE_COUNTS[state.end_surah] || 1)
 
 const rangeValid = computed(() =>
   isValidVerseRange(state.start_surah, state.start_verse, state.end_surah, state.end_verse)
@@ -454,17 +463,11 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="space-y-1">
             <span class="text-xs font-medium text-muted">{{ t('pages.achievements.fromLabel') }}</span>
-            <div class="grid grid-cols-2 gap-2">
-              <USelectMenu v-model="state.start_surah" :items="surahItems" value-key="value" searchable class="w-full" />
-              <UInput v-model.number="state.start_verse" type="number" :min="1" :max="maxStartVerse" class="w-full" />
-            </div>
+            <PlannerAyahSelect v-model:surah="state.start_surah" v-model:verse="state.start_verse" />
           </div>
           <div class="space-y-1">
             <span class="text-xs font-medium text-muted">{{ t('pages.achievements.toLabel') }}</span>
-            <div class="grid grid-cols-2 gap-2">
-              <USelectMenu v-model="state.end_surah" :items="surahItems" value-key="value" searchable class="w-full" />
-              <UInput v-model.number="state.end_verse" type="number" :min="1" :max="maxEndVerse" class="w-full" />
-            </div>
+            <PlannerAyahSelect v-model:surah="state.end_surah" v-model:verse="state.end_verse" />
           </div>
         </div>
         <p v-if="rangeSummary" class="mt-1.5 text-xs text-muted">

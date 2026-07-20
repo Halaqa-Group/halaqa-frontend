@@ -2,13 +2,15 @@ import { computed, reactive, ref } from 'vue'
 import type {
   ApiAchievement, ApiAttendance, ApiAttendanceListResult, ApiHalaqaDetail, ApiStudent,
   ApiStudentListResult, StudentWithAttendance, CreateAchievementDto,
-  AchievementErrorType, PositionError
+  AchievementErrorType, AchievementTestPosition, PositionError
 } from '~/types'
-import type { RecitationMarks } from '~/types/recitation'
+import type { MarkGroups, RecitationMarks, Severity } from '~/types/recitation'
 import { SEVERITY_LEVELS } from '~/types/recitation'
+import type { TestSpot } from '~/composables/useTestSpots'
 import { unwrapList } from '~/utils/api/list'
+import { makeRangePredicate } from '~/utils/mushaf'
 import { computePercentageScore, type ScoreCounts } from '~/utils/score'
-import { ensureQuranWordData, locateError } from '~/utils/quran-words'
+import { ensureQuranWordData, locateError, wordId } from '~/utils/quran-words'
 
 interface VerseRangeLike {
   start_surah: number
@@ -54,21 +56,83 @@ export async function buildErrorsFromCounts(
   return errors
 }
 
-// Mushaf flow: each marked word becomes one precisely-located error. The marking
-// spectrum has no harakat notion, so this only emits mistake/warning/tajweed
-// (green `minor` carries no penalty and is dropped).
-export async function buildErrorsFromMarks(marks: Readonly<RecitationMarks>): Promise<PositionError[]> {
+// Mushaf flow: each standalone marked word becomes one precisely-located error.
+// A drag-selected block (words sharing a group id) becomes a SINGLE error spanning
+// the run instead of one error per word. The marking spectrum has no harakat
+// notion, so this only emits mistake/warning/tajweed (green `minor` is dropped).
+export async function buildErrorsFromMarks(
+  marks: Readonly<RecitationMarks>,
+  groups: Readonly<MarkGroups> = {}
+): Promise<PositionError[]> {
   await ensureQuranWordData()
   const errors: PositionError[] = []
+  // Collect grouped words by block id; emit standalone words immediately.
+  const blocks = new Map<string, { severity: Severity, words: Array<[number, number, number]> }>()
+
   for (const [key, severity] of Object.entries(marks)) {
     const slot = SEVERITY_LEVELS.find(l => l.key === severity)?.scoreSlot
     if (!slot || slot === 'none') continue
     // key = "surah:ayah:position"
     const [s, a, p] = key.split(':').map(Number)
     if (!s || !a || !p) continue
+
+    const groupId = groups[key]
+    if (groupId) {
+      const block = blocks.get(groupId) ?? { severity, words: [] }
+      block.words.push([s, a, p])
+      blocks.set(groupId, block)
+      continue
+    }
     errors.push({ error_type: slot as AchievementErrorType, ...locateError(s, a, p) })
   }
+
+  // One error per block: span start→end when the run stays within one ayah,
+  // otherwise anchor it at the run's first word.
+  for (const { severity, words } of blocks.values()) {
+    const slot = SEVERITY_LEVELS.find(l => l.key === severity)?.scoreSlot
+    if (!slot || slot === 'none' || !words.length) continue
+    const sorted = words.slice().sort((x, y) => wordId(x[0], x[1], x[2]) - wordId(y[0], y[1], y[2]))
+    const [s1, a1, p1] = sorted[0]!
+    const [s2, a2, p2] = sorted[sorted.length - 1]!
+    const loc = s1 === s2 && a1 === a2 ? locateError(s1, a1, p1, p2) : locateError(s1, a1, p1)
+    errors.push({ error_type: slot as AchievementErrorType, ...loc })
+  }
+
   return errors
+}
+
+// Test flow: partition the session marks by tested spot. For each spot we keep
+// only the marks (and their group links) whose verse falls inside it, then build
+// that spot's itemized errors — yielding one test_position per spot. Marks that
+// fall outside every spot are dropped (they weren't part of a tested passage).
+export async function buildTestPositions(
+  spots: readonly TestSpot[],
+  marks: Readonly<RecitationMarks>,
+  groups: Readonly<MarkGroups> = {}
+): Promise<AchievementTestPosition[]> {
+  await ensureQuranWordData()
+  const positions: AchievementTestPosition[] = []
+  for (const spot of spots) {
+    const within = makeRangePredicate(spot.startSurah, spot.startVerse, spot.endSurah, spot.endVerse)
+    const spotMarks: RecitationMarks = {}
+    const spotGroups: MarkGroups = {}
+    for (const [key, severity] of Object.entries(marks)) {
+      // key = "surah:ayah:position" → verseKey "surah:ayah"
+      const [s, a] = key.split(':')
+      if (!within(`${s}:${a}`)) continue
+      spotMarks[key] = severity
+      const g = groups[key]
+      if (g) spotGroups[key] = g
+    }
+    positions.push({
+      start_surah: spot.startSurah,
+      start_verse: spot.startVerse,
+      end_surah: spot.endSurah,
+      end_verse: spot.endVerse,
+      errors: await buildErrorsFromMarks(spotMarks, spotGroups)
+    })
+  }
+  return positions
 }
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
@@ -100,6 +164,20 @@ const duplicateFrom = ref<ApiAchievement | null>(null)
 // Pre-selects the student when recording a fresh achievement (e.g. launched
 // from the planner's cell dialog). Cleared by openRecord for the plain "+" flow.
 const prefillStudentId = ref<number | null>(null)
+
+export interface PrefillPlanItem {
+  // The plan item's id, or null for an unsaved draft session (range-only prefill).
+  id: number | null
+  track_type: TrackType
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+}
+// Pre-selects the planned lesson (track + range) when recording from the
+// planner's cell dialog, so the teacher doesn't re-pick it. Kept selected even
+// when the lesson's weekday differs from the record date. Cleared by openRecord.
+const prefillPlanItem = ref<PrefillPlanItem | null>(null)
 const deleteOpen = ref(false)
 const deleteTarget = ref<ApiAchievement | null>(null)
 
@@ -306,6 +384,7 @@ export function useAchievements() {
     editing.value = null
     duplicateFrom.value = null
     prefillStudentId.value = null
+    prefillPlanItem.value = null
     navigateTo('/achievements/record')
   }
   function openEdit(a: ApiAchievement) {
@@ -342,6 +421,7 @@ export function useAchievements() {
     editing,
     duplicateFrom,
     prefillStudentId,
+    prefillPlanItem,
     deleteOpen,
     deleteTarget,
 

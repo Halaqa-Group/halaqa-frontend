@@ -2,9 +2,10 @@
 import { LazyCommonConfirmDialog } from '#components'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
 import { computePercentageScore } from '~/utils/score'
+import { makeRangePredicate } from '~/utils/mushaf'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
-import type { ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto } from '~/types'
-import type { MarkCounts } from '~/types/recitation'
+import type { AchievementTestPosition, ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto, PositionError, RecitationMethod } from '~/types'
+import type { MarkCounts, Severity } from '~/types/recitation'
 import { toScoreCounts } from '~/types/recitation'
 
 const route = useRoute()
@@ -72,6 +73,32 @@ const selectedItem = computed<ApiWeeklyPlanItem | null>(() =>
   todayItems.value.find(i => i.id === selectedItemId.value) ?? null
 )
 
+// ── Recitation method (step 1) ──────────────────────────────────────────────
+// Hifz (new memorization) is always a full recitation — no choice. Near/Far may
+// be tested at chosen positions; that capture UI lands later, so `test` is
+// disabled for now. The last method used on a testable track is remembered.
+const currentTrack = computed(() => selectedItem.value?.track_type ?? null)
+const lastTestableMethod = useLocalStorage<RecitationMethod>('recite:method', 'full')
+const recitationMethod = ref<RecitationMethod>('full')
+// In `test`, taps either define a spot's boundaries or mark errors inside it.
+const captureMode = ref<'spot' | 'mark'>('spot')
+watch(currentTrack, (track) => {
+  recitationMethod.value = track === 'Hifz' ? 'full' : lastTestableMethod.value
+  captureMode.value = 'spot'
+}, { immediate: true })
+
+function selectMethod(method: RecitationMethod) {
+  recitationMethod.value = method
+  if (method === 'test') captureMode.value = 'spot'
+  // Hifz is locked; only remember the choice for testable tracks.
+  if (currentTrack.value !== 'Hifz') lastTestableMethod.value = method
+}
+
+const showMethodSelector = computed(() =>
+  !isParentReadOnly.value && !!selectedItem.value && currentTrack.value !== 'Hifz'
+)
+const isTest = computed(() => recitationMethod.value === 'test')
+
 const PRELOAD_LIMIT = 3
 const { pageFor } = useVerseToPage()
 
@@ -132,12 +159,93 @@ const sessionId = computed(() =>
     ? `${studentId.value}:${dateStr.value}:${selectedItem.value.id}`
     : ''
 )
-const { marks, counts, tap, setMarks, clearAll } = useRecitationSession(sessionId)
+const { marks, groups, counts, tap, setMarks, clearAll } = useRecitationSession(sessionId)
+
+// ── Test-spot capture ───────────────────────────────────────────────────────
+const lessonRange = computed(() =>
+  selectedItem.value
+    ? {
+        startSurah: selectedItem.value.start_surah,
+        startVerse: selectedItem.value.start_verse,
+        endSurah: selectedItem.value.end_surah,
+        endVerse: selectedItem.value.end_verse
+      }
+    : null
+)
+const { spots, pendingStart, pickBoundary, removeSpot, clearSpots }
+  = useTestSpots(sessionId, lessonRange)
+
+const pendingVerseKey = computed(() =>
+  pendingStart.value ? `${pendingStart.value.surah}:${pendingStart.value.verse}` : null
+)
+
+// True when a verse ("surah:ayah") falls inside any defined test-spot.
+function inAnySpot(verseKey: string): boolean {
+  return spots.value.some(s =>
+    makeRangePredicate(s.startSurah, s.startVerse, s.endSurah, s.endVerse)(verseKey)
+  )
+}
+// A word key is "surah:ayah:position"; its verse is the first two segments.
+function wordInAnySpot(wordKey: string): boolean {
+  const [s, a] = wordKey.split(':')
+  return inAnySpot(`${s}:${a}`)
+}
+
+// In test mark-mode, only the tested spots stay lit; the rest of the lesson dims.
+const spotHighlight = computed<((verseKey: string) => boolean) | undefined>(() =>
+  isTest.value && captureMode.value === 'mark' ? inAnySpot : undefined
+)
+
+// Route a word tap: define a spot boundary (spot-mode), or mark an error — but in
+// test mode only inside a defined spot (taps on dimmed, out-of-spot words are inert,
+// so what's marked always matches what gets submitted).
+function onWordTap(wordKey: string, verseKey: string) {
+  if (isTest.value && captureMode.value === 'spot') {
+    pickBoundary(verseKey)
+    return
+  }
+  if (isTest.value && !wordInAnySpot(wordKey)) return
+  tap(wordKey)
+}
+// Drag-select marking: in test mode keep only the in-spot words, so nothing marked
+// outside a tested passage is silently dropped at submit.
+function onWordsMark(keys: string[], severity: Severity | null) {
+  const applied = isTest.value ? keys.filter(wordInAnySpot) : keys
+  if (!applied.length) return
+  setMarks(applied, severity)
+}
+// Drag-select marking is only meaningful when actually marking errors.
+const canDragMark = computed(() => !isTest.value || captureMode.value === 'mark')
+
+function spotLabel(s: { startSurah: number, startVerse: number, endSurah: number, endVerse: number }): string {
+  return rangeLabel({
+    start_surah: s.startSurah, start_verse: s.startVerse,
+    end_surah: s.endSurah, end_verse: s.endVerse
+  })
+}
+
+const canSubmit = computed(() =>
+  !!selectedItem.value && (!isTest.value || spots.value.length > 0)
+)
+
+const captureHint = computed(() => {
+  if (captureMode.value !== 'spot') return 'علّم الكلمات الخاطئة داخل المواضع'
+  return pendingStart.value ? 'اضغط آخر كلمة في الموضع' : 'اضغط أول كلمة في الموضع'
+})
 
 // One-line breakdown of the four severity levels, reused in the confirm dialog
 // and the success toasts.
 function countsSummary(c: MarkCounts): string {
   return `${c.severe} جسيم، ${c.medium} متوسط، ${c.light} خفيف، ${c.minor} تنبيه`
+}
+
+// Confirm/success summary: tested-spot count for `test`, severity breakdown for `full`.
+function submitSummary(): string {
+  if (isTest.value) {
+    const n = spots.value.length
+    return `${n} ${n === 1 ? 'موضع مُختبَر' : 'مواضع مُختبَرة'}`
+  }
+  return counts.value.total === 0 ? 'تلاوة تامة بدون أخطاء ✓' : countsSummary(counts.value)
 }
 
 const submitting = ref(false)
@@ -156,19 +264,17 @@ function onSubmitRequest() {
   const item = selectedItem.value
   if (!item || !studentId.value || !halaqaId.value) return
 
-  const c = counts.value
   const existing = findExistingAchievement(item)
   const verb = existing ? 'تحديث' : 'حفظ'
+  const kind = isTest.value ? 'اختبار' : 'إنجاز'
   const modal = overlay.create(LazyCommonConfirmDialog, {
     destroyOnClose: true,
     props: {
       'open': true,
       'title': existing ? 'تأكيد تحديث الجلسة' : 'تأكيد حفظ الإنجاز',
       'message':
-        `هل تريد ${verb} إنجاز ${trackLabel(item.track_type)} لـ${rangeLabel(item)}؟`
-        + (c.total === 0
-          ? '\nتلاوة تامة بدون أخطاء ✓'
-          : `\n${countsSummary(c)}.`),
+        `هل تريد ${verb} ${kind} ${trackLabel(item.track_type)} لـ${rangeLabel(item)}؟`
+        + `\n${submitSummary()}.`,
       'confirmLabel': verb,
       'cancelLabel': 'إلغاء',
       'loading': false,
@@ -197,12 +303,25 @@ function onSubmitRequest() {
 async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number) {
   submitting.value = true
   try {
-    const c = counts.value
-    const scoreCounts = toScoreCounts(c)
     const settings = await loadEvaluationSettings(hid)
-    const score = computePercentageScore(scoreCounts, settings)
-    // Each marked word becomes a precisely-located itemized error.
-    const errors = await buildErrorsFromMarks(marks.value)
+
+    // Build the recitation payload + score for the chosen method. `test` sends
+    // one position per tested spot (each with its own errors); `full` sends the
+    // whole-range errors. Score is derived from the errors that actually count.
+    let payload: { errors?: PositionError[], test_positions?: AchievementTestPosition[] }
+    let score: number
+    if (isTest.value) {
+      const positions = await buildTestPositions(spots.value, marks.value, groups.value)
+      const allErrors = positions.flatMap(p => p.errors ?? [])
+      score = computePercentageScore(tallyErrors(allErrors), settings)
+      payload = { test_positions: positions }
+    } else {
+      // Standalone words become one error each; a drag-selected block becomes one.
+      const errors = await buildErrorsFromMarks(marks.value, groups.value)
+      score = computePercentageScore(toScoreCounts(counts.value), settings)
+      payload = { errors }
+    }
+
     const existing = findExistingAchievement(item)
 
     if (existing) {
@@ -215,20 +334,21 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
         body: {
           track_type: item.track_type,
           completion_method: 'mushaf',
-          recitation_method: 'full',
+          recitation_method: recitationMethod.value,
           start_surah: item.start_surah,
           start_verse: item.start_verse,
           end_surah: item.end_surah,
           end_verse: item.end_verse,
-          errors,
+          ...payload,
           percentage_score: score
         }
       })
       priorAchievements.value = priorAchievements.value.map(a => a.id === existing.id ? updated : a)
       clearAll()
+      if (isTest.value) clearSpots()
       toast.add({
         title: 'تم تحديث الجلسة ✓',
-        description: countsSummary(c),
+        description: submitSummary(),
         color: 'success',
         icon: 'i-lucide-check-circle'
       })
@@ -241,20 +361,21 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
       date: dateStr.value,
       track_type: item.track_type,
       completion_method: 'mushaf',
-      recitation_method: 'full',
+      recitation_method: recitationMethod.value,
       start_surah: item.start_surah,
       start_verse: item.start_verse,
       end_surah: item.end_surah,
       end_verse: item.end_verse,
-      errors,
+      ...payload,
       percentage_score: score
     }
     const created = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
     priorAchievements.value = [created, ...priorAchievements.value]
     clearAll()
+    if (isTest.value) clearSpots()
     toast.add({
       title: 'تم حفظ الإنجاز ✓',
-      description: countsSummary(c),
+      description: submitSummary(),
       color: 'success',
       icon: 'i-lucide-check-circle'
     })
@@ -428,6 +549,101 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
           <!-- Reading column: mushaf + marking bar, centered and readable. -->
           <div class="min-w-0 flex-1">
             <div class="mx-auto flex w-full max-w-[640px] flex-col gap-3">
+              <!-- Recitation method: full recitation vs. partial test. -->
+              <div
+                v-if="showMethodSelector"
+                dir="rtl"
+                class="flex items-center gap-2"
+              >
+                <span class="inline-flex items-center gap-1 text-xs font-medium text-muted shrink-0">
+                  <UIcon name="i-lucide-list-checks" class="w-3.5 h-3.5" />
+                  نوع التسميع
+                </span>
+                <div class="inline-flex rounded-lg border border-default bg-default p-0.5">
+                  <button
+                    type="button"
+                    class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                    :class="recitationMethod === 'full'
+                      ? 'bg-primary text-inverted'
+                      : 'text-muted hover:text-default'"
+                    @click="selectMethod('full')"
+                  >
+                    تسميع كامل
+                  </button>
+                  <button
+                    type="button"
+                    class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                    :class="recitationMethod === 'test'
+                      ? 'bg-primary text-inverted'
+                      : 'text-muted hover:text-default'"
+                    @click="selectMethod('test')"
+                  >
+                    اختبار
+                  </button>
+                </div>
+              </div>
+              <div
+                v-else-if="!isParentReadOnly && selectedItem && currentTrack === 'Hifz'"
+                dir="rtl"
+                class="inline-flex items-center gap-1.5 text-xs text-muted"
+              >
+                <UIcon name="i-lucide-lock" class="w-3.5 h-3.5" />
+                تسميع كامل — إلزامي للحفظ الجديد
+              </div>
+
+              <!-- Test capture: pick spots on the mushaf, then mark errors inside them. -->
+              <div
+                v-if="isTest && !isParentReadOnly && selectedItem"
+                dir="rtl"
+                class="flex flex-col gap-2 rounded-xl border border-default bg-elevated/40 p-2.5"
+              >
+                <div class="flex items-center gap-2">
+                  <div class="inline-flex shrink-0 rounded-lg border border-default bg-default p-0.5">
+                    <button
+                      type="button"
+                      class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+                      :class="captureMode === 'spot' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
+                      @click="captureMode = 'spot'"
+                    >
+                      تحديد موضع
+                    </button>
+                    <button
+                      type="button"
+                      class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+                      :class="captureMode === 'mark' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
+                      @click="captureMode = 'mark'"
+                    >
+                      تعليم أخطاء
+                    </button>
+                  </div>
+                  <p class="min-w-0 flex-1 text-xs text-muted">
+                    {{ captureHint }}
+                  </p>
+                </div>
+
+                <div v-if="spots.length" class="flex flex-wrap gap-1.5">
+                  <span
+                    v-for="(s, i) in spots"
+                    :key="s.id"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-2 py-1 text-xs"
+                  >
+                    <span class="font-bold text-primary">{{ i + 1 }}</span>
+                    <span>{{ spotLabel(s) }}</span>
+                    <button
+                      type="button"
+                      class="text-muted hover:text-error"
+                      :aria-label="'حذف الموضع'"
+                      @click="removeSpot(s.id)"
+                    >
+                      <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                </div>
+                <p v-else class="text-xs text-muted">
+                  لا مواضع بعد — حدّد موضعًا واحدًا على الأقل للاختبار.
+                </p>
+              </div>
+
               <MushafRangeViewer
                 v-if="selectedItem"
                 :start-surah="selectedItem.start_surah"
@@ -435,15 +651,18 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                 :end-surah="selectedItem.end_surah"
                 :end-verse="selectedItem.end_verse"
                 :marks="isParentReadOnly ? undefined : marks"
-                :on-word-tap="isParentReadOnly ? undefined : tap"
-                :on-words-mark="isParentReadOnly ? undefined : setMarks"
+                :groups="isParentReadOnly ? undefined : groups"
+                :highlight-override="spotHighlight"
+                :pending-verse="isTest && captureMode === 'spot' ? pendingVerseKey : null"
+                :on-word-tap="isParentReadOnly ? undefined : onWordTap"
+                :on-words-mark="(isParentReadOnly || !canDragMark) ? undefined : onWordsMark"
               />
 
               <!-- Marking controls pinned to the bottom, aligned with the mushaf. -->
               <div v-if="showToolbar" class="sticky bottom-3 z-30">
                 <MushafMarkToolbar
                   :counts="counts"
-                  :can-submit="!!selectedItem"
+                  :can-submit="canSubmit"
                   :submitting="submitting"
                   @clear="clearAll"
                   @submit="onSubmitRequest"

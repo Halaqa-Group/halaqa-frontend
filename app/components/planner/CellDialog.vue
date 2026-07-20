@@ -117,13 +117,30 @@ function achRange(a: ApiAchievement) {
   return formatVerseRange(a.start_surah, a.start_verse, a.end_surah, a.end_verse, SURAH_NAMES)
 }
 
+function todayIso(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function recordAchievement() {
-  // Open the create form with this cell's student and date already filled in.
-  const { selectedDate, editing, duplicateFrom, prefillStudentId } = useAchievements()
+  // Open the create form with this cell's student pre-filled, dated today, and
+  // the cell's first session pre-selected as the lesson.
+  const { selectedDate, editing, duplicateFrom, prefillStudentId, prefillPlanItem } = useAchievements()
   editing.value = null
   duplicateFrom.value = null
-  selectedDate.value = isoDate.value
+  selectedDate.value = todayIso()
   prefillStudentId.value = selectedStudentId.value ?? null
+  const first = sessions.value[0]
+  prefillPlanItem.value = first
+    ? {
+        id: first.id ?? null,
+        track_type: props.track,
+        start_surah: first.start_surah,
+        start_verse: first.start_verse,
+        end_surah: first.end_surah,
+        end_verse: first.end_verse
+      }
+    : null
   open.value = false
   router.push('/achievements/record')
 }

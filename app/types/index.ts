@@ -459,6 +459,17 @@ export interface RecitationPosition {
   errors?: PositionError[]
 }
 
+// A verse-range spot the student was tested on (request shape for
+// recitation_method='test'). Each carries its own errors; per-type counts are
+// derived by the backend. Used only when submitting a partial test.
+export interface AchievementTestPosition {
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+  errors?: PositionError[]
+}
+
 export interface ApiAchievement {
   id: number
   student_id: number
@@ -568,6 +579,9 @@ export interface CreateAchievementDto {
   // Itemized errors (recitation_method='full' → attached to the single position).
   // Replaces the old raw-count inputs; the backend derives all counts from this.
   errors?: PositionError[]
+  // Tested spots (recitation_method='test' only, >=1). Mutually exclusive with
+  // top-level `errors`, which the backend rejects for a test recitation.
+  test_positions?: AchievementTestPosition[]
   percentage_score: number
   teacher_notes?: string
   approve?: boolean

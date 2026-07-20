@@ -10,6 +10,12 @@ export type WordKey = string
 
 export type RecitationMarks = Record<WordKey, Severity>
 
+// Words marked together as one drag-selected run share a block id. A block counts
+// as a single mistake (one count, one score hit, one error row) even though every
+// word in it is still highlighted individually. Words absent from this map are
+// standalone single-word marks. See `useRecitationSession`.
+export type MarkGroups = Record<WordKey, string>
+
 export interface MarkCounts {
   severe: number
   medium: number

@@ -2,7 +2,7 @@
 import { SURAH_NAMES } from '~/data/constants'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { SEVERITY_LEVELS } from '~/types/recitation'
-import type { RecitationMarks, Severity, WordKey } from '~/types/recitation'
+import type { MarkGroups, RecitationMarks, Severity, WordKey } from '~/types/recitation'
 import type { DragSelectRequest } from '~/composables/useWordDragSelect'
 
 const props = defineProps<{
@@ -11,6 +11,16 @@ const props = defineProps<{
   endSurah: number
   endVerse: number
   marks?: RecitationMarks
+  /** Word → block id, so a drag-selected run renders as one connected block. */
+  groups?: MarkGroups
+  /**
+   * Overrides which verses read as "in range" (highlighted, rest dimmed). Defaults
+   * to the lesson range; test mark-mode passes the tested-spots predicate so only
+   * spot verses stay lit.
+   */
+  highlightOverride?: (verseKey: string) => boolean
+  /** Verse ("surah:ayah") of an armed test-spot start, highlighted until closed. */
+  pendingVerse?: string | null
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
   /** Apply one severity (or unmark, when null) to a drag-selected run of words. */
   onWordsMark?: (keys: WordKey[], severity: Severity | null) => void
@@ -33,7 +43,8 @@ const pages = computed(() => {
 })
 
 const highlight = computed(() =>
-  makeRangePredicate(props.startSurah, props.startVerse, props.endSurah, props.endVerse)
+  props.highlightOverride
+  ?? makeRangePredicate(props.startSurah, props.startVerse, props.endSurah, props.endVerse)
 )
 
 // ── Page-by-page navigation ───────────────────────────────────────────────────
@@ -160,6 +171,8 @@ const rangeLabel = computed(() => {
           :page-number="currentPage"
           :highlight="highlight"
           :marks="marks"
+          :groups="groups"
+          :pending-verse="pendingVerse"
           :on-word-tap="onWordTap"
         />
       </div>
@@ -180,6 +193,7 @@ const rangeLabel = computed(() => {
         >
           <p class="mushaf-picker__title">
             طبّق على {{ picker.keys.length }} كلمة
+            <span v-if="picker.keys.length > 1" class="mushaf-picker__subtitle">تُحتسب خطأً واحدًا</span>
           </p>
           <button
             v-for="lvl in severityLevels"
@@ -301,6 +315,14 @@ const rangeLabel = computed(() => {
   color: #78716c;
   padding: 0.35rem 0.5rem 0.4rem;
   font-variant-numeric: tabular-nums;
+}
+
+.mushaf-picker__subtitle {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #a8a29e;
 }
 
 .mushaf-picker__item {

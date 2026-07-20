@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { synthesizeLines } from '~/utils/mushaf'
-import type { RecitationMarks, WordKey } from '~/types/recitation'
+import { MUSHAF_HOVERED_GROUP } from '~/utils/mushaf-hover'
+import type { MarkGroups, RecitationMarks, WordKey } from '~/types/recitation'
 
 const props = defineProps<{
   pageNumber: number
   highlight?: (verseKey: string) => boolean
   marks?: RecitationMarks
+  groups?: MarkGroups
+  pendingVerse?: string | null
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
 }>()
+
+// Which drag-selected block is hovered, shared with every child line so the
+// whole run lights up together (a block can span several lines). See MushafLine.
+const hoveredGroup = ref<string | null>(null)
+provide(MUSHAF_HOVERED_GROUP, hoveredGroup)
 
 const { page, loading, error } = useMushafPage(() => props.pageNumber)
 
@@ -71,6 +79,8 @@ onBeforeUnmount(clearSkeletonTimer)
           :page-number="pageNumber"
           :highlight="highlight"
           :marks="marks"
+          :groups="groups"
+          :pending-verse="pendingVerse"
           :on-word-tap="onWordTap"
         />
       </template>

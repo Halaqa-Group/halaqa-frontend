@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
-import type { ApiAchievement } from '~/types'
+import type { ApiAchievement, RecitationPosition } from '~/types'
 import { SURAH_NAMES } from '~/data/constants'
 import { formatVerseRange } from '~/utils/quran'
 import { TRACK_BADGE_COLOR, achievementStatusColor, type AchievementTrack } from '~/utils/achievement'
@@ -26,6 +26,22 @@ const totalErrors = computed(() =>
   + (props.achievement.tajweed_errors_count ?? 0)
   + (props.achievement.harakat_errors_count ?? 0)
 )
+
+// Tested spots — only meaningful for a partial `test` recitation. Each position
+// carries its own range and error counts (parents get ranges only).
+const isTest = computed(() => props.achievement.recitation_method === 'test')
+const spots = computed<RecitationPosition[]>(() => props.achievement.recitation_positions ?? [])
+function spotRange(p: RecitationPosition): string {
+  return formatVerseRange(p.start_surah, p.start_verse, p.end_surah, p.end_verse, SURAH_NAMES)
+}
+function spotErrors(p: RecitationPosition): number {
+  return (p.mistakes_count ?? 0) + (p.warnings_count ?? 0)
+    + (p.tajweed_errors_count ?? 0) + (p.harakat_errors_count ?? 0)
+}
+function spotErrorLabel(p: RecitationPosition): string {
+  const n = spotErrors(p)
+  return n === 0 ? t('pages.achievements.spotClean') : t('pages.achievements.spotErrorsCount', { n })
+}
 </script>
 
 <template>
@@ -53,6 +69,14 @@ const totalErrors = computed(() =>
       <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[achievement.track_type as AchievementTrack]">
         {{ t(`pages.achievements.tracks.${achievement.track_type}`) }}
       </UBadge>
+      <UBadge
+        v-if="achievement.recitation_method === 'test'"
+        variant="subtle"
+        color="neutral"
+        icon="i-lucide-list-checks"
+      >
+        {{ t('pages.achievements.methodTest') }}
+      </UBadge>
       <UBadge variant="subtle" :color="achievementStatusColor(achievement.status)">
         {{ isApproved ? t('pages.achievements.statusApproved') : t('pages.achievements.statusPending') }}
       </UBadge>
@@ -61,6 +85,30 @@ const totalErrors = computed(() =>
     <div class="flex items-center gap-2 text-sm text-muted">
       <UIcon name="i-lucide-book-open" class="w-4 h-4 shrink-0" />
       <span class="truncate">{{ range }}</span>
+    </div>
+
+    <!-- Tested spots (partial `test` recitation): each spot's range + error tally. -->
+    <div v-if="isTest && spots.length" class="flex flex-col gap-1.5 rounded-lg border border-default bg-elevated/40 p-2.5" dir="rtl">
+      <p class="text-xs font-medium text-muted">
+        {{ t('pages.achievements.testedSpots') }} ({{ spots.length }})
+      </p>
+      <div
+        v-for="(p, i) in spots"
+        :key="i"
+        class="flex items-center justify-between gap-2 text-xs"
+      >
+        <span class="flex min-w-0 items-center gap-1.5">
+          <span class="font-bold text-primary">{{ i + 1 }}</span>
+          <span class="truncate">{{ spotRange(p) }}</span>
+        </span>
+        <span
+          v-if="!hideErrors"
+          class="shrink-0 tabular-nums"
+          :class="spotErrors(p) === 0 ? 'text-success' : 'text-muted'"
+        >
+          {{ spotErrorLabel(p) }}
+        </span>
+      </div>
     </div>
 
     <div class="flex items-center justify-between border-t border-default pt-3">

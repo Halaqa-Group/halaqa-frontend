@@ -65,6 +65,42 @@ const preferredItemId = computed(() => {
   const v = Number(route.query.item_id)
   return Number.isFinite(v) && v > 0 ? v : null
 })
+
+function queryInt(key: string): number | null {
+  const q = route.query[key]
+  const v = Number(Array.isArray(q) ? q[0] : q)
+  return Number.isFinite(v) && v > 0 ? v : null
+}
+
+// When opened from the achievement form ("Save & recite"), the exact session —
+// its track and verse range — is carried in the query. That session can live on
+// any week/weekday (e.g. a future-dated planned lesson recorded today), so it may
+// not appear in `todayItems`; honour it directly rather than looking it up in the
+// record date's plan (which would otherwise fall back to today's first lesson).
+const querySession = computed<ApiWeeklyPlanItem | null>(() => {
+  const rawTrack = route.query.track
+  const track = Array.isArray(rawTrack) ? rawTrack[0] : rawTrack
+  if (track !== 'Hifz' && track !== 'Near' && track !== 'Far') return null
+  const ss = queryInt('start_surah')
+  const sv = queryInt('start_verse')
+  const es = queryInt('end_surah')
+  const ev = queryInt('end_verse')
+  if (ss == null || sv == null || es == null || ev == null) return null
+  return {
+    id: preferredItemId.value ?? 0,
+    day_of_week: 0,
+    track_type: track,
+    start_surah: ss,
+    start_verse: sv,
+    end_surah: es,
+    end_verse: ev,
+    total_verses: 0,
+    achieved_verses: 0,
+    status: 'due',
+    is_manual_override: false
+  }
+})
+
 const selectedItemId = ref<number | null>(null)
 watch(todayItems, (items) => {
   if (!items.length) {
@@ -79,7 +115,7 @@ watch(todayItems, (items) => {
 }, { immediate: true })
 
 const selectedItem = computed<ApiWeeklyPlanItem | null>(() =>
-  todayItems.value.find(i => i.id === selectedItemId.value) ?? null
+  querySession.value ?? todayItems.value.find(i => i.id === selectedItemId.value) ?? null
 )
 
 // ── Recitation method (step 1) ──────────────────────────────────────────────
@@ -478,18 +514,20 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
         </UPopover>
       </div>
 
-      <div v-if="planLoading" class="flex items-center justify-center gap-2 py-6 text-sm text-muted">
+      <!-- A session carried in via the query resolves synchronously, so skip the
+           plan-loading / empty states below and render the mushaf directly. -->
+      <div v-if="!selectedItem && planLoading" class="flex items-center justify-center gap-2 py-6 text-sm text-muted">
         <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
         جارٍ تحميل خطة اليوم…
       </div>
 
-      <div v-else-if="planError" class="flex items-center justify-center gap-2 py-6 text-sm text-error" dir="ltr">
+      <div v-else-if="!selectedItem && planError" class="flex items-center justify-center gap-2 py-6 text-sm text-error" dir="ltr">
         <UIcon name="i-lucide-alert-triangle" class="w-4 h-4" />
         Couldn't load this week's plan — {{ planError.message }}
       </div>
 
       <div
-        v-else-if="!plan"
+        v-else-if="!selectedItem && !plan"
         class="mx-auto max-w-sm w-full flex flex-col items-center gap-2 text-center px-6 py-8 rounded-2xl border border-default bg-default"
       >
         <UIcon name="i-lucide-calendar-off" class="w-8 h-8 text-muted opacity-70" />
@@ -505,7 +543,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
       </div>
 
       <div
-        v-else-if="!todayItems.length"
+        v-else-if="!selectedItem && !todayItems.length"
         class="mx-auto max-w-sm w-full flex flex-col items-center gap-2 text-center px-6 py-8 rounded-2xl border border-default bg-default"
       >
         <UIcon name="i-lucide-coffee" class="w-8 h-8 text-muted opacity-70" />

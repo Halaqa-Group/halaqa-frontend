@@ -6,12 +6,24 @@ const props = defineProps<{
   counts: MarkCounts
   canSubmit?: boolean
   submitting?: boolean
+  // When the recitation's achievement is already approved, the primary action
+  // toggles to "unapprove" instead of "approve".
+  approved?: boolean
 }>()
 
 const emit = defineEmits<{
   clear: []
   submit: []
 }>()
+
+const submitLabel = computed(() => {
+  if (props.submitting) return props.approved ? 'جارٍ الإلغاء…' : 'جارٍ الاعتماد…'
+  return props.approved ? 'إلغاء الاعتماد' : 'اعتماد'
+})
+// An unapprove is always available; only the approve action needs marks/spots.
+const submitDisabled = computed(() =>
+  props.approved ? props.submitting : (!props.canSubmit || props.submitting)
+)
 
 // Tap a word on the mushaf to cycle its severity down the spectrum
 // (red → orange → yellow → green → clear). The toolbar is a live legend of
@@ -54,16 +66,17 @@ function countFor(key: Severity): number {
 
       <button
         type="button"
-        class="mark-toolbar__btn mark-toolbar__btn--primary"
-        :disabled="!canSubmit || submitting"
-        :aria-label="submitting ? 'جارٍ الاعتماد' : 'اعتماد'"
+        class="mark-toolbar__btn"
+        :class="approved ? 'mark-toolbar__btn--warning' : 'mark-toolbar__btn--primary'"
+        :disabled="submitDisabled"
+        :aria-label="submitLabel"
         @click="emit('submit')"
       >
         <UIcon
-          :name="submitting ? 'i-lucide-loader-2' : 'i-lucide-check'"
+          :name="submitting ? 'i-lucide-loader-2' : (approved ? 'i-lucide-undo-2' : 'i-lucide-check')"
           :class="['size-4', submitting && 'mark-toolbar__spinner']"
         />
-        <span class="mark-toolbar__btn-label">{{ submitting ? 'جارٍ الاعتماد…' : 'اعتماد' }}</span>
+        <span class="mark-toolbar__btn-label">{{ submitLabel }}</span>
       </button>
     </div>
   </div>
@@ -178,6 +191,14 @@ function countFor(key: Severity): number {
 }
 .mark-toolbar__btn--primary:not(:disabled):hover {
   background: #15803d;
+}
+
+.mark-toolbar__btn--warning {
+  color: white;
+  background: #d97706;
+}
+.mark-toolbar__btn--warning:not(:disabled):hover {
+  background: #b45309;
 }
 
 .mark-toolbar__spinner {

@@ -305,6 +305,13 @@ function findExistingAchievement(item: ApiWeeklyPlanItem): ApiAchievement | null
   ) ?? null
 }
 
+// The achievement backing the current session, and whether it's approved — the
+// primary toolbar action turns into "unapprove" once it is.
+const existingAchievement = computed(() =>
+  selectedItem.value ? findExistingAchievement(selectedItem.value) : null
+)
+const isApproved = computed(() => existingAchievement.value?.status === 'approved')
+
 // Reopening an existing recitation from the achievements list: the achievement id
 // is carried in the query, so fetch its full detail (GET /achievements/{id}) and
 // seed the mushaf with the errors it was recorded with — the teacher sees exactly
@@ -393,6 +400,64 @@ function onSubmitRequest() {
     }
   })
   modal.open()
+}
+
+// Toolbar primary action: approve a fresh/pending recitation, or unapprove one
+// that's already approved.
+function onToolbarSubmit() {
+  if (isApproved.value) onUnapproveRequest()
+  else onSubmitRequest()
+}
+
+function onUnapproveRequest() {
+  const existing = existingAchievement.value
+  if (!existing) return
+  const modal = overlay.create(LazyCommonConfirmDialog, {
+    destroyOnClose: true,
+    props: {
+      'open': true,
+      'title': 'تأكيد إلغاء الاعتماد',
+      'message': `هل تريد إلغاء اعتماد ${trackLabel(existing.track_type)} لـ${rangeLabel(existing)}؟`,
+      'confirmLabel': 'إلغاء الاعتماد',
+      'cancelLabel': 'إلغاء',
+      'loading': false,
+      'onUpdate:open': (v: boolean) => { if (!v) modal.close() },
+      async onConfirm() {
+        try {
+          modal.patch({ loading: true })
+          await unapproveExisting(existing.id)
+          modal.close()
+        } catch (e) {
+          modal.patch({ loading: false })
+          const err = e as { data?: { message?: string }, message?: string }
+          toast.add({
+            title: 'خطأ في إلغاء الاعتماد',
+            description: apiError.format(err, err.message || 'حدث خطأ غير معروف'),
+            color: 'error',
+            icon: 'i-lucide-alert-circle'
+          })
+        }
+      }
+    }
+  })
+  modal.open()
+}
+
+// Unapprove in place and reflect the new status locally, so the toolbar flips
+// back to "approve" and the teacher can adjust the marks before re-approving.
+async function unapproveExisting(id: number) {
+  submitting.value = true
+  try {
+    const updated = await api<ApiAchievement>(`/achievements/${id}/unapprove`, { method: 'POST' })
+    priorAchievements.value = priorAchievements.value.map(a => a.id === id ? { ...a, ...updated } : a)
+    toast.add({
+      title: 'تم إلغاء الاعتماد ✓',
+      color: 'success',
+      icon: 'i-lucide-undo-2'
+    })
+  } finally {
+    submitting.value = false
+  }
 }
 
 async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number) {
@@ -722,8 +787,9 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                   :counts="counts"
                   :can-submit="canSubmit"
                   :submitting="submitting"
+                  :approved="isApproved"
                   @clear="clearAll"
-                  @submit="onSubmitRequest"
+                  @submit="onToolbarSubmit"
                 />
               </div>
             </div>

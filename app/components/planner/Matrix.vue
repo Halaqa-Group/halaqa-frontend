@@ -13,7 +13,7 @@ const props = defineProps<{ editable: boolean }>()
 const { t, locale } = useI18n()
 const toast = useToast()
 const {
-  restDays, copiedCell, dateOfDay, getCell, getCells,
+  restDays, copiedCell, dateOfDay, getCell, getCells, planStatus,
   toggleRestDay, copyRowToAllDays, applyColumnToAllDays, pasteCell, moveCell
 } = useWeeklyPlan()
 
@@ -120,8 +120,16 @@ function cleanupPointerDrag() {
   }
 }
 
-const days = computed(() =>
-  Array.from({ length: 7 }, (_, i) => {
+const tracks = PLAN_TRACKS as TrackType[]
+
+// A day is "off" when it's marked rest or carries no sessions in any track.
+const isApproved = computed(() => planStatus.value === 'approved')
+function dayHasSessions(index: number): boolean {
+  return tracks.some(track => getCells(index, track).length > 0)
+}
+
+const days = computed(() => {
+  const all = Array.from({ length: 7 }, (_, i) => {
     const d = dateOfDay(i)
     let label = String(i)
     let short = String(i)
@@ -131,9 +139,10 @@ const days = computed(() =>
     } catch { /* fall back to numeric labels */ }
     return { index: i, label, short, isRest: restDays.has(i) }
   })
-)
-
-const tracks = PLAN_TRACKS as TrackType[]
+  // Once approved the plan is read-only, so drop off days (rest or empty) — the
+  // reader only cares about the days that actually carry lessons.
+  return isApproved.value ? all.filter(d => !d.isRest && dayHasSessions(d.index)) : all
+})
 
 function rangeLabel(day: number, track: TrackType) {
   const c = getCell(day, track)

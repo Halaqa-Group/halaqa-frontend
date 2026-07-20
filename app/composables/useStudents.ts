@@ -50,6 +50,7 @@ export function useStudents() {
   const api = useApi()
   const toast = useToast()
   const { t } = useI18n()
+  const apiError = useApiError()
   const overlay = useOverlay()
 
   interface ListFilters {
@@ -81,7 +82,7 @@ export function useStudents() {
       students.value = mapped
       totalStudents.value = Array.isArray(data) ? items.length : data.total
     } catch (e: any) {
-      error.value = e?.data?.message || 'حدث خطأ أثناء تحميل الطلاب'
+      error.value = apiError.format(e, 'حدث خطأ أثناء تحميل الطلاب')
     } finally {
       isLoading.value = false
     }
@@ -118,9 +119,7 @@ export function useStudents() {
       totalStudents.value = Array.isArray(data) ? students.value.length : data.total
       currentPage.value = nextPage
     } catch (e: any) {
-      const raw = e?.data?.message
-      const msg = Array.isArray(raw) ? raw.join('، ') : (raw || 'حدث خطأ أثناء تحميل المزيد')
-      toast.add({ title: msg, color: 'error' })
+      toast.add({ title: apiError.format(e, 'حدث خطأ أثناء تحميل المزيد'), color: 'error' })
     } finally {
       isLoadingMore.value = false
     }
@@ -220,9 +219,7 @@ export function useStudents() {
       await restoreStudent(student.id)
       toast.add({ title: t('pages.students.actions.restoreSuccess'), color: 'success' })
     } catch (e: any) {
-      const raw = e?.data?.message
-      const message = Array.isArray(raw) ? raw.join('، ') : (raw || t('pages.students.actions.restoreError'))
-      toast.add({ title: message, color: 'error' })
+      toast.add({ title: apiError.format(e, t('pages.students.actions.restoreError')), color: 'error' })
     }
   }
 
@@ -248,9 +245,7 @@ export function useStudents() {
             modal.close()
           } catch (e: any) {
             modal.patch({ loading: false })
-            const raw = e?.data?.message
-            const message = Array.isArray(raw) ? raw.join('، ') : (raw || t('pages.students.actions.deleteError'))
-            toast.add({ title: message, color: 'error' })
+            toast.add({ title: apiError.format(e, t('pages.students.actions.deleteError')), color: 'error' })
           }
         }
       }
@@ -280,9 +275,7 @@ export function useStudents() {
             modal.close()
           } catch (e: any) {
             modal.patch({ loading: false })
-            const raw = e?.data?.message
-            const message = Array.isArray(raw) ? raw.join('، ') : (raw || t('pages.students.actions.graduateError'))
-            toast.add({ title: message, color: 'error' })
+            toast.add({ title: apiError.format(e, t('pages.students.actions.graduateError')), color: 'error' })
           }
         }
       }

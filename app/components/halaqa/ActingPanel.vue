@@ -15,6 +15,7 @@ const emit = defineEmits<{
 
 const { t, locale } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 
 const dateFormatter = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
@@ -38,8 +39,7 @@ async function loadTeacherOptions() {
   try {
     teacherOptions.value = await fetchTeachers()
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    teachersError.value = typeof msg === 'string' ? msg : t('pages.halaqat.toastError')
+    teachersError.value = apiError.format(e, t('pages.halaqat.toastError'))
     teacherOptions.value = []
   } finally {
     teachersLoading.value = false
@@ -113,8 +113,7 @@ async function submitSub(event: FormSubmitEvent<SubSchema>) {
     subOpen.value = false
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     subSaving.value = false
   }
@@ -144,8 +143,7 @@ async function submitExt(event: FormSubmitEvent<ExtSchema>) {
     extOpen.value = false
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     extSaving.value = false
   }
@@ -157,8 +155,7 @@ async function endNow() {
     toast.add({ title: t('pages.halaqat.acting.toastEnded'), color: 'success' })
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 </script>

@@ -22,6 +22,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { activeRole } = useAuth()
 const {
   halaqat,
@@ -164,11 +165,7 @@ async function onLifecycleConfirm() {
     await loadList(page.value)
     await initializeHalaqa()
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({
-      title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'),
-      color: 'error'
-    })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 

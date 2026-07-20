@@ -11,6 +11,7 @@ import { toScoreCounts } from '~/types/recitation'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const apiError = useApiError()
 const api = useApi()
 const overlay = useOverlay()
 const { activeRole } = useAuth()
@@ -297,7 +298,7 @@ function onSubmitRequest() {
           const err = e as { data?: { message?: string }, message?: string }
           toast.add({
             title: 'خطأ في حفظ الإنجاز',
-            description: err.data?.message || err.message || 'حدث خطأ غير معروف',
+            description: apiError.format(err, err.message || 'حدث خطأ غير معروف'),
             color: 'error',
             icon: 'i-lucide-alert-circle'
           })

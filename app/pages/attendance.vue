@@ -8,6 +8,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { activeRole } = useAuth()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const {
@@ -47,8 +48,7 @@ async function handleSaveAttendance() {
     toast.add({ title: t('pages.attendance.savedToastTitle'), icon: 'i-lucide-check-circle', color: 'success' })
   } catch (error: any) {
     toast.add({
-      title: t('pages.attendance.saveErrorTitle'),
-      description: error.message || t('pages.attendance.saveErrorFallback'),
+      title: apiError.format(error, t('pages.attendance.saveErrorTitle')),
       icon: 'i-lucide-alert-circle',
       color: 'error'
     })

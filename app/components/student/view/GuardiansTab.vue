@@ -8,6 +8,7 @@ const props = defineProps<{ student: Student }>()
 const { t } = useI18n()
 const { user } = useAuth()
 const toast = useToast()
+const apiError = useApiError()
 const { fetchGuardians, linkGuardian, updateGuardian, unlinkGuardian, refetchStudent } = useStudents()
 const { parents, isLoading: isLoadingParents, fetchParents } = useSchoolParents()
 
@@ -112,15 +113,7 @@ function openLinkDialog() {
 }
 
 function mapLinkError(e: any): string {
-  const status = e?.response?.status ?? e?.status
-  const raw = e?.data?.message
-  const msg = Array.isArray(raw) ? raw.join('، ') : raw
-  if (status === 404) return t('pages.students.guardians.errors.userNotFound')
-  if (status === 409) return t('pages.students.guardians.errors.userDeactivated')
-  if (status === 400 && typeof msg === 'string' && msg.toLowerCase().includes('already linked')) {
-    return t('pages.students.guardians.errors.alreadyLinked')
-  }
-  return msg || t('pages.students.guardians.errors.linkFailed')
+  return apiError.format(e, t('pages.students.guardians.errors.linkFailed'))
 }
 
 async function submitLink(_event: FormSubmitEvent<LinkSchema>) {
@@ -161,9 +154,7 @@ async function patchGuardian(g: ApiGuardian, body: Record<string, any>, successK
     refetchStudent(props.student.id).catch(() => { })
     toast.add({ title: t(successKey), color: 'success' })
   } catch (e: any) {
-    const raw = e?.data?.message
-    const message = Array.isArray(raw) ? raw.join('، ') : (raw || t('pages.students.guardians.errors.updateFailed'))
-    toast.add({ title: message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.students.guardians.errors.updateFailed')), color: 'error' })
   }
 }
 
@@ -220,9 +211,7 @@ async function confirmUnlink() {
     unlinkOpen.value = false
     pendingUnlink.value = null
   } catch (e: any) {
-    const raw = e?.data?.message
-    const message = Array.isArray(raw) ? raw.join('، ') : (raw || t('pages.students.guardians.errors.unlinkFailed'))
-    toast.add({ title: message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.students.guardians.errors.unlinkFailed')), color: 'error' })
   } finally {
     unlinkSaving.value = false
   }

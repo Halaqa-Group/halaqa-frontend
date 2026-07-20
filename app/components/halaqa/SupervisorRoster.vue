@@ -17,6 +17,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { assignSupervisor, unassignSupervisor } = useHalaqaSupervisors()
 const api = useApi()
 
@@ -65,8 +66,7 @@ async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
     assignOpen.value = false
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     assignSaving.value = false
   }
@@ -78,8 +78,7 @@ async function remove(s: ApiSupervisorSummary) {
     toast.add({ title: t('pages.halaqat.supervisors.toastRemoved'), color: 'success' })
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 </script>

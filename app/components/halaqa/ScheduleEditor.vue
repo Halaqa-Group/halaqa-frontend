@@ -15,6 +15,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { setSchedule } = useHalaqaSchedule()
 
 const rows = ref<ScheduleDayRow[]>([])
@@ -55,9 +56,8 @@ async function save() {
     toast.add({ title: t('pages.halaqat.toastUpdated'), color: 'success' })
     emit('saved', result.schedule)
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
     toast.add({
-      title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'),
+      title: apiError.format(e, t('pages.halaqat.toastError')),
       color: 'error'
     })
   } finally {

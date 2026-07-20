@@ -20,6 +20,7 @@ const open = defineModel<boolean>('open', { required: true })
 
 const { t, locale } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const api = useApi()
 const router = useRouter()
 const { activeRole } = useAuth()
@@ -129,7 +130,7 @@ async function approveAch(a: ApiAchievement) {
     toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
     await loadAchievements()
   } catch (e: any) {
-    toast.add({ title: t('pages.achievements.approveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.achievements.approveErrorTitle')), color: 'error' })
   } finally {
     approvingId.value = null
   }

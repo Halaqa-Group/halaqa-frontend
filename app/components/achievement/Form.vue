@@ -13,6 +13,7 @@ const emit = defineEmits<{ saved: [] }>()
 
 const { t, locale } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const overlay = useOverlay()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
@@ -398,8 +399,7 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
   } catch (e: any) {
     continueToRecite.value = false
     toast.add({
-      title: isEdit.value ? t('pages.achievements.updateErrorTitle') : t('pages.achievements.saveErrorTitle'),
-      description: e.data?.message || e.message,
+      title: apiError.format(e, isEdit.value ? t('pages.achievements.updateErrorTitle') : t('pages.achievements.saveErrorTitle')),
       color: 'error'
     })
   }

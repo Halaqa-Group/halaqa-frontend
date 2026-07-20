@@ -14,6 +14,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { listStudents, enrollStudent, removeStudent, transferStudent } = useHalaqaStudents()
 const api = useApi()
 const { halaqat } = useGlobalHalaqa()
@@ -91,8 +92,7 @@ async function submitEnroll(event: FormSubmitEvent<EnrollSchema>) {
     await load()
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     enrollSaving.value = false
   }
@@ -142,8 +142,7 @@ async function submitRemove(event: FormSubmitEvent<RemoveSchema>) {
     await load()
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     removeSaving.value = false
   }
@@ -207,8 +206,7 @@ async function submitTransfer(event: FormSubmitEvent<TransferSchema>) {
     await load()
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     transferSaving.value = false
   }

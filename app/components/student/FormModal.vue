@@ -24,6 +24,7 @@ const { user } = useAuth()
 const isEditMode = computed(() => props.mode === 'edit')
 const api = useApi()
 const toast = useToast()
+const apiError = useApiError()
 const { t, locale } = useI18n()
 
 const CAPACITY = {
@@ -331,12 +332,10 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
 
     emit('close', false)
   } catch (e: any) {
-    const raw = e?.data?.message
     const fallback = isEditMode.value
       ? t('pages.students.addModal.editError')
       : t('pages.students.addModal.saveError')
-    const message = Array.isArray(raw) ? raw.join('، ') : (raw || fallback)
-    toast.add({ title: message, color: 'error' })
+    toast.add({ title: apiError.format(e, fallback), color: 'error' })
   } finally {
     submitting.value = false
   }

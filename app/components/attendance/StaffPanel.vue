@@ -6,6 +6,7 @@ import type { AttendanceStatus } from '~/types'
 
 const { t, locale } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 
 const {
   staffRows, filteredRows, search, selectedDate, statusFilter, viewMode,
@@ -70,8 +71,7 @@ async function handleSave() {
     toast.add({ title: t('pages.attendance.savedToastTitle'), icon: 'i-lucide-check-circle', color: 'success' })
   } catch (error: any) {
     toast.add({
-      title: t('pages.attendance.saveErrorTitle'),
-      description: error?.message || t('pages.attendance.saveErrorFallback'),
+      title: apiError.format(error, t('pages.attendance.saveErrorTitle')),
       icon: 'i-lucide-alert-circle',
       color: 'error'
     })

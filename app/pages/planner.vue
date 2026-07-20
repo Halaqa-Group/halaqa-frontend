@@ -11,6 +11,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { activeRole } = useAuth()
 const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 const {
@@ -58,7 +59,7 @@ async function onSaveDraft() {
     await saveDraft()
     toast.add({ title: t('pages.planner.savedDraftToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   } finally {
     savingDraft.value = false
   }
@@ -71,7 +72,7 @@ async function onApprove() {
     await approvePlan()
     toast.add({ title: t('pages.planner.approvedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: t('pages.planner.approveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.approveErrorTitle')), color: 'error' })
   } finally {
     approving.value = false
   }
@@ -82,7 +83,7 @@ async function onUnapprove() {
     await unapprovePlan()
     toast.add({ title: t('pages.planner.unapprovedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: t('pages.planner.approveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.approveErrorTitle')), color: 'error' })
   }
 }
 
@@ -94,7 +95,7 @@ async function onDeleteItem() {
     await deleteItem(target.id)
     toast.add({ title: t('pages.planner.itemDeletedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   }
 }
 
@@ -103,7 +104,7 @@ async function onDeletePlan() {
     await deletePlan()
     toast.add({ title: t('pages.planner.planDeletedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: t('pages.planner.saveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   }
 }
 

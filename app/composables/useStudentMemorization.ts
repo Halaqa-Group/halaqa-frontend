@@ -9,6 +9,7 @@ import {
 
 export function useStudentMemorization(studentId: MaybeRefOrGetter<number | string>) {
   const api = useApi()
+  const apiError = useApiError()
 
   const bitmap = ref<Uint8Array>(new Uint8Array(0))
   const count = ref(0)
@@ -22,11 +23,6 @@ export function useStudentMemorization(studentId: MaybeRefOrGetter<number | stri
     TOTAL_AYAT > 0 ? Math.round((count.value / TOTAL_AYAT) * 1000) / 10 : 0
   )
 
-  function readError(e: any, fallback: string): string {
-    const raw = e?.data?.message
-    return Array.isArray(raw) ? raw.join('، ') : (raw || fallback)
-  }
-
   function apply(data: ApiMemorization) {
     bitmap.value = decodeBitmap(data.bitmap_base64)
     count.value = data.memorized_ayah_count
@@ -39,7 +35,7 @@ export function useStudentMemorization(studentId: MaybeRefOrGetter<number | stri
     try {
       apply(await api<ApiMemorization>(`/students/${id}/memorization`))
     } catch (e) {
-      error.value = readError(e, 'تعذّر تحميل بيانات الحفظ')
+      error.value = apiError.format(e, 'تعذّر تحميل بيانات الحفظ')
     } finally {
       loading.value = false
     }
@@ -56,7 +52,7 @@ export function useStudentMemorization(studentId: MaybeRefOrGetter<number | stri
       }))
       return true
     } catch (e) {
-      error.value = readError(e, 'تعذّر حفظ التعديل')
+      error.value = apiError.format(e, 'تعذّر حفظ التعديل')
       return false
     } finally {
       saving.value = false

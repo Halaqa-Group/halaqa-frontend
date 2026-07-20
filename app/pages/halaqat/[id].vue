@@ -22,6 +22,7 @@ definePageMeta({
 const route = useRoute()
 const { t, locale } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 
 const dateFormatter = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' })
@@ -58,11 +59,7 @@ async function loadDetail() {
   try {
     halaqa.value = await getHalaqa(halaqaId.value)
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({
-      title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'),
-      color: 'error'
-    })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
     halaqa.value = null
   } finally {
     loading.value = false
@@ -129,8 +126,7 @@ async function onLifecycleConfirm() {
     toast.add({ title: lifecycleCopy.value.toast, color: 'success' })
     await loadDetail()
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 

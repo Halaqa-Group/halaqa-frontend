@@ -10,6 +10,7 @@ definePageMeta({
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { activeRole } = useAuth()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const {
@@ -28,7 +29,7 @@ async function onDeleteConfirm() {
     await deleteAchievement(target.id)
     toast.add({ title: t('pages.achievements.deletedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: t('pages.achievements.deleteErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.achievements.deleteErrorTitle')), color: 'error' })
   }
 }
 

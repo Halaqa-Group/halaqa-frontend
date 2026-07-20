@@ -21,6 +21,7 @@ const emit = defineEmits<{
 
 const { t, locale } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 
 const dateFormatter = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
@@ -50,8 +51,7 @@ async function loadTeacherOptions() {
   try {
     teacherOptions.value = await fetchTeachers()
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    teachersError.value = typeof msg === 'string' ? msg : t('pages.halaqat.toastError')
+    teachersError.value = apiError.format(e, t('pages.halaqat.toastError'))
     teacherOptions.value = []
   } finally {
     teachersLoading.value = false
@@ -120,8 +120,7 @@ async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
     assignOpen.value = false
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     assignSaving.value = false
   }
@@ -180,8 +179,7 @@ async function submitEnd(event: FormSubmitEvent<EndSchema>) {
     endTarget.value = null
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     endSaving.value = false
   }
@@ -237,8 +235,7 @@ async function submitActing(event: FormSubmitEvent<ActingSchema>) {
     actingTarget.value = null
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     actingSaving.value = false
   }
@@ -250,8 +247,7 @@ async function changeRole(assignment: ApiTeacherAssignment, role: 'main' | 'assi
     toast.add({ title: t('pages.halaqat.teachers.toastUpdated'), color: 'success' })
     emit('changed')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    toast.add({ title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 

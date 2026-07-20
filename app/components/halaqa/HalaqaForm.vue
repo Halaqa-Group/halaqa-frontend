@@ -20,6 +20,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { createHalaqa, updateHalaqa, fetchTeachers } = useHalaqat()
 
 const isEdit = computed(() => props.editing != null)
@@ -35,8 +36,7 @@ async function loadTeachers() {
   try {
     teachers.value = await fetchTeachers()
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
-    teachersError.value = typeof msg === 'string' ? msg : t('pages.halaqat.toastError')
+    teachersError.value = apiError.format(e, t('pages.halaqat.toastError'))
     teachers.value = []
   } finally {
     teachersLoading.value = false
@@ -124,9 +124,8 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     }
     emit('saved')
   } catch (e: unknown) {
-    const msg = (e as { data?: { message?: string } })?.data?.message
     toast.add({
-      title: typeof msg === 'string' ? msg : t('pages.halaqat.toastError'),
+      title: apiError.format(e, t('pages.halaqat.toastError')),
       color: 'error'
     })
   } finally {

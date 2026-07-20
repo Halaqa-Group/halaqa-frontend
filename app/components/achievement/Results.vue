@@ -7,6 +7,7 @@ import { TRACK_BADGE_COLOR, achievementStatusColor, type AchievementTrack } from
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { activeRole } = useAuth()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
@@ -50,7 +51,7 @@ async function onApprove(a: ApiAchievement) {
     await approveAchievement(a.id)
     toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: t('pages.achievements.approveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.achievements.approveErrorTitle')), color: 'error' })
   }
 }
 async function onUnapprove(a: ApiAchievement) {
@@ -58,7 +59,7 @@ async function onUnapprove(a: ApiAchievement) {
     await unapproveAchievement(a.id)
     toast.add({ title: t('pages.achievements.unapprovedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: t('pages.achievements.unapproveErrorTitle'), description: e.data?.message || e.message, color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.achievements.unapproveErrorTitle')), color: 'error' })
   }
 }
 

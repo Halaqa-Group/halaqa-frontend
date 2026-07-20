@@ -3,6 +3,7 @@ import type { ApiSchool } from '~/types'
 
 const { t } = useI18n()
 const toast = useToast()
+const apiError = useApiError()
 const { activeRole } = useAuth()
 const { school, isLoading, fetchSchool, updateSchool } = useSchool()
 
@@ -40,9 +41,7 @@ function openEdit() {
 }
 
 function toastApiError(e: unknown) {
-  const raw = (e as { data?: { message?: string | string[] } })?.data?.message
-  const message = Array.isArray(raw) ? raw.join(', ') : (typeof raw === 'string' ? raw : t('pages.home.schoolCard.toastError'))
-  toast.add({ title: message, color: 'error' })
+  toast.add({ title: apiError.format(e, t('pages.home.schoolCard.toastError')), color: 'error' })
 }
 
 function validate(): string | null {

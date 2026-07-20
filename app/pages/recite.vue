@@ -388,11 +388,6 @@ function onSubmitRequest() {
         try {
           modal.patch({ loading: true })
           await postAchievement(item, studentId.value!, halaqaId.value!)
-          modal.close()
-          // Recitation recorded + approved — head back to the achievements list.
-          // Use the setup-captured router (not navigateTo): the Nuxt instance
-          // context is lost after the awaits above, so navigateTo would no-op.
-          await router.push('/achievements')
         } catch (e) {
           modal.patch({ loading: false })
           const err = e as { data?: { message?: string }, message?: string }
@@ -402,7 +397,14 @@ function onSubmitRequest() {
             color: 'error',
             icon: 'i-lucide-alert-circle'
           })
+          return
         }
+        // Saved + approved. Closing and redirecting live OUTSIDE the try above so a
+        // double-close (the dialog also self-closes on confirm) can't throw into the
+        // catch and swallow the redirect. Use the setup-captured router, not
+        // navigateTo — the Nuxt instance context is lost after the awaits.
+        try { modal.close() } catch { /* dialog already closed */ }
+        await router.push('/achievements')
       }
     }
   })
@@ -433,7 +435,6 @@ function onUnapproveRequest() {
         try {
           modal.patch({ loading: true })
           await unapproveExisting(existing.id)
-          modal.close()
         } catch (e) {
           modal.patch({ loading: false })
           const err = e as { data?: { message?: string }, message?: string }
@@ -443,7 +444,11 @@ function onUnapproveRequest() {
             color: 'error',
             icon: 'i-lucide-alert-circle'
           })
+          return
         }
+        // Unapproved — stay on the page (marks unlock for editing). Guard the close
+        // since the dialog also self-closes on confirm.
+        try { modal.close() } catch { /* dialog already closed */ }
       }
     }
   })

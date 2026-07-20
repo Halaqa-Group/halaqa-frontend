@@ -506,6 +506,25 @@ export interface ApiAchievementListResult {
   limit: number
 }
 
+// One aggregated error hotspot: a single ayah with the student's error tally there.
+export interface HeatmapHotspot {
+  surah: number
+  ayah: number
+  mistakes_count: number
+  warnings_count: number
+  tajweed_errors_count: number
+  harakat_errors_count: number
+  total: number
+}
+
+// Student error heatmap: worst ayat (most errors first) over a rolling window.
+export interface ApiErrorHeatmap {
+  student_id: number
+  days: number
+  total_errors: number
+  hotspots: HeatmapHotspot[]
+}
+
 export interface ApiWeeklyPlan {
   id: number
   student_id: number

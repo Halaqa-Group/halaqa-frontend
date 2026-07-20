@@ -21,12 +21,18 @@ const loadedStudent = ref<Student | null>(null)
 
 const student = computed(() => students.value.find(s => s.id === studentId.value) ?? loadedStudent.value)
 
+// Error-heatmap insights are staff-only (parents don't see error breakdowns).
+const canSeeInsights = computed(() => !!activeRole.value && activeRole.value !== 'parent')
+
 const tabs = computed<TabsItem[]>(() => [
   { value: 'overview', label: t('pages.students.viewModal.tabs.overview'), icon: 'i-lucide-layout-dashboard' },
-  { value: 'guardians', label: t('pages.students.viewModal.tabs.guardians'), icon: 'i-lucide-users' }
+  { value: 'guardians', label: t('pages.students.viewModal.tabs.guardians'), icon: 'i-lucide-users' },
+  ...(canSeeInsights.value
+    ? [{ value: 'insights', label: t('pages.students.viewModal.tabs.insights'), icon: 'i-lucide-chart-column-increasing' }]
+    : [])
 ])
 
-const activeTab = ref<'overview' | 'guardians'>('overview')
+const activeTab = ref<'overview' | 'guardians' | 'insights'>('overview')
 
 const backIcon = computed(() =>
   locale.value === 'ar' ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left'
@@ -92,6 +98,7 @@ watch(studentId, () => {
             <template #content="{ item }">
               <StudentViewOverviewTab v-if="item.value === 'overview'" :student="student" />
               <StudentViewGuardiansTab v-else-if="item.value === 'guardians'" :student="student" />
+              <StudentViewInsightsTab v-else-if="item.value === 'insights'" :student="student" />
             </template>
           </UTabs>
         </div>

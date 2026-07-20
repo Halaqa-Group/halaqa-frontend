@@ -62,6 +62,14 @@ const state = reactive<{
 const selectedPlanItemId = ref<number | null>(null)
 const manualRange = ref(false)
 
+// A lesson handed in from the planner's cell dialog. It's injected into the
+// picker and kept selected even when its weekday differs from the record date
+// (the day-filtered plan list wouldn't otherwise include it). prefilledStudentId
+// scopes it to the student it was chosen for, so switching student drops it.
+type PickerItem = Pick<ApiWeeklyPlanItem, 'id' | 'track_type' | 'start_surah' | 'start_verse' | 'end_surah' | 'end_verse'>
+const prefilledItem = ref<PickerItem | null>(null)
+const prefilledStudentId = ref<number | null>(null)
+
 function hydrate() {
   const src = editing.value ?? duplicateFrom.value
   selectedPlanItemId.value = null
@@ -98,7 +106,17 @@ function hydrate() {
       state.end_surah = pref.end_surah
       state.end_verse = pref.end_verse
       manualRange.value = true
+      // Keep the lesson selected in the picker. When it sits on another weekday
+      // it's injected into pickerItems (today's plan list wouldn't list it).
+      if (pref.id != null) {
+        selectedPlanItemId.value = pref.id
+        prefilledItem.value = { id: pref.id, track_type: pref.track_type, start_surah: pref.start_surah, start_verse: pref.start_verse, end_surah: pref.end_surah, end_verse: pref.end_verse }
+        prefilledStudentId.value = state.student_id ?? null
+      } else {
+        prefilledItem.value = null
+      }
     } else {
+      prefilledItem.value = null
       state.track_type = 'Hifz'
       state.start_surah = 1
       state.start_verse = 1
@@ -122,28 +140,57 @@ const { items: planItems, loading: planLoading } = useTodayPlanItems(
   () => state.date
 )
 
-function pickPlanItem(it: ApiWeeklyPlanItem) {
+function pickPlanItem(it: PickerItem) {
+  // Load the lesson's track + range into the editable inputs so the teacher can
+  // see and adjust them before saving (rather than a read-only summary).
   state.track_type = it.track_type
   state.start_surah = it.start_surah
   state.start_verse = it.start_verse
   state.end_surah = it.end_surah
   state.end_verse = it.end_verse
   selectedPlanItemId.value = it.id
-  manualRange.value = false
+  manualRange.value = true
 }
 
-// Drop a stale selection when the plan list changes (student/date switch).
+// The plan list is filtered to the record date's weekday, so a lesson handed in
+// from the planner (which may sit on another weekday) is merged in while it's the
+// active selection — keeping it visible and selected in the picker.
+const pickerItems = computed<PickerItem[]>(() => {
+  const items = planItems.value
+  const pref = prefilledItem.value
+  if (pref && selectedPlanItemId.value === pref.id && !items.some(i => i.id === pref.id)) {
+    return [pref, ...items]
+  }
+  return items
+})
+
+// Drop a stale selection when the plan list changes (student/date switch), but
+// keep the planner-handed lesson even though it isn't in the day's plan list.
 watch(planItems, (items) => {
-  if (selectedPlanItemId.value != null && !items.some(i => i.id === selectedPlanItemId.value)) {
+  if (
+    selectedPlanItemId.value != null
+    && selectedPlanItemId.value !== prefilledItem.value?.id
+    && !items.some(i => i.id === selectedPlanItemId.value)
+  ) {
     selectedPlanItemId.value = null
+  }
+})
+
+// The planner-handed lesson belongs to one student; switching student drops it.
+watch(() => state.student_id, (sid) => {
+  if (prefilledItem.value && sid !== prefilledStudentId.value) {
+    prefilledItem.value = null
+    if (selectedPlanItemId.value != null && !planItems.value.some(i => i.id === selectedPlanItemId.value)) {
+      selectedPlanItemId.value = null
+    }
   }
 })
 
 // Show the manual track + range inputs when there's no plan, or the teacher
 // explicitly opted into manual entry. When editing, the lesson/range is fixed —
 // it's shown read-only and can't be changed (only counts/notes are editable).
-const showManual = computed(() => !isEdit.value && (manualRange.value || planItems.value.length === 0))
-function planItemRange(it: ApiWeeklyPlanItem) {
+const showManual = computed(() => !isEdit.value && (manualRange.value || pickerItems.value.length === 0))
+function planItemRange(it: PickerItem) {
   return formatVerseRange(it.start_surah, it.start_verse, it.end_surah, it.end_verse, SURAH_NAMES)
 }
 
@@ -412,13 +459,13 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         {{ t('common.loading') }}
       </div>
       <template v-else>
-        <div v-if="planItems.length" class="grid grid-cols-3 gap-1.5">
+        <div v-if="pickerItems.length" class="grid grid-cols-3 gap-1.5">
           <button
-            v-for="it in planItems"
+            v-for="it in pickerItems"
             :key="it.id"
             type="button"
             class="flex flex-col gap-1 rounded-lg border p-2 text-start transition"
-            :class="!manualRange && selectedPlanItemId === it.id
+            :class="selectedPlanItemId === it.id
               ? 'border-primary bg-primary/5 ring-1 ring-primary'
               : 'border-default hover:border-primary/60 hover:bg-elevated'"
             @click="pickPlanItem(it)"
@@ -428,9 +475,9 @@ defineExpose({ saving: isSaving, setContinueToRecite })
                 {{ t(`pages.achievements.tracks.${it.track_type}`) }}
               </UBadge>
               <UIcon
-                :name="!manualRange && selectedPlanItemId === it.id ? 'i-lucide-circle-check-big' : 'i-lucide-circle'"
+                :name="selectedPlanItemId === it.id ? 'i-lucide-circle-check-big' : 'i-lucide-circle'"
                 class="w-4 h-4 shrink-0"
-                :class="!manualRange && selectedPlanItemId === it.id ? 'text-primary' : 'text-muted'"
+                :class="selectedPlanItemId === it.id ? 'text-primary' : 'text-muted'"
               />
             </div>
             <p class="text-xs leading-tight">
@@ -443,7 +490,7 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         </p>
 
         <button
-          v-if="planItems.length"
+          v-if="pickerItems.length"
           type="button"
           class="mt-2 text-xs text-primary hover:underline"
           @click="manualRange = !manualRange"

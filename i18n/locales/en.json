@@ -982,7 +982,17 @@
         "tabs": {
           "overview": "Overview",
           "guardians": "Guardians",
-          "memorization": "Memorization"
+          "memorization": "Memorization",
+          "insights": "Insights"
+        },
+        "insights": {
+          "title": "Error heatmap",
+          "subtitle": "Where this student stumbles most",
+          "window4": "4 weeks",
+          "window8": "8 weeks",
+          "window12": "12 weeks",
+          "totalErrors": "{n} errors total in this window",
+          "empty": "No errors recorded in this window — well done!"
         },
         "memorization": {
           "progressTitle": "Memorization progress",

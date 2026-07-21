@@ -53,7 +53,7 @@ function spotErrorLabel(p: RecitationPosition): string {
           {{ studentName }}
         </p>
       </div>
-      <UDropdownMenu :items="actions" :content="{ align: 'end', collisionPadding: 12 }">
+      <UDropdownMenu v-if="actions.length" :items="actions" :content="{ align: 'end', collisionPadding: 12 }">
         <UButton
           icon="i-lucide-ellipsis-vertical"
           color="neutral"

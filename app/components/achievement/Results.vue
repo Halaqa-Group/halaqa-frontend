@@ -89,14 +89,24 @@ function reciteLink(a: ApiAchievement) {
   }
 }
 
+// Drop empty groups so the trigger can hide entirely — with recite gone, a parent
+// looking at a form-entered record has no actions left at all.
+function compact(groups: DropdownMenuItem[][]): DropdownMenuItem[][] {
+  return groups.filter(g => g.length > 0)
+}
+
 function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
-  const primary: DropdownMenuItem[] = [
-    {
+  const primary: DropdownMenuItem[] = []
+  // Only a mushaf recitation can be reopened on the mushaf. A form-entered record
+  // has no per-word data — its errors are synthesized at the range's first word —
+  // so the page would render a blank mushaf with nothing highlighted.
+  if (sourceOf(a) === 'mushaf') {
+    primary.push({
       label: t('pages.achievements.actions.recite'),
       icon: 'i-lucide-book-open',
       onSelect: () => navigateTo(reciteLink(a))
-    }
-  ]
+    })
+  }
   // Approving is scoped to the achievement's own halaqa: an assistant teacher
   // is in scope to record but not to approve.
   if (canApproveAchievement(a.halaqa_id) && !isApproved(a)) {
@@ -105,17 +115,17 @@ function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
   if (canUnapproveAchievement.value && isApproved(a)) {
     primary.push({ label: t('pages.achievements.unapprove'), icon: 'i-lucide-undo-2', onSelect: () => onUnapprove(a) })
   }
-  if (!isStaff.value) return [primary]
+  if (!isStaff.value) return compact([primary])
 
   if (!isApproved(a)) {
     primary.push({ label: t('pages.achievements.actions.edit'), icon: 'i-lucide-pencil', onSelect: () => openEdit(a) })
   }
   primary.push({ label: t('pages.achievements.actions.duplicate'), icon: 'i-lucide-copy', onSelect: () => openDuplicate(a) })
 
-  if (!canDeleteAchievement(isApproved(a))) return [primary]
-  return [primary, [
+  if (!canDeleteAchievement(isApproved(a))) return compact([primary])
+  return compact([primary, [
     { label: t('pages.achievements.actions.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => requestDelete(a) }
-  ]]
+  ]])
 }
 
 const columns = computed<TableColumn<ApiAchievement>[]>(() => {
@@ -226,7 +236,11 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
         </template>
 
         <template #actions-cell="{ row }">
-          <UDropdownMenu :items="rowActions(row.original)" :content="{ align: 'end', collisionPadding: 12 }">
+          <UDropdownMenu
+            v-if="rowActions(row.original).length"
+            :items="rowActions(row.original)"
+            :content="{ align: 'end', collisionPadding: 12 }"
+          >
             <UButton
               icon="i-lucide-ellipsis-vertical"
               color="neutral"

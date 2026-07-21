@@ -62,7 +62,8 @@ const isDefault = computed(() =>
 )
 
 // Concrete feedback on what the weights mean: the score a student lands on
-// after exactly one error of each type.
+// after exactly one error of each type. Left at the default one-page span,
+// which is the basis the weights are defined against — the label says so.
 const sampleScore = computed(() => {
   if (!isValid.value) return null
   return computePercentageScore({

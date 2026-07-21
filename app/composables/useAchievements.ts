@@ -345,10 +345,12 @@ export function useAchievements() {
   const totalPages = computed(() => (limit.value > 0 ? Math.ceil(total.value / limit.value) : 1))
 
   // percentage_score is computed on the frontend from the error counts (derived
-  // from the itemized errors[]) and the halaqa's weights, then stored as-is.
+  // from the itemized errors[]), the halaqa's weights, and the range's page span
+  // (weights are per page), then stored as-is.
   async function withComputedScore(data: CreateAchievementDto): Promise<CreateAchievementDto> {
     const settings = await loadEvaluationSettings(data.halaqa_id)
-    const percentage_score = computePercentageScore(tallyErrors(data.errors), settings)
+    const pages = pageSpan(data.start_surah, data.start_verse, data.end_surah, data.end_verse)
+    const percentage_score = computePercentageScore(tallyErrors(data.errors), settings, pages)
     return { ...data, percentage_score }
   }
 

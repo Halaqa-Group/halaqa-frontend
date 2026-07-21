@@ -16,7 +16,7 @@ const apiError = useApiError()
 const api = useApi()
 const overlay = useOverlay()
 const { isParent: isParentReadOnly } = usePermissions()
-const { loadEvaluationSettings } = useAchievements()
+const { loadEvaluationSettings, currentEvaluationSettings } = useAchievements()
 // Warm the QUL word-id / juz / hizb lookup so building errors[] on submit is instant.
 useQuranWords()
 
@@ -204,6 +204,27 @@ const sessionId = computed(() =>
     : ''
 )
 const { marks, groups, counts, tap, setMarks, clearAll } = useRecitationSession(sessionId)
+
+// ── Live score ──────────────────────────────────────────────────────────────
+// The weights are per mushaf page, so the lesson's page span divides every
+// deduction. Fetched as soon as the halaqa is known so the toolbar can show a
+// running mark while the teacher is still marking, not only on submit.
+watch(halaqaId, (hid) => {
+  if (hid) void loadEvaluationSettings(hid)
+}, { immediate: true })
+
+const lessonPages = computed(() => {
+  const item = selectedItem.value
+  return item ? pageSpan(item.start_surah, item.start_verse, item.end_surah, item.end_verse) : 1
+})
+
+// In test mode, taps outside a defined spot are inert (see `onWordTap`), so the
+// marks on screen are exactly what gets submitted — one basis serves both methods.
+const liveScore = computed(() => computePercentageScore(
+  toScoreCounts(counts.value),
+  currentEvaluationSettings.value,
+  lessonPages.value
+))
 
 // ── Test-spot capture ───────────────────────────────────────────────────────
 const lessonRange = computed(() =>
@@ -486,15 +507,18 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
     // whole-range errors. Score is derived from the errors that actually count.
     let payload: { errors?: PositionError[], test_positions?: AchievementTestPosition[] }
     let score: number
+    // Weights are per mushaf page — a longer lesson divides each deduction by
+    // the number of pages it spans.
+    const pages = lessonPages.value
     if (isTest.value) {
       const positions = await buildTestPositions(spots.value, marks.value, groups.value)
       const allErrors = positions.flatMap(p => p.errors ?? [])
-      score = computePercentageScore(tallyErrors(allErrors), settings)
+      score = computePercentageScore(tallyErrors(allErrors), settings, pages)
       payload = { test_positions: positions }
     } else {
       // Standalone words become one error each; a drag-selected block becomes one.
       const errors = await buildErrorsFromMarks(marks.value, groups.value)
-      score = computePercentageScore(toScoreCounts(counts.value), settings)
+      score = computePercentageScore(toScoreCounts(counts.value), settings, pages)
       payload = { errors }
     }
 
@@ -808,6 +832,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
               <div v-if="showToolbar" class="sticky bottom-3 z-30">
                 <MushafMarkToolbar
                   :counts="counts"
+                  :score="liveScore"
                   :can-submit="canSubmit"
                   :submitting="submitting"
                   :approved="isApproved"

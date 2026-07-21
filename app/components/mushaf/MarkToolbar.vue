@@ -9,6 +9,9 @@ const props = defineProps<{
   // When the recitation's achievement is already approved, the primary action
   // toggles to "unapprove" instead of "approve".
   approved?: boolean
+  // Running mark for the current marks, already divided by the lesson's page
+  // span. Omit to hide the readout.
+  score?: number
 }>()
 
 const emit = defineEmits<{
@@ -26,6 +29,12 @@ const submitLabel = computed(() => {
 const submitDisabled = computed(() =>
   props.approved ? props.submitting : (!props.canSubmit || props.submitting)
 )
+
+// Same bands as the achievement form's score preview.
+const scoreTone = computed(() => {
+  const v = props.score ?? 100
+  return v >= 90 ? 'good' : v >= 75 ? 'fair' : 'poor'
+})
 
 // Tap a word on the mushaf to cycle its severity down the spectrum
 // (red → orange → yellow → green → clear). The toolbar is a live legend of
@@ -54,32 +63,46 @@ function countFor(key: Severity): number {
       </span>
     </div>
 
-    <div class="mark-toolbar__actions">
-      <button
-        type="button"
-        class="mark-toolbar__btn mark-toolbar__btn--ghost"
-        :disabled="counts.total === 0 || approved"
-        :aria-label="'مسح'"
-        @click="emit('clear')"
+    <!-- Score + actions travel together: when the bar wraps they drop as one
+         group instead of the score being flung to the opposite edge. -->
+    <div class="mark-toolbar__end">
+      <div
+        v-if="score != null"
+        class="mark-toolbar__score"
+        :class="`mark-toolbar__score--${scoreTone}`"
+        :title="t('pages.achievements.table.score')"
       >
-        <UIcon name="i-lucide-eraser" class="size-4" />
-        <span class="mark-toolbar__btn-label">مسح</span>
-      </button>
+        <span class="mark-toolbar__score-value">{{ score }}%</span>
+        <span class="mark-toolbar__score-label">{{ t('pages.achievements.table.score') }}</span>
+      </div>
 
-      <button
-        type="button"
-        class="mark-toolbar__btn"
-        :class="approved ? 'mark-toolbar__btn--warning' : 'mark-toolbar__btn--primary'"
-        :disabled="submitDisabled"
-        :aria-label="submitLabel"
-        @click="emit('submit')"
-      >
-        <UIcon
-          :name="submitting ? 'i-lucide-loader-2' : (approved ? 'i-lucide-undo-2' : 'i-lucide-check')"
-          :class="['size-4', submitting && 'mark-toolbar__spinner']"
-        />
-        <span class="mark-toolbar__btn-label">{{ submitLabel }}</span>
-      </button>
+      <div class="mark-toolbar__actions">
+        <button
+          type="button"
+          class="mark-toolbar__btn mark-toolbar__btn--ghost"
+          :disabled="counts.total === 0 || approved"
+          :aria-label="'مسح'"
+          @click="emit('clear')"
+        >
+          <UIcon name="i-lucide-eraser" class="size-4" />
+          <span class="mark-toolbar__btn-label">مسح</span>
+        </button>
+
+        <button
+          type="button"
+          class="mark-toolbar__btn"
+          :class="approved ? 'mark-toolbar__btn--warning' : 'mark-toolbar__btn--primary'"
+          :disabled="submitDisabled"
+          :aria-label="submitLabel"
+          @click="emit('submit')"
+        >
+          <UIcon
+            :name="submitting ? 'i-lucide-loader-2' : (approved ? 'i-lucide-undo-2' : 'i-lucide-check')"
+            :class="['size-4', submitting && 'mark-toolbar__spinner']"
+          />
+          <span class="mark-toolbar__btn-label">{{ submitLabel }}</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -88,8 +111,7 @@ function countFor(key: Severity): number {
 .mark-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.5rem 0.75rem;
   padding: 0.5rem 0.6rem;
   background: white;
   border: 1px solid #e7e5e4;
@@ -104,9 +126,19 @@ function countFor(key: Severity): number {
 .mark-toolbar__legend {
   display: flex;
   gap: 0.3rem;
+  /* Soaks up the slack so the end group stays pinned to the trailing edge, but
+     yields the whole row to itself before the chips start clipping. */
   flex: 1 1 auto;
   min-width: 0;
   flex-wrap: wrap;
+}
+
+.mark-toolbar__end {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  margin-inline-start: auto;
 }
 
 .mark-toolbar__level {
@@ -150,6 +182,45 @@ function countFor(key: Severity): number {
   font-weight: 700;
   tab-size: 1;
   font-variant-numeric: tabular-nums;
+}
+
+.mark-toolbar__score {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+  border: 1.5px solid currentColor;
+  font-family: 'Thmanyah Sans', serif;
+  min-height: 40px;
+  flex: 0 0 auto;
+}
+
+.mark-toolbar__score-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.mark-toolbar__score-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.mark-toolbar__score--good {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.1);
+}
+.mark-toolbar__score--fair {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.1);
+}
+.mark-toolbar__score--poor {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
 }
 
 .mark-toolbar__actions {
@@ -230,6 +301,12 @@ function countFor(key: Severity): number {
   }
   .mark-toolbar__btn {
     padding: 0.45rem 0.55rem;
+  }
+  .mark-toolbar__score {
+    padding: 0.35rem 0.5rem;
+  }
+  .mark-toolbar__score-label {
+    display: none;
   }
 }
 </style>

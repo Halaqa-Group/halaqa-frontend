@@ -214,6 +214,10 @@ const rangeSummary = computed(() => {
   return total > 0 ? t('pages.achievements.versesCount', { count: total }) : null
 })
 
+// Weights are per mushaf page, so the range's page span scales the deduction.
+const rangePages = computed(() =>
+  pageSpan(state.start_surah, state.start_verse, state.end_surah, state.end_verse)
+)
 const scorePreview = computed(() => computePercentageScore(
   {
     mistakes_count: state.mistakes_count,
@@ -221,7 +225,8 @@ const scorePreview = computed(() => computePercentageScore(
     tajweed_errors_count: state.tajweed_errors_count,
     harakat_errors_count: state.harakat_errors_count
   },
-  currentEvaluationSettings.value
+  currentEvaluationSettings.value,
+  rangePages.value
 ))
 const scoreColor = computed(() =>
   scorePreview.value >= 90 ? 'text-success' : scorePreview.value >= 75 ? 'text-warning' : 'text-error'

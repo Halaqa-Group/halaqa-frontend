@@ -90,7 +90,6 @@ watch(activeRole, async (role) => {
   if (route.path.startsWith('/users') && !canManageUsers.value) {
     await navigateTo('/')
   }
-
 })
 
 onMounted(async () => {
@@ -184,6 +183,5 @@ onMounted(async () => {
         <slot />
       </template>
     </UDashboardPanel>
-
   </UDashboardGroup>
 </template>

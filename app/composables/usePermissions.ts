@@ -81,7 +81,9 @@ export function usePermissions() {
    */
   function hasApprovalAuthority(halaqaId?: number | null): boolean {
     if (isAdmin.value) return true
-    if (isSupervisor.value) return isMemberOf(halaqaId)
+    // A supervisor has no sub-tier: every halaqa the API shows them is one they
+    // supervise, so scope is already settled server-side.
+    if (isSupervisor.value) return true
     if (isTeacher.value) return isPrimaryTeacherOf(halaqaId)
     return false
   }

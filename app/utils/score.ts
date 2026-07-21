@@ -46,17 +46,29 @@ export function normalizeEvaluationSettings(raw: Record<string, unknown> | null 
   }
 }
 
-// score = max(0, 100 − Σ countᵢ·weightᵢ), rounded to 2 decimal places.
+/**
+ * score = max(0, 100 − (Σ countᵢ·weightᵢ) ÷ pages), rounded to 2 decimals.
+ *
+ * The weights are defined per mushaf page: a one-page lesson deducts them as
+ * configured, a two-page lesson halves each deduction, a three-page lesson
+ * thirds it, and so on. Without that divisor a long revision range would be
+ * punished harder than a short one for the same rate of mistakes.
+ *
+ * `pages` defaults to 1 — pass `pageSpan(...)` for a real lesson range.
+ */
 export function computePercentageScore(
   counts: ScoreCounts,
-  settings: Record<string, unknown> | EvaluationSettings | null | undefined
+  settings: Record<string, unknown> | EvaluationSettings | null | undefined,
+  pages: number = 1
 ): number {
   const s = normalizeEvaluationSettings(settings as Record<string, unknown> | null | undefined)
-  const raw = BASE_SCORE
-    - counts.mistakes_count * s.mistake_weight
-    - counts.warnings_count * s.warning_weight
-    - counts.tajweed_errors_count * s.tajweed_weight
-    - counts.harakat_errors_count * s.harakat_weight
-  const clamped = Math.max(MIN_SCORE, raw)
+  const divisor = Number.isFinite(pages) && pages >= 1 ? pages : 1
+  const deduction = (
+    counts.mistakes_count * s.mistake_weight
+    + counts.warnings_count * s.warning_weight
+    + counts.tajweed_errors_count * s.tajweed_weight
+    + counts.harakat_errors_count * s.harakat_weight
+  ) / divisor
+  const clamped = Math.max(MIN_SCORE, BASE_SCORE - deduction)
   return Math.round(clamped * 100) / 100
 }

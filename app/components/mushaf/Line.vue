@@ -109,6 +109,7 @@ function onWordLeave(word: MushafWord) {
           'mushaf-word--dim': highlight && !highlight(word.k),
           'mushaf-word--spot-pending': pendingVerse && word.k === pendingVerse && word.t !== 'e',
           'mushaf-word--block-hover': isBlockHovered(word),
+          'mushaf-word--body': word.t !== 'e',
           'mushaf-word--tappable': !!onWordTap && word.t !== 'e'
         }
       ]"
@@ -172,9 +173,15 @@ function onWordLeave(word: MushafWord) {
   opacity: 0.25;
 }
 
+/* Word metrics live here, not on --tappable, so the page keeps identical line
+   spacing whether or not marking is enabled. A read-only view (parent, or an
+   approved achievement) must lay out exactly like the editable one. */
+.mushaf-word--body {
+  padding: 0.4em 3px;
+}
+
 .mushaf-word--tappable {
   cursor: pointer;
-  padding: 0.4em 3px;
   /* pan-y keeps native vertical scrolling while reserving horizontal movement
      for drag-to-select (see useWordDragSelect); it also drops the double-tap
      zoom delay the way `manipulation` did. */

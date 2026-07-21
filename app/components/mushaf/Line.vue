@@ -2,7 +2,7 @@
 import { SURAH_HEADER_GLYPHS } from '~/data/surah-header-glyphs'
 import { MUSHAF_HOVERED_GROUP } from '~/utils/mushaf-hover'
 import type { MushafWord, RenderedLine } from '~/types/mushaf'
-import type { MarkGroups, RecitationMarks, Severity, WordKey } from '~/types/recitation'
+import type { MarkGroups, RecitationMarks, Severity, VerseEdge, VerseLock, WordKey } from '~/types/recitation'
 
 const props = defineProps<{
   line: RenderedLine
@@ -12,8 +12,31 @@ const props = defineProps<{
   groups?: MarkGroups
   /** Verse ("surah:ayah") of an armed test-spot start, highlighted until closed. */
   pendingVerse?: string | null
+  /** Verses that can't be picked right now — rendered normally, but inert. */
+  lockedAt?: VerseLock
+  /** Ayah-end ornaments that bound a tested موضع; recoloured in place. */
+  spotEdgeAt?: VerseEdge
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
 }>()
+
+// A verse belongs to at most one موضع, so while a new one is being picked the
+// verses already taken are out of bounds. They keep their normal appearance —
+// they just don't respond to taps and can't be selected.
+const locked = computed<boolean[]>(() => {
+  const line = props.line
+  const at = props.lockedAt
+  if (line.kind !== 'ayah' || !at) return []
+  return line.words.map(word => word.t !== 'e' && at(word.k))
+})
+
+// A موضع is delimited by the mushaf's own ayah ornaments — the one just before
+// it starts and the one at its last verse — recoloured, nothing added.
+const spotEdge = computed<boolean[]>(() => {
+  const line = props.line
+  const at = props.spotEdgeAt
+  if (line.kind !== 'ayah' || !at) return []
+  return line.words.map(word => word.t === 'e' && at(word.k))
+})
 
 const fontClass = computed(() => `p${props.pageNumber}-v1`)
 
@@ -106,18 +129,20 @@ function onWordLeave(word: MushafWord) {
         blockClass(wordBlocks[i]),
         {
           'mushaf-word--marker': word.t === 'e',
+          'mushaf-word--spot-edge': spotEdge[i],
           'mushaf-word--dim': highlight && !highlight(word.k),
+          'mushaf-word--locked': locked[i],
           'mushaf-word--spot-pending': pendingVerse && word.k === pendingVerse && word.t !== 'e',
           'mushaf-word--block-hover': isBlockHovered(word),
           'mushaf-word--body': word.t !== 'e',
-          'mushaf-word--tappable': !!onWordTap && word.t !== 'e'
+          'mushaf-word--tappable': !!onWordTap && word.t !== 'e' && !locked[i]
         }
       ]"
       :data-word-key="word.k"
       :data-word-position="word.p"
       @mouseenter="onWordEnter(word)"
       @mouseleave="onWordLeave(word)"
-      @click="onWordTap && word.t !== 'e' && onWordTap(wordKey(word.k, word.p), word.k)"
+      @click="!locked[i] && onWordTap && word.t !== 'e' && onWordTap(wordKey(word.k, word.p), word.k)"
     >{{ word.c }}</span>
   </div>
 </template>
@@ -210,6 +235,19 @@ function onWordLeave(word: MushafWord) {
   background-color: rgba(37, 99, 235, 0.16);
   box-shadow: inset 0 0 0 1.5px rgba(37, 99, 235, 0.6);
   border-radius: 4px;
+}
+
+/* Verses already inside a موضع, while a new one is being picked. No styling of
+   their own — they look exactly like the rest of the page, they just can't be
+   tapped or selected (`--tappable` is withheld, so no hover, cursor or handler). */
+.mushaf-word--locked {
+  user-select: none;
+}
+
+/* The ayah ornaments bounding a tested موضع: the glyph is recoloured and nothing
+   else changes, so the page keeps its own look and its exact metrics. */
+.mushaf-word--spot-edge {
+  color: #1d4ed8;
 }
 
 /* Tarteel-style severity spectrum: red → orange → yellow → green.

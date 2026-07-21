@@ -61,6 +61,29 @@ export function useTestSpots(
     return n >= r.startSurah * 1000 + r.startVerse && n <= r.endSurah * 1000 + r.endVerse
   }
 
+  function boundsOf(s: TestSpot): [number, number] {
+    return [
+      verseKeyOrder(`${s.startSurah}:${s.startVerse}`),
+      verseKeyOrder(`${s.endSurah}:${s.endVerse}`)
+    ]
+  }
+
+  /** Is this verse already inside a defined موضع? */
+  function isVerseTaken(verseKey: string): boolean {
+    const n = verseKeyOrder(verseKey)
+    return spots.value.some((s) => {
+      const [lo, hi] = boundsOf(s)
+      return n >= lo && n <= hi
+    })
+  }
+
+  function overlapsExisting(from: number, to: number): boolean {
+    return spots.value.some((s) => {
+      const [lo, hi] = boundsOf(s)
+      return from <= hi && to >= lo
+    })
+  }
+
   /**
    * Handle a boundary tap. First in-range tap arms the start; the second closes
    * the spot (endpoints ordered by mushaf position). Returns the new spot, or
@@ -69,6 +92,9 @@ export function useTestSpots(
   function pickBoundary(verseKey: string): TestSpot | null {
     const parsed = parseVerseKey(verseKey)
     if (!parsed || !inLessonRange(parsed.surah, parsed.verse)) return null
+    // Each verse belongs to at most one موضع — a tap inside an existing one is
+    // inert rather than silently re-covering ground already tested.
+    if (isVerseTaken(verseKey)) return null
 
     if (!pendingStart.value) {
       pendingStart.value = parsed
@@ -81,6 +107,12 @@ export function useTestSpots(
     const [lo, hi] = verseKeyOrder(`${a.surah}:${a.verse}`) <= verseKeyOrder(`${b.surah}:${b.verse}`)
       ? [a, b]
       : [b, a]
+    // Both endpoints are free, but the span between them may still jump over a
+    // whole existing موضع — that would swallow it. Drop the selection instead.
+    if (overlapsExisting(verseKeyOrder(`${lo.surah}:${lo.verse}`), verseKeyOrder(`${hi.surah}:${hi.verse}`))) {
+      pendingStart.value = null
+      return null
+    }
     const spot: TestSpot = {
       id: newSpotId(),
       startSurah: lo.surah,
@@ -119,6 +151,7 @@ export function useTestSpots(
     spots: readonly(spots),
     pendingStart: readonly(pendingStart),
     isSelecting,
+    isVerseTaken,
     pickBoundary,
     cancelPending,
     removeSpot,

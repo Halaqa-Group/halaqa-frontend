@@ -5,7 +5,7 @@ import { computePercentageScore } from '~/utils/score'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import type { AchievementTestPosition, ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto, PositionError, RecitationMethod } from '~/types'
-import type { MarkCounts, Severity } from '~/types/recitation'
+import type { MarkCounts, Severity, VerseEdge, VerseLock } from '~/types/recitation'
 import { SEVERITY_LEVELS, toScoreCounts } from '~/types/recitation'
 
 const route = useRoute()
@@ -300,8 +300,29 @@ const lessonRange = computed(() =>
       }
     : null
 )
-const { spots, pendingStart, pickBoundary, removeSpot, setSpots, clearSpots }
+const { spots, pendingStart, isSelecting, isVerseTaken, pickBoundary, cancelPending, removeSpot, setSpots, clearSpots }
   = useTestSpots(sessionId, lessonRange)
+
+// While picking a new موضع, the verses already inside one are inert — a verse
+// belongs to at most one passage. Only applies in spot mode: marking errors
+// requires tapping words inside those very passages.
+const lockedAt = computed<VerseLock | undefined>(() =>
+  isTest.value && captureMode.value === 'spot' ? inAnySpot : undefined
+)
+
+// Delimit each موضع with the mushaf's own ayah ornaments: the one on its first
+// verse and the one on its last. A single-verse موضع colours just the one.
+const spotEdgeAt = computed<VerseEdge | undefined>(() => {
+  if (!isTest.value) return undefined
+  const list = spots.value
+  if (!list.length) return undefined
+  const keys = new Set<string>()
+  for (const s of list) {
+    keys.add(`${s.startSurah}:${s.startVerse}`)
+    keys.add(`${s.endSurah}:${s.endVerse}`)
+  }
+  return (verseKey: string) => keys.has(verseKey)
+})
 
 const pendingVerseKey = computed(() =>
   pendingStart.value ? `${pendingStart.value.surah}:${pendingStart.value.verse}` : null
@@ -355,6 +376,9 @@ const spotHighlight = computed<((verseKey: string) => boolean) | undefined>(() =
 // so what's marked always matches what gets submitted).
 function onWordTap(wordKey: string, verseKey: string) {
   if (isTest.value && captureMode.value === 'spot') {
+    // Belt and braces: the mushaf already withholds the tap handler from these
+    // verses (see `lockedAt`), so this only guards a stray call.
+    if (isVerseTaken(verseKey)) return
     pickBoundary(verseKey)
     return
   }
@@ -378,13 +402,28 @@ function spotLabel(s: { startSurah: number, startVerse: number, endSurah: number
   })
 }
 
+// Tapping a موضع takes the mushaf to it — on a multi-page lesson the passage is
+// often on a page that isn't the one currently shown.
+const viewerRef = ref<{ goToVerse: (verseKey: string) => void } | null>(null)
+function focusSpot(s: { startSurah: number, startVerse: number }) {
+  viewerRef.value?.goToVerse(`${s.startSurah}:${s.startVerse}`)
+}
+
 const canSubmit = computed(() =>
   !!selectedItem.value && (!isTest.value || spots.value.length > 0)
 )
 
+function verseLabel(surah: number, verse: number): string {
+  return `${SURAH_NAMES[surah] ?? `سورة ${surah}`} ${verse}`
+}
+
+// Names the step the teacher is on. Once a start is armed it echoes back exactly
+// which verse was picked, so choosing the end is a decision rather than a guess.
 const captureHint = computed(() => {
   if (captureMode.value !== 'spot') return 'علّم الكلمات الخاطئة داخل المواضع'
-  return pendingStart.value ? 'اضغط آخر كلمة في الموضع' : 'اضغط أول كلمة في الموضع'
+  const p = pendingStart.value
+  if (!p) return `١. اضغط أول آية في الموضع ${spots.value.length + 1}`
+  return `٢. البداية ${verseLabel(p.surah, p.verse)} — اضغط الآية الأخيرة`
 })
 
 // One-line breakdown of the four severity levels, reused in the confirm dialog
@@ -877,23 +916,43 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                       تعليم أخطاء
                     </button>
                   </div>
-                  <p class="min-w-0 flex-1 text-xs text-muted">
+                  <p class="min-w-0 flex-1 text-xs" :class="isSelecting ? 'text-primary font-medium' : 'text-muted'">
                     {{ captureHint }}
                   </p>
+                  <!-- Picked the wrong start? Back out without defining a موضع. -->
+                  <UButton
+                    v-if="isSelecting"
+                    size="xs"
+                    variant="soft"
+                    color="neutral"
+                    class="shrink-0"
+                    @click="cancelPending"
+                  >
+                    إلغاء
+                  </UButton>
                 </div>
 
                 <div v-if="spots.length" class="flex flex-wrap gap-1.5">
                   <span
                     v-for="(s, i) in spots"
                     :key="s.id"
-                    class="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-2 py-1 text-xs"
+                    class="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 ps-2 pe-1 py-1 text-xs"
                   >
-                    <span class="font-bold text-primary">{{ i + 1 }}</span>
-                    <span>{{ spotLabel(s) }}</span>
+                    <!-- Tapping the موضع takes the mushaf to it. Kept a sibling of
+                         the remove button — a button can't nest inside a button. -->
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1.5 rounded-full transition hover:opacity-70"
+                      :aria-label="`الذهاب إلى الموضع ${i + 1}`"
+                      @click="focusSpot(s)"
+                    >
+                      <span class="font-bold text-primary">{{ i + 1 }}</span>
+                      <span>{{ spotLabel(s) }}</span>
+                    </button>
                     <button
                       v-if="!markingLocked"
                       type="button"
-                      class="text-muted hover:text-error"
+                      class="text-muted hover:text-error px-0.5"
                       :aria-label="'حذف الموضع'"
                       @click="removeSpot(s.id)"
                     >
@@ -908,6 +967,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
 
               <MushafRangeViewer
                 v-if="selectedItem"
+                ref="viewerRef"
                 :start-surah="selectedItem.start_surah"
                 :start-verse="selectedItem.start_verse"
                 :end-surah="selectedItem.end_surah"
@@ -916,6 +976,8 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                 :groups="isParentReadOnly ? undefined : groups"
                 :highlight-override="spotHighlight"
                 :pending-verse="isTest && captureMode === 'spot' ? pendingVerseKey : null"
+                :locked-at="lockedAt"
+                :spot-edge-at="spotEdgeAt"
                 :on-word-tap="markingLocked ? undefined : onWordTap"
                 :on-words-mark="(markingLocked || !canDragMark) ? undefined : onWordsMark"
               />

@@ -16,6 +16,20 @@ export type RecitationMarks = Record<WordKey, Severity>
 // standalone single-word marks. See `useRecitationSession`.
 export type MarkGroups = Record<WordKey, string>
 
+/**
+ * Is this verse ("surah:ayah") off-limits? Used while a new موضع is being
+ * picked: verses already inside one are simply inert — not tappable, not
+ * selectable — with no styling of their own.
+ */
+export type VerseLock = (verseKey: string) => boolean
+
+/**
+ * Does this verse's ayah-end ornament bound a tested موضع? True for the ornament
+ * immediately before a موضع begins and the one at its last verse — the mushaf's
+ * own glyphs act as the passage's opening and closing marks.
+ */
+export type VerseEdge = (verseKey: string) => boolean
+
 export interface MarkCounts {
   severe: number
   medium: number

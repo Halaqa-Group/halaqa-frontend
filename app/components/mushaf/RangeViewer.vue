@@ -2,7 +2,7 @@
 import { SURAH_NAMES } from '~/data/constants'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { SEVERITY_LEVELS } from '~/types/recitation'
-import type { MarkGroups, RecitationMarks, Severity, WordKey } from '~/types/recitation'
+import type { MarkGroups, RecitationMarks, Severity, VerseEdge, VerseLock, WordKey } from '~/types/recitation'
 import type { DragSelectRequest } from '~/composables/useWordDragSelect'
 
 const props = defineProps<{
@@ -21,6 +21,10 @@ const props = defineProps<{
   highlightOverride?: (verseKey: string) => boolean
   /** Verse ("surah:ayah") of an armed test-spot start, highlighted until closed. */
   pendingVerse?: string | null
+  /** Verses that can't be picked right now — rendered normally, but inert. */
+  lockedAt?: VerseLock
+  /** Ayah-end ornaments that bound a tested موضع; recoloured in place. */
+  spotEdgeAt?: VerseEdge
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
   /** Apply one severity (or unmark, when null) to a drag-selected run of words. */
   onWordsMark?: (keys: WordKey[], severity: Severity | null) => void
@@ -67,6 +71,22 @@ watch(pages, (list) => {
 }, { immediate: true })
 
 const pageEl = ref<HTMLElement | null>(null)
+
+/**
+ * Jump to the page holding a given verse and bring it into view. Lets a caller
+ * navigate the mushaf from outside — e.g. tapping a موضع chip to go to it.
+ */
+function goToVerse(verseKey: string) {
+  const target = pageFor(verseKey)
+  if (!target) return
+  const idx = pages.value.indexOf(target)
+  if (idx >= 0) current.value = idx
+  nextTick(() => {
+    pageEl.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  })
+}
+
+defineExpose({ goToVerse })
 
 // ── Drag-to-select word marking ───────────────────────────────────────────────
 // Press-and-drag across a run of words to mark them all at one severity. The
@@ -174,6 +194,8 @@ const rangeLabel = computed(() => {
           :marks="marks"
           :groups="groups"
           :pending-verse="pendingVerse"
+          :locked-at="lockedAt"
+          :spot-edge-at="spotEdgeAt"
           :on-word-tap="onWordTap"
         />
       </div>

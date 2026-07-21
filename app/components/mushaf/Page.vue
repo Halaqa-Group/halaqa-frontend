@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { synthesizeLines } from '~/utils/mushaf'
 import { MUSHAF_HOVERED_GROUP } from '~/utils/mushaf-hover'
-import type { MarkGroups, RecitationMarks, WordKey } from '~/types/recitation'
+import type { MarkGroups, RecitationMarks, VerseEdge, VerseLock, WordKey } from '~/types/recitation'
 
 const props = defineProps<{
   pageNumber: number
@@ -9,6 +9,8 @@ const props = defineProps<{
   marks?: RecitationMarks
   groups?: MarkGroups
   pendingVerse?: string | null
+  lockedAt?: VerseLock
+  spotEdgeAt?: VerseEdge
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
 }>()
 
@@ -29,7 +31,9 @@ const showSkeleton = ref(false)
 let skeletonTimer: ReturnType<typeof setTimeout> | null = null
 
 function clearSkeletonTimer() {
-  if (skeletonTimer) { clearTimeout(skeletonTimer); skeletonTimer = null }
+  if (!skeletonTimer) return
+  clearTimeout(skeletonTimer)
+  skeletonTimer = null
 }
 
 watch(
@@ -63,11 +67,15 @@ onBeforeUnmount(clearSkeletonTimer)
       <template v-if="error && !page">
         <div class="mushaf-page__error" dir="rtl">
           <UIcon name="i-lucide-triangle-alert" class="size-6 text-error" />
-          <p class="mushaf-page__error-title">تعذّر عرض الصفحة {{ pageNumber }}</p>
+          <p class="mushaf-page__error-title">
+            تعذّر عرض الصفحة {{ pageNumber }}
+          </p>
           <p class="mushaf-page__error-detail">
             تأكد من اتصالك بالشبكة ثم أعد المحاولة.
           </p>
-          <p class="mushaf-page__error-tech" dir="ltr">{{ error.message }}</p>
+          <p class="mushaf-page__error-tech" dir="ltr">
+            {{ error.message }}
+          </p>
         </div>
       </template>
 
@@ -81,6 +89,8 @@ onBeforeUnmount(clearSkeletonTimer)
           :marks="marks"
           :groups="groups"
           :pending-verse="pendingVerse"
+          :locked-at="lockedAt"
+          :spot-edge-at="spotEdgeAt"
           :on-word-tap="onWordTap"
         />
       </template>

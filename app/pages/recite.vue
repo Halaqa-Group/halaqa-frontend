@@ -36,10 +36,32 @@ const dateStr = computed(() => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 })
 
+// ── Reopening a recorded achievement ────────────────────────────────────────
+// Arriving from the achievements list carries the achievement id. Its detail
+// (GET /achievements/{id}) already holds the student name, the session's track +
+// range, the approval status and the recorded errors — everything this page
+// needs. So when it's present it is the ONLY request we make: the day's weekly
+// plan, the day's achievement list and the student record are all redundant and
+// stay unfetched (see `planStudentId`, `loadStudent`, `loadPrior`).
+const achievementId = computed(() => {
+  const v = Number(route.query.achievement_id)
+  return Number.isFinite(v) && v > 0 ? v : null
+})
+const achievementDetail = ref<ApiAchievement | null>(null)
+const detailLoading = ref(false)
+
 const student = ref<ApiStudent | null>(null)
 const studentLoading = ref(false)
+// Name for the header: the achievement detail carries it (every role sees
+// `student_name`), so the extra /students/{id} round-trip is only for the
+// plan-driven entry points.
+const studentName = computed(() =>
+  student.value?.name ?? achievementDetail.value?.student_name ?? null
+)
+const studentPending = computed(() => studentLoading.value || detailLoading.value)
 
 async function loadStudent() {
+  if (achievementId.value != null) return
   if (!studentId.value || !halaqaId.value) {
     student.value = null
     return
@@ -53,10 +75,14 @@ async function loadStudent() {
     studentLoading.value = false
   }
 }
-watch([studentId, halaqaId], loadStudent, { immediate: true })
+watch([studentId, halaqaId, achievementId], loadStudent, { immediate: true })
 
+// Nulling the ids short-circuits the composable's fetch — the session comes from
+// the achievement detail instead of the day's plan.
+const planStudentId = computed(() => (achievementId.value != null ? null : studentId.value))
+const planHalaqaId = computed(() => (achievementId.value != null ? null : halaqaId.value))
 const { items: todayItems, plan, loading: planLoading, error: planError }
-  = useTodayPlanItems(studentId, halaqaId, dateStr)
+  = useTodayPlanItems(planStudentId, planHalaqaId, dateStr)
 
 // The session is chosen upstream (on the achievement) and carried in as item_id;
 // there's no in-page switcher, so honour it and fall back to the first lesson.
@@ -76,15 +102,10 @@ function queryInt(key: string): number | null {
 // any week/weekday (e.g. a future-dated planned lesson recorded today), so it may
 // not appear in `todayItems`; honour it directly rather than looking it up in the
 // record date's plan (which would otherwise fall back to today's first lesson).
-const querySession = computed<ApiWeeklyPlanItem | null>(() => {
-  const rawTrack = route.query.track
-  const track = Array.isArray(rawTrack) ? rawTrack[0] : rawTrack
-  if (track !== 'Hifz' && track !== 'Near' && track !== 'Far') return null
-  const ss = queryInt('start_surah')
-  const sv = queryInt('start_verse')
-  const es = queryInt('end_surah')
-  const ev = queryInt('end_verse')
-  if (ss == null || sv == null || es == null || ev == null) return null
+function makeSession(
+  track: 'Hifz' | 'Near' | 'Far',
+  ss: number, sv: number, es: number, ev: number
+): ApiWeeklyPlanItem {
   return {
     id: preferredItemId.value ?? 0,
     day_of_week: 0,
@@ -98,6 +119,26 @@ const querySession = computed<ApiWeeklyPlanItem | null>(() => {
     status: 'due',
     is_manual_override: false
   }
+}
+
+const querySession = computed<ApiWeeklyPlanItem | null>(() => {
+  const rawTrack = route.query.track
+  const track = Array.isArray(rawTrack) ? rawTrack[0] : rawTrack
+  if (track !== 'Hifz' && track !== 'Near' && track !== 'Far') return null
+  const ss = queryInt('start_surah')
+  const sv = queryInt('start_verse')
+  const es = queryInt('end_surah')
+  const ev = queryInt('end_verse')
+  if (ss == null || sv == null || es == null || ev == null) return null
+  return makeSession(track, ss, sv, es, ev)
+})
+
+// The achievement itself defines the session it was recorded against, so a link
+// carrying only achievement_id still resolves without touching the weekly plan.
+const detailSession = computed<ApiWeeklyPlanItem | null>(() => {
+  const d = achievementDetail.value
+  if (!d) return null
+  return makeSession(d.track_type, d.start_surah, d.start_verse, d.end_surah, d.end_verse)
 })
 
 const selectedItemId = ref<number | null>(null)
@@ -114,7 +155,10 @@ watch(todayItems, (items) => {
 }, { immediate: true })
 
 const selectedItem = computed<ApiWeeklyPlanItem | null>(() =>
-  querySession.value ?? todayItems.value.find(i => i.id === selectedItemId.value) ?? null
+  querySession.value
+  ?? detailSession.value
+  ?? todayItems.value.find(i => i.id === selectedItemId.value)
+  ?? null
 )
 
 // ── Recitation method (step 1) ──────────────────────────────────────────────
@@ -180,6 +224,10 @@ const priorAchievements = ref<ApiAchievement[]>([])
 const priorLoading = ref(false)
 
 async function loadPrior() {
+  // Opened on a specific achievement: that one record is the only one this page
+  // acts on (it's what re-submitting updates), and the detail already provided
+  // it — so the day's list is never fetched.
+  if (achievementId.value != null) return
   if (!studentId.value || !halaqaId.value) {
     priorAchievements.value = []
     return
@@ -196,7 +244,30 @@ async function loadPrior() {
     priorLoading.value = false
   }
 }
-watch([studentId, halaqaId, dateStr], loadPrior, { immediate: true })
+watch([studentId, halaqaId, dateStr, achievementId], loadPrior, { immediate: true })
+
+// The one request this entry point makes. Everything downstream — the header
+// name, the session, update-vs-create, the approval lock and the recorded marks
+// — is driven off it.
+async function loadAchievementDetail(id: number) {
+  detailLoading.value = true
+  try {
+    const detail = await api<ApiAchievement>(`/achievements/${id}`)
+    achievementDetail.value = detail
+    // Stand in for the day's list: `findExistingAchievement` matches on
+    // track + range, so re-submitting updates this record instead of duplicating.
+    priorAchievements.value = [detail]
+  } catch {
+    achievementDetail.value = null
+    priorAchievements.value = []
+  } finally {
+    detailLoading.value = false
+  }
+}
+watch(achievementId, (id) => {
+  if (id != null) void loadAchievementDetail(id)
+  else achievementDetail.value = null
+}, { immediate: true })
 
 const sessionId = computed(() =>
   selectedItem.value && studentId.value
@@ -338,30 +409,18 @@ const isApproved = computed(() => existingAchievement.value?.status === 'approve
 // highlighted for review, but words can't be tapped/dragged and nothing cleared).
 const markingLocked = computed(() => isParentReadOnly.value || isApproved.value)
 
-// Reopening an existing recitation from the achievements list: the achievement id
-// is carried in the query, so fetch its full detail (GET /achievements/{id}) and
-// seed the mushaf with the errors it was recorded with — the teacher sees exactly
-// what was marked. Local marks are wiped on submit, so a fresh visit would
-// otherwise start blank. Only mushaf recitations carry real word positions
-// (quick-entry errors are synthetic, all stacked at the range's start word). Seeds
-// once, and never over marks the teacher has already started this visit.
-const achievementId = computed(() => {
-  const v = Number(route.query.achievement_id)
-  return Number.isFinite(v) && v > 0 ? v : null
-})
+// Seed the mushaf with the errors the achievement was recorded with, so the
+// teacher sees exactly what was marked — local marks are wiped on submit, so a
+// fresh visit would otherwise start blank. Reads the detail already loaded by
+// `loadAchievementDetail`; no second request. Only mushaf recitations carry real
+// word positions (quick-entry errors are synthetic, all stacked at the range's
+// start word). Seeds once, and never over marks started this visit.
 const hydratedFor = ref<number | null>(null)
-async function hydrateFromAchievement(id: number) {
+async function hydrateFromAchievement(detail: ApiAchievement) {
+  const id = detail.id
   if (isParentReadOnly.value || hydratedFor.value === id) return
   hydratedFor.value = id
   if (Object.keys(marks.value).length > 0) return
-
-  let detail: ApiAchievement
-  try {
-    detail = await api<ApiAchievement>(`/achievements/${id}`)
-  } catch {
-    hydratedFor.value = null
-    return
-  }
   if (detail.completion_method !== 'mushaf') return
 
   const positions = detail.recitation_positions ?? []
@@ -381,9 +440,11 @@ async function hydrateFromAchievement(id: number) {
   }
   for (const run of runs) setMarks(run.keys, run.severity)
 }
-watch([achievementId, selectedItem], () => {
-  const id = achievementId.value
-  if (id != null && selectedItem.value) void hydrateFromAchievement(id)
+// Waits for the session too: marks are stored per session id, so seeding before
+// `selectedItem` resolves would file them under the wrong key.
+watch([achievementDetail, selectedItem], () => {
+  const detail = achievementDetail.value
+  if (detail && selectedItem.value) void hydrateFromAchievement(detail)
 }, { immediate: true })
 
 function onSubmitRequest() {
@@ -634,7 +695,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
             {{ isParentReadOnly ? 'تلاوة اليوم — للعرض فقط' : (isApproved ? 'تلاوة في المصحف — معتمد (للعرض)' : 'تلاوة في المصحف') }}
           </p>
           <p class="text-base font-bold truncate">
-            {{ studentLoading ? '…' : (student?.name ?? `طالب #${studentId}`) }}
+            {{ studentPending && !studentName ? '…' : (studentName ?? `طالب #${studentId}`) }}
           </p>
         </div>
         <UBadge color="neutral" variant="subtle" size="sm" class="shrink-0 tabular-nums hidden sm:inline-flex">

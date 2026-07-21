@@ -107,9 +107,7 @@ function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
       onSelect: () => navigateTo(reciteLink(a))
     })
   }
-  // Approving is scoped to the achievement's own halaqa: an assistant teacher
-  // is in scope to record but not to approve.
-  if (canApproveAchievement(a.halaqa_id) && !isApproved(a)) {
+  if (canApproveAchievement.value && !isApproved(a)) {
     primary.push({ label: t('pages.achievements.approve'), icon: 'i-lucide-check-check', onSelect: () => onApprove(a) })
   }
   if (canUnapproveAchievement.value && isApproved(a)) {

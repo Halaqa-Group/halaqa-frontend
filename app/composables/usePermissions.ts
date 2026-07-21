@@ -6,22 +6,19 @@ import type { ApiHalaqaDetail, ApiHalaqaListItem } from '~/types'
  * a concrete endpoint rule — when the backend changes, change it here too and
  * nowhere else.
  *
- * Two things are deliberate:
+ * Gating reads `activeRole`, not the union of `user.roles`. The backend
+ * authorizes on the union, so acting as a lesser role only ever narrows the UI —
+ * never widens it past what the server allows. That is what makes the role
+ * switcher honest.
  *
- * 1. Gating reads `activeRole`, not the union of `user.roles`. The backend
- *    authorizes on the union, so acting as a lesser role only ever narrows the
- *    UI — never widens it past what the server allows. That is what makes the
- *    role switcher honest.
- *
- * 2. Several teacher capabilities need the *primary/acting* teacher of a
- *    specific halaqa, not just any teacher assigned to it. The backend
- *    predicate is `role = 'main' OR acting_as_primary = 1`; `GET /halaqat`
- *    already resolves exactly that into `primary_teacher`, so we cache it as
- *    halaqa lists load and answer from there.
+ * The achievements module (achievements, weekly plans, plan items) authorizes
+ * every mutation on ONE check — `hasHalaqaScope`: principal, VP, a supervisor of
+ * the halaqa, or ANY teacher with an active assignment to it. There is no
+ * primary/acting-teacher tier and no admin-only carve-out; approve, unapprove
+ * and delete all sit behind that same check. Since the API only ever returns
+ * achievements and plans the caller is already in scope for, the frontend can
+ * answer those with the role alone.
  */
-
-// halaqa id → user id of its effective primary (main, or the acting substitute).
-const primaryTeacherByHalaqa = ref(new Map<number, number | null>())
 
 // Every halaqa id we have seen in a list response. The API scopes /halaqat to
 // what the caller may see, so for a teacher or supervisor "seen" == "mine".
@@ -29,29 +26,18 @@ const knownHalaqaIds = ref(new Set<number>())
 
 /** Feed the permission cache from any halaqa list response. */
 export function rememberHalaqaAccess(items: ApiHalaqaListItem[]) {
-  const primary = new Map(primaryTeacherByHalaqa.value)
   const known = new Set(knownHalaqaIds.value)
-  for (const h of items) {
-    primary.set(h.id, h.primary_teacher?.user_id ?? null)
-    known.add(h.id)
-  }
-  primaryTeacherByHalaqa.value = primary
+  for (const h of items) known.add(h.id)
   knownHalaqaIds.value = known
 }
 
-/** Same, from a halaqa detail response, whose teacher rows carry the acting flag. */
+/** Same, from a halaqa detail response. */
 export function rememberHalaqaDetailAccess(halaqa: ApiHalaqaDetail) {
-  const effective = halaqa.teachers.find(
-    t => !t.end_date && (t.role === 'main' || t.acting_as_primary)
-  )
-  const primary = new Map(primaryTeacherByHalaqa.value)
-  primary.set(halaqa.id, effective?.teacher_user_id ?? null)
-  primaryTeacherByHalaqa.value = primary
   knownHalaqaIds.value = new Set(knownHalaqaIds.value).add(halaqa.id)
 }
 
 export function usePermissions() {
-  const { user, activeRole } = useAuth()
+  const { activeRole } = useAuth()
 
   const role = computed(() => activeRole.value ?? '')
   const isPrincipal = computed(() => role.value === 'principal')
@@ -61,34 +47,12 @@ export function usePermissions() {
   const isParent = computed(() => role.value === 'parent')
   const isStaff = computed(() => !!role.value && role.value !== 'parent')
 
-  /** Is the current user the halaqa's main — or acting — teacher? */
-  function isPrimaryTeacherOf(halaqaId?: number | null): boolean {
-    const uid = user.value?.id
-    if (uid == null || halaqaId == null) return false
-    return primaryTeacherByHalaqa.value.get(halaqaId) === uid
-  }
-
   /** Is the halaqa one the server lets this user see at all? */
   function isMemberOf(halaqaId?: number | null): boolean {
     return halaqaId != null && knownHalaqaIds.value.has(halaqaId)
   }
 
-  /**
-   * Backend `hasApprovalAuthority`: principal/VP, a supervisor of the halaqa, or
-   * its primary/acting teacher. An assistant or non-acting substitute is NOT
-   * included — this is what keeps them from seeing buttons that 403.
-   * Supervisor scope is enforced server-side; we only know it is one of theirs.
-   */
-  function hasApprovalAuthority(halaqaId?: number | null): boolean {
-    if (isAdmin.value) return true
-    // A supervisor has no sub-tier: every halaqa the API shows them is one they
-    // supervise, so scope is already settled server-side.
-    if (isSupervisor.value) return true
-    if (isTeacher.value) return isPrimaryTeacherOf(halaqaId)
-    return false
-  }
-
-  /** Backend `hasHalaqaScope`: any in-scope role, including assistant teachers. */
+  /** Backend `hasHalaqaScope`: admin, a supervisor of it, or any of its teachers. */
   function hasHalaqaScope(halaqaId?: number | null): boolean {
     if (isAdmin.value) return true
     return isStaff.value && isMemberOf(halaqaId)
@@ -103,31 +67,27 @@ export function usePermissions() {
     isParent,
     isStaff,
 
-    isPrimaryTeacherOf,
     isMemberOf,
-    hasApprovalAuthority,
     hasHalaqaScope,
 
     // ── Achievements ───────────────────────────────────────────────────────
-    // POST/PATCH/DELETE /achievements — p, vp, supervisor, any active teacher.
+    // Record, edit, approve, unapprove and delete are one and the same check:
+    // hasHalaqaScope on the achievement's halaqa. Any staff row the list shows
+    // is already in scope, so the role alone answers it.
     canRecordAchievement: isStaff,
     canEditAchievement: isStaff,
-    // Approved rows are principal-only to delete; VP cannot.
-    canDeleteAchievement: (approved: boolean) => (approved ? isPrincipal.value : isStaff.value),
-    // POST /achievements/:id/approve — needs approval authority on its halaqa.
-    canApproveAchievement: (halaqaId?: number | null) => hasApprovalAuthority(halaqaId),
-    // POST /achievements/:id/unapprove — p, vp only.
-    canUnapproveAchievement: isAdmin,
+    canDeleteAchievement: isStaff,
+    canApproveAchievement: isStaff,
+    canUnapproveAchievement: isStaff,
 
     // ── Weekly plans & plan items ──────────────────────────────────────────
-    // POST /weekly-plans and POST /weekly-plans/:id/approve, plus every
-    // weekly-plan-items mutation, all go through hasApprovalAuthority.
-    canCreatePlan: (halaqaId?: number | null) => hasApprovalAuthority(halaqaId),
-    canApprovePlan: (halaqaId?: number | null) => hasApprovalAuthority(halaqaId),
-    canEditPlanItems: (halaqaId?: number | null) => hasApprovalAuthority(halaqaId),
-    // DELETE /weekly-plans/:id and unapprove — p, vp only.
-    canDeletePlan: isAdmin,
-    canUnapprovePlan: isAdmin,
+    // Same single tier: create, approve, unapprove, hard-delete, and every
+    // plan-item mutation all gate on hasHalaqaScope.
+    canCreatePlan: isStaff,
+    canApprovePlan: isStaff,
+    canEditPlanItems: isStaff,
+    canDeletePlan: isStaff,
+    canUnapprovePlan: isStaff,
 
     // ── Attendance ─────────────────────────────────────────────────────────
     // POST /attendance/sync and PATCH /attendance/:id — p, vp, teacher.

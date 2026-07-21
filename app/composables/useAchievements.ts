@@ -344,26 +344,47 @@ export function useAchievements() {
 
   const totalPages = computed(() => (limit.value > 0 ? Math.ceil(total.value / limit.value) : 1))
 
+  // Where the itemized errors live depends on the method: `full` carries them at
+  // the top level, `test` inside each position.
+  function allErrorsOf(data: CreateAchievementDto): PositionError[] {
+    return data.recitation_method === 'test'
+      ? (data.test_positions ?? []).flatMap(p => p.errors ?? [])
+      : (data.errors ?? [])
+  }
+
   // percentage_score is computed on the frontend from the error counts (derived
   // from the itemized errors[]), the halaqa's weights, and the range's page span
   // (weights are per page), then stored as-is.
   async function withComputedScore(data: CreateAchievementDto): Promise<CreateAchievementDto> {
     const settings = await loadEvaluationSettings(data.halaqa_id)
     const pages = pageSpan(data.start_surah, data.start_verse, data.end_surah, data.end_verse)
-    const percentage_score = computePercentageScore(tallyErrors(data.errors), settings, pages)
+    const percentage_score = computePercentageScore(tallyErrors(allErrorsOf(data)), settings, pages)
     return { ...data, percentage_score }
+  }
+
+  // The API accepts exactly one error carrier per method and 400s on the other:
+  // "test_positions is only valid when recitation_method is 'test'" / "Errors are
+  // per-position when recitation_method is 'test'". Send one, strip the other.
+  function withPositionsPayload(data: CreateAchievementDto): CreateAchievementDto {
+    const body: CreateAchievementDto = { ...data, recitation_method: data.recitation_method ?? 'full' }
+    if (body.recitation_method === 'test') {
+      body.test_positions = body.test_positions ?? []
+      delete body.errors
+    } else {
+      body.errors = body.errors ?? []
+      delete body.test_positions
+    }
+    return body
   }
 
   async function addAchievement(data: CreateAchievementDto) {
     isSaving.value = true
     try {
       const full = await withComputedScore(data)
-      const body: CreateAchievementDto = {
-        ...full,
-        recitation_method: full.recitation_method ?? 'full',
-        errors: full.errors ?? []
-      }
-      const created = await api<ApiAchievement>('/achievements', { method: 'POST', body })
+      const created = await api<ApiAchievement>('/achievements', {
+        method: 'POST',
+        body: withPositionsPayload(full)
+      })
       await loadAchievements()
       return created
     } finally {
@@ -378,19 +399,22 @@ export function useAchievements() {
       // The update endpoint only accepts mutable fields — student_id, halaqa_id
       // and date are immutable for an existing record and are rejected by the
       // backend's whitelist ("property student_id should not exist"). Sending
-      // errors[] + recitation_method regenerates the positions wholesale.
-      const body = {
+      // the errors + recitation_method regenerates the positions wholesale.
+      const method = full.recitation_method ?? 'full'
+      const body: Record<string, unknown> = {
         track_type: full.track_type,
         completion_method: full.completion_method,
-        recitation_method: full.recitation_method ?? 'full',
+        recitation_method: method,
         start_surah: full.start_surah,
         start_verse: full.start_verse,
         end_surah: full.end_surah,
         end_verse: full.end_verse,
-        errors: full.errors ?? [],
         percentage_score: full.percentage_score,
         teacher_notes: full.teacher_notes
       }
+      // Same one-carrier rule as create.
+      if (method === 'test') body.test_positions = full.test_positions ?? []
+      else body.errors = full.errors ?? []
       const updated = await api<ApiAchievement>(`/achievements/${id}`, { method: 'PATCH', body })
       await loadAchievements()
       return updated

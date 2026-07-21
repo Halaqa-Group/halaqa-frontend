@@ -1047,6 +1047,15 @@
       "approveErrorTitle": "خطأ في اعتماد الإنجاز",
       "unapproveErrorTitle": "خطأ في إلغاء اعتماد الإنجاز",
       "computedScore": "النتيجة المحسوبة",
+      "recitationMethods": {
+        "full": "تسميع كامل",
+        "test": "اختبار"
+      },
+      "fullRequiredForHifz": "تسميع كامل — إلزامي للحفظ الجديد",
+      "positionN": "الموضع {n}",
+      "addPosition": "إضافة موضع",
+      "removePosition": "حذف الموضع",
+      "noPositionsYet": "لا مواضع بعد — أضف موضعًا واحدًا على الأقل للاختبار.",
       "recordButton": "تسجيل إنجاز",
       "recordTitle": "تسجيل إنجاز",
       "editTitle": "تعديل إنجاز",
@@ -1106,7 +1115,9 @@
       "validation": {
         "student": "اختر الطالب",
         "range": "نطاق الآيات غير صحيح",
-        "pickLesson": "اختر جلسة من خطة اليوم"
+        "pickLesson": "اختر جلسة من خطة اليوم",
+        "needPosition": "أضف موضعًا واحدًا على الأقل",
+        "positionOutOfRange": "يجب أن يقع الموضع داخل نطاق الدرس"
       },
       "deleteConfirm": {
         "title": "حذف الإنجاز",

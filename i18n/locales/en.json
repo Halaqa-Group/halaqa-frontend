@@ -1047,6 +1047,15 @@
       "approveErrorTitle": "Failed to approve achievement",
       "unapproveErrorTitle": "Failed to revoke approval",
       "computedScore": "Computed score",
+      "recitationMethods": {
+        "full": "Full recitation",
+        "test": "Test"
+      },
+      "fullRequiredForHifz": "Full recitation — required for new memorization",
+      "positionN": "Position {n}",
+      "addPosition": "Add position",
+      "removePosition": "Remove position",
+      "noPositionsYet": "No positions yet — add at least one to test.",
       "recordButton": "Record achievement",
       "recordTitle": "Record achievement",
       "editTitle": "Edit achievement",
@@ -1106,7 +1115,9 @@
       "validation": {
         "student": "Select a student",
         "range": "Invalid verse range",
-        "pickLesson": "Choose a session from today's plan"
+        "pickLesson": "Choose a session from today's plan",
+        "needPosition": "Add at least one position",
+        "positionOutOfRange": "A position must fall inside the lesson range"
       },
       "deleteConfirm": {
         "title": "Delete achievement",

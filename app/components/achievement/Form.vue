@@ -5,9 +5,10 @@ import { LazyCommonConfirmDialog } from '#components'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
 import { isValidVerseRange, totalVersesInRange, formatVerseRange } from '~/utils/quran'
-import { computePercentageScore } from '~/utils/score'
+import { verseToGlobal } from '~/utils/quran-structure'
+import { computePercentageScore, type ScoreCounts } from '~/utils/score'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
-import type { ApiWeeklyPlanItem, CreateAchievementDto } from '~/types'
+import type { AchievementTestPosition, ApiWeeklyPlanItem, CreateAchievementDto, RecitationMethod } from '~/types'
 
 const emit = defineEmits<{ saved: [] }>()
 
@@ -63,6 +64,66 @@ const state = reactive<{
   teacher_notes: ''
 })
 
+// ── Tested positions (مواضع) ────────────────────────────────────────────────
+// The mushaf flow lets the teacher tap out the passages a student was tested on;
+// this is the same idea for the quick form — each موضع is a sub-range of the
+// lesson carrying its own error counts. `full` keeps the single counters block.
+interface PositionRow {
+  id: string
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+  mistakes_count: number
+  warnings_count: number
+  tajweed_errors_count: number
+  harakat_errors_count: number
+}
+
+const recitationMethod = ref<RecitationMethod>('full')
+const positions = ref<PositionRow[]>([])
+let positionSeq = 0
+
+// New memorization is always recited in full — same rule the mushaf enforces.
+const canTest = computed(() => state.track_type !== 'Hifz')
+watch(() => state.track_type, (track) => {
+  if (track === 'Hifz') recitationMethod.value = 'full'
+})
+
+function newPositionRow(counts?: Partial<ScoreCounts>): PositionRow {
+  return {
+    id: `pos-${++positionSeq}`,
+    // Seed with the lesson range so a fresh موضع is valid before it's narrowed.
+    start_surah: state.start_surah,
+    start_verse: state.start_verse,
+    end_surah: state.end_surah,
+    end_verse: state.end_verse,
+    mistakes_count: counts?.mistakes_count ?? 0,
+    warnings_count: counts?.warnings_count ?? 0,
+    tajweed_errors_count: counts?.tajweed_errors_count ?? 0,
+    harakat_errors_count: counts?.harakat_errors_count ?? 0
+  }
+}
+
+function addPosition() {
+  positions.value = [...positions.value, newPositionRow()]
+}
+function removePosition(id: string) {
+  positions.value = positions.value.filter(p => p.id !== id)
+}
+
+// A موضع has to sit inside the achievement's own range — the API rejects
+// anything outside it ("Each test position must fall within the achievement
+// verse range"), so catch it here instead of on submit.
+function positionWithinLesson(p: PositionRow): boolean {
+  const lo = verseToGlobal(state.start_surah, state.start_verse)
+  const hi = verseToGlobal(state.end_surah, state.end_verse)
+  return verseToGlobal(p.start_surah, p.start_verse) >= lo
+    && verseToGlobal(p.end_surah, p.end_verse) <= hi
+}
+
+const isTest = computed(() => recitationMethod.value === 'test')
+
 // When true, the track + range are entered by hand; otherwise they come from a
 // picked plan item. selectedPlanItemId tracks which plan lesson is chosen.
 const selectedPlanItemId = ref<number | null>(null)
@@ -75,6 +136,30 @@ const manualRange = ref(false)
 type PickerItem = Pick<ApiWeeklyPlanItem, 'id' | 'track_type' | 'start_surah' | 'start_verse' | 'end_surah' | 'end_verse'>
 const prefilledItem = ref<PickerItem | null>(null)
 const prefilledStudentId = ref<number | null>(null)
+
+// Restore the tested positions of an existing record. Duplicating keeps the
+// passages but drops their counts — same rule the top-level counters follow.
+function hydratePositions() {
+  const src = editing.value ?? duplicateFrom.value
+  const keepCounts = editing.value != null
+  if (src?.recitation_method === 'test' && src.recitation_positions?.length) {
+    recitationMethod.value = 'test'
+    positions.value = src.recitation_positions.map(p => ({
+      id: `pos-${++positionSeq}`,
+      start_surah: p.start_surah,
+      start_verse: p.start_verse,
+      end_surah: p.end_surah,
+      end_verse: p.end_verse,
+      mistakes_count: keepCounts ? (p.mistakes_count ?? 0) : 0,
+      warnings_count: keepCounts ? (p.warnings_count ?? 0) : 0,
+      tajweed_errors_count: keepCounts ? (p.tajweed_errors_count ?? 0) : 0,
+      harakat_errors_count: keepCounts ? (p.harakat_errors_count ?? 0) : 0
+    }))
+  } else {
+    recitationMethod.value = 'full'
+    positions.value = []
+  }
+}
 
 function hydrate() {
   const src = editing.value ?? duplicateFrom.value
@@ -135,6 +220,7 @@ function hydrate() {
     state.harakat_errors_count = 0
     state.teacher_notes = ''
   }
+  hydratePositions()
 }
 watch([editing, duplicateFrom], hydrate, { immediate: true })
 
@@ -218,13 +304,27 @@ const rangeSummary = computed(() => {
 const rangePages = computed(() =>
   pageSpan(state.start_surah, state.start_verse, state.end_surah, state.end_verse)
 )
+
+// `test` scores off the sum of every موضع; `full` off the single counters block.
+const effectiveCounts = computed<ScoreCounts>(() => {
+  if (!isTest.value) {
+    return {
+      mistakes_count: state.mistakes_count,
+      warnings_count: state.warnings_count,
+      tajweed_errors_count: state.tajweed_errors_count,
+      harakat_errors_count: state.harakat_errors_count
+    }
+  }
+  return positions.value.reduce<ScoreCounts>((acc, p) => ({
+    mistakes_count: acc.mistakes_count + p.mistakes_count,
+    warnings_count: acc.warnings_count + p.warnings_count,
+    tajweed_errors_count: acc.tajweed_errors_count + p.tajweed_errors_count,
+    harakat_errors_count: acc.harakat_errors_count + p.harakat_errors_count
+  }), { mistakes_count: 0, warnings_count: 0, tajweed_errors_count: 0, harakat_errors_count: 0 })
+})
+
 const scorePreview = computed(() => computePercentageScore(
-  {
-    mistakes_count: state.mistakes_count,
-    warnings_count: state.warnings_count,
-    tajweed_errors_count: state.tajweed_errors_count,
-    harakat_errors_count: state.harakat_errors_count
-  },
+  effectiveCounts.value,
   currentEvaluationSettings.value,
   rangePages.value
 ))
@@ -235,9 +335,10 @@ const scoreBarColor = computed(() =>
   scorePreview.value >= 90 ? 'bg-success' : scorePreview.value >= 75 ? 'bg-warning' : 'bg-error'
 )
 
-const hasErrorCounts = computed(() =>
-  state.mistakes_count + state.warnings_count + state.tajweed_errors_count + state.harakat_errors_count > 0
-)
+const hasErrorCounts = computed(() => {
+  const c = effectiveCounts.value
+  return c.mistakes_count + c.warnings_count + c.tajweed_errors_count + c.harakat_errors_count > 0
+})
 
 // "Save & recite" re-counts errors word-by-word on the mushaf, so any counts typed
 // into the quick form would be discarded. Warn first and only proceed (zeroing the
@@ -326,6 +427,23 @@ const schema = computed(() => z.object({
   const r = rangeValid.value
   if (!r.valid) {
     ctx.addIssue({ code: 'custom', path: ['end_verse'], message: r.error || t('pages.achievements.validation.range') })
+    return
+  }
+  if (!isTest.value) return
+  if (positions.value.length === 0) {
+    ctx.addIssue({ code: 'custom', path: ['positions'], message: t('pages.achievements.validation.needPosition') })
+    return
+  }
+  for (const p of positions.value) {
+    const pr = isValidVerseRange(p.start_surah, p.start_verse, p.end_surah, p.end_verse)
+    if (!pr.valid) {
+      ctx.addIssue({ code: 'custom', path: ['positions'], message: pr.error || t('pages.achievements.validation.range') })
+      return
+    }
+    if (!positionWithinLesson(p)) {
+      ctx.addIssue({ code: 'custom', path: ['positions'], message: t('pages.achievements.validation.positionOutOfRange') })
+      return
+    }
   }
 }))
 type Schema = z.output<typeof schema.value>
@@ -347,36 +465,55 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
     state.warnings_count = 0
     state.tajweed_errors_count = 0
     state.harakat_errors_count = 0
+    positions.value = positions.value.map(p => ({
+      ...p, mistakes_count: 0, warnings_count: 0, tajweed_errors_count: 0, harakat_errors_count: 0
+    }))
   }
 
   await loadEvaluationSettings(halaqaId)
 
   // The quick form captures error counts, not per-word locations; synthesize
-  // itemized errors at the range's start word so the backend accepts them.
-  const errors = await buildErrorsFromCounts(
-    {
-      mistakes_count: state.mistakes_count,
-      warnings_count: state.warnings_count,
-      tajweed_errors_count: state.tajweed_errors_count,
-      harakat_errors_count: state.harakat_errors_count
-    },
-    state
-  )
-
+  // itemized errors at the start word of whichever range owns them — the lesson
+  // range for `full`, each موضع's own range for `test`.
   const dto: CreateAchievementDto = {
     student_id: studentId,
     halaqa_id: halaqaId,
     date: state.date,
     track_type: state.track_type,
     completion_method: 'quick',
-    recitation_method: 'full',
+    recitation_method: isTest.value ? 'test' : 'full',
     start_surah: state.start_surah,
     start_verse: state.start_verse,
     end_surah: state.end_surah,
     end_verse: state.end_verse,
-    errors,
     percentage_score: scorePreview.value,
     teacher_notes: state.teacher_notes || undefined
+  }
+
+  if (isTest.value) {
+    const built: AchievementTestPosition[] = []
+    for (const p of positions.value) {
+      built.push({
+        start_surah: p.start_surah,
+        start_verse: p.start_verse,
+        end_surah: p.end_surah,
+        end_verse: p.end_verse,
+        errors: await buildErrorsFromCounts({
+          mistakes_count: p.mistakes_count,
+          warnings_count: p.warnings_count,
+          tajweed_errors_count: p.tajweed_errors_count,
+          harakat_errors_count: p.harakat_errors_count
+        }, p)
+      })
+    }
+    dto.test_positions = built
+  } else {
+    dto.errors = await buildErrorsFromCounts({
+      mistakes_count: state.mistakes_count,
+      warnings_count: state.warnings_count,
+      tajweed_errors_count: state.tajweed_errors_count,
+      harakat_errors_count: state.harakat_errors_count
+    }, state)
   }
 
   try {
@@ -592,12 +729,82 @@ defineExpose({ saving: isSaving, setContinueToRecite })
           />
         </div>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5">
+      <!-- Recitation method: full, or tested at chosen مواضع (mirrors the mushaf). -->
+      <div v-if="canTest" class="grid grid-cols-2 gap-1.5 p-2.5 pb-0">
+        <button
+          v-for="m in (['full', 'test'] as const)"
+          :key="m"
+          type="button"
+          class="rounded-lg border px-3 py-2 text-sm font-medium transition"
+          :class="recitationMethod === m
+            ? 'border-primary bg-primary/5 ring-1 ring-primary text-primary'
+            : 'border-default hover:border-primary/60 hover:bg-elevated'"
+          @click="recitationMethod = m"
+        >
+          {{ t(`pages.achievements.recitationMethods.${m}`) }}
+        </button>
+      </div>
+      <p v-else class="px-3 pt-2.5 text-xs text-muted">
+        {{ t('pages.achievements.fullRequiredForHifz') }}
+      </p>
+
+      <!-- full: one set of counters for the whole lesson -->
+      <div v-if="!isTest" class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5">
         <AchievementCounterField v-model="state.mistakes_count" :label="t('pages.achievements.mistakes')" />
         <AchievementCounterField v-model="state.warnings_count" :label="t('pages.achievements.warnings')" />
         <AchievementCounterField v-model="state.tajweed_errors_count" :label="t('pages.achievements.tajweedErrors')" />
         <AchievementCounterField v-model="state.harakat_errors_count" :label="t('pages.achievements.harakat')" />
       </div>
+
+      <!-- test: one card per موضع, each with its own range and counters -->
+      <UFormField v-else name="positions" class="block p-2.5">
+        <div class="space-y-2">
+          <div
+            v-for="(p, i) in positions"
+            :key="p.id"
+            class="rounded-lg border border-default bg-default p-2.5 space-y-2"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold">
+                {{ t('pages.achievements.positionN', { n: i + 1 }) }}
+              </span>
+              <UButton
+                icon="i-lucide-trash-2"
+                color="error"
+                variant="ghost"
+                size="xs"
+                square
+                :aria-label="t('pages.achievements.removePosition')"
+                @click="removePosition(p.id)"
+              />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div class="space-y-1">
+                <span class="text-[11px] font-medium text-muted">{{ t('pages.achievements.fromLabel') }}</span>
+                <PlannerAyahSelect v-model:surah="p.start_surah" v-model:verse="p.start_verse" />
+              </div>
+              <div class="space-y-1">
+                <span class="text-[11px] font-medium text-muted">{{ t('pages.achievements.toLabel') }}</span>
+                <PlannerAyahSelect v-model:surah="p.end_surah" v-model:verse="p.end_verse" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <AchievementCounterField v-model="p.mistakes_count" :label="t('pages.achievements.mistakes')" />
+              <AchievementCounterField v-model="p.warnings_count" :label="t('pages.achievements.warnings')" />
+              <AchievementCounterField v-model="p.tajweed_errors_count" :label="t('pages.achievements.tajweedErrors')" />
+              <AchievementCounterField v-model="p.harakat_errors_count" :label="t('pages.achievements.harakat')" />
+            </div>
+          </div>
+
+          <p v-if="!positions.length" class="text-xs text-muted">
+            {{ t('pages.achievements.noPositionsYet') }}
+          </p>
+
+          <UButton icon="i-lucide-plus" variant="soft" size="sm" block @click="addPosition">
+            {{ t('pages.achievements.addPosition') }}
+          </UButton>
+        </div>
+      </UFormField>
     </div>
 
     <UFormField :label="t('pages.achievements.notes')" name="teacher_notes">

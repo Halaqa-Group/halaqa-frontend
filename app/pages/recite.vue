@@ -403,11 +403,39 @@ function spotLabel(s: { startSurah: number, startVerse: number, endSurah: number
 }
 
 // Tapping a موضع takes the mushaf to it — on a multi-page lesson the passage is
-// often on a page that isn't the one currently shown.
+// often on a page that isn't the one currently shown — then pulses its two
+// ornaments so the eye lands on the passage rather than hunting for it.
+const FLASH_MS = 1600
 const viewerRef = ref<{ goToVerse: (verseKey: string) => void } | null>(null)
-function focusSpot(s: { startSurah: number, startVerse: number }) {
+const flashedVerses = ref<Set<string> | null>(null)
+let flashTimer: ReturnType<typeof setTimeout> | null = null
+
+const flashAt = computed<VerseEdge | undefined>(() => {
+  const set = flashedVerses.value
+  return set ? (verseKey: string) => set.has(verseKey) : undefined
+})
+
+function focusSpot(s: { startSurah: number, startVerse: number, endSurah: number, endVerse: number }) {
   viewerRef.value?.goToVerse(`${s.startSurah}:${s.startVerse}`)
+  if (flashTimer) clearTimeout(flashTimer)
+  // Drop the class first so tapping the same موضع twice replays the animation
+  // instead of doing nothing (a running animation won't restart on re-add).
+  flashedVerses.value = null
+  void nextTick(() => {
+    flashedVerses.value = new Set([
+      `${s.startSurah}:${s.startVerse}`,
+      `${s.endSurah}:${s.endVerse}`
+    ])
+    flashTimer = setTimeout(() => {
+      flashedVerses.value = null
+      flashTimer = null
+    }, FLASH_MS)
+  })
 }
+
+onBeforeUnmount(() => {
+  if (flashTimer) clearTimeout(flashTimer)
+})
 
 const canSubmit = computed(() =>
   !!selectedItem.value && (!isTest.value || spots.value.length > 0)
@@ -978,6 +1006,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                 :pending-verse="isTest && captureMode === 'spot' ? pendingVerseKey : null"
                 :locked-at="lockedAt"
                 :spot-edge-at="spotEdgeAt"
+                :flash-at="flashAt"
                 :on-word-tap="markingLocked ? undefined : onWordTap"
                 :on-words-mark="(markingLocked || !canDragMark) ? undefined : onWordsMark"
               />

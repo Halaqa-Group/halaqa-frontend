@@ -11,6 +11,7 @@ const props = defineProps<{
   pendingVerse?: string | null
   lockedAt?: VerseLock
   spotEdgeAt?: VerseEdge
+  flashAt?: VerseEdge
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
 }>()
 
@@ -91,6 +92,7 @@ onBeforeUnmount(clearSkeletonTimer)
           :pending-verse="pendingVerse"
           :locked-at="lockedAt"
           :spot-edge-at="spotEdgeAt"
+          :flash-at="flashAt"
           :on-word-tap="onWordTap"
         />
       </template>

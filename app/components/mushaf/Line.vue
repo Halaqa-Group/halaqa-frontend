@@ -16,6 +16,8 @@ const props = defineProps<{
   lockedAt?: VerseLock
   /** Ayah-end ornaments that bound a tested موضع; recoloured in place. */
   spotEdgeAt?: VerseEdge
+  /** Ornaments to pulse briefly, to point out a موضع just navigated to. */
+  flashAt?: VerseEdge
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
 }>()
 
@@ -34,6 +36,13 @@ const locked = computed<boolean[]>(() => {
 const spotEdge = computed<boolean[]>(() => {
   const line = props.line
   const at = props.spotEdgeAt
+  if (line.kind !== 'ayah' || !at) return []
+  return line.words.map(word => word.t === 'e' && at(word.k))
+})
+
+const spotFlash = computed<boolean[]>(() => {
+  const line = props.line
+  const at = props.flashAt
   if (line.kind !== 'ayah' || !at) return []
   return line.words.map(word => word.t === 'e' && at(word.k))
 })
@@ -130,6 +139,7 @@ function onWordLeave(word: MushafWord) {
         {
           'mushaf-word--marker': word.t === 'e',
           'mushaf-word--spot-edge': spotEdge[i],
+          'mushaf-word--spot-flash': spotFlash[i],
           'mushaf-word--dim': highlight && !highlight(word.k),
           'mushaf-word--locked': locked[i],
           'mushaf-word--spot-pending': pendingVerse && word.k === pendingVerse && word.t !== 'e',
@@ -248,6 +258,26 @@ function onWordLeave(word: MushafWord) {
    else changes, so the page keeps its own look and its exact metrics. */
 .mushaf-word--spot-edge {
   color: #1d4ed8;
+}
+
+/* Pulsed for a moment after jumping to a موضع, so the eye lands on its two ends.
+   `transform` doesn't affect layout, so the line never reflows. */
+.mushaf-word--spot-flash {
+  animation: mushaf-spot-flash 0.5s ease-in-out 3;
+  transform-origin: center;
+}
+
+@keyframes mushaf-spot-flash {
+  50% {
+    transform: scale(1.45);
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mushaf-word--spot-flash {
+    animation: none;
+  }
 }
 
 /* Tarteel-style severity spectrum: red → orange → yellow → green.

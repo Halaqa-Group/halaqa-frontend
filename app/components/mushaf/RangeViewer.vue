@@ -25,6 +25,8 @@ const props = defineProps<{
   lockedAt?: VerseLock
   /** Ayah-end ornaments that bound a tested موضع; recoloured in place. */
   spotEdgeAt?: VerseEdge
+  /** Ornaments to pulse briefly, to point out a موضع just navigated to. */
+  flashAt?: VerseEdge
   onWordTap?: (wordKey: WordKey, verseKey: string) => void
   /** Apply one severity (or unmark, when null) to a drag-selected run of words. */
   onWordsMark?: (keys: WordKey[], severity: Severity | null) => void
@@ -196,6 +198,7 @@ const rangeLabel = computed(() => {
           :pending-verse="pendingVerse"
           :locked-at="lockedAt"
           :spot-edge-at="spotEdgeAt"
+          :flash-at="flashAt"
           :on-word-tap="onWordTap"
         />
       </div>

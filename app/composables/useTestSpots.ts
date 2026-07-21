@@ -20,12 +20,9 @@ export interface LessonRange {
   endVerse: number
 }
 
-const STORAGE_PREFIX = 'recitation-spots:'
-
-function storageKey(sessionId: string) {
-  return `${STORAGE_PREFIX}${sessionId}`
-}
-
+// Like the marks, spots are NOT cached client-side — a stale set outlived the
+// visit and was shown instead of the positions the server actually stored. They
+// are restored from the achievement detail on load and sent on submit.
 function newSpotId(): string {
   const c = globalThis.crypto
   return c?.randomUUID ? c.randomUUID() : `s-${Date.now()}-${Math.floor(Math.random() * 1e6)}`
@@ -51,34 +48,11 @@ export function useTestSpots(
   // First boundary tapped; the next in-range tap closes the spot.
   const pendingStart = ref<{ surah: number, verse: number } | null>(null)
 
-  function load(id: string) {
-    if (!id) {
-      spots.value = []
-      return
-    }
-    try {
-      const raw = localStorage.getItem(storageKey(id))
-      spots.value = raw ? (JSON.parse(raw) as TestSpot[]) : []
-    } catch {
-      spots.value = []
-    }
-  }
-
-  function persist(id: string, list: TestSpot[]) {
-    if (!id) return
-    try {
-      localStorage.setItem(storageKey(id), JSON.stringify(list))
-    } catch {
-      // best-effort persistence; ignore quota/serialization failures
-    }
-  }
-
-  watch(() => toValue(sessionId), (id) => {
+  // Switching session starts clean — nothing is read back from storage.
+  watch(() => toValue(sessionId), () => {
     pendingStart.value = null
-    load(id)
-  }, { immediate: true })
-
-  watch(spots, list => persist(toValue(sessionId), list), { deep: true })
+    spots.value = []
+  })
 
   function inLessonRange(surah: number, verse: number): boolean {
     const r = toValue(range)

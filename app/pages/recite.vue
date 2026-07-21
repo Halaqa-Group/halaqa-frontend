@@ -19,6 +19,9 @@ const { isParent: isParentReadOnly } = usePermissions()
 const { loadEvaluationSettings, currentEvaluationSettings } = useAchievements()
 // Warm the QUL word-id / juz / hizb lookup so building errors[] on submit is instant.
 useQuranWords()
+// Marks and spots are no longer cached client-side; clear what older builds left
+// behind so a stale session can't resurface.
+onMounted(purgeLegacyRecitationCache)
 
 const halaqaId = computed(() => {
   const v = Number(route.query.halaqa_id)
@@ -166,20 +169,24 @@ const selectedItem = computed<ApiWeeklyPlanItem | null>(() =>
 // be tested at chosen positions; that capture UI lands later, so `test` is
 // disabled for now. The last method used on a testable track is remembered.
 const currentTrack = computed(() => selectedItem.value?.track_type ?? null)
-const lastTestableMethod = useLocalStorage<RecitationMethod>('recite:method', 'full')
+// Declared here (not next to `hydrateFromAchievement`) because the immediate
+// watcher below reads it during setup.
+const hydratedFor = ref<string | null>(null)
 const recitationMethod = ref<RecitationMethod>('full')
 // In `test`, taps either define a spot's boundaries or mark errors inside it.
 const captureMode = ref<'spot' | 'mark'>('spot')
-watch(currentTrack, (track) => {
-  recitationMethod.value = track === 'Hifz' ? 'full' : lastTestableMethod.value
+watch(currentTrack, () => {
+  // A restored recitation owns its method and mode — don't reset them out from
+  // under `hydrateFromAchievement`. Otherwise start on a full recitation; the
+  // last-used method is deliberately NOT remembered client-side.
+  if (hydratedFor.value) return
+  recitationMethod.value = 'full'
   captureMode.value = 'spot'
 }, { immediate: true })
 
 function selectMethod(method: RecitationMethod) {
   recitationMethod.value = method
   if (method === 'test') captureMode.value = 'spot'
-  // Hifz is locked; only remember the choice for testable tracks.
-  if (currentTrack.value !== 'Hifz') lastTestableMethod.value = method
 }
 
 const showMethodSelector = computed(() =>
@@ -426,19 +433,24 @@ const markingLocked = computed(() => isParentReadOnly.value || isApproved.value)
 // `loadAchievementDetail`; no second request. Only mushaf recitations carry real
 // word positions (quick-entry errors are synthetic, all stacked at the range's
 // start word). Seeds once, and never over marks started this visit.
-const hydratedFor = ref<number | null>(null)
+// `hydratedFor` is declared up with the recitation-method state. The API
+// serializes ids as strings ("47"), so normalize before comparing.
 async function hydrateFromAchievement(detail: ApiAchievement) {
-  const id = detail.id
+  const id = String(detail.id)
   if (isParentReadOnly.value || hydratedFor.value === id) return
-  hydratedFor.value = id
-  if (Object.keys(marks.value).length > 0) return
   if (detail.completion_method !== 'mushaf') return
+  hydratedFor.value = id
 
   const positions = detail.recitation_positions ?? []
-  const runs = await buildMarkRunsFromErrors(positions.flatMap(p => p.errors ?? []))
-  // Restore a partial test's tested spots + method so the view matches how it was
-  // taken (marks outside a spot would otherwise be dimmed and look dropped).
-  if (detail.recitation_method === 'test' && positions.length) {
+  const isTestRun = detail.recitation_method === 'test' && positions.length > 0
+
+  // Restore the tested passages FIRST, and synchronously. Both matter:
+  //  - `spotHighlight` dims every verse outside a spot, so with no spots a
+  //    restored test shows neither its مواضع nor the errors inside them;
+  //  - anything awaited before this yields to `watch(currentTrack)`, which
+  //    resets captureMode to 'spot' and recitationMethod to the remembered one,
+  //    silently undoing the restore.
+  if (isTestRun) {
     recitationMethod.value = 'test'
     captureMode.value = 'mark'
     setSpots(positions.map((p, i) => ({
@@ -449,6 +461,14 @@ async function hydrateFromAchievement(detail: ApiAchievement) {
       endVerse: p.end_verse
     })))
   }
+
+  // Never paint over marks the teacher already started this visit — but the
+  // spots above are restored either way.
+  if (Object.keys(marks.value).length > 0) return
+
+  const runs = await buildMarkRunsFromErrors(positions.flatMap(p => p.errors ?? []))
+  // Re-assert after the await, for the same reason as above.
+  if (isTestRun) captureMode.value = 'mark'
   for (const run of runs) setMarks(run.keys, run.severity)
 }
 // Waits for the session too: marks are stored per session id, so seeding before

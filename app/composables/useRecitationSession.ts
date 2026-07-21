@@ -1,17 +1,25 @@
 import type { MarkCounts, MarkGroups, RecitationMarks, Severity, WordKey } from '~/types/recitation'
 import { SEVERITY_ORDER } from '~/types/recitation'
 
-const STORAGE_PREFIX = 'recitation:'
+// Marks are NOT persisted client-side. They used to be cached in localStorage
+// per session, which meant a half-finished marking session outlived the visit
+// and was shown in place of what the server actually stored — the achievement
+// said 5 mistakes + 2 tajweed while the mushaf showed a stale 4/3/1, and the
+// restore was skipped entirely because local marks "already existed".
+// The backend is the source of truth; this state lives for one visit only.
+const LEGACY_STORAGE_PREFIXES = ['recitation:', 'recitation-spots:']
 
-function storageKey(sessionId: string) {
-  return `${STORAGE_PREFIX}${sessionId}`
-}
-
-// Persisted shape. Kept as an object so the block grouping travels with the
-// marks; older sessions stored a bare `RecitationMarks`, still read below.
-interface PersistedSession {
-  marks: RecitationMarks
-  groups: MarkGroups
+/** One-time sweep of the caches earlier builds left behind. */
+export function purgeLegacyRecitationCache() {
+  if (typeof localStorage === 'undefined') return
+  try {
+    const stale = Object.keys(localStorage).filter(k =>
+      LEGACY_STORAGE_PREFIXES.some(p => k.startsWith(p))
+    )
+    for (const k of stale) localStorage.removeItem(k)
+  } catch {
+    // best-effort cleanup; a blocked localStorage is not an error here
+  }
 }
 
 function newGroupId(): string {
@@ -24,52 +32,11 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
   // Word → block id for words marked together as one drag-selected run.
   const groups = ref<MarkGroups>({})
 
-  function load(id: string) {
-    if (!id) {
-      marks.value = {}
-      groups.value = {}
-      return
-    }
-    try {
-      const raw = localStorage.getItem(storageKey(id))
-      if (!raw) {
-        marks.value = {}
-        groups.value = {}
-        return
-      }
-      const parsed = JSON.parse(raw) as PersistedSession | RecitationMarks
-      // New shape carries `marks`/`groups`; the legacy shape was a bare marks map
-      // (word keys are "surah:ayah:position", so a top-level `marks` key is unambiguous).
-      if (parsed && typeof parsed === 'object' && 'marks' in parsed) {
-        const session = parsed as PersistedSession
-        marks.value = session.marks ?? {}
-        groups.value = session.groups ?? {}
-      } else {
-        marks.value = (parsed as RecitationMarks) ?? {}
-        groups.value = {}
-      }
-    } catch {
-      marks.value = {}
-      groups.value = {}
-    }
-  }
-
-  function persist(id: string, m: RecitationMarks, g: MarkGroups) {
-    if (!id) return
-    try {
-      localStorage.setItem(storageKey(id), JSON.stringify({ marks: m, groups: g } satisfies PersistedSession))
-    } catch {
-      // best-effort persistence; ignore quota/serialization failures
-    }
-  }
-
-  watch(() => toValue(sessionId), id => load(id), { immediate: true })
-
-  watch(
-    [marks, groups],
-    ([m, g]) => { persist(toValue(sessionId), m, g) },
-    { deep: true }
-  )
+  // Switching session starts clean — nothing is read back from storage.
+  watch(() => toValue(sessionId), () => {
+    marks.value = {}
+    groups.value = {}
+  })
 
   // Each tap steps the mark one notch down the severity spectrum
   //   (unmarked) → severe → medium → light → minor → (unmarked)
@@ -119,12 +86,18 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
     if (!keys.length) return
     if (severity) {
       const nextMarks: RecitationMarks = { ...marks.value }
-      const nextGroups: MarkGroups = { ...groups.value }
       const groupId = keys.length > 1 ? newGroupId() : null
+      // A one-word selection is standalone, so it must shed any block membership
+      // it had; rebuild without those keys rather than deleting in place.
+      const shed = new Set(keys)
+      const nextGroups: MarkGroups = groupId
+        ? { ...groups.value }
+        : Object.fromEntries(
+          Object.entries(groups.value).filter(([k]) => !shed.has(k))
+        ) as MarkGroups
       for (const k of keys) {
         nextMarks[k] = severity
         if (groupId) nextGroups[k] = groupId
-        else delete nextGroups[k]
       }
       marks.value = nextMarks
       groups.value = nextGroups

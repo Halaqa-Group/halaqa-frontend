@@ -14,12 +14,11 @@ const toast = useToast()
 const apiError = useApiError()
 const api = useApi()
 const overlay = useOverlay()
-const { activeRole } = useAuth()
+const { isParent: isParentReadOnly } = usePermissions()
 const { loadEvaluationSettings } = useAchievements()
 // Warm the QUL word-id / juz / hizb lookup so building errors[] on submit is instant.
 useQuranWords()
 
-const isParentReadOnly = computed(() => activeRole.value === 'parent')
 
 const halaqaId = computed(() => {
   const v = Number(route.query.halaqa_id)
@@ -279,9 +278,11 @@ const captureHint = computed(() => {
 })
 
 // One-line breakdown of the four severity levels, reused in the confirm dialog
-// and the success toasts.
+// and the success toasts. Named by the scoring bucket each level feeds, in the
+// same order as the achievement form's counters — "٣ جسيم" also read as broken
+// Arabic (an adjective counted as a noun).
 function countsSummary(c: MarkCounts): string {
-  return `${c.severe} جسيم، ${c.medium} متوسط، ${c.light} خفيف، ${c.minor} تنبيه`
+  return `أخطاء: ${c.severe}، تنبيهات: ${c.light}، تجويد: ${c.medium}، تنبيه بسيط: ${c.minor}`
 }
 
 // Confirm/success summary: tested-spot count for `test`, severity breakdown for `full`.
@@ -623,15 +624,17 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
               <p class="text-xs font-semibold text-muted mb-2">
                 تم تسجيله اليوم ({{ priorAchievements.length }})
               </p>
-              <ul class="flex flex-col items-start gap-1.5">
-                <li v-for="a in priorAchievements" :key="a.id">
+              <ul class="flex flex-col items-start gap-2">
+                <li v-for="a in priorAchievements" :key="a.id" class="flex flex-col items-start gap-1">
                   <UBadge :color="TRACK_BADGE_COLOR[a.track_type as AchievementTrack]" variant="subtle" class="gap-1.5">
                     <span class="font-bold">{{ trackLabel(a.track_type) }}</span>
                     <span class="opacity-80">{{ rangeLabel(a) }}</span>
-                    <span v-if="!isParentReadOnly" class="tabular-nums opacity-70">
-                      · {{ a.mistakes_count }}خ {{ a.warnings_count }}ت {{ a.tajweed_errors_count }}ج {{ a.harakat_errors_count ?? 0 }}ح
-                    </span>
                   </UBadge>
+                  <!-- Spelled out rather than the old «خ ت ج ح» initials: on this
+                       page «ت» reads as تجويد and «ج» as جسيم just as easily. -->
+                  <span v-if="!isParentReadOnly" class="text-[11px] tabular-nums text-muted">
+                    أخطاء {{ a.mistakes_count }} · تنبيهات {{ a.warnings_count }} · تجويد {{ a.tajweed_errors_count }} · حركات {{ a.harakat_errors_count ?? 0 }}
+                  </span>
                 </li>
               </ul>
             </div>

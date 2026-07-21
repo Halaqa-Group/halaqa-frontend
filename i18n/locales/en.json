@@ -1059,8 +1059,8 @@
       "versesCount": "{count} verses",
       "mistakes": "Mistakes",
       "warnings": "Warnings",
-      "tajweedErrors": "Tajweed errors",
-      "harakat": "Harakat errors",
+      "tajweedErrors": "Tajweed",
+      "harakat": "Harakat",
       "notes": "Teacher notes",
       "notesPlaceholder": "Add notes on the student's performance... (optional)",
       "table": {

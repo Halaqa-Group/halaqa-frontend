@@ -31,17 +31,15 @@ const dateFormatter = computed(() =>
 const backIcon = computed(() =>
   locale.value === 'ar' ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left'
 )
-const { activeRole } = useAuth()
-const { canEditHalaqaMeta } = usePermissions()
+const { canEditHalaqaMeta, canManageHalaqaMembership } = usePermissions()
 const { getHalaqa, archiveHalaqa, completeHalaqa, restoreHalaqa } = useHalaqat()
 
 const halaqaId = computed(() => Number(route.params.id))
 const halaqa = ref<ApiHalaqaDetail | null>(null)
 const loading = ref(false)
 
-const canManage = computed(() =>
-  activeRole.value === 'principal' || activeRole.value === 'vice_principal'
-)
+// Lifecycle, schedule, and every roster mutation are principal/vice_principal.
+const canManage = canManageHalaqaMembership
 
 // PATCH /halaqat/:id takes a wider set than the lifecycle actions: supervisors
 // of the halaqa and its active teachers may edit the weights too.

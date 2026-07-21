@@ -3,7 +3,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { t } = useI18n()
 const { user, activeRole } = useAuth()
-const { isParent, canViewHalaqat, canViewUsers, canViewCalendar } = usePermissions()
+const { isParent, canViewHalaqat, canManageUsers, canViewCalendar } = usePermissions()
 const { initializeHalaqa, isHalaqaScoped } = useGlobalHalaqa()
 const route = useRoute()
 const localePath = useLocalePath()
@@ -33,7 +33,7 @@ const links = computed<NavigationMenuItem[][]>(() => {
     })
   }
 
-  if (canViewUsers.value) {
+  if (canManageUsers.value) {
     mainLinks.push({ label: t('nav.users'), icon: 'i-lucide-users-round', to: '/users' })
   }
 
@@ -87,7 +87,7 @@ watch(activeRole, async (role) => {
     await navigateTo('/')
   }
 
-  if (route.path.startsWith('/users') && !canViewUsers.value) {
+  if (route.path.startsWith('/users') && !canManageUsers.value) {
     await navigateTo('/')
   }
 

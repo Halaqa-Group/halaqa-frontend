@@ -23,7 +23,7 @@ definePageMeta({
 const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-const { activeRole } = useAuth()
+const { canCreateHalaqa, canManageHalaqaLifecycle } = usePermissions()
 const {
   halaqat,
   total,
@@ -37,9 +37,9 @@ const {
 } = useHalaqat()
 const { initializeHalaqa } = useGlobalHalaqa()
 
-const canManage = computed(() =>
-  activeRole.value === 'principal' || activeRole.value === 'vice_principal'
-)
+// Create / archive / complete / restore are all principal + vice_principal;
+// a supervisor or teacher reaching this page gets their own halaqat read-only.
+const canManage = canManageHalaqaLifecycle
 
 const filters = reactive<{
   type: HalaqaType | null
@@ -232,7 +232,7 @@ onMounted(() => loadList(1))
         </h1>
       </div>
       <UButton
-        v-if="canManage"
+        v-if="canCreateHalaqa"
         icon="i-lucide-plus"
         class="shrink-0"
         @click="openAdd"

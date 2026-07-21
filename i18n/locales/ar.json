@@ -1059,8 +1059,8 @@
       "versesCount": "{count} آية",
       "mistakes": "أخطاء",
       "warnings": "تنبيهات",
-      "tajweedErrors": "أخطاء التجويد",
-      "harakat": "أخطاء الحركات",
+      "tajweedErrors": "تجويد",
+      "harakat": "حركات",
       "notes": "ملاحظات المعلم",
       "notesPlaceholder": "أضف ملاحظاتك على أداء الطالب... (اختياري)",
       "table": {

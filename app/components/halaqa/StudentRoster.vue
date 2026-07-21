@@ -106,9 +106,25 @@ async function openEnroll() {
   await fetchStudents('')
 }
 
-const studentSelectItems = computed(() =>
-  studentOptions.value.map(s => ({ label: s.name, value: s.id }))
-)
+// Selecting clears the search term, which re-runs the query — so the chosen
+// student can fall out of the fresh page and the trigger would render blank.
+// Pin them into the list to keep the selection displayable.
+const pinnedStudent = ref<{ id: number, name: string } | null>(null)
+watch(() => enrollState.student_id, (id) => {
+  if (id == null) {
+    pinnedStudent.value = null
+    return
+  }
+  const found = studentOptions.value.find(s => s.id === id)
+  if (found) pinnedStudent.value = found
+})
+
+const studentSelectItems = computed(() => {
+  const opts = studentOptions.value
+  const pinned = pinnedStudent.value
+  const list = pinned && !opts.some(s => s.id === pinned.id) ? [pinned, ...opts] : opts
+  return list.map(s => ({ label: s.name, value: s.id }))
+})
 
 async function submitEnroll(event: FormSubmitEvent<EnrollSchema>) {
   enrollSaving.value = true

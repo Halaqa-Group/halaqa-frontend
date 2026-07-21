@@ -16,6 +16,8 @@ const emit = defineEmits<{
   submit: []
 }>()
 
+const { t } = useI18n()
+
 const submitLabel = computed(() => {
   if (props.submitting) return props.approved ? 'جارٍ الإلغاء…' : 'جارٍ الاعتماد…'
   return props.approved ? 'إلغاء الاعتماد' : 'اعتماد'
@@ -44,10 +46,10 @@ function countFor(key: Severity): number {
         class="mark-toolbar__level"
         :class="{ 'mark-toolbar__level--empty': countFor(lvl.key) === 0 }"
         :style="{ '--level-rgb': lvl.rgb }"
-        :title="lvl.label"
+        :title="t(lvl.labelKey)"
       >
         <span class="mark-toolbar__swatch" />
-        <span class="mark-toolbar__level-label">{{ lvl.label }}</span>
+        <span class="mark-toolbar__level-label">{{ t(lvl.labelKey) }}</span>
         <span v-if="countFor(lvl.key) > 0" class="mark-toolbar__level-count">{{ countFor(lvl.key) }}</span>
       </span>
     </div>

@@ -28,6 +28,7 @@ const props = defineProps<{
 
 const severityLevels = SEVERITY_LEVELS
 
+const { t } = useI18n()
 const { pageFor, loading: metaLoading, error: metaError } = useVerseToPage()
 
 const startPage = computed(() => pageFor(`${props.startSurah}:${props.startVerse}`))
@@ -204,7 +205,7 @@ const rangeLabel = computed(() => {
             @click="applyPicker(lvl.key)"
           >
             <span class="mushaf-picker__swatch" />
-            <span class="mushaf-picker__label">{{ lvl.label }}</span>
+            <span class="mushaf-picker__label">{{ t(lvl.labelKey) }}</span>
           </button>
           <button
             type="button"

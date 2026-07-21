@@ -32,11 +32,13 @@ export type ScoreSlot = 'mistake' | 'tajweed' | 'warning' | 'none'
 export interface SeverityMeta {
   key: Severity
   /**
-   * Arabic label shown in the toolbar legend and dialogs. Names the scoring
-   * bucket it feeds in parentheses — the severity names alone don't say which
-   * weight in إعدادات التقييم a mark is charged against.
+   * i18n key for the label shown in the toolbar legend and the severity picker.
+   * Deliberately the SAME key the achievement form's counters and the halaqa's
+   * إعدادات التقييم use, so the four names can never drift apart across the
+   * three screens. The colour already conveys the severity; the label spends
+   * its space naming the weight the mark is charged against.
    */
-  label: string
+  labelKey: string
   icon: string
   /** Themeable color used for the word shading and legend swatch. */
   rgb: string
@@ -46,10 +48,10 @@ export interface SeverityMeta {
 // Ordered most-severe → least-severe. This order is also the tap-cycle order:
 //   (unmarked) → severe → medium → light → minor → (unmarked)
 export const SEVERITY_LEVELS: readonly SeverityMeta[] = [
-  { key: 'severe', label: 'خطأ جسيم (أخطاء)', icon: 'i-lucide-circle-x', rgb: '220 38 38', scoreSlot: 'mistake' },
-  { key: 'medium', label: 'خطأ متوسط (تجويد)', icon: 'i-lucide-circle-alert', rgb: '234 88 12', scoreSlot: 'tajweed' },
-  { key: 'light', label: 'خطأ خفيف (تنبيهات)', icon: 'i-lucide-circle-dot', rgb: '234 179 8', scoreSlot: 'warning' },
-  { key: 'minor', label: 'تنبيه بسيط (بدون خصم)', icon: 'i-lucide-circle', rgb: '22 163 74', scoreSlot: 'none' }
+  { key: 'severe', labelKey: 'pages.achievements.mistakes', icon: 'i-lucide-circle-x', rgb: '220 38 38', scoreSlot: 'mistake' },
+  { key: 'medium', labelKey: 'pages.achievements.tajweedErrors', icon: 'i-lucide-circle-alert', rgb: '234 88 12', scoreSlot: 'tajweed' },
+  { key: 'light', labelKey: 'pages.achievements.warnings', icon: 'i-lucide-circle-dot', rgb: '234 179 8', scoreSlot: 'warning' },
+  { key: 'minor', labelKey: 'pages.achievements.harakat', icon: 'i-lucide-circle', rgb: '22 163 74', scoreSlot: 'none' }
 ] as const
 
 export const SEVERITY_ORDER: readonly Severity[] = SEVERITY_LEVELS.map(l => l.key)

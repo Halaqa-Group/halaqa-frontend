@@ -6,10 +6,11 @@ import { makeRangePredicate } from '~/utils/mushaf'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import type { AchievementTestPosition, ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto, PositionError, RecitationMethod } from '~/types'
 import type { MarkCounts, Severity } from '~/types/recitation'
-import { toScoreCounts } from '~/types/recitation'
+import { SEVERITY_LEVELS, toScoreCounts } from '~/types/recitation'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 const api = useApi()
@@ -18,7 +19,6 @@ const { isParent: isParentReadOnly } = usePermissions()
 const { loadEvaluationSettings } = useAchievements()
 // Warm the QUL word-id / juz / hizb lookup so building errors[] on submit is instant.
 useQuranWords()
-
 
 const halaqaId = computed(() => {
   const v = Number(route.query.halaqa_id)
@@ -278,11 +278,10 @@ const captureHint = computed(() => {
 })
 
 // One-line breakdown of the four severity levels, reused in the confirm dialog
-// and the success toasts. Named by the scoring bucket each level feeds, in the
-// same order as the achievement form's counters — "٣ جسيم" also read as broken
-// Arabic (an adjective counted as a noun).
+// and the success toasts. Reads its names off SEVERITY_LEVELS so it stays in
+// step with the toolbar legend and إعدادات التقييم.
 function countsSummary(c: MarkCounts): string {
-  return `أخطاء: ${c.severe}، تنبيهات: ${c.light}، تجويد: ${c.medium}، تنبيه بسيط: ${c.minor}`
+  return SEVERITY_LEVELS.map(lvl => `${t(lvl.labelKey)}: ${c[lvl.key]}`).join('، ')
 }
 
 // Confirm/success summary: tested-spot count for `test`, severity breakdown for `full`.
@@ -404,7 +403,9 @@ function onSubmitRequest() {
         // double-close (the dialog also self-closes on confirm) can't throw into the
         // catch and swallow the redirect. Use the setup-captured router, not
         // navigateTo — the Nuxt instance context is lost after the awaits.
-        try { modal.close() } catch { /* dialog already closed */ }
+        try {
+          modal.close()
+        } catch { /* dialog already closed */ }
         await router.push('/achievements')
       }
     }
@@ -449,7 +450,9 @@ function onUnapproveRequest() {
         }
         // Unapproved — stay on the page (marks unlock for editing). Guard the close
         // since the dialog also self-closes on confirm.
-        try { modal.close() } catch { /* dialog already closed */ }
+        try {
+          modal.close()
+        } catch { /* dialog already closed */ }
       }
     }
   })
@@ -630,10 +633,13 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                     <span class="font-bold">{{ trackLabel(a.track_type) }}</span>
                     <span class="opacity-80">{{ rangeLabel(a) }}</span>
                   </UBadge>
-                  <!-- Spelled out rather than the old «خ ت ج ح» initials: on this
-                       page «ت» reads as تجويد and «ج» as جسيم just as easily. -->
+                  <!-- Spelled out rather than the old «خ ت ج ح» initials, which
+                       were ambiguous against the legend right above. -->
                   <span v-if="!isParentReadOnly" class="text-[11px] tabular-nums text-muted">
-                    أخطاء {{ a.mistakes_count }} · تنبيهات {{ a.warnings_count }} · تجويد {{ a.tajweed_errors_count }} · حركات {{ a.harakat_errors_count ?? 0 }}
+                    {{ t('pages.achievements.mistakes') }} {{ a.mistakes_count }}
+                    · {{ t('pages.achievements.warnings') }} {{ a.warnings_count }}
+                    · {{ t('pages.achievements.tajweedErrors') }} {{ a.tajweed_errors_count }}
+                    · {{ t('pages.achievements.harakat') }} {{ a.harakat_errors_count ?? 0 }}
                   </span>
                 </li>
               </ul>

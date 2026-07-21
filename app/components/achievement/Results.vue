@@ -8,7 +8,13 @@ import { TRACK_BADGE_COLOR, achievementStatusColor, type AchievementTrack } from
 const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-const { activeRole } = useAuth()
+const {
+  isParent,
+  isStaff,
+  canApproveAchievement,
+  canUnapproveAchievement,
+  canDeleteAchievement
+} = usePermissions()
 const {
   achievements,
   filteredAchievements,
@@ -25,11 +31,6 @@ const {
   approveAchievement,
   unapproveAchievement
 } = useAchievements()
-
-const isParent = computed(() => activeRole.value === 'parent')
-const canApprove = computed(() => ['principal', 'vice_principal', 'supervisor', 'teacher'].includes(activeRole.value ?? ''))
-const canUnapprove = computed(() => ['principal', 'vice_principal'].includes(activeRole.value ?? ''))
-const isPrincipal = computed(() => activeRole.value === 'principal')
 
 function isApproved(a: ApiAchievement) {
   return a.status === 'approved'
@@ -96,21 +97,22 @@ function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
       onSelect: () => navigateTo(reciteLink(a))
     }
   ]
-  if (canApprove.value && !isApproved(a)) {
+  // Approving is scoped to the achievement's own halaqa: an assistant teacher
+  // is in scope to record but not to approve.
+  if (canApproveAchievement(a.halaqa_id) && !isApproved(a)) {
     primary.push({ label: t('pages.achievements.approve'), icon: 'i-lucide-check-check', onSelect: () => onApprove(a) })
   }
-  if (canUnapprove.value && isApproved(a)) {
+  if (canUnapproveAchievement.value && isApproved(a)) {
     primary.push({ label: t('pages.achievements.unapprove'), icon: 'i-lucide-undo-2', onSelect: () => onUnapprove(a) })
   }
-  if (isParent.value) return [primary]
+  if (!isStaff.value) return [primary]
 
   if (!isApproved(a)) {
     primary.push({ label: t('pages.achievements.actions.edit'), icon: 'i-lucide-pencil', onSelect: () => openEdit(a) })
   }
   primary.push({ label: t('pages.achievements.actions.duplicate'), icon: 'i-lucide-copy', onSelect: () => openDuplicate(a) })
 
-  const canDelete = isApproved(a) ? isPrincipal.value : true
-  if (!canDelete) return [primary]
+  if (!canDeleteAchievement(isApproved(a))) return [primary]
   return [primary, [
     { label: t('pages.achievements.actions.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => requestDelete(a) }
   ]]

@@ -1,3 +1,4 @@
+import { rememberHalaqaAccess, rememberHalaqaDetailAccess } from '~/composables/usePermissions'
 import type {
   ApiHalaqaCreated,
   ApiHalaqaDetail,
@@ -71,6 +72,9 @@ export function useHalaqat() {
     isLoading.value = true
     try {
       const result = await api<ApiHalaqaListResult>(`/halaqat${buildQuery(query)}`)
+      // Feeds the permission cache: which halaqat are mine, and which of them
+      // I am the primary/acting teacher of. Filtered fetches only ever add.
+      rememberHalaqaAccess(result.items)
       halaqat.value = result.items
       total.value = result.total
       page.value = result.page
@@ -82,7 +86,9 @@ export function useHalaqat() {
   }
 
   async function getHalaqa(id: number) {
-    return api<ApiHalaqaDetail>(`/halaqat/${id}`)
+    const halaqa = await api<ApiHalaqaDetail>(`/halaqat/${id}`)
+    rememberHalaqaDetailAccess(halaqa)
+    return halaqa
   }
 
   async function createHalaqa(payload: CreateHalaqaPayload) {

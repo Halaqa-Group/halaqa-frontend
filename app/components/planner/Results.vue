@@ -7,13 +7,18 @@ import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import { planItemStatusColor } from '~/utils/plan'
 
 const { t, locale } = useI18n()
-const { activeRole } = useAuth()
+const { canEditPlanItems } = usePermissions()
+const { selectedHalaqaId } = useGlobalHalaqa()
 const {
   plan, items, filteredItems, planStatus, isLoading, viewMode, selectedStudentId,
   hasActiveFilters, clearFilters, dateOfDay, openAdd, openEdit, requestDelete
 } = useWeeklyPlan()
 
-const canModify = computed(() => activeRole.value !== 'parent' && planStatus.value !== 'approved')
+// Plan-item writes need approval authority on the halaqa, so an assistant
+// teacher reads the plan without edit affordances.
+const canModify = computed(() =>
+  canEditPlanItems(selectedHalaqaId.value) && planStatus.value !== 'approved'
+)
 
 function dayLabel(it: ApiWeeklyPlanItem) {
   const d = dateOfDay(it.day_of_week)

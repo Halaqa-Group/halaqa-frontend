@@ -211,6 +211,13 @@ const deleteTarget = ref<ApiAchievement | null>(null)
 const settingsCache = new Map<number, Record<string, unknown> | null>()
 const currentEvaluationSettings = ref<Record<string, unknown> | null>(null)
 
+// Weights are fetched once per halaqa and reused for every score computed in the
+// session. Editing them on the halaqa page has to seed the new value here, or
+// the next achievement would still be scored with the old deductions.
+export function invalidateEvaluationSettings(halaqaId: number, next: Record<string, unknown> | null) {
+  settingsCache.set(halaqaId, next)
+}
+
 export function useAchievements() {
   const api = useApi()
   const { selectedHalaqaId, halaqat, selectHalaqa } = useGlobalHalaqa()

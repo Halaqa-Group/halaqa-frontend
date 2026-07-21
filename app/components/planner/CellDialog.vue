@@ -23,10 +23,10 @@ const toast = useToast()
 const apiError = useApiError()
 const api = useApi()
 const router = useRouter()
-const { activeRole } = useAuth()
+const { canApproveAchievement } = usePermissions()
 const { selectedHalaqaId } = useGlobalHalaqa()
 
-const canApprove = computed(() => ['principal', 'vice_principal', 'supervisor', 'teacher'].includes(activeRole.value ?? ''))
+const canApprove = computed(() => canApproveAchievement(selectedHalaqaId.value))
 const {
   dateOfDay, selectedStudentId, getCells,
   addSession, updateSession, removeSession, clearCell, copyCell, pasteCell, copiedCell

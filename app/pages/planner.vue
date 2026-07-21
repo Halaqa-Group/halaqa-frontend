@@ -12,7 +12,7 @@ definePageMeta({
 const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-const { activeRole } = useAuth()
+const { canApprovePlan, canEditPlanItems, canDeletePlan, canUnapprovePlan } = usePermissions()
 const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 const {
   selectedStudentId, selectedWeekStart, plan, planStatus, viewMode,
@@ -21,10 +21,13 @@ const {
   loadStudents, loadPlan, approvePlan, unapprovePlan, deletePlan, deleteItem, openAdd
 } = useWeeklyPlan()
 
-const isStaff = computed(() => activeRole.value !== 'parent')
-const canApprove = computed(() => ['principal', 'vice_principal', 'supervisor', 'teacher'].includes(activeRole.value ?? ''))
-const canAdmin = computed(() => ['principal', 'vice_principal'].includes(activeRole.value ?? ''))
-const canModify = computed(() => isStaff.value && planStatus.value !== 'approved')
+// Creating a plan, approving it, and every plan-item mutation all require
+// approval authority on the halaqa — for a teacher that means being its
+// primary or acting teacher, not merely assigned to it.
+const canApprove = computed(() => canApprovePlan(selectedHalaqaId.value))
+const canModify = computed(() =>
+  canEditPlanItems(selectedHalaqaId.value) && planStatus.value !== 'approved'
+)
 
 const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
 const formSaving = computed(() => formRef.value?.saving.value ?? false)
@@ -40,7 +43,7 @@ function openDeletePlan() {
 }
 
 const planMenu = computed(() => {
-  if (!plan.value || !canAdmin.value) return []
+  if (!plan.value || !canDeletePlan.value) return []
   return [[{ label: t('pages.planner.deletePlan'), icon: 'i-lucide-trash-2', color: 'error' as const, onSelect: openDeletePlan }]]
 })
 
@@ -152,7 +155,7 @@ onMounted(async () => {
           {{ t('pages.planner.approvePlan') }}
         </UButton>
         <UButton
-          v-if="canAdmin && planStatus === 'approved'"
+          v-if="canUnapprovePlan && planStatus === 'approved'"
           icon="i-lucide-undo-2"
           color="warning"
           variant="soft"

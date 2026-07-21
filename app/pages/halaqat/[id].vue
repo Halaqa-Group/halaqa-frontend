@@ -2,8 +2,8 @@
 import type { TabsItem } from '@nuxt/ui'
 import type { ApiHalaqaDetail } from '~/types'
 import { HALAQA_STATUS_COLOR, HALAQA_TYPE_ICON } from '~/utils/halaqa'
-import { normalizeEvaluationSettings } from '~/utils/score'
 import HalaqaScheduleEditor from '~/components/halaqa/ScheduleEditor.vue'
+import HalaqaEvaluationSettingsEditor from '~/components/halaqa/EvaluationSettingsEditor.vue'
 import HalaqaTeacherRoster from '~/components/halaqa/TeacherRoster.vue'
 import HalaqaActingPanel from '~/components/halaqa/ActingPanel.vue'
 import HalaqaStudentRoster from '~/components/halaqa/StudentRoster.vue'
@@ -32,26 +32,21 @@ const backIcon = computed(() =>
   locale.value === 'ar' ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left'
 )
 const { activeRole } = useAuth()
+const { canEditHalaqaMeta } = usePermissions()
 const { getHalaqa, archiveHalaqa, completeHalaqa, restoreHalaqa } = useHalaqat()
 
 const halaqaId = computed(() => Number(route.params.id))
 const halaqa = ref<ApiHalaqaDetail | null>(null)
 const loading = ref(false)
 
-// The backend serves a closed 4-weight object; normalize so all four always
-// show even if the halaqa was never explicitly configured.
-const evaluationWeights = computed(() => {
-  const w = normalizeEvaluationSettings(halaqa.value?.evaluation_settings ?? null)
-  return [
-    { key: 'mistake', label: t('pages.achievements.mistakes'), value: w.mistake_weight },
-    { key: 'warning', label: t('pages.achievements.warnings'), value: w.warning_weight },
-    { key: 'tajweed', label: t('pages.achievements.tajweedErrors'), value: w.tajweed_weight },
-    { key: 'harakat', label: t('pages.achievements.harakat'), value: w.harakat_weight }
-  ]
-})
-
 const canManage = computed(() =>
   activeRole.value === 'principal' || activeRole.value === 'vice_principal'
+)
+
+// PATCH /halaqat/:id takes a wider set than the lifecycle actions: supervisors
+// of the halaqa and its active teachers may edit the weights too.
+const canEditEvaluation = computed(() =>
+  !!halaqa.value && halaqa.value.status === 'active' && canEditHalaqaMeta(halaqa.value.id)
 )
 
 async function loadDetail() {
@@ -236,26 +231,12 @@ function formatDate(iso: string) {
             </UCard>
 
             <UCard class="md:col-span-3">
-              <h3 class="font-semibold mb-1">
-                {{ t('pages.halaqat.details.evaluationSettings') }}
-              </h3>
-              <p class="text-xs text-muted mb-3">
-                {{ t('pages.halaqat.details.evaluationSettingsHint') }}
-              </p>
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div
-                  v-for="w in evaluationWeights"
-                  :key="w.key"
-                  class="rounded-lg border border-default bg-elevated px-3 py-2.5"
-                >
-                  <p class="text-xs text-muted truncate">
-                    {{ w.label }}
-                  </p>
-                  <p class="text-xl font-bold tabular-nums mt-0.5">
-                    −{{ w.value }}
-                  </p>
-                </div>
-              </div>
+              <HalaqaEvaluationSettingsEditor
+                :halaqa-id="halaqa.id"
+                :initial="halaqa.evaluation_settings"
+                :read-only="!canEditEvaluation"
+                @saved="loadDetail"
+              />
             </UCard>
           </div>
 

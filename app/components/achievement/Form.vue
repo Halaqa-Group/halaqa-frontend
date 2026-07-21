@@ -15,6 +15,7 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 const overlay = useOverlay()
+const { canApproveAchievement } = usePermissions()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
   students, editing, duplicateFrom, prefillStudentId, prefillPlanItem, selectedDate, currentEvaluationSettings,
@@ -404,9 +405,15 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
         await navigateTo({ path: '/recite', query })
         return
       }
-      // Plain record button approves the achievement on the spot.
-      await approveAchievement(created.id)
-      toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
+      // Plain record button approves the achievement on the spot — but only for
+      // callers the API lets approve. An assistant teacher records it as pending
+      // for the halaqa's primary teacher to approve.
+      if (canApproveAchievement(halaqaId)) {
+        await approveAchievement(created.id)
+        toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
+      } else {
+        toast.add({ title: t('pages.achievements.savedToast'), color: 'success' })
+      }
     }
     emit('saved')
   } catch (e: any) {

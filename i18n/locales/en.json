@@ -469,7 +469,8 @@
         },
         "toastEnrolled": "Student enrolled",
         "toastRemoved": "Student removed",
-        "toastTransferred": "Student transferred"
+        "toastTransferred": "Student transferred",
+        "noStudentMatch": "No matching student"
       },
       "supervisors": {
         "title": "Supervisors",

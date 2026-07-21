@@ -469,7 +469,8 @@
         },
         "toastEnrolled": "تم تسجيل الطالب",
         "toastRemoved": "تمت إزالة الطالب",
-        "toastTransferred": "تم نقل الطالب"
+        "toastTransferred": "تم نقل الطالب",
+        "noStudentMatch": "لا يوجد طالب مطابق"
       },
       "supervisors": {
         "title": "المشرفون",

@@ -21,7 +21,6 @@ const { halaqat } = useGlobalHalaqa()
 
 const enrollments = ref<ApiStudentEnrollment[]>([])
 const loading = ref(false)
-const studentOptions = ref<{ id: number, name: string }[]>([])
 
 async function load() {
   loading.value = true
@@ -32,16 +31,46 @@ async function load() {
   }
 }
 
-async function loadStudentOptions() {
-  if (studentOptions.value.length) return
+// ── Student picker ────────────────────────────────────────────────────────────
+// The roster is school-wide, so the list is searched on the server (GET /students
+// takes `q` and caps `limit` at 100) rather than pulled down whole. The select
+// menu shows the first page until the user types, then narrows.
+const STUDENT_PAGE_SIZE = 50
+
+const studentOptions = ref<{ id: number, name: string }[]>([])
+const studentSearch = ref('')
+const studentsLoading = ref(false)
+let studentSearchToken = 0
+
+async function fetchStudents(q: string) {
+  const token = ++studentSearchToken
+  studentsLoading.value = true
   try {
-    const data = await api<{ items: ApiStudent[] } | ApiStudent[]>('/students?limit=200&status=active')
+    const params = new URLSearchParams({
+      limit: String(STUDENT_PAGE_SIZE),
+      status: 'active'
+    })
+    if (q) params.set('q', q)
+    const data = await api<{ items: ApiStudent[] } | ApiStudent[]>(`/students?${params}`)
+    // A slower earlier request must not overwrite a newer one's results.
+    if (token !== studentSearchToken) return
     const items = Array.isArray(data) ? data : data.items
     studentOptions.value = items.map(s => ({ id: s.id, name: s.name }))
   } catch {
-    studentOptions.value = []
+    if (token === studentSearchToken) studentOptions.value = []
+  } finally {
+    if (token === studentSearchToken) studentsLoading.value = false
   }
 }
+
+let studentSearchTimer: ReturnType<typeof setTimeout> | null = null
+watch(studentSearch, (q) => {
+  if (studentSearchTimer) clearTimeout(studentSearchTimer)
+  studentSearchTimer = setTimeout(() => fetchStudents(q.trim()), 300)
+})
+onBeforeUnmount(() => {
+  if (studentSearchTimer) clearTimeout(studentSearchTimer)
+})
 
 onMounted(load)
 
@@ -70,10 +99,11 @@ const enrollState = reactive<{
 const enrollSaving = ref(false)
 
 async function openEnroll() {
-  await loadStudentOptions()
   enrollState.student_id = null
   enrollState.enrollment_date = toIsoDate(new Date())
   enrollOpen.value = true
+  studentSearch.value = ''
+  await fetchStudents('')
 }
 
 const studentSelectItems = computed(() =>
@@ -294,13 +324,22 @@ function rowActions(e: ApiStudentEnrollment) {
         @submit="submitEnroll"
       >
         <UFormField :label="t('pages.halaqat.students.fieldStudent')" name="student_id" required>
-          <USelect
+          <USelectMenu
             v-model="enrollState.student_id"
+            v-model:search-term="studentSearch"
             :items="studentSelectItems"
             value-key="value"
             :placeholder="t('common.selectStudent')"
+            :loading="studentsLoading"
+            icon="i-lucide-user"
+            ignore-filter
+            :reset-search-term-on-blur="false"
             class="w-full"
-          />
+          >
+            <template #empty>
+              {{ studentsLoading ? t('common.loading') : t('pages.halaqat.students.noStudentMatch') }}
+            </template>
+          </USelectMenu>
         </UFormField>
         <UFormField :label="t('pages.halaqat.students.fieldEnrollmentDate')" name="enrollment_date">
           <UInput v-model="enrollState.enrollment_date" type="date" class="w-full" />

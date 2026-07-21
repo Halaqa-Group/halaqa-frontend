@@ -74,19 +74,51 @@ watch(pages, (list) => {
 
 const pageEl = ref<HTMLElement | null>(null)
 
+// Words carry `data-word-key="surah:ayah"`, so the verse itself can be scrolled
+// to rather than the page that contains it — centring the tall page container
+// just lands the reader in the middle of it, nowhere near the verse.
+const SCROLL_RETRY_MS = 80
+const SCROLL_MAX_TRIES = 20
+let scrollTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearScrollTimer() {
+  if (!scrollTimer) return
+  clearTimeout(scrollTimer)
+  scrollTimer = null
+}
+
+function scrollToVerse(verseKey: string, attempt = 0) {
+  const root = pageEl.value
+  if (!root) return
+  // First match is word 1 of that verse — the words render in reading order.
+  const el = root.querySelector<HTMLElement>(`[data-word-key="${verseKey}"]`)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    return
+  }
+  // A page switch loads its words asynchronously; wait for them rather than
+  // scrolling to a page that hasn't rendered its text yet.
+  if (attempt < SCROLL_MAX_TRIES) {
+    scrollTimer = setTimeout(() => scrollToVerse(verseKey, attempt + 1), SCROLL_RETRY_MS)
+  } else {
+    root.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+}
+
 /**
- * Jump to the page holding a given verse and bring it into view. Lets a caller
- * navigate the mushaf from outside — e.g. tapping a موضع chip to go to it.
+ * Jump to the page holding a given verse and bring THAT VERSE into view. Lets a
+ * caller navigate the mushaf from outside — e.g. tapping a موضع chip.
  */
 function goToVerse(verseKey: string) {
   const target = pageFor(verseKey)
   if (!target) return
   const idx = pages.value.indexOf(target)
   if (idx >= 0) current.value = idx
-  nextTick(() => {
-    pageEl.value?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  })
+  clearScrollTimer()
+  nextTick(() => scrollToVerse(verseKey))
 }
+
+onBeforeUnmount(clearScrollTimer)
 
 defineExpose({ goToVerse })
 

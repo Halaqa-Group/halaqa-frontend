@@ -307,7 +307,9 @@ function rowActions(e: ApiStudentEnrollment) {
         class="flex items-center justify-between gap-3 p-4"
       >
         <div class="space-y-1">
-          <p class="font-medium">{{ e.student_name }}</p>
+          <p class="font-medium">
+            {{ e.student_name }}
+          </p>
           <p class="text-xs text-muted">
             {{ t('pages.halaqat.students.enrollmentDate') }}: {{ e.enrollment_date }}
           </p>

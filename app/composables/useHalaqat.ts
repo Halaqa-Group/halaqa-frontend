@@ -7,8 +7,7 @@ import type {
   ApiTeacherOption,
   ApiTeacher,
   HalaqaStatus,
-  HalaqaType,
-  PrayerSlot
+  HalaqaType
 } from '~/types'
 
 export interface ListHalaqatQuery {
@@ -21,19 +20,11 @@ export interface ListHalaqatQuery {
   search?: string
 }
 
-export interface ScheduleEntryPayload {
-  day_of_week: number
-  prayer_slot?: PrayerSlot | null
-  start_time?: string | null
-  end_time?: string | null
-}
-
 export interface CreateHalaqaPayload {
   name: string
   type: HalaqaType
   evaluation_settings?: Record<string, unknown> | null
   primary_teacher_user_id?: number
-  schedule?: ScheduleEntryPayload[]
 }
 
 export interface UpdateHalaqaPayload {

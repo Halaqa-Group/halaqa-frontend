@@ -120,7 +120,6 @@ export type HalaqaType = 'Memorization' | 'Tajweed' | 'Aqeedah'
 export type HalaqaStatus = 'active' | 'archived' | 'completed'
 export type TeacherRole = 'main' | 'assistant' | 'substitute'
 export type EndReason = 'reassigned' | 'left_school' | 'vacation' | 'retired' | 'other'
-export type PrayerSlot = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha'
 export type StudentHalaqaStatus = 'active' | 'transferred' | 'completed' | 'archived'
 
 export type HalaqaActivityAction
@@ -137,14 +136,6 @@ export interface ApiPrimaryTeacher {
   user_id: number
   name: string
   is_acting: boolean
-}
-
-export interface ApiScheduleEntry {
-  id: number
-  day_of_week: number
-  prayer_slot: PrayerSlot | null
-  start_time: string | null
-  end_time: string | null
 }
 
 export interface ApiTeacherAssignment {
@@ -191,7 +182,6 @@ export interface ApiHalaqaDetail {
   type: HalaqaType
   evaluation_settings: Record<string, unknown> | null
   status: HalaqaStatus
-  schedule: ApiScheduleEntry[]
   teachers: ApiTeacherAssignment[]
   supervisors: ApiSupervisorSummary[]
   students_count: number
@@ -214,11 +204,6 @@ export interface ApiStudentEnrollment {
   student_name: string
   enrollment_date: string
   status: StudentHalaqaStatus
-}
-
-export interface ApiSetScheduleResult {
-  schedule: ApiScheduleEntry[]
-  warnings: string[]
 }
 
 export interface ApiActivityLogItem {

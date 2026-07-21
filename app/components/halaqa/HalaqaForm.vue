@@ -6,9 +6,10 @@ import type {
   ApiTeacherOption,
   HalaqaType
 } from '~/types'
-import { HALAQA_TYPES } from '~/utils/halaqa'
-import type { ScheduleEntryPayload } from '~/composables/useHalaqat'
-import HalaqaScheduleDays, { type ScheduleDayRow } from '~/components/halaqa/ScheduleDays.vue'
+
+// Every halaqa is a memorization (حفظ) circle, so the type picker is gone from
+// the form and this is sent on every create and update.
+const HALAQA_TYPE: HalaqaType = 'Memorization'
 
 const props = defineProps<{
   editing: ApiHalaqaListItem | null
@@ -49,60 +50,34 @@ const schema = computed(() => z.object({
   name: z.string({ error: () => t('pages.halaqat.validationName') })
     .trim()
     .min(1, t('pages.halaqat.validationName')),
-  type: z.enum(HALAQA_TYPES as unknown as [HalaqaType, ...HalaqaType[]]),
-  primary_teacher_user_id: z.number().nullable().optional(),
-  schedule: z.array(z.any()).optional()
+  primary_teacher_user_id: z.number().nullable().optional()
 }))
 
 type Schema = z.output<typeof schema.value>
 
 const state = reactive<{
   name: string
-  type: HalaqaType
   primary_teacher_user_id: number | null
-  schedule: ScheduleDayRow[]
 }>({
   name: '',
-  type: 'Memorization',
-  primary_teacher_user_id: null,
-  schedule: []
+  primary_teacher_user_id: null
 })
 
 watch(() => props.editing, (next) => {
   if (next) {
     state.name = next.name
-    state.type = next.type
   } else {
     state.name = ''
-    state.type = 'Memorization'
     state.primary_teacher_user_id = null
-    state.schedule = []
   }
 }, { immediate: true })
 
 const saving = ref(false)
 
-const typeItems = computed(() =>
-  HALAQA_TYPES.map(value => ({
-    label: t(`pages.halaqat.types.${value}`),
-    value
-  }))
-)
-
 const teacherItems = computed(() => [
   { label: t('pages.halaqat.fieldPrimaryTeacherPlaceholder'), value: null },
   ...teachers.value.map(u => ({ label: u.name, value: u.id }))
 ])
-
-function buildSchedulePayload(): ScheduleEntryPayload[] | undefined {
-  if (state.schedule.length === 0) return undefined
-  return state.schedule.map(r => ({
-    day_of_week: r.day_of_week,
-    prayer_slot: r.prayer_slot ?? undefined,
-    start_time: r.start_time ? `${r.start_time}:00` : undefined,
-    end_time: r.end_time ? `${r.end_time}:00` : undefined
-  }))
-}
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   saving.value = true
@@ -110,15 +85,14 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     if (isEdit.value && props.editing) {
       await updateHalaqa(props.editing.id, {
         name: event.data.name,
-        type: event.data.type
+        type: HALAQA_TYPE
       })
       toast.add({ title: t('pages.halaqat.toastUpdated'), color: 'success' })
     } else {
       await createHalaqa({
         name: event.data.name,
-        type: event.data.type,
-        primary_teacher_user_id: state.primary_teacher_user_id ?? undefined,
-        schedule: buildSchedulePayload()
+        type: HALAQA_TYPE,
+        primary_teacher_user_id: state.primary_teacher_user_id ?? undefined
       })
       toast.add({ title: t('pages.halaqat.toastCreated'), color: 'success' })
     }
@@ -152,15 +126,6 @@ defineExpose({ saving })
       />
     </UFormField>
 
-    <UFormField :label="t('pages.halaqat.fieldType')" name="type" required>
-      <USelect
-        v-model="state.type"
-        :items="typeItems"
-        value-key="value"
-        class="w-full"
-      />
-    </UFormField>
-
     <template v-if="!isEdit">
       <UFormField
         :label="t('pages.halaqat.fieldPrimaryTeacher')"
@@ -186,14 +151,6 @@ defineExpose({ saving })
             {{ t('common.tryAgain') }}
           </UButton>
         </template>
-      </UFormField>
-
-      <UFormField
-        :label="t('pages.halaqat.fieldSchedule')"
-        :hint="t('pages.halaqat.fieldScheduleHint')"
-        name="schedule"
-      >
-        <HalaqaScheduleDays v-model="state.schedule" />
       </UFormField>
     </template>
   </UForm>

@@ -2,7 +2,6 @@
 import type { TabsItem } from '@nuxt/ui'
 import type { ApiHalaqaDetail } from '~/types'
 import { HALAQA_STATUS_COLOR, HALAQA_TYPE_ICON } from '~/utils/halaqa'
-import HalaqaScheduleEditor from '~/components/halaqa/ScheduleEditor.vue'
 import HalaqaEvaluationSettingsEditor from '~/components/halaqa/EvaluationSettingsEditor.vue'
 import HalaqaTeacherRoster from '~/components/halaqa/TeacherRoster.vue'
 import HalaqaActingPanel from '~/components/halaqa/ActingPanel.vue'
@@ -38,7 +37,7 @@ const halaqaId = computed(() => Number(route.params.id))
 const halaqa = ref<ApiHalaqaDetail | null>(null)
 const loading = ref(false)
 
-// Lifecycle, schedule, and every roster mutation are principal/vice_principal.
+// Lifecycle and every roster mutation are principal/vice_principal.
 const canManage = canManageHalaqaMembership
 
 // PATCH /halaqat/:id takes a wider set than the lifecycle actions: supervisors
@@ -64,7 +63,6 @@ onMounted(loadDetail)
 const tab = ref('overview')
 const tabs = computed<TabsItem[]>(() => [
   { value: 'overview', label: t('pages.halaqat.details.tabs.overview'), icon: 'i-lucide-info' },
-  { value: 'schedule', label: t('pages.halaqat.details.tabs.schedule'), icon: 'i-lucide-calendar-days' },
   { value: 'teachers', label: t('pages.halaqat.details.tabs.teachers'), icon: 'i-lucide-graduation-cap' },
   { value: 'students', label: t('pages.halaqat.details.tabs.students'), icon: 'i-lucide-users' },
   { value: 'supervisors', label: t('pages.halaqat.details.tabs.supervisors'), icon: 'i-lucide-shield-check' },
@@ -233,17 +231,6 @@ function formatDate(iso: string) {
                 :halaqa-id="halaqa.id"
                 :initial="halaqa.evaluation_settings"
                 :read-only="!canEditEvaluation"
-                @saved="loadDetail"
-              />
-            </UCard>
-          </div>
-
-          <div v-else-if="item.value === 'schedule'" class="mt-4">
-            <UCard>
-              <HalaqaScheduleEditor
-                :halaqa-id="halaqa.id"
-                :initial="halaqa.schedule"
-                :read-only="!canManage || halaqa.status !== 'active'"
                 @saved="loadDetail"
               />
             </UCard>

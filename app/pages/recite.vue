@@ -194,38 +194,10 @@ const showMethodSelector = computed(() =>
 )
 const isTest = computed(() => recitationMethod.value === 'test')
 
-const PRELOAD_LIMIT = 3
-const { pageFor } = useVerseToPage()
-
-const pageRange = computed<number[]>(() => {
-  const item = selectedItem.value
-  if (!item) return []
-  const start = pageFor(`${item.start_surah}:${item.start_verse}`)
-  const end = pageFor(`${item.end_surah}:${item.end_verse}`)
-  if (!start || !end || end < start) return []
-  const out: number[] = []
-  for (let p = start; p <= end; p++) out.push(p)
-  return out
-})
-
-useHead(() => {
-  const pages = pageRange.value
-  if (!pages.length) return {}
-  const preload = pages.slice(0, PRELOAD_LIMIT)
-  const prefetch = pages.slice(PRELOAD_LIMIT)
-  return {
-    link: [
-      ...preload.flatMap(p => [
-        { rel: 'preload', as: 'fetch', href: `/quran/pages/${p}.json`, crossorigin: 'anonymous' },
-        { rel: 'preload', as: 'font', type: 'font/woff2', href: `/quran/fonts/v1/p${p}.woff2`, crossorigin: 'anonymous' }
-      ]),
-      ...prefetch.flatMap(p => [
-        { rel: 'prefetch', as: 'fetch', href: `/quran/pages/${p}.json`, crossorigin: 'anonymous' },
-        { rel: 'prefetch', as: 'font', type: 'font/woff2', href: `/quran/fonts/v1/p${p}.woff2`, crossorigin: 'anonymous' }
-      ])
-    ]
-  }
-})
+// No preload/prefetch link tags for the lesson's pages: they duplicated the
+// fetches `useMushafPage` already makes for the page on screen, and for a long
+// revision range they queued every page in the lesson up front. The mushaf
+// fetches the page it is showing, and that alone.
 
 const priorAchievements = ref<ApiAchievement[]>([])
 const priorLoading = ref(false)
@@ -502,9 +474,11 @@ const markingLocked = computed(() => isParentReadOnly.value || isApproved.value)
 // start word). Seeds once, and never over marks started this visit.
 // `hydratedFor` is declared up with the recitation-method state. The API
 // serializes ids as strings ("47"), so normalize before comparing.
+// Parents hydrate too: the API now serves them the same positions and itemized
+// errors, and `markingLocked` keeps the mushaf read-only for them.
 async function hydrateFromAchievement(detail: ApiAchievement) {
   const id = String(detail.id)
-  if (isParentReadOnly.value || hydratedFor.value === id) return
+  if (hydratedFor.value === id) return
   if (detail.completion_method !== 'mushaf') return
   hydratedFor.value = id
 
@@ -818,7 +792,7 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                   </UBadge>
                   <!-- Spelled out rather than the old «خ ت ج ح» initials, which
                        were ambiguous against the legend right above. -->
-                  <span v-if="!isParentReadOnly" class="text-[11px] tabular-nums text-muted">
+                  <span class="text-[11px] tabular-nums text-muted">
                     {{ t('pages.achievements.mistakes') }} {{ a.mistakes_count }}
                     · {{ t('pages.achievements.warnings') }} {{ a.warnings_count }}
                     · {{ t('pages.achievements.tajweedErrors') }} {{ a.tajweed_errors_count }}
@@ -1000,8 +974,8 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                 :start-verse="selectedItem.start_verse"
                 :end-surah="selectedItem.end_surah"
                 :end-verse="selectedItem.end_verse"
-                :marks="isParentReadOnly ? undefined : marks"
-                :groups="isParentReadOnly ? undefined : groups"
+                :marks="marks"
+                :groups="groups"
                 :highlight-override="spotHighlight"
                 :pending-verse="isTest && captureMode === 'spot' ? pendingVerseKey : null"
                 :locked-at="lockedAt"

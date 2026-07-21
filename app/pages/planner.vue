@@ -21,13 +21,10 @@ const {
   loadStudents, loadPlan, approvePlan, unapprovePlan, deletePlan, deleteItem, openAdd
 } = useWeeklyPlan()
 
-// Creating a plan, approving it, and every plan-item mutation all require
-// approval authority on the halaqa — for a teacher that means being its
-// primary or acting teacher, not merely assigned to it.
-const canApprove = computed(() => canApprovePlan(selectedHalaqaId.value))
-const canModify = computed(() =>
-  canEditPlanItems(selectedHalaqaId.value) && planStatus.value !== 'approved'
-)
+// Creating a plan, approving it, and every plan-item mutation share one check —
+// halaqa scope — and the planner only ever loads a halaqa the caller is in.
+const canApprove = canApprovePlan
+const canModify = computed(() => canEditPlanItems.value && planStatus.value !== 'approved')
 
 const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
 const formSaving = computed(() => formRef.value?.saving.value ?? false)

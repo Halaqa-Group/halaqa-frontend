@@ -9,7 +9,6 @@ const props = defineProps<{
   achievement: ApiAchievement
   studentName: string
   studentAvatar: string
-  hideErrors?: boolean
   actions: DropdownMenuItem[][]
 }>()
 
@@ -102,7 +101,6 @@ function spotErrorLabel(p: RecitationPosition): string {
           <span class="truncate">{{ spotRange(p) }}</span>
         </span>
         <span
-          v-if="!hideErrors"
           class="shrink-0 tabular-nums"
           :class="spotErrors(p) === 0 ? 'text-success' : 'text-muted'"
         >
@@ -120,7 +118,7 @@ function spotErrorLabel(p: RecitationPosition): string {
           {{ Number(achievement.percentage_score) }}<span class="text-sm font-normal text-muted">%</span>
         </p>
       </div>
-      <div v-if="!hideErrors" class="text-end">
+      <div class="text-end">
         <p class="text-xs text-muted">
           {{ t('pages.achievements.table.errors') }}
         </p>

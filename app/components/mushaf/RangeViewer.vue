@@ -67,9 +67,12 @@ function next() {
   if (canNext.value) current.value++
 }
 
-watch(pages, (list) => {
+// Only reset the position. The whole range used to be prefetched here — for a
+// long revision that is dozens of page JSONs + fonts on arrival. `useMushafPage`
+// loads the page being shown and warms its immediate neighbours on idle, which
+// is all a prev/next/swipe can reach.
+watch(pages, () => {
   current.value = 0
-  for (const p of list) prefetchMushafPage(p)
 }, { immediate: true })
 
 const pageEl = ref<HTMLElement | null>(null)

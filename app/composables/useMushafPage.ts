@@ -83,7 +83,9 @@ function loadPageJson(page: number): Promise<MushafPageData> {
   if (cached) return Promise.resolve(cached)
   const existing = inflight.get(page)
   if (existing) return existing
-  const p = $fetch<WirePage>(`/quran/pages/${page}.json`).then((wire) => {
+  // `force-cache`: the page files are immutable, so a copy already in the HTTP
+  // cache is served without a revalidation round-trip.
+  const p = $fetch<WirePage>(`/quran/pages/${page}.json`, { cache: 'force-cache' }).then((wire) => {
     const data = normalizePage(wire)
     pageCache.set(page, data)
     inflight.delete(page)
@@ -153,74 +155,13 @@ export function prefetchMushafPage(page: number) {
   void loadPageJson(page)
 }
 
-const NEIGHBOUR_RADIUS = 3
+// Just the two pages a prev/next tap or a swipe can reach. It used to be ±3,
+// i.e. six page JSONs + six fonts warmed for every page viewed.
+const NEIGHBOUR_RADIUS = 1
 
 function warmNeighbourPages(page: number) {
   for (let d = 1; d <= NEIGHBOUR_RADIUS; d++) {
     prefetchMushafPage(page - d)
     prefetchMushafPage(page + d)
   }
-}
-
-let warmAllFontBytesPromise: Promise<void> | null = null
-
-export function warmAllFontBytes(): Promise<void> {
-  if (warmAllFontBytesPromise) return warmAllFontBytesPromise
-
-  warmAllFontBytesPromise = (async () => {
-    if (typeof navigator === 'undefined') return
-    const conn = (navigator as Navigator & {
-      connection?: { saveData?: boolean, effectiveType?: string }
-    }).connection
-    if (conn?.saveData) return
-    if (conn?.effectiveType === 'slow-2g' || conn?.effectiveType === '2g') return
-
-    const CONCURRENCY = 2
-    const queue: number[] = []
-    for (let p = 1; p <= 604; p++) queue.push(p)
-
-    async function paceIdle(): Promise<void> {
-      return new Promise((r) => {
-        if (typeof requestIdleCallback === 'function') {
-          requestIdleCallback(() => r(), { timeout: 500 })
-        } else {
-          setTimeout(r, 50)
-        }
-      })
-    }
-
-    async function worker() {
-      while (queue.length) {
-        const p = queue.shift()!
-        if (fontReady.has(p)) {
-          await paceIdle()
-          continue
-        }
-        try {
-          const res = await fetch(`/quran/fonts/v1/p${p}.woff2`, { cache: 'force-cache' })
-          await res.blob()
-        } catch {
-          // ignore fetch failures during idle warmup
-        }
-        await paceIdle()
-      }
-    }
-
-    await Promise.all(Array.from({ length: CONCURRENCY }, worker))
-  })()
-
-  return warmAllFontBytesPromise
-}
-
-export function primePagesCache(rawPages: unknown[]): number {
-  if (!Array.isArray(rawPages)) return 0
-  let primed = 0
-  for (const raw of rawPages) {
-    const wire = raw as WirePage
-    if (!wire || typeof wire.page !== 'number') continue
-    if (pageCache.has(wire.page)) continue
-    pageCache.set(wire.page, normalizePage(wire))
-    primed++
-  }
-  return primed
 }

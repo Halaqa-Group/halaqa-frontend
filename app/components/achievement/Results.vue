@@ -120,7 +120,7 @@ function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
   }
   primary.push({ label: t('pages.achievements.actions.duplicate'), icon: 'i-lucide-copy', onSelect: () => openDuplicate(a) })
 
-  if (!canDeleteAchievement(isApproved(a))) return compact([primary])
+  if (!canDeleteAchievement.value) return compact([primary])
   return compact([primary, [
     { label: t('pages.achievements.actions.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => requestDelete(a) }
   ]])
@@ -133,7 +133,9 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
     { id: 'range', header: t('pages.achievements.table.range') },
     { accessorKey: 'percentage_score', header: t('pages.achievements.table.score') }
   ]
-  if (!isParent.value) cols.push({ id: 'errors', header: t('pages.achievements.table.errors') })
+  // The API serves the error breakdown to every role that can read the row,
+  // parents included, so there is nothing left to hide here.
+  cols.push({ id: 'errors', header: t('pages.achievements.table.errors') })
   cols.push({ accessorKey: 'completion_method', header: t('pages.achievements.table.source') })
   cols.push({ accessorKey: 'status', header: t('pages.achievements.table.status') })
   cols.push({ id: 'actions', header: t('pages.achievements.table.actions') })
@@ -181,7 +183,6 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
         :achievement="a"
         :student-name="studentDisplayName(a)"
         :student-avatar="studentAvatar(a.student_id)"
-        :hide-errors="isParent"
         :actions="rowActions(a)"
       />
     </div>

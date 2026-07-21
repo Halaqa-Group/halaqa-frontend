@@ -447,16 +447,18 @@ export interface PositionError {
 
 // A recited/tested position on an achievement (response shape). Derived counts +
 // errors are hidden for the parent role.
+// Response shape. Every field is served to every role that can read the
+// achievement — the API stopped stripping the breakdown for parents.
 export interface RecitationPosition {
   start_surah: number
   start_verse: number
   end_surah: number
   end_verse: number
-  mistakes_count?: number
-  warnings_count?: number
-  tajweed_errors_count?: number
-  harakat_errors_count?: number
-  errors?: PositionError[]
+  mistakes_count: number
+  warnings_count: number
+  tajweed_errors_count: number
+  harakat_errors_count: number
+  errors: PositionError[]
 }
 
 // A verse-range spot the student was tested on (request shape for
@@ -484,16 +486,17 @@ export interface ApiAchievement {
   start_verse: number
   end_surah: number
   end_verse: number
-  // Top-level totals — derived from errors[] by the backend, hidden for parents.
-  mistakes_count?: number
-  warnings_count?: number
-  tajweed_errors_count?: number
-  harakat_errors_count?: number
+  // Top-level totals — derived from errors[] by the backend. Served to every
+  // role, parents included; null only when the row carries no breakdown.
+  mistakes_count: number | null
+  warnings_count: number | null
+  tajweed_errors_count: number | null
+  harakat_errors_count: number | null
   percentage_score: number | string
   status: 'approved' | 'unapproved'
-  recorded_by_name?: string | null
-  approved_by_name?: string | null
-  approved_at?: string | null
+  recorded_by_name: string | null
+  approved_by_name: string | null
+  approved_at: string | null
   teacher_notes: string | null
   created_at?: string
   student?: ApiStudent

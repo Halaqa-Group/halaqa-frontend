@@ -23,10 +23,8 @@ const toast = useToast()
 const apiError = useApiError()
 const api = useApi()
 const router = useRouter()
-const { canApproveAchievement } = usePermissions()
+const { canApproveAchievement: canApprove } = usePermissions()
 const { selectedHalaqaId } = useGlobalHalaqa()
-
-const canApprove = computed(() => canApproveAchievement(selectedHalaqaId.value))
 const {
   dateOfDay, selectedStudentId, getCells,
   addSession, updateSession, removeSession, clearCell, copyCell, pasteCell, copiedCell

@@ -3,6 +3,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { t } = useI18n()
 const { user, activeRole } = useAuth()
+const { isParent, canViewHalaqat, canViewUsers, canViewCalendar } = usePermissions()
 const { initializeHalaqa, isHalaqaScoped } = useGlobalHalaqa()
 const route = useRoute()
 const localePath = useLocalePath()
@@ -11,7 +12,7 @@ const open = ref(false)
 const isCollapsed = ref(false)
 
 const links = computed<NavigationMenuItem[][]>(() => {
-  if (activeRole.value === 'parent') {
+  if (isParent.value) {
     return [[
       { label: t('nav.parentOverview'), icon: 'i-lucide-heart-handshake', to: '/parent' }
     ]]
@@ -21,16 +22,19 @@ const links = computed<NavigationMenuItem[][]>(() => {
     { label: t('nav.home'), icon: 'i-lucide-home', to: '/' }
   ]
 
-  if (activeRole.value === 'principal') {
-    mainLinks.push(
-      {
-        label: t('nav.halaqat'),
-        icon: 'i-lucide-building-2',
-        to: '/halaqat',
-        active: route.path === '/halaqat' || route.path.startsWith('/halaqat/')
-      },
-      { label: t('nav.users'), icon: 'i-lucide-users-round', to: '/users' }
-    )
+  // GET /halaqat is scoped server-side: supervisors and teachers see only their
+  // own, and the page itself hides the writes they cannot perform.
+  if (canViewHalaqat.value) {
+    mainLinks.push({
+      label: t('nav.halaqat'),
+      icon: 'i-lucide-building-2',
+      to: '/halaqat',
+      active: route.path === '/halaqat' || route.path.startsWith('/halaqat/')
+    })
+  }
+
+  if (canViewUsers.value) {
+    mainLinks.push({ label: t('nav.users'), icon: 'i-lucide-users-round', to: '/users' })
   }
 
   mainLinks.push(
@@ -45,7 +49,9 @@ const links = computed<NavigationMenuItem[][]>(() => {
   //   mainLinks.push({ label: t('nav.analytics'), icon: 'i-lucide-bar-chart-3', to: '/analytics' })
   // }
 
-  if (activeRole.value === 'principal' || activeRole.value === 'vice_principal') {
+  // GET /schedules and /holidays are open to all staff; writes are admin-only
+  // and the page gates them.
+  if (canViewCalendar.value) {
     mainLinks.push({ label: t('nav.schoolCalendar'), icon: 'i-lucide-calendar-days', to: '/school-calendar' })
   }
 
@@ -77,11 +83,11 @@ watch(activeRole, async (role) => {
     return
   }
 
-  if (route.path.startsWith('/halaqat') && role !== 'principal') {
+  if (route.path.startsWith('/halaqat') && !canViewHalaqat.value) {
     await navigateTo('/')
   }
 
-  if (route.path.startsWith('/users') && role !== 'principal') {
+  if (route.path.startsWith('/users') && !canViewUsers.value) {
     await navigateTo('/')
   }
 

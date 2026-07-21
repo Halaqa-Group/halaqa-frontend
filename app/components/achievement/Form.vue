@@ -300,9 +300,10 @@ const rangeSummary = computed(() => {
   return total > 0 ? t('pages.achievements.versesCount', { count: total }) : null
 })
 
-// Weights are per mushaf page, so the range's page span scales the deduction.
+// Weights are per mushaf page, so the pages actually recited scale the deduction:
+// the lesson range for `full`, the sum of the مواضع (fractional) for `test`.
 const rangePages = computed(() =>
-  pageSpan(state.start_surah, state.start_verse, state.end_surah, state.end_verse)
+  pagesRecited(state, isTest.value ? positions.value : null)
 )
 
 // `test` scores off the sum of every موضع; `full` off the single counters block.

@@ -276,26 +276,11 @@ const sessionId = computed(() =>
 )
 const { marks, groups, counts, tap, setMarks, clearAll } = useRecitationSession(sessionId)
 
-// ── Live score ──────────────────────────────────────────────────────────────
-// The weights are per mushaf page, so the lesson's page span divides every
-// deduction. Fetched as soon as the halaqa is known so the toolbar can show a
-// running mark while the teacher is still marking, not only on submit.
+// The halaqa's weights back the running mark in the toolbar, so fetch them as
+// soon as the halaqa is known rather than waiting for submit.
 watch(halaqaId, (hid) => {
   if (hid) void loadEvaluationSettings(hid)
 }, { immediate: true })
-
-const lessonPages = computed(() => {
-  const item = selectedItem.value
-  return item ? pageSpan(item.start_surah, item.start_verse, item.end_surah, item.end_verse) : 1
-})
-
-// In test mode, taps outside a defined spot are inert (see `onWordTap`), so the
-// marks on screen are exactly what gets submitted — one basis serves both methods.
-const liveScore = computed(() => computePercentageScore(
-  toScoreCounts(counts.value),
-  currentEvaluationSettings.value,
-  lessonPages.value
-))
 
 // ── Test-spot capture ───────────────────────────────────────────────────────
 const lessonRange = computed(() =>
@@ -326,6 +311,32 @@ function wordInAnySpot(wordKey: string): boolean {
   const [s, a] = wordKey.split(':')
   return inAnySpot(`${s}:${a}`)
 }
+
+// ── Live score ──────────────────────────────────────────────────────────────
+// Weights are per mushaf page, so the pages actually recited divide every
+// deduction: the lesson range for `full`, the summed (fractional) coverage of
+// the tested spots for `test` — three spots of a page, half a page and a page
+// divide by 2.5.
+const spotRanges = computed(() => spots.value.map(s => ({
+  start_surah: s.startSurah,
+  start_verse: s.startVerse,
+  end_surah: s.endSurah,
+  end_verse: s.endVerse
+})))
+
+const lessonPages = computed(() => {
+  const item = selectedItem.value
+  if (!item) return 1
+  return pagesRecited(item, isTest.value ? spotRanges.value : null)
+})
+
+// In test mode, taps outside a defined spot are inert (see `onWordTap`), so the
+// marks on screen are exactly what gets submitted — one basis serves both methods.
+const liveScore = computed(() => computePercentageScore(
+  toScoreCounts(counts.value),
+  currentEvaluationSettings.value,
+  lessonPages.value
+))
 
 // In test mark-mode, only the tested spots stay lit; the rest of the lesson dims.
 const spotHighlight = computed<((verseKey: string) => boolean) | undefined>(() =>

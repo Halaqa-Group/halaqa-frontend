@@ -357,7 +357,11 @@ export function useAchievements() {
   // (weights are per page), then stored as-is.
   async function withComputedScore(data: CreateAchievementDto): Promise<CreateAchievementDto> {
     const settings = await loadEvaluationSettings(data.halaqa_id)
-    const pages = pageSpan(data.start_surah, data.start_verse, data.end_surah, data.end_verse)
+    // A test is scored over the positions actually recited, not the lesson span.
+    const pages = pagesRecited(
+      data,
+      data.recitation_method === 'test' ? data.test_positions : null
+    )
     const percentage_score = computePercentageScore(tallyErrors(allErrorsOf(data)), settings, pages)
     return { ...data, percentage_score }
   }

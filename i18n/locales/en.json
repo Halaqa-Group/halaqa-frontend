@@ -380,7 +380,7 @@
         },
         "back": "Back",
         "evaluationSettings": "Evaluation settings",
-        "evaluationSettingsHint": "Points deducted per single error of each type, per mushaf page (out of 100). A two-page lesson divides each deduction by 2, a three-page lesson by 3, and so on.",
+        "evaluationSettingsHint": "Points deducted per single error of each type, per mushaf page (out of 100). Each deduction is divided by the pages recited, which may be fractional — half a page doubles it. For a test it is the sum of the positions' pages (a page + a half + a page = 2.5).",
         "evaluationSample": "Example (one page): one error of each type → {score}%",
         "restoreDefaults": "Default values",
         "weightRange": "Between 0 and 100",

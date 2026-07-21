@@ -49,12 +49,13 @@ export function normalizeEvaluationSettings(raw: Record<string, unknown> | null 
 /**
  * score = max(0, 100 − (Σ countᵢ·weightᵢ) ÷ pages), rounded to 2 decimals.
  *
- * The weights are defined per mushaf page: a one-page lesson deducts them as
- * configured, a two-page lesson halves each deduction, a three-page lesson
- * thirds it, and so on. Without that divisor a long revision range would be
- * punished harder than a short one for the same rate of mistakes.
+ * The weights are defined per mushaf page: one page deducts them as configured,
+ * two pages halve each deduction, three pages third it. Without that divisor a
+ * long revision would be punished harder than a short one for the same rate of
+ * mistakes. `pages` is fractional — half a page doubles each deduction — and for
+ * a partial test it is the SUM of the tested positions, not the lesson's span.
  *
- * `pages` defaults to 1 — pass `pageSpan(...)` for a real lesson range.
+ * Defaults to 1 — pass `pagesRecited(range, positions)` for a real lesson.
  */
 export function computePercentageScore(
   counts: ScoreCounts,

@@ -160,14 +160,6 @@ function countFor(key: Severity): number {
   opacity: 0.5;
 }
 
-.mark-toolbar__swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  background: rgb(var(--level-rgb));
-  flex-shrink: 0;
-}
-
 .mark-toolbar__level-count {
   display: inline-flex;
   align-items: center;
@@ -281,9 +273,8 @@ function countFor(key: Severity): number {
 }
 
 @media (max-width: 560px) {
-  .mark-toolbar__level-label {
-    display: none;
-  }
+  /* The label is the chip's only content now that the swatch is gone — it can't
+     be hidden here the way it used to be. Tighten the padding instead. */
   .mark-toolbar__level {
     padding: 0.45rem 0.5rem;
     gap: 0.3rem;

@@ -57,7 +57,6 @@ function countFor(key: Severity): number {
         :style="{ '--level-rgb': lvl.rgb }"
         :title="t(lvl.labelKey)"
       >
-        <span class="mark-toolbar__swatch" />
         <span class="mark-toolbar__level-label">{{ t(lvl.labelKey) }}</span>
         <span v-if="countFor(lvl.key) > 0" class="mark-toolbar__level-count">{{ countFor(lvl.key) }}</span>
       </span>

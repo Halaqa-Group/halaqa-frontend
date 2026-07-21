@@ -1066,9 +1066,14 @@
         "range": "Range",
         "score": "Score",
         "errors": "Errors",
+        "source": "Source",
         "status": "Status",
         "date": "Date",
         "actions": "Actions"
+      },
+      "sources": {
+        "mushaf": "Mushaf",
+        "quick": "Form"
       },
       "tracks": {
         "Hifz": "New memorization",

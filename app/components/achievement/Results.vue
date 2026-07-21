@@ -40,6 +40,11 @@ function formatRange(a: ApiAchievement) {
 function formatScore(a: ApiAchievement) {
   return `${Number(a.percentage_score)}%`
 }
+// Where the achievement was recorded from. Rows predating the mushaf flow carry
+// no completion_method — those all came from the quick-entry form.
+function sourceOf(a: ApiAchievement): 'mushaf' | 'quick' {
+  return a.completion_method === 'mushaf' ? 'mushaf' : 'quick'
+}
 function totalErrors(a: ApiAchievement) {
   return (a.mistakes_count ?? 0) + (a.warnings_count ?? 0)
     + (a.tajweed_errors_count ?? 0) + (a.harakat_errors_count ?? 0)
@@ -119,6 +124,7 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
     { accessorKey: 'percentage_score', header: t('pages.achievements.table.score') }
   ]
   if (!isParent.value) cols.push({ id: 'errors', header: t('pages.achievements.table.errors') })
+  cols.push({ accessorKey: 'completion_method', header: t('pages.achievements.table.source') })
   cols.push({ accessorKey: 'status', header: t('pages.achievements.table.status') })
   cols.push({ id: 'actions', header: t('pages.achievements.table.actions') })
   return cols
@@ -171,7 +177,7 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
     </div>
 
     <div v-else class="overflow-x-auto">
-      <UTable :data="filteredAchievements" :columns="columns" :loading="isLoading" class="min-w-[760px]">
+      <UTable :data="filteredAchievements" :columns="columns" :loading="isLoading" class="min-w-[880px]">
         <template #student_id-cell="{ row }">
           <div class="flex items-center gap-3 min-w-0">
             <img
@@ -199,6 +205,16 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
 
         <template #errors-cell="{ row }">
           <span class="tabular-nums text-muted">{{ totalErrors(row.original) }}</span>
+        </template>
+
+        <template #completion_method-cell="{ row }">
+          <UBadge
+            variant="subtle"
+            :color="sourceOf(row.original) === 'mushaf' ? 'primary' : 'neutral'"
+            :icon="sourceOf(row.original) === 'mushaf' ? 'i-lucide-book-open' : 'i-lucide-clipboard-list'"
+          >
+            {{ t(`pages.achievements.sources.${sourceOf(row.original)}`) }}
+          </UBadge>
         </template>
 
         <template #status-cell="{ row }">

@@ -19,7 +19,7 @@ const emit = defineEmits<{ close: [boolean] }>()
 const { createStudent, updateStudent } = useStudents()
 const { halaqat, fetchHalaqat, isLoading: halaqatLoading } = useHalaqat()
 const { palestinianId } = useValidation()
-const { user } = useAuth()
+const { lockStudentBio } = usePermissions()
 
 const isEditMode = computed(() => props.mode === 'edit')
 const api = useApi()
@@ -33,13 +33,9 @@ const CAPACITY = {
   far: { min: 0, max: 100 }
 } as const
 
-const isTeacherOnly = computed(() => {
-  const roles = user.value?.roles ?? []
-  return roles.includes('teacher')
-    && !roles.includes('principal')
-    && !roles.includes('vice_principal')
-})
-const lockBio = computed(() => isTeacherOnly.value && isEditMode.value)
+// A teacher's PATCH body is limited to capacities + notes; sending bio fields
+// as a teacher is a 400, so lock them rather than let the form submit them.
+const lockBio = computed(() => lockStudentBio.value && isEditMode.value)
 
 const df = computed(() => new DateFormatter(locale.value, { dateStyle: 'medium' }))
 

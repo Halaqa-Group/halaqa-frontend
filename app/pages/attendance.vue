@@ -9,7 +9,7 @@ definePageMeta({
 const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-const { activeRole } = useAuth()
+const { canMarkStudentAttendance, canViewStaffAttendance, canManageStaffAttendance } = usePermissions()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const {
   attendanceRows, selectedDate, isSaving, isDirty,
@@ -19,12 +19,14 @@ const {
 // Staff attendance dirty state, so the unsaved-changes guards cover both tabs.
 const { isDirty: staffIsDirty } = useTeacherAttendance()
 
-const canMark = computed(() => activeRole.value !== 'parent')
-const canManageStaff = computed(() =>
-  activeRole.value === 'principal' || activeRole.value === 'vice_principal'
-)
+// Recording student attendance is principal/vice_principal/teacher — a
+// supervisor may read the roster but not save it.
+const canMark = canMarkStudentAttendance
+// All staff can read the staff roster; only admins get an editable one, which
+// StaffPanel enforces on its own controls.
+const canSeeStaffTab = canViewStaffAttendance
 
-const tab = ref<'students' | 'staff'>('staff')
+const tab = ref<'students' | 'staff'>(canManageStaffAttendance.value ? 'staff' : 'students')
 const tabItems = computed(() => [
   { label: t('pages.attendance.tabs.staff'), icon: 'i-lucide-briefcase', value: 'staff', slot: 'staff' as const },
   { label: t('pages.attendance.tabs.students'), icon: 'i-lucide-graduation-cap', value: 'students', slot: 'students' as const }
@@ -109,7 +111,7 @@ onBeforeUnmount(() => {
     </div>
 
     <UTabs
-      v-if="canManageStaff"
+      v-if="canSeeStaffTab"
       v-model="tab"
       :items="tabItems"
       variant="link"
@@ -137,7 +139,7 @@ onBeforeUnmount(() => {
     />
 
     <AttendanceStickyBar
-      v-if="tab === 'students' || !canManageStaff"
+      v-if="canMark && (tab === 'students' || !canSeeStaffTab)"
       :is-saving="isSaving"
       :is-dirty="isDirty"
       @save="handleSaveAttendance"

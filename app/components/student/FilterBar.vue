@@ -5,14 +5,9 @@ import type { Student } from '~/types'
 type StatusFilter = Student['status'] | 'deleted' | null
 
 const { t } = useI18n()
-const { user } = useAuth()
+const { canRestoreStudent: canManageDeleted } = usePermissions()
 const { searchQuery } = useStudents()
 const { filterStatus, sortKey, viewMode } = useStudentsView()
-
-const canManageDeleted = computed(() => {
-  const roles = user.value?.roles ?? []
-  return roles.includes('principal') || roles.includes('vice_principal')
-})
 
 const statusFilters = computed<{ label: string, value: StatusFilter }[]>(() => {
   const base: { label: string, value: StatusFilter }[] = [

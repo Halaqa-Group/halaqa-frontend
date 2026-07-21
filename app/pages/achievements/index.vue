@@ -11,15 +11,13 @@ definePageMeta({
 const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-const { activeRole } = useAuth()
+const { canRecordAchievement: canRecord } = usePermissions()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const {
   selectedDate, filters, page, total, limit, totalPages, isLoading,
   deleteOpen, deleteTarget,
   loadAll, loadAchievements, openRecord, deleteAchievement
 } = useAchievements()
-
-const canRecord = computed(() => activeRole.value !== 'parent')
 
 async function onDeleteConfirm() {
   const target = deleteTarget.value

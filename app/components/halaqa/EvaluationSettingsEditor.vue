@@ -31,7 +31,8 @@ const WEIGHTS: Array<{ key: WeightKey, labelKey: string }> = [
   { key: 'harakat_weight', labelKey: 'pages.achievements.harakat' }
 ]
 
-const form = reactive<EvaluationSettings>({ ...DEFAULT_EVALUATION_SETTINGS })
+// Nullable because UInputNumber emits null when the field is cleared.
+const form = reactive<Record<WeightKey, number | null>>({ ...DEFAULT_EVALUATION_SETTINGS })
 // The last server-known state, so "dirty" survives a save without a refetch.
 const baseline = ref<EvaluationSettings>({ ...DEFAULT_EVALUATION_SETTINGS })
 const saving = ref(false)
@@ -46,8 +47,8 @@ watch(() => props.initial, (next) => {
   apply(normalized)
 }, { immediate: true, deep: true })
 
-// UInputNumber hands back null when the field is cleared, so guard the range
-// here rather than trusting the widget's min/max alone.
+// Guard the range here rather than trusting the widget's min/max alone — a
+// cleared or typed-over field can sit outside it.
 const invalidKeys = computed(() =>
   WEIGHTS.filter(({ key }) => {
     const v = form[key]
@@ -84,12 +85,9 @@ async function save() {
   if (!isValid.value || saving.value) return
   saving.value = true
   // PATCH replaces the stored object wholesale, so send all four weights.
-  const payload: EvaluationSettings = {
-    mistake_weight: form.mistake_weight,
-    warning_weight: form.warning_weight,
-    tajweed_weight: form.tajweed_weight,
-    harakat_weight: form.harakat_weight
-  }
+  // isValid already proved each one is a number in range; normalize just
+  // narrows the nullable form type back to EvaluationSettings.
+  const payload: Record<string, unknown> = { ...normalizeEvaluationSettings(form) }
   try {
     const updated = await updateHalaqa(props.halaqaId, { evaluation_settings: payload })
     const normalized = normalizeEvaluationSettings(updated.evaluation_settings)

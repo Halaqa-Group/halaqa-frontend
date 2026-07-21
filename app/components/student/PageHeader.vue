@@ -1,12 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n()
-const { user } = useAuth()
+const { canCreateStudent } = usePermissions()
 const { openAdd } = useStudents()
-
-const canCreateStudent = computed(() => {
-  const roles = user.value?.roles ?? []
-  return roles.includes('principal') || roles.includes('vice_principal')
-})
 </script>
 
 <template>

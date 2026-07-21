@@ -4,7 +4,9 @@ import type { Student } from '~/types'
 
 const props = defineProps<{ student: Student }>()
 const { t } = useI18n()
-const { user } = useAuth()
+const {
+  canEditStudent, canGraduateStudent, canDeleteStudent, canRestoreStudent
+} = usePermissions()
 const {
   openView,
   openEdit,
@@ -29,11 +31,6 @@ const statusColor = computed<'success' | 'warning' | 'info' | 'error'>(() => {
 
 const primaryGuardian = computed(() => props.student.guardians.find(g => g.is_primary) ?? null)
 
-const isPrincipalOrVP = computed(() => {
-  const roles = user.value?.roles ?? []
-  return roles.includes('principal') || roles.includes('vice_principal')
-})
-
 const menuItems = computed<DropdownMenuItem[][]>(() => {
   const primary: DropdownMenuItem[] = [
     {
@@ -50,37 +47,43 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       label: t('pages.students.actions.recordAttendance'),
       icon: 'i-lucide-check',
       onSelect: () => navigateTo(`/attendance?studentId=${props.student.id}`)
-    },
-    {
+    }
+  ]
+  // PATCH /students/:id is principal, vice_principal, teacher — supervisors read only.
+  if (canEditStudent.value) {
+    primary.push({
       label: t('pages.students.actions.editStudent'),
       icon: 'i-lucide-pencil',
       onSelect: () => openEdit(props.student)
-    }
-  ]
-  if (!isPrincipalOrVP.value) return [primary]
+    })
+  }
   const lifecycle: DropdownMenuItem[] = []
   if (isDeleted.value) {
-    lifecycle.push({
-      label: t('pages.students.actions.restore'),
-      icon: 'i-lucide-rotate-ccw',
-      onSelect: () => requestRestore(props.student)
-    })
+    if (canRestoreStudent.value) {
+      lifecycle.push({
+        label: t('pages.students.actions.restore'),
+        icon: 'i-lucide-rotate-ccw',
+        onSelect: () => requestRestore(props.student)
+      })
+    }
   } else {
-    if (props.student.status !== 'graduated') {
+    if (canGraduateStudent.value && props.student.status !== 'graduated') {
       lifecycle.push({
         label: t('pages.students.actions.graduate'),
         icon: 'i-lucide-graduation-cap',
         onSelect: () => requestGraduate(props.student)
       })
     }
-    lifecycle.push({
-      label: t('pages.students.actions.delete'),
-      icon: 'i-lucide-trash-2',
-      color: 'error',
-      onSelect: () => requestDelete(props.student)
-    })
+    if (canDeleteStudent.value) {
+      lifecycle.push({
+        label: t('pages.students.actions.delete'),
+        icon: 'i-lucide-trash-2',
+        color: 'error',
+        onSelect: () => requestDelete(props.student)
+      })
+    }
   }
-  return [primary, lifecycle]
+  return lifecycle.length ? [primary, lifecycle] : [primary]
 })
 </script>
 

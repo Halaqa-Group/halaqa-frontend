@@ -8,10 +8,7 @@ import { formatVerseRange, isValidVerseRange } from '~/utils/quran'
 const props = defineProps<{ student: Student }>()
 const { t } = useI18n()
 const toast = useToast()
-const { activeRole } = useAuth()
-
-const EDITOR_ROLES = ['principal', 'vice_principal', 'supervisor', 'teacher']
-const canEdit = computed(() => !!activeRole.value && EDITOR_ROLES.includes(activeRole.value))
+const { canEditMemorization: canEdit } = usePermissions()
 
 const {
   count, percentage, ranges, loading, saving, error, load, edit

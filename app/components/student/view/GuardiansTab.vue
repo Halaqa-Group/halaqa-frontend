@@ -6,16 +6,11 @@ import type { Student, ApiGuardian } from '~/types'
 
 const props = defineProps<{ student: Student }>()
 const { t } = useI18n()
-const { user } = useAuth()
+const { canManageGuardians: isPrincipalOrVP } = usePermissions()
 const toast = useToast()
 const apiError = useApiError()
 const { fetchGuardians, linkGuardian, updateGuardian, unlinkGuardian, refetchStudent } = useStudents()
 const { parents, isLoading: isLoadingParents, fetchParents } = useSchoolParents()
-
-const isPrincipalOrVP = computed(() => {
-  const roles = user.value?.roles ?? []
-  return roles.includes('principal') || roles.includes('vice_principal')
-})
 
 const localGuardians = ref<ApiGuardian[]>([])
 const isLoadingGuardians = ref(false)

@@ -3,7 +3,9 @@ import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
 import type { Student } from '~/types'
 
 const { t } = useI18n()
-const { user } = useAuth()
+const {
+  canCreateStudent, canEditStudent, canGraduateStudent, canDeleteStudent, canRestoreStudent
+} = usePermissions()
 const {
   students,
   isLoading,
@@ -15,10 +17,6 @@ const {
   requestGraduate,
   requestRestore
 } = useStudents()
-const isPrincipalOrVP = computed(() => {
-  const roles = user.value?.roles ?? []
-  return roles.includes('principal') || roles.includes('vice_principal')
-})
 const { viewMode, sortedStudents, clearFilters } = useStudentsView()
 
 const columns = computed<TableColumn<Student>[]>(() => [
@@ -61,37 +59,43 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
       label: t('pages.students.actions.recordAttendance'),
       icon: 'i-lucide-check',
       onSelect: () => navigateTo(`/attendance?studentId=${student.id}`)
-    },
-    {
+    }
+  ]
+  // PATCH /students/:id is principal, vice_principal, teacher — supervisors read only.
+  if (canEditStudent.value) {
+    primary.push({
       label: t('pages.students.actions.editStudent'),
       icon: 'i-lucide-pencil',
       onSelect: () => openEdit(student)
-    }
-  ]
-  if (!isPrincipalOrVP.value) return [primary]
+    })
+  }
   const lifecycle: DropdownMenuItem[] = []
   if (student.deletedAt) {
-    lifecycle.push({
-      label: t('pages.students.actions.restore'),
-      icon: 'i-lucide-rotate-ccw',
-      onSelect: () => requestRestore(student)
-    })
+    if (canRestoreStudent.value) {
+      lifecycle.push({
+        label: t('pages.students.actions.restore'),
+        icon: 'i-lucide-rotate-ccw',
+        onSelect: () => requestRestore(student)
+      })
+    }
   } else {
-    if (student.status !== 'graduated') {
+    if (canGraduateStudent.value && student.status !== 'graduated') {
       lifecycle.push({
         label: t('pages.students.actions.graduate'),
         icon: 'i-lucide-graduation-cap',
         onSelect: () => requestGraduate(student)
       })
     }
-    lifecycle.push({
-      label: t('pages.students.actions.delete'),
-      icon: 'i-lucide-trash-2',
-      color: 'error',
-      onSelect: () => requestDelete(student)
-    })
+    if (canDeleteStudent.value) {
+      lifecycle.push({
+        label: t('pages.students.actions.delete'),
+        icon: 'i-lucide-trash-2',
+        color: 'error',
+        onSelect: () => requestDelete(student)
+      })
+    }
   }
-  return [primary, lifecycle]
+  return lifecycle.length ? [primary, lifecycle] : [primary]
 }
 </script>
 
@@ -110,7 +114,7 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
       {{ t('pages.students.empty.welcomeTitle') }}
     </p>
     <UButton
-      v-if="isPrincipalOrVP"
+      v-if="canCreateStudent"
       icon="i-lucide-plus"
       size="sm"
       @click="openAdd"

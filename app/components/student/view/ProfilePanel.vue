@@ -4,7 +4,7 @@ import type { Student } from '~/types'
 const props = defineProps<{ student: Student }>()
 const emit = defineEmits<{ close: [] }>()
 const { t, locale } = useI18n()
-const { user } = useAuth()
+const { canEditStudent: canEdit } = usePermissions()
 const { openEdit } = useStudents()
 
 const dateFormatter = computed(() =>
@@ -45,13 +45,6 @@ const joinDateLabel = computed(() => {
   if (!iso) return '—'
   const d = new Date(iso)
   return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
-})
-
-const canEdit = computed(() => {
-  const roles = user.value?.roles ?? []
-  return roles.includes('principal')
-    || roles.includes('vice_principal')
-    || roles.includes('teacher')
 })
 
 function handleEditClick() {

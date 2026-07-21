@@ -8,6 +8,11 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 
+// Staff attendance is readable by all staff (GET /attendance/teachers) but only
+// principal/vice_principal may sync or correct it, so everyone else gets the
+// roster read-only rather than buttons that 403.
+const { canManageStaffAttendance: canEdit } = usePermissions()
+
 const {
   staffRows, filteredRows, search, selectedDate, statusFilter, viewMode,
   isLoading, loadError, isSaving, isDirty,
@@ -104,7 +109,7 @@ function handleMarkAllPresent() {
   <div class="flex flex-col gap-4">
     <div class="flex justify-end">
       <UButton
-        v-if="staffRows.length > 0"
+        v-if="canEdit && staffRows.length > 0"
         icon="i-lucide-check-check"
         color="primary"
         variant="soft"
@@ -252,9 +257,9 @@ function handleMarkAllPresent() {
               <p class="font-semibold truncate flex-1 min-w-0">
                 {{ row.name }}
               </p>
-              <AttendanceNotePopover :name="row.name" :notes="row.notes" @save="(v) => setNote(row.userId, v)" />
+              <AttendanceNotePopover :name="row.name" :notes="row.notes" :disabled="!canEdit" @save="(v) => setNote(row.userId, v)" />
             </div>
-            <AttendanceStatusToggle :status="row.status" @set="(s: AttendanceStatus) => setStatus(row.userId, s)" />
+            <AttendanceStatusToggle :status="row.status" :disabled="!canEdit" @set="(s: AttendanceStatus) => setStatus(row.userId, s)" />
           </div>
         </div>
 
@@ -269,9 +274,9 @@ function handleMarkAllPresent() {
               <p class="font-semibold truncate flex-1 min-w-0">
                 {{ row.name }}
               </p>
-              <AttendanceNotePopover :name="row.name" :notes="row.notes" @save="(v) => setNote(row.userId, v)" />
+              <AttendanceNotePopover :name="row.name" :notes="row.notes" :disabled="!canEdit" @save="(v) => setNote(row.userId, v)" />
             </div>
-            <AttendanceStatusToggle :status="row.status" @set="(s: AttendanceStatus) => setStatus(row.userId, s)" />
+            <AttendanceStatusToggle :status="row.status" :disabled="!canEdit" @set="(s: AttendanceStatus) => setStatus(row.userId, s)" />
           </div>
         </div>
 
@@ -292,6 +297,7 @@ function handleMarkAllPresent() {
               <AttendanceStatusToggle
                 :status="row.original.status"
                 compact
+                :disabled="!canEdit"
                 @set="(s: AttendanceStatus) => setStatus(row.original.userId, s)"
               />
             </template>
@@ -300,6 +306,7 @@ function handleMarkAllPresent() {
               <AttendanceNotePopover
                 :name="row.original.name"
                 :notes="row.original.notes"
+                :disabled="!canEdit"
                 @save="(v) => setNote(row.original.userId, v)"
               />
             </template>
@@ -309,6 +316,7 @@ function handleMarkAllPresent() {
     </UCard>
 
     <AttendanceStickyBar
+      v-if="canEdit"
       :is-saving="isSaving"
       :is-dirty="isDirty"
       @save="handleSave"

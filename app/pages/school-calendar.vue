@@ -13,17 +13,13 @@ definePageMeta({
 const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-const { activeRole } = useAuth()
+const { canManageCalendar: canManage } = usePermissions()
 
 const {
   schedules, holidays, isLoadingSchedules, isLoadingHolidays,
   fetchSchedules, createSchedule, deleteSchedule,
   fetchHolidays, createHoliday, deleteHoliday
 } = useSchoolCalendar()
-
-const canManage = computed(() =>
-  activeRole.value === 'principal' || activeRole.value === 'vice_principal'
-)
 
 // 0 = Saturday … 6 = Friday
 const dayNames = computed(() => [

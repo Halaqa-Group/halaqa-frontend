@@ -8,12 +8,11 @@ definePageMeta({
 })
 
 const { t, locale } = useI18n()
-const { activeRole } = useAuth()
+const { canRecordAchievement: canRecord } = usePermissions()
 const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 const { editing, hasStudents, loadStudents } = useAchievements()
 
 const isEdit = computed(() => editing.value != null)
-const canRecord = computed(() => activeRole.value !== 'parent')
 
 const formRef = useTemplateRef<{ saving: Ref<boolean>, setContinueToRecite: (v: boolean) => void } | null>('formRef')
 const formSaving = computed(() => formRef.value?.saving.value ?? false)

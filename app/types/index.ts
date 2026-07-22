@@ -111,9 +111,10 @@ export interface ApiGuardian {
 export interface ApiSchool {
   id: number
   name: string
-  address: string
+  address: string | null
   phone: string | null
   status: 'active' | 'inactive'
+  timezone: string
 }
 
 export type HalaqaType = 'Memorization' | 'Tajweed' | 'Aqeedah'

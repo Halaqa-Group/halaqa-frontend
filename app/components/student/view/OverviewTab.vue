@@ -4,6 +4,15 @@ import type { Student } from '~/types'
 const props = defineProps<{ student: Student }>()
 const { t, locale } = useI18n()
 
+// The name is stored as four parts; the display `name` in the header is what the
+// database derives from them, so show the breakdown here.
+const nameParts = computed(() => [
+  { labelKey: 'label.first_name', value: props.student.firstName },
+  { labelKey: 'label.second_name', value: props.student.secondName },
+  { labelKey: 'label.third_name', value: props.student.thirdName },
+  { labelKey: 'label.family_name', value: props.student.familyName }
+] as const)
+
 const dailyTracks = computed(() => [
   { label: t('pages.students.card.dailyHifz'), value: props.student.dailyHifzPagesCapacity },
   { label: t('pages.students.card.dailyNear'), value: props.student.dailyNearPagesCapacity },
@@ -44,6 +53,18 @@ const ageLabel = computed(() => {
         </h3>
       </template>
       <dl class="divide-y divide-default">
+        <div
+          v-for="part in nameParts"
+          :key="part.labelKey"
+          class="flex items-center justify-between gap-3 p-4 text-sm"
+        >
+          <dt class="text-muted">
+            {{ t(part.labelKey) }}
+          </dt>
+          <dd class="font-medium">
+            {{ part.value || '—' }}
+          </dd>
+        </div>
         <div class="flex items-center justify-between gap-3 p-4 text-sm">
           <dt class="text-muted">
             {{ t('pages.students.viewModal.idNumber') }}

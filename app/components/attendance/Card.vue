@@ -6,10 +6,12 @@ const props = defineProps<{
   name: string
   avatar: string
   status: AttendanceStatus
+  ethicsRating: number
   notes: string
 }>()
 
-const { wasAbsentYesterday, setStatus, setNote } = useAttendance()
+const { canMarkStudentAttendance: canEdit } = usePermissions()
+const { wasAbsentYesterday, setStatus, setEthicsRating } = useAttendance()
 const absentYesterday = computed(() => wasAbsentYesterday(props.studentId))
 </script>
 
@@ -32,9 +34,23 @@ const absentYesterday = computed(() => wasAbsentYesterday(props.studentId))
           {{ $t('pages.attendance.absentYesterday') }}
         </UBadge>
       </div>
-      <AttendanceNotePopover :name="name" :notes="notes" @save="(v) => setNote(studentId, v)" />
+      <AttendanceRowActions
+        :student-id="studentId"
+        :name="name"
+        :notes="notes"
+        :can-edit="canEdit"
+      />
     </div>
 
-    <AttendanceStatusToggle :status="status" @set="(s) => setStatus(studentId, s)" />
+    <AttendanceStatusToggle :status="status" :disabled="!canEdit" @set="(s) => setStatus(studentId, s)" />
+
+    <div class="flex items-center justify-between gap-2">
+      <span class="text-xs text-muted">{{ $t('pages.attendance.ethics.label') }}</span>
+      <AttendanceEthicsRating
+        :rating="ethicsRating"
+        :disabled="!canEdit"
+        @set="(r) => setEthicsRating(studentId, r)"
+      />
+    </div>
   </div>
 </template>

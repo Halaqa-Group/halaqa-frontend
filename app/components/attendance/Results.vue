@@ -3,15 +3,26 @@ import type { TableColumn } from '@nuxt/ui'
 import type { AttendanceRow } from '~/composables/useAttendance'
 
 const { t } = useI18n()
+const { canMarkStudentAttendance } = usePermissions()
 const {
   attendanceRows, filteredRows, isLoading, loadError, viewMode,
-  hasActiveFilters, clearFilters, wasAbsentYesterday, setStatus, setNote
+  hasActiveFilters, clearFilters, wasAbsentYesterday, setStatus, setEthicsRating
 } = useAttendance()
+
+// Supervisors may read the roster but not record it — mirror StaffPanel and
+// disable the controls rather than let a click 403 on save.
+const canEdit = canMarkStudentAttendance
 
 const columns = computed<TableColumn<AttendanceRow>[]>(() => [
   { accessorKey: 'name', header: t('pages.attendance.table.student') },
   { accessorKey: 'status', header: t('pages.attendance.statusLabel') },
-  { id: 'note', header: t('pages.attendance.table.note') }
+  { accessorKey: 'ethicsRating', header: t('pages.attendance.ethics.label') },
+  // Content is grouped at the row end, so the header follows it.
+  {
+    id: 'actions',
+    header: t('pages.attendance.table.actions'),
+    meta: { class: { th: 'text-end' } }
+  }
 ])
 </script>
 
@@ -57,6 +68,7 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
         :name="row.name"
         :avatar="row.avatar"
         :status="row.status"
+        :ethics-rating="row.ethicsRating"
         :notes="row.notes"
       />
     </div>
@@ -70,6 +82,7 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
           :name="row.name"
           :avatar="row.avatar"
           :status="row.status"
+          :ethics-rating="row.ethicsRating"
           :notes="row.notes"
         />
       </div>
@@ -100,15 +113,26 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
             <AttendanceStatusToggle
               :status="row.original.status"
               compact
+              :disabled="!canEdit"
               @set="(s) => setStatus(row.original.studentId, s)"
             />
           </template>
 
-          <template #note-cell="{ row }">
-            <AttendanceNotePopover
+          <template #ethicsRating-cell="{ row }">
+            <AttendanceEthicsRating
+              :rating="row.original.ethicsRating"
+              compact
+              :disabled="!canEdit"
+              @set="(r) => setEthicsRating(row.original.studentId, r)"
+            />
+          </template>
+
+          <template #actions-cell="{ row }">
+            <AttendanceRowActions
+              :student-id="row.original.studentId"
               :name="row.original.name"
               :notes="row.original.notes"
-              @save="(v) => setNote(row.original.studentId, v)"
+              :can-edit="canEdit"
             />
           </template>
         </UTable>

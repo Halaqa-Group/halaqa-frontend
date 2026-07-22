@@ -1,24 +1,51 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { NAME_PART_MAX_LENGTH } from '~/data/constants'
 
 const { t } = useI18n()
 const toast = useToast()
 const { user, updateMe } = useAuth()
 const apiError = useApiError()
 
+// PATCH /me takes the four name parts; the display name is derived server-side.
+const NAME_PART_FIELDS = [
+  { key: 'first_name', labelKey: 'label.first_name' },
+  { key: 'second_name', labelKey: 'label.second_name' },
+  { key: 'third_name', labelKey: 'label.third_name' },
+  { key: 'family_name', labelKey: 'label.family_name' }
+] as const
+
+const namePart = z.string({ error: () => t('validation.required') })
+  .trim()
+  .min(1, t('validation.required'))
+  .max(NAME_PART_MAX_LENGTH, t('validation.max', { max: NAME_PART_MAX_LENGTH }))
+
 const schema = z.object({
-  name: z.string({ error: () => t('validation.required') }).min(1, t('validation.required')).max(100),
+  first_name: namePart,
+  second_name: namePart,
+  third_name: namePart,
+  family_name: namePart,
   phone: z.string().max(20).optional().or(z.literal('')),
   photo_url: z.string().optional().or(z.literal(''))
 })
 type Schema = z.output<typeof schema>
 
-const state = reactive<Schema>({ name: '', phone: '', photo_url: '' })
+const state = reactive<Schema>({
+  first_name: '',
+  second_name: '',
+  third_name: '',
+  family_name: '',
+  phone: '',
+  photo_url: ''
+})
 
 watchEffect(() => {
   if (!user.value) return
-  state.name = user.value.name
+  state.first_name = user.value.firstName ?? ''
+  state.second_name = user.value.secondName ?? ''
+  state.third_name = user.value.thirdName ?? ''
+  state.family_name = user.value.familyName ?? ''
   state.phone = user.value.phone ?? ''
   state.photo_url = user.value.photoUrl ?? ''
 })
@@ -31,7 +58,10 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   isLoading.value = true
   try {
     await updateMe({
-      name: event.data.name,
+      first_name: event.data.first_name,
+      second_name: event.data.second_name,
+      third_name: event.data.third_name,
+      family_name: event.data.family_name,
       phone: event.data.phone || null,
       photo_url: event.data.photo_url || null
     })
@@ -58,9 +88,17 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     </template>
 
     <UForm :schema="schema" :state="state" class="space-y-5" @submit="onSubmit">
-      <UFormField :label="$t('label.full_name')" name="name" required>
-        <UInput v-model="state.name" />
-      </UFormField>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <UFormField
+          v-for="field in NAME_PART_FIELDS"
+          :key="field.key"
+          :label="$t(field.labelKey)"
+          :name="field.key"
+          required
+        >
+          <UInput v-model="state[field.key]" :maxlength="NAME_PART_MAX_LENGTH" class="w-full" />
+        </UFormField>
+      </div>
 
       <UFormField :label="$t('label.email_address')" :hint="$t('pages.profile.profileCard.emailHint')">
         <UInput :model-value="user?.email ?? ''" disabled dir="ltr" />

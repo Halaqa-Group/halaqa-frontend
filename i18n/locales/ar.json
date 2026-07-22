@@ -704,6 +704,11 @@
         "excused": "المعذورون"
       },
       "statusLabel": "الحالة",
+      "ethics": {
+        "label": "تقييم الأخلاق",
+        "valueLabel": "تقييم الأخلاق {rating} من {max}",
+        "setTo": "ضبط تقييم الأخلاق على {rating}"
+      },
       "noMatch": "لا توجد نتائج مطابقة",
       "view": {
         "table": "عرض جدول"
@@ -711,7 +716,14 @@
       "table": {
         "student": "الطالب",
         "note": "ملاحظة",
-        "staff": "عضو الطاقم"
+        "staff": "عضو الطاقم",
+        "actions": "إجراءات"
+      },
+      "rowActions": {
+        "label": "إجراءات الصف",
+        "viewProfile": "عرض ملف الطالب",
+        "logAchievement": "تسجيل إنجاز",
+        "reset": "إعادة إلى حاضر"
       },
       "markAllPresent": "تحديد الكل حاضر",
       "markedAllPresent": "تم تحديد جميع الطلاب كحاضرين",
@@ -832,8 +844,6 @@
         "halaqaPlaceholder": "اختر حلقة أو أكثر...",
         "photoUrl": "رابط الصورة",
         "photoUrlPlaceholder": "https://...",
-        "fullName": "الاسم الكامل",
-        "fullNamePlaceholder": "اسم الطالب الرباعي",
         "idNumber": "رقم الهوية",
         "idNumberPlaceholder": "9 أرقام",
         "gender": "الجنس",
@@ -1383,6 +1393,10 @@
     "password_confirmation": "تأكيد كلمة المرور",
     "current_password": "كلمة المرور الحالية",
     "full_name": "الاسم الكامل",
+    "first_name": "الاسم الأول",
+    "second_name": "اسم الأب",
+    "third_name": "اسم الجد",
+    "family_name": "اسم العائلة",
     "phone": "رقم الجوال",
     "photo_url": "رابط الصورة"
   },

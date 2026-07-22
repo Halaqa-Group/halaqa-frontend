@@ -14,7 +14,11 @@ const { t } = useI18n()
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex justify-end">
+    <!-- Halaqa scope sits with the roster-wide action, not among the row filters:
+         both answer "which students am I about to mark?". Renders nothing for
+         teachers, who are already scoped to one halaqa from the navbar. -->
+    <div class="flex flex-wrap items-center justify-end gap-3">
+      <HalaqaFilter />
       <UButton
         v-if="canMark && hasHalaqa && hasRows"
         icon="i-lucide-check-check"

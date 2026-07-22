@@ -2,6 +2,12 @@ export type UserStatus = 'active' | 'inactive' | 'suspended'
 
 export interface ManagedUser {
   id: number
+  // The users module serves the four name parts in camelCase (unlike the
+  // students module, which uses snake_case). `name` is derived server-side.
+  firstName: string
+  secondName: string
+  thirdName: string
+  familyName: string
   name: string
   email: string
   phone: string | null
@@ -29,7 +35,11 @@ export interface ListUsersQuery {
 }
 
 export interface CreateUserPayload {
-  name: string
+  // Write payloads carry the parts in snake_case; sending `name` is a 400.
+  first_name: string
+  second_name: string
+  third_name: string
+  family_name: string
   // National ID — required by the backend on user creation, unique per school,
   // and usable as a login identifier. A bad checksum is stored with a warning.
   id_number: string
@@ -42,7 +52,10 @@ export interface CreateUserPayload {
 }
 
 export interface UpdateUserPayload {
-  name?: string
+  first_name?: string
+  second_name?: string
+  third_name?: string
+  family_name?: string
   phone?: string | null
   photo_url?: string | null
   status?: UserStatus

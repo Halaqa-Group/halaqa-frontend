@@ -1,5 +1,11 @@
 export interface AuthUser {
   id: number
+  // /auth/me and /auth/login serve the four name parts in camelCase; `name` is
+  // the display value the database derives from them.
+  firstName: string
+  secondName: string
+  thirdName: string
+  familyName: string
   name: string
   email: string
   phone?: string | null
@@ -7,8 +13,13 @@ export interface AuthUser {
   roles: string[]
 }
 
+// PATCH /me — self-edit whitelist. Name parts go up in snake_case; `name` is
+// derived and rejected.
 export interface UpdateMePayload {
-  name?: string
+  first_name?: string
+  second_name?: string
+  third_name?: string
+  family_name?: string
   phone?: string | null
   photo_url?: string | null
 }
@@ -29,9 +40,11 @@ export interface Session {
   current: boolean
 }
 
+// /auth/login answers with a thin projection of the user — no name parts, phone,
+// or photo. The full profile comes from /auth/me right after.
 interface LoginResponse {
   accessToken: string
-  user: AuthUser
+  user: Pick<AuthUser, 'id' | 'name' | 'email' | 'roles'>
 }
 
 export function useAuth() {
@@ -88,7 +101,11 @@ export function useAuth() {
       body
     })
     token.value = data.accessToken
-    user.value = data.user
+    // Hydrate from /auth/me so the four name parts, phone, and photo are present
+    // — the login payload carries none of them, and nothing else refetches while
+    // `user` is already set.
+    const hydrated = await fetchMe()
+    if (!hydrated) throw new Error('Failed to load profile after login')
   }
 
   async function fetchMe(): Promise<boolean> {
@@ -135,6 +152,10 @@ export function useAuth() {
     })
     user.value = {
       id: updated.id,
+      firstName: updated.firstName,
+      secondName: updated.secondName,
+      thirdName: updated.thirdName,
+      familyName: updated.familyName,
       name: updated.name,
       email: updated.email,
       phone: updated.phone ?? null,

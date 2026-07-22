@@ -24,9 +24,34 @@ export interface DayData {
   statusColors: Record<LessonCategory, string>
 }
 
+// ─── Person names ─────────────────────────────────────────────────────────────
+// Students and users carry the four-part Arabic name (الاسم الأول / اسم الأب /
+// اسم الجد / اسم العائلة). `name` is a read-only display value the database
+// derives from the parts — reads keep using it, writes must send the parts.
+export interface ApiPersonName {
+  first_name: string
+  second_name: string
+  third_name: string
+  family_name: string
+  /** Derived server-side from the four parts; rejected in a write payload. */
+  name: string
+}
+
+/** The four parts as a write payload: all required on create, all optional on patch. */
+export interface PersonNameInput {
+  first_name: string
+  second_name: string
+  third_name: string
+  family_name: string
+}
+
 export interface Student {
   id: string
   name: string
+  firstName: string
+  secondName: string
+  thirdName: string
+  familyName: string
   gender: 'male' | 'female'
   status: 'active' | 'inactive' | 'graduated'
   idNumber: string | null
@@ -53,9 +78,8 @@ export interface AttendanceEntry {
   notes: string
 }
 
-export interface ApiStudent {
+export interface ApiStudent extends ApiPersonName {
   id: number
-  name: string
   gender: 'male' | 'female'
   id_number: string | null
   dob: string | null
@@ -97,9 +121,8 @@ export interface EditMemorizationInput {
 }
 
 export interface ApiGuardian {
-  user: {
+  user: ApiPersonName & {
     id: number
-    name: string
     email: string
     phone: string | null
   }
@@ -288,6 +311,8 @@ export interface ApiAttendance {
   student_id: number
   date: string
   status: AttendanceStatus
+  /** تقييم الأخلاق — behaviour score 1..5. Seeded rows carry 5. Students only. */
+  ethics_rating: number
   excuse_note: string | null
   recorded_by?: number | null
   modified_by?: number | null
@@ -309,6 +334,8 @@ export interface AttendanceSyncEntry {
   student_id: number
   date: string
   status: AttendanceStatus
+  /** Omitted → a new row defaults to 5 and an existing row keeps its rating. */
+  ethics_rating?: number
   excuse_note?: string
   client_uuid?: string
   client_recorded_at?: string
@@ -331,8 +358,18 @@ export interface AttendanceSyncResult {
   results: AttendanceSyncResultRow[]
 }
 
-// PATCH /attendance/students/:id and /attendance/teachers/:id — single-row correction.
+// PATCH /attendance/students/:id — single-row correction. `status` and
+// `ethics_rating` are both optional, but at least one must actually differ from
+// the stored row or the backend answers 400.
 export interface AttendanceCorrectionPayload {
+  status?: AttendanceStatus
+  ethics_rating?: number
+  excuse_note?: string
+  modification_reason?: string
+}
+
+// PATCH /attendance/teachers/:id — staff rows have no ethics rating.
+export interface TeacherAttendanceCorrectionPayload {
   status: AttendanceStatus
   excuse_note?: string
   modification_reason?: string

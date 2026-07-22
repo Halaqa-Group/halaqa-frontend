@@ -704,6 +704,11 @@
         "excused": "Excused"
       },
       "statusLabel": "Status",
+      "ethics": {
+        "label": "Ethics rating",
+        "valueLabel": "Ethics rating {rating} of {max}",
+        "setTo": "Set ethics rating to {rating}"
+      },
       "noMatch": "No matching results",
       "view": {
         "table": "Table view"
@@ -711,7 +716,14 @@
       "table": {
         "student": "Student",
         "note": "Note",
-        "staff": "Staff member"
+        "staff": "Staff member",
+        "actions": "Actions"
+      },
+      "rowActions": {
+        "label": "Row actions",
+        "viewProfile": "View student profile",
+        "logAchievement": "Log an achievement",
+        "reset": "Reset to present"
       },
       "markAllPresent": "Mark all present",
       "markedAllPresent": "All students marked present",
@@ -832,8 +844,6 @@
         "halaqaPlaceholder": "Select one or more halaqat...",
         "photoUrl": "Photo URL",
         "photoUrlPlaceholder": "https://...",
-        "fullName": "Full name",
-        "fullNamePlaceholder": "Student's full name",
         "idNumber": "ID number",
         "idNumberPlaceholder": "9 digits",
         "gender": "Gender",
@@ -1383,6 +1393,10 @@
     "password_confirmation": "Confirm password",
     "current_password": "Current password",
     "full_name": "Full name",
+    "first_name": "First name",
+    "second_name": "Father's name",
+    "third_name": "Grandfather's name",
+    "family_name": "Family name",
     "phone": "Phone number",
     "photo_url": "Photo URL"
   },

@@ -34,7 +34,7 @@ function openEdit() {
   const s = school.value
   if (!s) return
   form.name = s.name
-  form.address = s.address
+  form.address = s.address ?? ''
   form.phone = s.phone ?? ''
   form.status = s.status
   editOpen.value = true
@@ -57,10 +57,11 @@ async function submitForm() {
   }
   saving.value = true
   try {
+    const address = form.address.trim()
     const phone = form.phone.trim()
     const payload: Partial<Pick<ApiSchool, 'name' | 'address' | 'phone' | 'status'>> = {
       name: form.name.trim(),
-      address: form.address.trim(),
+      address: address.length ? address : null,
       phone: phone.length ? phone : null,
       status: form.status
     }

@@ -451,7 +451,7 @@ export interface CreateHolidayPayload {
   description: string
 }
 
-export type AchievementErrorType = 'mistake' | 'warning' | 'tajweed' | 'harakat'
+export type AchievementErrorType = 'mistake' | 'warning' | 'harakat'
 export type CompletionMethod = 'quick' | 'mushaf'
 export type RecitationMethod = 'full' | 'test'
 
@@ -479,7 +479,6 @@ export interface RecitationPosition {
   end_verse: number
   mistakes_count: number
   warnings_count: number
-  tajweed_errors_count: number
   harakat_errors_count: number
   errors: PositionError[]
 }
@@ -513,7 +512,6 @@ export interface ApiAchievement {
   // role, parents included; null only when the row carries no breakdown.
   mistakes_count: number | null
   warnings_count: number | null
-  tajweed_errors_count: number | null
   harakat_errors_count: number | null
   percentage_score: number | string
   status: 'approved' | 'unapproved'
@@ -538,7 +536,6 @@ export interface HeatmapHotspot {
   ayah: number
   mistakes_count: number
   warnings_count: number
-  tajweed_errors_count: number
   harakat_errors_count: number
   total: number
 }

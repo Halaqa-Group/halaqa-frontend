@@ -45,7 +45,6 @@ const state = reactive<{
   end_verse: number
   mistakes_count: number
   warnings_count: number
-  tajweed_errors_count: number
   harakat_errors_count: number
   teacher_notes: string
 }>({
@@ -58,7 +57,6 @@ const state = reactive<{
   end_verse: 7,
   mistakes_count: 0,
   warnings_count: 0,
-  tajweed_errors_count: 0,
   harakat_errors_count: 0,
   teacher_notes: ''
 })
@@ -75,7 +73,6 @@ interface PositionRow {
   end_verse: number
   mistakes_count: number
   warnings_count: number
-  tajweed_errors_count: number
   harakat_errors_count: number
 }
 
@@ -99,7 +96,6 @@ function newPositionRow(counts?: Partial<ScoreCounts>): PositionRow {
     end_verse: state.end_verse,
     mistakes_count: counts?.mistakes_count ?? 0,
     warnings_count: counts?.warnings_count ?? 0,
-    tajweed_errors_count: counts?.tajweed_errors_count ?? 0,
     harakat_errors_count: counts?.harakat_errors_count ?? 0
   }
 }
@@ -151,7 +147,6 @@ function hydratePositions() {
       end_verse: p.end_verse,
       mistakes_count: keepCounts ? (p.mistakes_count ?? 0) : 0,
       warnings_count: keepCounts ? (p.warnings_count ?? 0) : 0,
-      tajweed_errors_count: keepCounts ? (p.tajweed_errors_count ?? 0) : 0,
       harakat_errors_count: keepCounts ? (p.harakat_errors_count ?? 0) : 0
     }))
   } else {
@@ -176,7 +171,6 @@ function hydrate() {
     state.end_verse = src.end_verse
     state.mistakes_count = editing.value ? (src.mistakes_count ?? 0) : 0
     state.warnings_count = editing.value ? (src.warnings_count ?? 0) : 0
-    state.tajweed_errors_count = editing.value ? (src.tajweed_errors_count ?? 0) : 0
     state.harakat_errors_count = editing.value ? (src.harakat_errors_count ?? 0) : 0
     state.teacher_notes = editing.value ? (src.teacher_notes ?? '') : ''
     if (duplicateFrom.value) state.date = selectedDate.value
@@ -215,7 +209,6 @@ function hydrate() {
     }
     state.mistakes_count = 0
     state.warnings_count = 0
-    state.tajweed_errors_count = 0
     state.harakat_errors_count = 0
     state.teacher_notes = ''
   }
@@ -311,16 +304,14 @@ const effectiveCounts = computed<ScoreCounts>(() => {
     return {
       mistakes_count: state.mistakes_count,
       warnings_count: state.warnings_count,
-      tajweed_errors_count: state.tajweed_errors_count,
       harakat_errors_count: state.harakat_errors_count
     }
   }
   return positions.value.reduce<ScoreCounts>((acc, p) => ({
     mistakes_count: acc.mistakes_count + p.mistakes_count,
     warnings_count: acc.warnings_count + p.warnings_count,
-    tajweed_errors_count: acc.tajweed_errors_count + p.tajweed_errors_count,
     harakat_errors_count: acc.harakat_errors_count + p.harakat_errors_count
-  }), { mistakes_count: 0, warnings_count: 0, tajweed_errors_count: 0, harakat_errors_count: 0 })
+  }), { mistakes_count: 0, warnings_count: 0, harakat_errors_count: 0 })
 })
 
 const scorePreview = computed(() => computePercentageScore(
@@ -337,7 +328,7 @@ const scoreBarColor = computed(() =>
 
 const hasErrorCounts = computed(() => {
   const c = effectiveCounts.value
-  return c.mistakes_count + c.warnings_count + c.tajweed_errors_count + c.harakat_errors_count > 0
+  return c.mistakes_count + c.warnings_count + c.harakat_errors_count > 0
 })
 
 // "Save & recite" re-counts errors word-by-word on the mushaf, so any counts typed
@@ -411,7 +402,6 @@ const schema = computed(() => z.object({
   track_type: z.enum(['Hifz', 'Near', 'Far']),
   mistakes_count: z.number().min(0),
   warnings_count: z.number().min(0),
-  tajweed_errors_count: z.number().min(0),
   harakat_errors_count: z.number().min(0),
   teacher_notes: z.string().optional()
 }).superRefine((val, ctx) => {
@@ -463,10 +453,9 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
     }
     state.mistakes_count = 0
     state.warnings_count = 0
-    state.tajweed_errors_count = 0
     state.harakat_errors_count = 0
     positions.value = positions.value.map(p => ({
-      ...p, mistakes_count: 0, warnings_count: 0, tajweed_errors_count: 0, harakat_errors_count: 0
+      ...p, mistakes_count: 0, warnings_count: 0, harakat_errors_count: 0
     }))
   }
 
@@ -501,7 +490,6 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
         errors: await buildErrorsFromCounts({
           mistakes_count: p.mistakes_count,
           warnings_count: p.warnings_count,
-          tajweed_errors_count: p.tajweed_errors_count,
           harakat_errors_count: p.harakat_errors_count
         }, p)
       })
@@ -511,7 +499,6 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
     dto.errors = await buildErrorsFromCounts({
       mistakes_count: state.mistakes_count,
       warnings_count: state.warnings_count,
-      tajweed_errors_count: state.tajweed_errors_count,
       harakat_errors_count: state.harakat_errors_count
     }, state)
   }
@@ -745,10 +732,9 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </p>
 
       <!-- full: one set of counters for the whole lesson -->
-      <div v-if="!isTest" class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-2.5">
+      <div v-if="!isTest" class="grid grid-cols-3 gap-2 p-2.5">
         <AchievementCounterField v-model="state.mistakes_count" :label="t('pages.achievements.mistakes')" />
         <AchievementCounterField v-model="state.warnings_count" :label="t('pages.achievements.warnings')" />
-        <AchievementCounterField v-model="state.tajweed_errors_count" :label="t('pages.achievements.tajweedErrors')" />
         <AchievementCounterField v-model="state.harakat_errors_count" :label="t('pages.achievements.harakat')" />
       </div>
 
@@ -784,10 +770,9 @@ defineExpose({ saving: isSaving, setContinueToRecite })
                 <PlannerAyahSelect v-model:surah="p.end_surah" v-model:verse="p.end_verse" />
               </div>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div class="grid grid-cols-3 gap-2">
               <AchievementCounterField v-model="p.mistakes_count" :label="t('pages.achievements.mistakes')" />
               <AchievementCounterField v-model="p.warnings_count" :label="t('pages.achievements.warnings')" />
-              <AchievementCounterField v-model="p.tajweed_errors_count" :label="t('pages.achievements.tajweedErrors')" />
               <AchievementCounterField v-model="p.harakat_errors_count" :label="t('pages.achievements.harakat')" />
             </div>
           </div>

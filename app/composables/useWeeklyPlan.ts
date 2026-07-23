@@ -242,6 +242,42 @@ export function useWeeklyPlan() {
     else draft.delete(fromK)
   }
 
+  // Reorder a session within its own cell, moving it from one slot to another.
+  // The dragged session takes the target slot; the others shift to fill the gap.
+  // Order is persisted as the array index, so this re-sequences the saved items.
+  function reorderSession(day: number, track: TrackType, from: number, to: number) {
+    if (from === to) return
+    const k = cellKey(day, track)
+    const list = draft.get(k)
+    if (!list || from < 0 || from >= list.length || to < 0 || to >= list.length) return
+    const next = [...list]
+    const [moved] = next.splice(from, 1)
+    next.splice(to, 0, moved!)
+    draft.set(k, next)
+  }
+
+  // Move a single session out of its cell and append it to the destination,
+  // leaving the source cell's remaining sessions in place. This is the drag unit
+  // when a cell holds more than one session — the whole list no longer moves as a
+  // block. The session keeps its id so a saved item is re-homed via a PATCH of
+  // day_of_week/track_type/order rather than being recreated.
+  function moveSession(
+    fromDay: number, fromTrack: TrackType, fromIndex: number, toDay: number, toTrack: TrackType
+  ) {
+    if (fromDay === toDay && fromTrack === toTrack) return
+    if (restDays.has(toDay)) return
+    const fromK = cellKey(fromDay, fromTrack)
+    const src = draft.get(fromK)
+    const session = src?.[fromIndex]
+    if (!session) return
+    const rest = src.filter((_, i) => i !== fromIndex)
+    if (rest.length) draft.set(fromK, rest)
+    else draft.delete(fromK)
+    const toK = cellKey(toDay, toTrack)
+    restDays.delete(toDay)
+    draft.set(toK, [...(draft.get(toK) ?? []), session])
+  }
+
   function copyCell(day: number, track: TrackType) {
     const list = getCells(day, track)
     if (list.length) copiedCell.value = list.map(c => makeSession(toRange(c)))
@@ -586,6 +622,8 @@ export function useWeeklyPlan() {
     copyCell,
     pasteCell,
     moveCell,
+    moveSession,
+    reorderSession,
     saveDraft,
     clearWeek,
     applyPlanToStudents

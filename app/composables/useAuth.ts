@@ -75,9 +75,6 @@ export function useAuth() {
     localStorage.setItem(activeRoleStorageKey.value, role)
   })
 
-  // The backend accepts EITHER an email or a national ID as the identifier
-  // (exactly one). We infer which from the shape of the value: anything with an
-  // "@" is treated as an email, everything else as an id_number.
   async function login(identifier: string, password: string, rememberMe = false) {
     const id = identifier.trim()
     const body = id.includes('@')

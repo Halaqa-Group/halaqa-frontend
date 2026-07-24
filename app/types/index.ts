@@ -205,6 +205,8 @@ export interface ApiHalaqaDetail {
   name: string
   type: HalaqaType
   evaluation_settings: Record<string, unknown> | null
+  /** Daily-report track weights (sum = 100). Defaults to 40/25/30/5. */
+  report_weights: ReportWeights
   status: HalaqaStatus
   teachers: ApiTeacherAssignment[]
   supervisors: ApiSupervisorSummary[]
@@ -219,6 +221,7 @@ export interface ApiHalaqaCreated {
   name: string
   type: HalaqaType
   evaluation_settings: Record<string, unknown> | null
+  report_weights: ReportWeights
   status: HalaqaStatus
   created_at: string
 }
@@ -314,6 +317,13 @@ export interface ApiAttendance {
   /** تقييم الأخلاق — behaviour score 1..5. Seeded rows carry 5. Students only. */
   ethics_rating: number
   excuse_note: string | null
+  /**
+   * ملاحظة المحفّظ اليومية — the teacher's daily note, surfaced as `teacher_note`
+   * in the daily report. Currently write-only: the attendance list/detail
+   * endpoints do NOT return it yet, so it arrives undefined on reads. Kept
+   * optional so a later backend change that serializes it works without edits.
+   */
+  daily_note?: string | null
   recorded_by?: number | null
   modified_by?: number | null
   modification_reason?: string | null
@@ -365,6 +375,8 @@ export interface AttendanceCorrectionPayload {
   status?: AttendanceStatus
   ethics_rating?: number
   excuse_note?: string
+  /** ملاحظة المحفّظ اليومية — surfaced as `teacher_note` in the daily report. */
+  daily_note?: string
   modification_reason?: string
 }
 
@@ -634,4 +646,166 @@ export interface StudentWithAttendance {
   name: string
   avatar: string
   attendanceStatus: AttendanceStatus | null
+}
+
+// ─── Daily evaluation report ──────────────────────────────────────────────────
+// Contracts for the daily report feature (backend module `daily-reports`).
+// Endpoints, all under GET/POST /halaqat/:id/...:
+//   GET  :id/daily-report?date=YYYY-MM-DD              → ApiDailyReport
+//   GET  :id/daily-report/:date/students/:studentId    → ApiStudentReportDetail
+//   POST :id/daily-reports/:date/recalculate           → { message }
+// Response fields are snake_case (like halaqat/students/achievements); the only
+// exception is the internal `reconciliation` audit blob, whose keys stay
+// camelCase because the backend stores it verbatim. All rates/scores are already
+// rounded to 2 decimals (ROUND_HALF_UP) server-side — the frontend only formats.
+
+export type DailyReportSource = 'live' | 'snapshot'
+export type DailyReportDayStatus = 'working_day' | 'non_working_day'
+export type DailyReportStatus = 'complete' | 'partial' | 'failed'
+/** Attendance as seen by the report: the four real states plus a synthetic one. */
+export type EvaluationAttendanceStatus = AttendanceStatus | 'missing_attendance'
+
+export type SystemAlertSeverity = 'info' | 'warning' | 'error'
+/** Known codes; typed loosely so a new backend code still renders. */
+export type SystemAlertCode =
+  | 'NO_APPROVED_PLAN'
+  | 'MISSING_ATTENDANCE'
+  | 'OUTSIDE_PLAN'
+  | 'PLAN_GAPS'
+  | 'WEIGHTS_REDISTRIBUTED'
+  | 'RECALCULATED'
+  | (string & {})
+
+export interface SystemAlert {
+  code: SystemAlertCode
+  severity: SystemAlertSeverity
+  message: string
+}
+
+/** The four effective (snapshot) weights returned with a report; sum to 100. */
+export interface ReportWeightsSummary {
+  hifz: number
+  near: number
+  far: number
+  ethics: number
+}
+
+/** One student row in the summary report. `null` scores mean "not computed". */
+export interface StudentReportRow {
+  student_id: number
+  student_name: string
+  attendance_status: EvaluationAttendanceStatus
+  hifz_score: number
+  near_score: number
+  far_score: number
+  /** null when attendance is missing. */
+  ethics_score: number | null
+  /** Quantity-of-plan achieved, independent of quality. null when missing. */
+  plan_completion_rate: number | null
+  /** null when attendance is missing — render as "—", never as zero. */
+  total_score: number | null
+  teacher_note: string | null
+  system_alerts: SystemAlert[]
+}
+
+/** GET /halaqat/:id/daily-report?date=… */
+export interface ApiDailyReport {
+  halaqa_id: number
+  date: string
+  source: DailyReportSource
+  day_status: DailyReportDayStatus
+  report_status: DailyReportStatus
+  weights: ReportWeightsSummary
+  /** Empty on a non_working_day (no zero-filled rows). */
+  students: StudentReportRow[]
+}
+
+// Reconciliation audit blob (§12) — camelCase, stored verbatim by the backend.
+export interface ReconciliationSegment {
+  startSurah: number
+  startVerse: number
+  endSurah: number
+  endVerse: number
+  startGlobalAyah?: number
+  endGlobalAyah?: number
+  pageCoverage: number
+}
+
+export interface ReconciliationPlannedRange extends ReconciliationSegment {
+  planItemId: number
+}
+
+export interface ReconciliationApprovedSegment extends ReconciliationSegment {
+  percentageScore: number
+  selectedAchievementId: number
+  candidateAchievementIds: number[]
+}
+
+export interface ReconciliationOutsideSegment {
+  achievementId: number
+  startSurah: number
+  startVerse: number
+  endSurah: number
+  endVerse: number
+  pageCoverage: number
+}
+
+export interface TrackReconciliation {
+  version: number
+  trackType: string
+  plannedPages: number
+  achievedPages: number
+  completionRate: number
+  qualityRate: number
+  plannedRanges: ReconciliationPlannedRange[]
+  approvedSegments: ReconciliationApprovedSegment[]
+  gaps: ReconciliationSegment[]
+  outsidePlanSegments: ReconciliationOutsideSegment[]
+}
+
+/** Per-track breakdown for one student. */
+export interface StudentTrackDetail {
+  base_weight: number
+  /** May exceed base_weight when another track's weight is redistributed here. */
+  effective_weight: number
+  planned_pages: number
+  achieved_pages: number
+  completion_rate: number
+  quality_rate: number
+  score: number
+  reconciliation: TrackReconciliation | null
+}
+
+/** GET /halaqat/:id/daily-report/:date/students/:studentId */
+export interface ApiStudentReportDetail {
+  halaqa_id: number
+  date: string
+  student_id: number
+  student_name: string
+  source: DailyReportSource
+  attendance_status: EvaluationAttendanceStatus
+  hifz: StudentTrackDetail
+  near: StudentTrackDetail
+  far: StudentTrackDetail
+  ethics_rating: number | null
+  ethics_score: number | null
+  plan_completion_rate: number | null
+  total_score: number | null
+  teacher_note: string | null
+  system_alerts: SystemAlert[]
+}
+
+/** Per-halaqa track weights for the report. Persisted on the halaqa; sum = 100. */
+export interface ReportWeights {
+  hifz_weight: number
+  near_weight: number
+  far_weight: number
+  ethics_weight: number
+}
+
+export const REPORT_WEIGHTS_DEFAULTS: ReportWeights = {
+  hifz_weight: 40,
+  near_weight: 25,
+  far_weight: 30,
+  ethics_weight: 5
 }

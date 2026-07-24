@@ -7,7 +7,8 @@ import type {
   ApiTeacherOption,
   ApiTeacher,
   HalaqaStatus,
-  HalaqaType
+  HalaqaType,
+  ReportWeights
 } from '~/types'
 
 export interface ListHalaqatQuery {
@@ -24,6 +25,8 @@ export interface CreateHalaqaPayload {
   name: string
   type: HalaqaType
   evaluation_settings?: Record<string, unknown> | null
+  /** Daily-report track weights; all four required together, sum = 100. */
+  report_weights?: ReportWeights
   primary_teacher_user_id?: number
 }
 
@@ -31,6 +34,8 @@ export interface UpdateHalaqaPayload {
   name?: string
   type?: HalaqaType
   evaluation_settings?: Record<string, unknown> | null
+  /** Daily-report track weights; all four required together, sum = 100. */
+  report_weights?: ReportWeights
 }
 
 const halaqat = ref<ApiHalaqaListItem[]>([])

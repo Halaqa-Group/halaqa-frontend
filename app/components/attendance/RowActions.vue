@@ -11,6 +11,8 @@ const props = defineProps<{
   studentId: string
   name: string
   notes: string
+  /** ملاحظة المحفّظ اليومية — the teacher's daily note (report `teacher_note`). */
+  dailyNote?: string
   /** False for roles that may read the roster but not record it (supervisors). */
   canEdit: boolean
 }>()
@@ -56,6 +58,12 @@ const items = computed<DropdownMenuItem[][]>(() => {
       :notes="notes"
       :disabled="!canEdit"
       @save="(v) => setNote(studentId, v)"
+    />
+    <AttendanceDailyNotePopover
+      :student-id="studentId"
+      :name="name"
+      :daily-note="dailyNote ?? ''"
+      :disabled="!canEdit"
     />
     <UDropdownMenu :items="items" :content="{ align: 'end', collisionPadding: 12 }">
       <UButton

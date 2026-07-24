@@ -76,6 +76,7 @@
     "users": "المستخدمون",
     "parentOverview": "أبنائي",
     "attendance": "الحضور",
+    "dailyReport": "التقييم اليومي",
     "students": "الطلاب",
     "achievements": "الإنجازات",
     "analytics": "التحليلات",
@@ -341,6 +342,9 @@
         "restoreDefaults": "القيم الافتراضية",
         "weightRange": "من ٠ إلى ١٠٠",
         "noEvaluationSettings": "لا توجد إعدادات",
+        "reportWeights": "أوزان التقييم اليومي",
+        "reportWeightsHint": "توزيع درجة الطالب اليومية على المسارات: الحفظ والمراجعة القريبة والبعيدة والأخلاق. يجب أن يكون مجموع الأوزان ١٠٠ بالضبط.",
+        "weightsTotal": "المجموع: {total} / ١٠٠",
         "studentsCount": "عدد الطلاب",
         "createdAt": "تاريخ الإنشاء",
         "updatedAt": "آخر تحديث"
@@ -673,6 +677,70 @@
         "fri": "الجمعة"
       }
     },
+    "dailyReport": {
+      "title": "تقرير التقييم اليومي",
+      "subtitle": "درجات الطلاب اليومية موزّعة على المسارات، محسوبة من الخطة المعتمدة والإنجازات والحضور.",
+      "weights": "الأوزان",
+      "ethics": "الأخلاق",
+      "prevDay": "اليوم السابق",
+      "nextDay": "اليوم التالي",
+      "planCompletion": "تحقيق الخطة",
+      "totalScore": "الدرجة الكلية",
+      "teacherNote": "ملاحظة المعلم",
+      "noStudents": "لا يوجد طلاب في هذا التقرير.",
+      "nonWorkingDay": "يوم غير دراسي",
+      "nonWorkingDayHint": "لا تُحتسب درجات في الأيام غير الدراسية.",
+      "source": {
+        "live": "مباشر",
+        "snapshot": "لقطة محفوظة"
+      },
+      "status": {
+        "complete": "مكتمل",
+        "partial": "جزئي",
+        "failed": "فشل"
+      },
+      "attendance": {
+        "missing": "لم يُسجّل الحضور",
+        "missingHint": "لم يُسجّل حضور الطالب لهذا اليوم، لذا لا تُحتسب درجة كلية."
+      },
+      "columns": {
+        "student": "الطالب",
+        "attendance": "الحضور",
+        "planCompletion": "تحقيق الخطة",
+        "total": "الكلي",
+        "alerts": "تنبيهات"
+      },
+      "rowActions": {
+        "label": "إجراءات الصف",
+        "viewDetails": "عرض التفاصيل",
+        "viewProfile": "عرض ملف الطالب",
+        "logAchievement": "تسجيل إنجاز"
+      },
+      "detail": {
+        "title": "تفاصيل الطالب",
+        "loadError": "تعذّر تحميل تفاصيل الطالب",
+        "ethics": "الأخلاق",
+        "tracks": "تفصيل المسارات",
+        "plannedPages": "الصفحات المخطّطة",
+        "achievedPages": "الصفحات المنجزة",
+        "completionRate": "نسبة الإنجاز",
+        "qualityRate": "نسبة الجودة",
+        "weightRedistributed": "أُعيد توزيع الوزن ({base} ← {effective})",
+        "plannedRanges": "نطاقات مخطّطة: {n}",
+        "gaps": "فجوات: {n}",
+        "outsidePlan": "خارج الخطة: {n}"
+      },
+      "recalculate": {
+        "button": "إعادة الاحتساب",
+        "title": "إعادة احتساب التقرير",
+        "description": "سيُعاد حساب تقرير هذا اليوم واستبدال النسخة المحفوظة. لا تُنشأ نسخة ثانية.",
+        "reasonLabel": "سبب إعادة الاحتساب",
+        "reasonPlaceholder": "مثال: تم تصحيح تسميع الطالب",
+        "confirm": "إعادة الاحتساب",
+        "doneToast": "تمت إعادة احتساب التقرير",
+        "errorToast": "تعذّرت إعادة الاحتساب"
+      }
+    },
     "attendance": {
       "recordLabel": "السجل",
       "title": "الحضور والغياب",
@@ -738,6 +806,15 @@
       "noteFor": "ملاحظة عن {name}",
       "noteEmpty": "لا توجد ملاحظة بعد",
       "saveNote": "حفظ الملاحظة",
+      "dailyNote": {
+        "label": "ملاحظة المحفّظ اليومية",
+        "title": "ملاحظة المحفّظ عن {name}",
+        "hint": "تظهر في تقرير التقييم اليومي كملاحظة المعلم. منفصلة عن سبب الغياب.",
+        "placeholder": "اكتب ملاحظتك اليومية عن الطالب...",
+        "needsRecord": "يجب حفظ حضور الطالب لهذا اليوم أولاً قبل إضافة الملاحظة.",
+        "savedToast": "تم حفظ ملاحظة المحفّظ",
+        "errorToast": "تعذّر حفظ الملاحظة"
+      },
       "viewFullCalendar": "عرض التقويم الكامل",
       "calendarTitle": "التقويم الكامل",
       "statsLabels": {

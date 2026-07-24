@@ -40,6 +40,7 @@ const links = computed<NavigationMenuItem[][]>(() => {
   mainLinks.push(
     { label: t('nav.students'), icon: 'i-lucide-graduation-cap', to: '/students' },
     { label: t('nav.attendance'), icon: 'i-lucide-user-check', to: '/attendance' },
+    { label: t('nav.dailyReport'), icon: 'i-lucide-clipboard-check', to: '/daily-report' },
     { label: t('nav.achievements'), icon: 'i-lucide-award', to: '/achievements' },
     { label: t('nav.planner'), icon: 'i-lucide-book-open', to: '/planner' }
   )

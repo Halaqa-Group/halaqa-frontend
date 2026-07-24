@@ -20,6 +20,12 @@ export interface AttendanceRow {
   /** تقييم الأخلاق — 1..5, starts at the full mark and is lowered by exception. */
   ethicsRating: number
   notes: string
+  /**
+   * ملاحظة المحفّظ اليومية — teacher's daily note (report `teacher_note`). Saved
+   * through the single-row correction endpoint only; the attendance list does
+   * not return it yet, so it starts empty on every reload.
+   */
+  dailyNote: string
 }
 
 interface ExistingRecord {
@@ -27,6 +33,7 @@ interface ExistingRecord {
   status: AttendanceStatus
   ethicsRating: number
   notes: string
+  dailyNote: string
 }
 
 interface RowSnapshot {
@@ -86,7 +93,8 @@ export function useAttendance() {
         id: a.id,
         status: a.status,
         ethicsRating: a.ethics_rating ?? ETHICS_RATING_DEFAULT,
-        notes: a.excuse_note || ''
+        notes: a.excuse_note || '',
+        dailyNote: a.daily_note || ''
       })
     })
     return map
@@ -128,7 +136,8 @@ export function useAttendance() {
           currentSurah: '—',
           status: ex ? ex.status : 'present' as AttendanceStatus,
           ethicsRating: ex ? ex.ethicsRating : ETHICS_RATING_DEFAULT,
-          notes: ex?.notes || ''
+          notes: ex?.notes || '',
+          dailyNote: ex?.dailyNote || ''
         }
       })
       snapshotCurrentRows()
@@ -187,6 +196,7 @@ export function useAttendance() {
       status?: AttendanceStatus
       ethicsRating?: number
       excuseNote?: string
+      dailyNote?: string
       modificationReason?: string
     }
   ): Promise<ApiAttendance> {
@@ -195,24 +205,30 @@ export function useAttendance() {
       body: {
         ...(payload.status !== undefined && { status: payload.status }),
         ...(payload.ethicsRating !== undefined && { ethics_rating: payload.ethicsRating }),
+        ...(payload.dailyNote !== undefined && { daily_note: payload.dailyNote }),
         excuse_note: payload.excuseNote,
         modification_reason: payload.modificationReason
       }
     })
-    // Reflect the corrected row into local state.
+    // Reflect the corrected row into local state. `daily_note` is not returned by
+    // the endpoint yet, so keep whatever we just sent rather than blanking it.
     const studentId = String(updated.student_id)
     const rating = updated.ethics_rating ?? ETHICS_RATING_DEFAULT
+    const prev = existingRecords.value.get(studentId)
+    const dailyNote = updated.daily_note ?? payload.dailyNote ?? prev?.dailyNote ?? ''
     existingRecords.value.set(studentId, {
       id: updated.id,
       status: updated.status,
       ethicsRating: rating,
-      notes: updated.excuse_note || ''
+      notes: updated.excuse_note || '',
+      dailyNote
     })
     const row = attendanceRows.value.find(r => r.studentId === studentId)
     if (row) {
       row.status = updated.status
       row.ethicsRating = rating
       row.notes = updated.excuse_note || ''
+      row.dailyNote = dailyNote
     }
     const snap = originalSnapshot.value.get(studentId)
     if (snap) {
@@ -221,6 +237,25 @@ export function useAttendance() {
       snap.notes = updated.excuse_note || ''
     }
     return updated
+  }
+
+  // Whether the student already has a saved attendance row for the selected day.
+  // The daily note can only be written through the correction endpoint, which
+  // needs a row id — so the note editor is gated on this.
+  function hasSavedRecord(studentId: string): boolean {
+    return existingRecords.value.has(studentId)
+  }
+
+  // Save just the teacher's daily note via the single-row correction endpoint.
+  // The endpoint requires a modification reason (min 3 chars); a fixed one is
+  // used since editing a note is not an attendance correction per se.
+  async function saveDailyNote(studentId: string, note: string): Promise<void> {
+    const ex = existingRecords.value.get(studentId)
+    if (!ex) throw new Error('no-saved-record')
+    await correct(ex.id, {
+      dailyNote: note,
+      modificationReason: 'تحديث ملاحظة المحفّظ اليومية'
+    })
   }
 
   function setStatus(studentId: string, status: AttendanceStatus) {
@@ -378,6 +413,8 @@ export function useAttendance() {
     loadSession,
     submitSession,
     correct,
+    hasSavedRecord,
+    saveDailyNote,
     setStatus,
     setEthicsRating,
     resetRow,

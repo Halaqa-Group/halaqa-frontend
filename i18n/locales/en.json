@@ -1147,6 +1147,16 @@
       "unapprovedToast": "Plan approval revoked",
       "approveErrorTitle": "Failed to approve plan",
       "addItem": "Add session",
+      "downloadPdf": "Download plan",
+      "print": {
+        "title": "Plan print preview",
+        "download": "Download PDF",
+        "downloadImage": "Download PNG image",
+        "fileName": "memorization-plan",
+        "empty": "This plan has no sessions to print",
+        "error": "Could not generate the PDF",
+        "errorImage": "Could not generate the image"
+      },
       "weekOf": "Week of {date}",
       "selectStudent": "Select a student",
       "noPlan": "No plan for this week yet",

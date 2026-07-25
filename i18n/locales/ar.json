@@ -1147,6 +1147,16 @@
       "unapprovedToast": "تم إلغاء اعتماد الخطة",
       "approveErrorTitle": "خطأ في اعتماد الخطة",
       "addItem": "إضافة جلسة",
+      "downloadPdf": "تحميل الخطة",
+      "print": {
+        "title": "معاينة طباعة الخطة",
+        "download": "تحميل PDF",
+        "downloadImage": "تحميل صورة PNG",
+        "fileName": "خطة-الحافظ",
+        "empty": "لا توجد جلسات في هذه الخطة لطباعتها",
+        "error": "تعذّر إنشاء ملف PDF",
+        "errorImage": "تعذّر إنشاء الصورة"
+      },
       "weekOf": "أسبوع {date}",
       "selectStudent": "اختر الطالب",
       "noPlan": "لا توجد خطة لهذا الأسبوع بعد",

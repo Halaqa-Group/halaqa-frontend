@@ -141,28 +141,21 @@ function todayIso(): string {
 
 function recordAchievement() {
   // Open the create form with this cell's student pre-filled, dated today, and
-  // the session the user selected pre-filled as the lesson. Fall back to the
-  // first session when the cell was opened without a specific session.
+  // the cell's first session pre-selected as the lesson.
   const { selectedDate, editing, duplicateFrom, prefillStudentId, prefillPlanItem } = useAchievements()
   editing.value = null
   duplicateFrom.value = null
   selectedDate.value = todayIso()
   prefillStudentId.value = selectedStudentId.value ?? null
-  const index =
-    editIndex.value != null && editIndex.value >= 0
-      ? editIndex.value
-      : props.editSession != null && props.editSession >= 0
-        ? props.editSession
-        : 0
-  const selected = sessions.value[index] ?? sessions.value[0]
-  prefillPlanItem.value = selected
+  const first = sessions.value[0]
+  prefillPlanItem.value = first
     ? {
-        id: selected.id ?? null,
+        id: first.id ?? null,
         track_type: props.track,
-        start_surah: selected.start_surah,
-        start_verse: selected.start_verse,
-        end_surah: selected.end_surah,
-        end_verse: selected.end_verse
+        start_surah: first.start_surah,
+        start_verse: first.start_verse,
+        end_surah: first.end_surah,
+        end_verse: first.end_verse
       }
     : null
   open.value = false

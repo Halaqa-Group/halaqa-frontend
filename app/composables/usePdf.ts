@@ -113,6 +113,13 @@ export function usePdf(): UsePdf {
       windowHeight: el.scrollHeight,
       // Patch the cloned document only — leaves the live preview untouched.
       onclone: (clonedDoc: Document) => {
+        const clone = clonedDoc.getElementById(elementId)
+        // Tag the captured clone so templates can apply capture-only styles
+        // under `[data-pdf-capture]`. html2canvas rasterises text differently
+        // from the browser (e.g. it draws Arabic glyphs low in the line-box),
+        // so a template may need small tweaks that must NOT touch the on-screen
+        // preview — gate those on this attribute. See QuranPlan.vue.
+        clone?.setAttribute('data-pdf-capture', '')
         if (!wordSpacing) return
         const style = clonedDoc.createElement('style')
         style.textContent

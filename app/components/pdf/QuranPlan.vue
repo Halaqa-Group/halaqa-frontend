@@ -217,8 +217,6 @@ withDefaults(defineProps<QuranPlanProps>(), {
   color: var(--qp-blue);
   line-height: 1.1;
   margin: 0;
-  /* padding-bottom counters html2canvas's low Arabic baseline (see .qp-cc) */
-  padding-bottom: 0.4em;
 }
 
 .qp-student {
@@ -261,22 +259,15 @@ withDefaults(defineProps<QuranPlanProps>(), {
 }
 
 /*
- * Flex-centre each cell's text, let this box define the row height, and counter
- * html2canvas's low Arabic baseline with an asymmetric bottom padding.
+ * Flex-centre each cell's text and let this box define the row height. We
+ * shrink-wrap (own content + symmetric padding, no fixed cell height) because
+ * html2canvas won't resolve `height: 100%` on a flex child inside a <td> nor
+ * honour `vertical-align: middle` on the cell.
  *
- * Two separate html2canvas-pro quirks bite here:
- *   1. It won't resolve `height: 100%` on a flex child inside a <td>, nor honour
- *      `vertical-align: middle` on the cell — so we shrink-wrap instead (the box
- *      sizes to its own content + padding, no fixed cell height).
- *   2. Even in a correctly-centred box, it rasterises Arabic glyphs LOW in the
- *      line-box — measured ~26 % of the row height too low in the real export
- *      (invisible in the CSS preview; the live DOM is perfectly centred).
- *      `transform: translateY()` is IGNORED by html2canvas, so the only lever
- *      that works is padding: `padding-top: 0` + a large em-based `padding-bottom`
- *      pushes the glyph back up to the true centre. 1.15em was tuned against the
- *      real /dev/pdf-demo raster (thead ≈ 0 %, tbody ≈ 0 %). Em units keep it
- *      correct across the slightly different header/body font sizes.
- * Re-tune by rendering the actual raster — NOT the CSS preview.
+ * This symmetric padding centres the text in the *browser preview*. The exported
+ * raster needs an extra nudge (html2canvas draws Arabic low in the line-box) —
+ * that lives in the `[data-pdf-capture]` block near the end of this file so it
+ * only affects the capture, never the preview.
  */
 .qp-cc {
   display: flex;
@@ -284,7 +275,7 @@ withDefaults(defineProps<QuranPlanProps>(), {
   justify-content: center;
   min-height: 6mm;
   line-height: 1.2;
-  padding: 0 2.5mm 1.15em;
+  padding: 1.5mm 2.5mm;
 }
 
 .qp-table thead th {
@@ -315,10 +306,9 @@ withDefaults(defineProps<QuranPlanProps>(), {
 /*
  * The band shrink-wraps its content (no min-height) so it is exactly
  * content + padding, and `align-items: stretch` turns the label's trailing
- * border into a full-height divider. The label and text then counter
- * html2canvas's low Arabic baseline the same way the table cells do — via an
- * em-based `padding-bottom` on each (see .qp-completion-label/-text) — since
- * html2canvas draws the glyphs ~23 % too low inside the band otherwise.
+ * border into a full-height divider. The label + text centre naturally in the
+ * browser preview; the capture-only nudge for html2canvas's low Arabic baseline
+ * lives in the `[data-pdf-capture]` block near the end of this file.
  */
 .qp-completion {
   /* Pin the completion + signature block to the bottom of the frame, leaving
@@ -341,8 +331,6 @@ withDefaults(defineProps<QuranPlanProps>(), {
   font-weight: 800;
   font-size: 4mm;
   color: #8a6d1a;
-  /* padding-bottom counters html2canvas's low Arabic baseline (see .qp-cc) */
-  padding-block: 0 1.25em;
   padding-inline-end: 3mm;
   border-inline-end: 0.4mm solid var(--qp-yellow-line);
 }
@@ -354,8 +342,6 @@ withDefaults(defineProps<QuranPlanProps>(), {
   font-size: 3.7mm;
   font-weight: 600;
   color: var(--qp-ink);
-  /* padding-bottom counters html2canvas's low Arabic baseline (see .qp-cc) */
-  padding-block: 0 1.25em;
 }
 
 /*
@@ -423,11 +409,9 @@ withDefaults(defineProps<QuranPlanProps>(), {
    * filled green block in the exported PDF.
    */
   /*
-   * Centre the text by shrink-wrapping: no min-height, symmetric vertical
-   * padding, tight line-height. html2canvas-pro top-aligns flex content when the
-   * box is taller than the content, so the old `min-height: 8mm` made the word
-   * ride high inside the double border. Sizing the box to text + equal padding
-   * removes the slack and the glyphs sit dead-centre.
+   * Shrink-wrap the text with symmetric padding + tight line-height so it sits
+   * dead-centre in the browser preview (the capture-only nudge is in the
+   * `[data-pdf-capture]` block below).
    */
   display: inline-flex;
   align-items: center;
@@ -437,8 +421,7 @@ withDefaults(defineProps<QuranPlanProps>(), {
   color: var(--qp-stamp);
   background: #ffffff;
   border-radius: 2mm;
-  /* asymmetric bottom padding counters html2canvas's low Arabic baseline (see .qp-cc) */
-  padding: 1mm 4.5mm 3.4mm;
+  padding: 2.2mm 4.5mm;
   font-size: 4.5mm;
   font-weight: 800;
   /*
@@ -448,5 +431,36 @@ withDefaults(defineProps<QuranPlanProps>(), {
    */
   white-space: nowrap;
   transform: rotate(-8deg);
+}
+
+/* ── Capture-only compensation ──────────────────────────── */
+/*
+ * These rules apply ONLY to the html2canvas capture, never the on-screen
+ * preview: `usePdf` tags the cloned root with `data-pdf-capture` (see
+ * usePdf.ts). The browser renders Arabic centred, but html2canvas rasterises
+ * the glyphs LOW in the line-box (~26 % of row height too low). `transform:
+ * translateY()` is ignored by html2canvas, so the only working lever is an
+ * asymmetric bottom padding that pushes each glyph back up to the true centre.
+ * Values tuned against the real /dev/pdf-demo raster:
+ *   thead ≈ 0 %, tbody ≈ 0 %, band ≈ 1 %, stamp ≈ 3 %, title-in-header ≈ 5 %.
+ * Em units keep the correction proportional across the different font sizes.
+ * RE-TUNE by rendering the actual raster — the CSS preview will look "wrong"
+ * here on purpose (that's the whole point of separating the two).
+ */
+.quran-plan[data-pdf-capture] .qp-cc {
+  padding: 0 2.5mm 1.15em;
+}
+
+.quran-plan[data-pdf-capture] .qp-completion-label,
+.quran-plan[data-pdf-capture] .qp-completion-text {
+  padding-block: 0 1.25em;
+}
+
+.quran-plan[data-pdf-capture] .qp-title {
+  padding-bottom: 0.4em;
+}
+
+.quran-plan[data-pdf-capture] .qp-stamp-text {
+  padding: 1mm 4.5mm 3.4mm;
 }
 </style>

@@ -317,14 +317,12 @@ async function onRecalculate(reason: string) {
           :data="report.students"
           :columns="columns"
           :loading="isLoading"
+          :on-select="onRowSelect"
           class="min-w-[720px]"
+          :ui="{ tr: 'cursor-pointer' }"
         >
         <template #student_name-cell="{ row }">
-          <button
-            type="button"
-            class="flex items-center gap-2 min-w-0 text-start hover:underline"
-            @click="openDetail(row.original)"
-          >
+          <div class="flex items-center gap-2 min-w-0">
             <span class="font-medium truncate">{{ row.original.student_name }}</span>
             <UIcon
               v-if="row.original.teacher_note"
@@ -332,7 +330,7 @@ async function onRecalculate(reason: string) {
               class="size-3.5 text-primary shrink-0"
               :title="row.original.teacher_note"
             />
-          </button>
+          </div>
         </template>
 
         <template #attendance_status-cell="{ row }">
@@ -381,19 +379,22 @@ async function onRecalculate(reason: string) {
           <DailyReportSystemAlerts :alerts="row.original.system_alerts" compact />
         </template>
 
+        <!-- Stop propagation so the menu doesn't also open the row's detail. -->
         <template #actions-cell="{ row }">
-          <UDropdownMenu
-            :items="rowMenuItems(row.original)"
-            :content="{ align: 'end', collisionPadding: 12 }"
-          >
-            <UButton
-              icon="i-lucide-ellipsis-vertical"
-              color="neutral"
-              variant="ghost"
-              square
-              :aria-label="t('pages.dailyReport.columns.actions')"
-            />
-          </UDropdownMenu>
+          <div class="flex justify-end" @click.stop>
+            <UDropdownMenu
+              :items="rowMenuItems(row.original)"
+              :content="{ align: 'end', collisionPadding: 12 }"
+            >
+              <UButton
+                icon="i-lucide-ellipsis-vertical"
+                color="neutral"
+                variant="ghost"
+                square
+                :aria-label="t('pages.dailyReport.columns.actions')"
+              />
+            </UDropdownMenu>
+          </div>
         </template>
         </UTable>
       </div>

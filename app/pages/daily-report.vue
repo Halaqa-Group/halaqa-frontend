@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
-import type { TableColumn, TableRow } from '@nuxt/ui'
+import type { TableColumn, DropdownMenuItem, TableRow } from '@nuxt/ui'
 import type { StudentReportRow } from '~/types'
 import {
   attendanceMeta,
@@ -123,10 +123,10 @@ const columns = computed<TableColumn<StudentReportRow>[]>(() => [
   { accessorKey: 'plan_completion_rate', header: t('pages.dailyReport.columns.planCompletion'), meta: { class: { th: 'text-center', td: 'text-center' } } },
   { accessorKey: 'total_score', header: t('pages.dailyReport.columns.total'), meta: { class: { th: 'text-center', td: 'text-center' } } },
   { id: 'alerts', header: t('pages.dailyReport.columns.alerts') },
-  { id: 'actions', header: '', meta: { class: { th: 'text-end w-10', td: 'text-end' } } }
+  { id: 'actions', header: t('pages.dailyReport.columns.actions') }
 ])
 
-function rowActions(row: StudentReportRow) {
+function rowMenuItems(row: StudentReportRow): DropdownMenuItem[][] {
   return [[
     {
       label: t('pages.dailyReport.rowActions.viewDetails'),
@@ -176,7 +176,7 @@ async function onRecalculate(reason: string) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 pb-16">
+  <div class="flex flex-col gap-6">
     <div class="flex flex-col gap-1">
       <h1 class="text-2xl font-bold">
         {{ t('pages.dailyReport.title') }}
@@ -186,145 +186,153 @@ async function onRecalculate(reason: string) {
       </p>
     </div>
 
-    <!-- Controls -->
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-      <USelectMenu
-        v-model="halaqaId"
-        :items="halaqaItems"
-        value-key="value"
-        :placeholder="t('common.selectHalaqa')"
-        icon="i-lucide-building-2"
-        class="w-full sm:w-64"
-      />
-
-      <div class="flex items-center gap-1">
-        <UButton
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-chevron-right"
-          square
-          :aria-label="t('pages.dailyReport.prevDay')"
-          @click="shiftDate(-1)"
-        />
-        <UPopover v-model:open="calendarOpen">
-          <UButton
-            variant="outline"
-            color="neutral"
-            icon="i-lucide-calendar-days"
-            trailing-icon="i-lucide-chevron-down"
-            class="w-full justify-between sm:w-auto"
-          >
-            {{ formattedDate }}
-          </UButton>
-          <template #content>
-            <UCalendar
-              :model-value="calendarValue"
-              :max-value="maxCalendarValue"
-              color="primary"
-              class="p-2"
-              @update:model-value="onCalendarPick"
+    <UCard :ui="{ body: 'p-0 sm:p-0' }">
+      <template #header>
+        <div class="flex flex-col gap-3">
+          <!-- Controls -->
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
+            <USelectMenu
+              v-model="halaqaId"
+              :items="halaqaItems"
+              value-key="value"
+              :placeholder="t('common.selectHalaqa')"
+              icon="i-lucide-building-2"
+              class="w-full sm:w-64"
             />
-          </template>
-        </UPopover>
-        <UButton
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-chevron-left"
-          square
-          :disabled="isToday"
-          :aria-label="t('pages.dailyReport.nextDay')"
-          @click="shiftDate(1)"
-        />
+
+            <div class="flex items-center gap-1">
+              <UButton
+                variant="outline"
+                color="neutral"
+                icon="i-lucide-chevron-right"
+                square
+                :aria-label="t('pages.dailyReport.prevDay')"
+                @click="shiftDate(-1)"
+              />
+              <UPopover v-model:open="calendarOpen">
+                <UButton
+                  variant="outline"
+                  color="neutral"
+                  icon="i-lucide-calendar-days"
+                  trailing-icon="i-lucide-chevron-down"
+                  class="w-full justify-between sm:w-auto"
+                >
+                  {{ formattedDate }}
+                </UButton>
+                <template #content>
+                  <UCalendar
+                    :model-value="calendarValue"
+                    :max-value="maxCalendarValue"
+                    color="primary"
+                    class="p-2"
+                    @update:model-value="onCalendarPick"
+                  />
+                </template>
+              </UPopover>
+              <UButton
+                variant="outline"
+                color="neutral"
+                icon="i-lucide-chevron-left"
+                square
+                :disabled="isToday"
+                :aria-label="t('pages.dailyReport.nextDay')"
+                @click="shiftDate(1)"
+              />
+            </div>
+
+            <div class="flex items-center gap-2 sm:ms-auto">
+              <UBadge
+                v-if="report"
+                :color="report.source === 'live' ? 'success' : 'neutral'"
+                variant="subtle"
+                :icon="report.source === 'live' ? 'i-lucide-radio' : 'i-lucide-history'"
+                :label="t(`pages.dailyReport.source.${report.source}`)"
+              />
+              <UBadge
+                v-if="reportStatusMeta"
+                :color="reportStatusMeta.color"
+                variant="subtle"
+                :label="t(reportStatusMeta.key)"
+              />
+              <UButton
+                v-if="report && canManageHalaqaLifecycle"
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-refresh-cw"
+                :label="t('pages.dailyReport.recalculate.button')"
+                @click="recalcOpen = true"
+              />
+            </div>
+          </div>
+
+          <!-- Weights summary -->
+          <div v-if="report && !isNonWorkingDay" class="flex flex-wrap items-center gap-2">
+            <span class="text-xs text-muted">{{ t('pages.dailyReport.weights') }}:</span>
+            <UBadge
+              v-for="w in weightItems"
+              :key="w.labelKey"
+              color="neutral"
+              variant="soft"
+              :label="`${t(w.labelKey)} ${formatScore(w.value)}`"
+            />
+          </div>
+        </div>
+      </template>
+
+      <!-- States -->
+      <div v-if="isLoading" class="flex items-center justify-center py-16">
+        <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary" />
       </div>
 
-      <div class="flex items-center gap-2 sm:ms-auto">
-        <UBadge
-          v-if="report"
-          :color="report.source === 'live' ? 'success' : 'neutral'"
-          variant="subtle"
-          :icon="report.source === 'live' ? 'i-lucide-radio' : 'i-lucide-history'"
-          :label="t(`pages.dailyReport.source.${report.source}`)"
-        />
-        <UBadge
-          v-if="reportStatusMeta"
-          :color="reportStatusMeta.color"
-          variant="subtle"
-          :label="t(reportStatusMeta.key)"
-        />
-        <UButton
-          v-if="report && canManageHalaqaLifecycle"
-          color="neutral"
-          variant="outline"
-          icon="i-lucide-refresh-cw"
-          :label="t('pages.dailyReport.recalculate.button')"
-          @click="recalcOpen = true"
-        />
+      <div v-else-if="error" class="flex flex-col items-center gap-3 py-12 text-center">
+        <UIcon name="i-lucide-triangle-alert" class="size-8 text-error" />
+        <p class="text-sm text-error">
+          {{ error }}
+        </p>
+        <UButton variant="soft" size="sm" :label="t('common.tryAgain')" @click="reload" />
       </div>
-    </div>
 
-    <!-- Weights summary -->
-    <div v-if="report && !isNonWorkingDay" class="flex flex-wrap items-center gap-2">
-      <span class="text-xs text-muted">{{ t('pages.dailyReport.weights') }}:</span>
-      <UBadge
-        v-for="w in weightItems"
-        :key="w.labelKey"
-        color="neutral"
-        variant="soft"
-        :label="`${t(w.labelKey)} ${formatScore(w.value)}`"
-      />
-    </div>
+      <div v-else-if="halaqaId === null" class="py-12 text-center text-sm text-muted">
+        {{ t('common.selectHalaqaToContinue') }}
+      </div>
 
-    <!-- States -->
-    <div v-if="isLoading" class="flex items-center justify-center py-16">
-      <UIcon name="i-lucide-loader-circle" class="size-7 animate-spin text-muted" />
-    </div>
+      <!-- Non-working day: no zero-filled rows -->
+      <div v-else-if="isNonWorkingDay" class="flex flex-col items-center gap-2 py-14 text-center">
+        <UIcon name="i-lucide-calendar-off" class="size-8 text-muted" />
+        <p class="font-medium">
+          {{ t('pages.dailyReport.nonWorkingDay') }}
+        </p>
+        <p class="text-sm text-muted">
+          {{ t('pages.dailyReport.nonWorkingDayHint') }}
+        </p>
+      </div>
 
-    <div v-else-if="error" class="rounded-xl border border-default py-12 text-center">
-      <UIcon name="i-lucide-triangle-alert" class="mx-auto mb-2 size-8 text-error" />
-      <p class="text-sm text-error">
-        {{ error }}
-      </p>
-      <UButton class="mt-3" variant="soft" size="sm" :label="t('common.tryAgain')" @click="reload" />
-    </div>
+      <div v-else-if="report && report.students.length === 0" class="py-12 text-center text-sm text-muted">
+        {{ t('pages.dailyReport.noStudents') }}
+      </div>
 
-    <div v-else-if="halaqaId === null" class="rounded-xl border border-default py-12 text-center text-muted">
-      {{ t('common.selectHalaqaToContinue') }}
-    </div>
-
-    <!-- Non-working day: no zero-filled rows -->
-    <div v-else-if="isNonWorkingDay" class="rounded-xl border border-dashed border-default py-14 text-center">
-      <UIcon name="i-lucide-calendar-off" class="mx-auto mb-2 size-8 text-muted" />
-      <p class="font-medium">
-        {{ t('pages.dailyReport.nonWorkingDay') }}
-      </p>
-      <p class="mt-1 text-sm text-muted">
-        {{ t('pages.dailyReport.nonWorkingDayHint') }}
-      </p>
-    </div>
-
-    <div v-else-if="report && report.students.length === 0" class="rounded-xl border border-default py-12 text-center text-muted">
-      {{ t('pages.dailyReport.noStudents') }}
-    </div>
-
-    <!-- Report table -->
-    <div v-else-if="report" class="overflow-x-auto rounded-xl border border-default">
-      <UTable
-        :data="report.students"
-        :columns="columns"
-        :on-select="onRowSelect"
-        class="min-w-[720px]"
-        :ui="{ tr: 'cursor-pointer transition-colors hover:bg-elevated/60 data-[selectable=true]:focus-visible:bg-elevated/60' }"
-      >
+      <!-- Report table -->
+      <div v-else-if="report" class="overflow-x-auto">
+        <UTable
+          :data="report.students"
+          :columns="columns"
+          :loading="isLoading"
+          class="min-w-[720px]"
+        >
         <template #student_name-cell="{ row }">
-          <div class="flex items-center gap-2">
-            <span class="font-medium">{{ row.original.student_name }}</span>
+          <button
+            type="button"
+            class="flex items-center gap-2 min-w-0 text-start hover:underline"
+            @click="openDetail(row.original)"
+          >
+            <span class="font-medium truncate">{{ row.original.student_name }}</span>
             <UIcon
               v-if="row.original.teacher_note"
               name="i-lucide-sticky-note"
               class="size-3.5 text-primary shrink-0"
               :title="row.original.teacher_note"
             />
-          </div>
+          </button>
         </template>
 
         <template #attendance_status-cell="{ row }">
@@ -373,23 +381,23 @@ async function onRecalculate(reason: string) {
           <DailyReportSystemAlerts :alerts="row.original.system_alerts" compact />
         </template>
 
-        <!-- Stop propagation so opening the menu does not also open the row detail. -->
         <template #actions-cell="{ row }">
-          <div class="flex justify-end" @click.stop>
-            <UDropdownMenu :items="rowActions(row.original)" :content="{ align: 'end', collisionPadding: 12 }">
-              <UButton
-                icon="i-lucide-ellipsis-vertical"
-                color="neutral"
-                variant="ghost"
-                size="sm"
-                square
-                :aria-label="t('pages.dailyReport.rowActions.label')"
-              />
-            </UDropdownMenu>
-          </div>
+          <UDropdownMenu
+            :items="rowMenuItems(row.original)"
+            :content="{ align: 'end', collisionPadding: 12 }"
+          >
+            <UButton
+              icon="i-lucide-ellipsis-vertical"
+              color="neutral"
+              variant="ghost"
+              square
+              :aria-label="t('pages.dailyReport.columns.actions')"
+            />
+          </UDropdownMenu>
         </template>
-      </UTable>
-    </div>
+        </UTable>
+      </div>
+    </UCard>
 
     <DailyReportStudentDetail
       v-if="halaqaId !== null"

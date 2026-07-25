@@ -708,7 +708,8 @@
         "attendance": "Attendance",
         "planCompletion": "Plan completion",
         "total": "Total",
-        "alerts": "Alerts"
+        "alerts": "Alerts",
+        "actions": "Actions"
       },
       "rowActions": {
         "label": "Row actions",

@@ -708,7 +708,8 @@
         "attendance": "الحضور",
         "planCompletion": "تحقيق الخطة",
         "total": "الكلي",
-        "alerts": "تنبيهات"
+        "alerts": "تنبيهات",
+        "actions": "إجراءات"
       },
       "rowActions": {
         "label": "إجراءات الصف",

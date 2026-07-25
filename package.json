@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cp .env.prod .env && nuxt build",
+    "build": "cp .env.prod .env && pnpm setup:quran && nuxt build",
+    "build:app": "cp .env.prod .env && nuxt build",
     "dev": "nuxt dev --host",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
@@ -34,5 +35,8 @@
     "typescript": "^6.0.2",
     "vue-tsc": "^3.2.6"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.5.0"
+  }
 }

@@ -594,22 +594,6 @@
       "greetingFallback": "Welcome",
       "subtitle": "Here's an overview of your halaqa's activity today.",
       "quickAccess": "Quick access",
-      "stats": {
-        "totalStudents": "Total students",
-        "activeHalaqat": "Active halaqat",
-        "loadFailed": "Failed to load",
-        "attendanceToday": "Today's attendance",
-        "attendanceCount": "{present} of {total}",
-        "currentDay": "Today",
-        "pendingReviews": "Pending reviews",
-        "vsLastWeek": "vs last week"
-      },
-      "quickActions": {
-        "attendance": "Record daily attendance",
-        "students": "Manage learners",
-        "achievements": "Track recitation and memorization",
-        "analytics": "Performance reports and alerts"
-      },
       "schoolCard": {
         "title": "Your school",
         "subtitle": "Keep this information accurate for staff, parents, and records.",
@@ -629,52 +613,90 @@
         "toastError": "Could not save school",
         "validationName": "School name is required"
       },
-      "welcome": {
-        "title": "Welcome to Halaqa",
-        "message": "Halaqa not set up yet. Contact your admin to add students."
+      "period": {
+        "week": "This week",
+        "month": "This month",
+        "custom": "Custom range",
+        "refresh": "Refresh",
+        "vsPreviousPeriod": "Change compared with the previous week",
+        "vsPreviousMonth": "Change compared with the previous month"
       },
-      "schedule": {
-        "title": "Today's Schedule",
-        "noSessions": "No sessions scheduled for today",
-        "students": "students"
+      "kpi": {
+        "studentAttendance": "Student attendance",
+        "teacherAttendance": "Teacher attendance",
+        "newMemorization": "New memorization",
+        "pagesHint": "Pages in the period",
+        "planCompletion": "Plan completion",
+        "averageScore": "Average score",
+        "scoreHint": "Out of 100",
+        "ethics": "Ethics rating",
+        "ethicsHint": "Out of 5",
+        "activeStudents": "Active students",
+        "activeHalaqat": "Active halaqat"
       },
-      "weeklyAttendance": {
-        "title": "Weekly Attendance",
-        "present": "Present",
-        "absent": "Absent"
-      },
-      "topPerformers": {
-        "title": "Top Performers This Week",
+      "topStudents": {
+        "title": "Top students",
+        "trackLabel": "Track",
         "pages": "pages",
-        "noData": "Not enough data"
+        "positions": "{pages} recited",
+        "meta": "{count} achievements · average {score}",
+        "empty": "No approved achievements in this period"
       },
-      "recentActivity": {
-        "title": "Recent Activity",
-        "completedSurah": "{student} completed Surah {surah}",
-        "attendanceRecorded": "Attendance recorded for {halaqa}",
-        "newStudent": "New student {student} added",
-        "achievementLogged": "{student} logged a memorization achievement",
-        "planApproved": "Weekly plan approved for {halaqa}",
-        "timeAgo": {
-          "minutes": "{count} min ago",
-          "hours": "{count} hours ago",
-          "days": "{count} days ago"
+      "halaqat": {
+        "title": "Halaqa performance",
+        "empty": "No halaqat in this period",
+        "columns": {
+          "halaqa": "Halaqa",
+          "students": "Students",
+          "attendance": "Attendance",
+          "pages": "Pages",
+          "score": "Average score",
+          "planCompletion": "Plan completion"
         }
       },
-      "absenceAlerts": {
-        "title": "Absence Alerts",
-        "missedSessions": "Missed {count} consecutive sessions",
-        "contactParent": "Contact parent",
-        "noAlerts": "No absence alerts"
+      "teachers": {
+        "title": "Teacher commitment",
+        "empty": "No teachers in this period",
+        "columns": {
+          "teacher": "Teacher",
+          "ownAttendance": "Their attendance",
+          "halaqat": "Halaqat",
+          "students": "Students",
+          "studentAttendance": "Students' attendance",
+          "studentPages": "Students' pages"
+        }
       },
-      "days": {
-        "sat": "Sat",
-        "sun": "Sun",
-        "mon": "Mon",
-        "tue": "Tue",
-        "wed": "Wed",
-        "thu": "Thu",
-        "fri": "Fri"
+      "alerts": {
+        "title": "Needs attention",
+        "empty": "Nothing needs attention right now",
+        "staleWindow": "Last {days} days",
+        "staleWindowLabel": "Stall window",
+        "never": "No approved achievement yet",
+        "daysSince": "{days} days since the last achievement",
+        "stalled": {
+          "title": "Students with no achievement in {days} days",
+          "action": "Record an achievement"
+        },
+        "noTeacher": {
+          "title": "Halaqat with no main teacher"
+        },
+        "highAbsence": {
+          "title": "Teachers with high absence",
+          "detail": "{days} absent days · attendance {rate}%"
+        }
+      },
+      "errors": {
+        "overview": "Could not load the headline indicators",
+        "topStudents": "Could not load the top students",
+        "halaqat": "Could not load halaqa performance",
+        "teachers": "Could not load teacher commitment",
+        "alerts": "Could not load the alerts"
+      },
+      "quickActions": {
+        "attendance": "Record daily attendance",
+        "students": "Manage learners",
+        "achievements": "Track recitation and memorization",
+        "dailyReport": "Review the daily evaluation report"
       }
     },
     "dailyReport": {

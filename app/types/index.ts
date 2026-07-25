@@ -809,3 +809,186 @@ export const REPORT_WEIGHTS_DEFAULTS: ReportWeights = {
   far_weight: 30,
   ethics_weight: 5
 }
+
+// ─── Dashboard KPIs (GET /dashboard/*) ────────────────────────────────────────
+// A read-only aggregation layer over attendance, achievements, weekly plans,
+// halaqat and students. It owns no table and exposes no mutations.
+//
+// Scope is resolved SERVER-side from the caller's role — principal/VP see the
+// whole school, a supervisor their supervised halaqat, a teacher the halaqat
+// they currently teach. A caller with nothing in scope gets zeros/empty arrays
+// rather than a 403, so the frontend never pre-checks scope; it only hides the
+// two staff-facing surfaces the API refuses outright (see `canViewTeacherCommitment`).
+//
+// Units are uniform across every endpoint and are NOT interchangeable:
+//   • rates  → fractions 0..1   (`0.92` = 92%)
+//   • scores → 0..100           (averages of `percentage_score`)
+//   • ethics → 1..5
+//   • volume → mushaf PAGES, fractional — never verses
+// Every response echoes the resolved `range`, so the UI always knows which
+// window it is showing even when it sent none.
+
+export type DashboardPeriod = 'week' | 'month'
+
+/** Same three tracks as `AchievementTrack` in `~/utils/achievement`. */
+export type DashboardTrack = 'Hifz' | 'Near' | 'Far'
+
+/** The resolved reporting window, inclusive on both ends. */
+export interface DashboardRange {
+  from: string
+  to: string
+}
+
+/**
+ * The window query every dashboard endpoint accepts. `from`+`to` win when both
+ * are present; otherwise `period` decides ('month' → 1st of this month, default
+ * 'week' → the most recent Saturday), always ending today.
+ */
+export interface DashboardWindowQuery {
+  period?: DashboardPeriod
+  from?: string
+  to?: string
+}
+
+/** The headline KPIs over the immediately-preceding window, for trend deltas. */
+export interface ApiDashboardOverviewPrevious {
+  range: DashboardRange
+  student_attendance_rate: number
+  teacher_attendance_rate: number | null
+  ethics_average: number
+  new_memorization_pages: number
+  plan_completion_rate: number
+  average_score: number
+}
+
+/** GET /dashboard/overview */
+export interface ApiDashboardOverview {
+  range: DashboardRange
+  /** (present + late) / obligated rows, 0..1. */
+  student_attendance_rate: number
+  /** `null` for the teacher role — staff commitment is above their level. */
+  teacher_attendance_rate: number | null
+  /** Average ethics rating (تقييم الأخلاق), 1..5. */
+  ethics_average: number
+  /** SUM(total_pages) of approved Hifz achievements — fractional pages. */
+  new_memorization_pages: number
+  plan_completion_rate: number
+  /** Average percentage_score, 0..100. */
+  average_score: number
+  active_students: number
+  active_halaqat: number
+  /** Only populated when the request asked for `compare=true`; else null. */
+  previous: ApiDashboardOverviewPrevious | null
+}
+
+export interface ApiTopStudent {
+  student_id: number
+  student_name: string
+  /** الصفحات الكلية — what the leaderboard ranks by. */
+  total_pages: number
+  /** صفحات المواضع — the amount actually recited; equals total_pages when full. */
+  positions_pages: number
+  achievements_count: number
+  average_score: number
+}
+
+/** GET /dashboard/top-students */
+export interface ApiTopStudents {
+  range: DashboardRange
+  track: DashboardTrack
+  items: ApiTopStudent[]
+}
+
+export interface ApiHalaqaPerformance {
+  halaqa_id: number
+  halaqa_name: string
+  students: number
+  attendance_rate: number
+  /** New-memorization pages (Hifz) in the window. */
+  pages: number
+  average_score: number
+  plan_completion_rate: number
+}
+
+/** GET /dashboard/halaqat */
+export interface ApiHalaqatPerformance {
+  range: DashboardRange
+  items: ApiHalaqaPerformance[]
+}
+
+export interface ApiTeacherCommitment {
+  teacher_id: number
+  teacher_name: string
+  /** The teacher's OWN attendance rate; `null` when they have no rows at all. */
+  attendance_rate: number | null
+  halaqat: number
+  students: number
+  /** Their students' attendance rate — a different metric from the one above. */
+  student_attendance_rate: number
+  student_pages: number
+}
+
+/** GET /dashboard/teachers — principal, VP and supervisor only (403 otherwise). */
+export interface ApiTeachersCommitment {
+  range: DashboardRange
+  items: ApiTeacherCommitment[]
+}
+
+export interface ApiStalledStudent {
+  student_id: number
+  student_name: string
+  /** Date of their last approved achievement; `null` when they have never had one. */
+  last_achievement_date: string | null
+  /** Days since that achievement; `null` when there has never been one. */
+  days_since: number | null
+}
+
+export interface ApiHalaqaWithoutTeacher {
+  halaqa_id: number
+  halaqa_name: string
+}
+
+export interface ApiHighAbsenceTeacher {
+  teacher_id: number
+  teacher_name: string
+  absent_days: number
+  attendance_rate: number
+}
+
+/** GET /dashboard/alerts */
+export interface ApiDashboardAlerts {
+  range: DashboardRange
+  /** The staleness window the server actually applied (it clamps to 1..90). */
+  stalled_days: number
+  stalled_students: ApiStalledStudent[]
+  halaqat_without_teacher: ApiHalaqaWithoutTeacher[]
+  /** Always empty for the teacher role — the endpoint itself withholds it. */
+  high_absence_teachers: ApiHighAbsenceTeacher[]
+}
+
+/** Extra knobs `GET /dashboard/alerts` accepts on top of the window query. */
+export interface DashboardAlertsQuery extends DashboardWindowQuery {
+  /** No approved achievement in this many days = "stalled". Default 7, clamped 1..90. */
+  stalled_days?: number
+  /** Absent days that flag a teacher. Default 2, clamped 1..90. */
+  absence_threshold?: number
+}
+
+/**
+ * The window as the UI models it. `mode: 'custom'` is the only case that carries
+ * `from`/`to`; the other two let the server derive the window from `period`, so
+ * the client never has to know that the school week starts on Saturday.
+ */
+export interface DashboardWindowSelection {
+  mode: DashboardPeriod | 'custom'
+  from?: string
+  to?: string
+}
+
+/** Extra knobs `GET /dashboard/top-students` accepts. */
+export interface DashboardTopStudentsQuery extends DashboardWindowQuery {
+  /** Defaults to `Hifz`; `Near`/`Far` rank by review volume instead. */
+  track?: DashboardTrack
+  /** Default 10, capped at 50 server-side. */
+  limit?: number
+}

@@ -594,22 +594,6 @@
       "greetingFallback": "مرحباً بك",
       "subtitle": "هذه نظرة عامة على نشاط حلقتك اليوم.",
       "quickAccess": "الوصول السريع",
-      "stats": {
-        "totalStudents": "إجمالي الطلاب",
-        "activeHalaqat": "حلقات نشطة",
-        "loadFailed": "تعذّر التحميل",
-        "attendanceToday": "الحضور اليوم",
-        "attendanceCount": "{present} من {total}",
-        "currentDay": "اليوم الحالي",
-        "pendingReviews": "في انتظار المراجعة",
-        "vsLastWeek": "مقارنة بالأسبوع الماضي"
-      },
-      "quickActions": {
-        "attendance": "تسجيل الحضور اليومي",
-        "students": "إدارة المتعلمين",
-        "achievements": "متابعة التلاوة والحفظ",
-        "analytics": "تقارير الأداء والتنبيهات"
-      },
       "schoolCard": {
         "title": "مدرستك",
         "subtitle": "حافظ على صحة هذه البيانات للموظفين وأولياء الأمور والسجلات.",
@@ -629,52 +613,90 @@
         "toastError": "تعذّر حفظ بيانات المدرسة",
         "validationName": "اسم المدرسة مطلوب"
       },
-      "welcome": {
-        "title": "مرحباً بك في حلقة",
-        "message": "لم يتم إعداد الحلقة بعد. تواصل مع المشرف لإضافة الطلاب."
+      "period": {
+        "week": "هذا الأسبوع",
+        "month": "هذا الشهر",
+        "custom": "مدة مخصصة",
+        "refresh": "تحديث",
+        "vsPreviousPeriod": "التغير مقارنة بالأسبوع السابق",
+        "vsPreviousMonth": "التغير مقارنة بالشهر السابق"
       },
-      "schedule": {
-        "title": "جدول اليوم",
-        "noSessions": "لا توجد جلسات مجدولة لهذا اليوم",
-        "students": "طالب"
+      "kpi": {
+        "studentAttendance": "حضور الطلاب",
+        "teacherAttendance": "حضور المحفظين",
+        "newMemorization": "الحفظ الجديد",
+        "pagesHint": "صفحات خلال المدة",
+        "planCompletion": "إنجاز الخطة",
+        "averageScore": "متوسط الدرجة",
+        "scoreHint": "من ١٠٠",
+        "ethics": "تقييم الأخلاق",
+        "ethicsHint": "من ٥",
+        "activeStudents": "الطلاب النشطون",
+        "activeHalaqat": "الحلقات النشطة"
       },
-      "weeklyAttendance": {
-        "title": "الحضور الأسبوعي",
-        "present": "حاضر",
-        "absent": "غائب"
+      "topStudents": {
+        "title": "الأكثر إنجازاً",
+        "trackLabel": "المسار",
+        "pages": "صفحة",
+        "positions": "{pages} صفحة مواضع",
+        "meta": "{count} إنجاز · بمتوسط {score}",
+        "empty": "لا توجد إنجازات معتمدة في هذه المدة"
       },
-      "topPerformers": {
-        "title": "المتميزون هذا الأسبوع",
-        "pages": "صفحات",
-        "noData": "لا توجد بيانات كافية"
-      },
-      "recentActivity": {
-        "title": "آخر الأنشطة",
-        "completedSurah": "أتمّ {student} سورة {surah}",
-        "attendanceRecorded": "تم تسجيل حضور حلقة {halaqa}",
-        "newStudent": "تم إضافة الطالب {student}",
-        "achievementLogged": "سجّل {student} إنجازاً في الحفظ",
-        "planApproved": "تم اعتماد خطة الأسبوع لحلقة {halaqa}",
-        "timeAgo": {
-          "minutes": "منذ {count} دقيقة",
-          "hours": "منذ {count} ساعة",
-          "days": "منذ {count} يوم"
+      "halaqat": {
+        "title": "أداء الحلقات",
+        "empty": "لا توجد حلقات في هذه المدة",
+        "columns": {
+          "halaqa": "الحلقة",
+          "students": "الطلاب",
+          "attendance": "الحضور",
+          "pages": "الصفحات",
+          "score": "متوسط الدرجة",
+          "planCompletion": "إنجاز الخطة"
         }
       },
-      "absenceAlerts": {
-        "title": "تنبيهات الغياب",
-        "missedSessions": "غاب {count} جلسات متتالية",
-        "contactParent": "تواصل مع ولي الأمر",
-        "noAlerts": "لا توجد تنبيهات غياب"
+      "teachers": {
+        "title": "معدل التزام المحفظين",
+        "empty": "لا يوجد محفظون في هذه المدة",
+        "columns": {
+          "teacher": "المحفظ",
+          "ownAttendance": "حضوره",
+          "halaqat": "الحلقات",
+          "students": "الطلاب",
+          "studentAttendance": "حضور طلابه",
+          "studentPages": "صفحات طلابه"
+        }
       },
-      "days": {
-        "sat": "السبت",
-        "sun": "الأحد",
-        "mon": "الاثنين",
-        "tue": "الثلاثاء",
-        "wed": "الأربعاء",
-        "thu": "الخميس",
-        "fri": "الجمعة"
+      "alerts": {
+        "title": "بحاجة إلى متابعة",
+        "empty": "لا يوجد ما يستدعي المتابعة حالياً",
+        "staleWindow": "آخر {days} يوم",
+        "staleWindowLabel": "مدة التوقف",
+        "never": "لا يوجد إنجاز معتمد بعد",
+        "daysSince": "مضى {days} يوم على آخر إنجاز",
+        "stalled": {
+          "title": "طلاب بلا إنجاز منذ {days} يوم",
+          "action": "تسجيل إنجاز"
+        },
+        "noTeacher": {
+          "title": "حلقات بلا محفظ أساسي"
+        },
+        "highAbsence": {
+          "title": "محفظون كثيرو الغياب",
+          "detail": "{days} أيام غياب · الحضور {rate}٪"
+        }
+      },
+      "errors": {
+        "overview": "تعذّر تحميل المؤشرات الرئيسية",
+        "topStudents": "تعذّر تحميل قائمة الأكثر إنجازاً",
+        "halaqat": "تعذّر تحميل أداء الحلقات",
+        "teachers": "تعذّر تحميل التزام المحفظين",
+        "alerts": "تعذّر تحميل التنبيهات"
+      },
+      "quickActions": {
+        "attendance": "تسجيل الحضور اليومي",
+        "students": "إدارة المتعلمين",
+        "achievements": "متابعة التلاوة والحفظ",
+        "dailyReport": "مراجعة تقرير التقييم اليومي"
       }
     },
     "dailyReport": {

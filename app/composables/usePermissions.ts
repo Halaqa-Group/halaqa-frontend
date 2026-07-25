@@ -132,6 +132,13 @@ export function usePermissions() {
 
     // ── Users ──────────────────────────────────────────────────────────────
     canViewUsers: isAdmin,
-    canManageUsers: isPrincipal
+    canManageUsers: isPrincipal,
+
+    // ── Dashboard KPIs ─────────────────────────────────────────────────────
+    // /dashboard/{overview,top-students,halaqat,alerts} are open to all staff
+    // and scope themselves server-side, so no flag is needed for them.
+    // GET /dashboard/teachers is the exception: it reports ON teachers, so it
+    // is p/vp/supervisor only and 403s for the teacher role.
+    canViewTeacherCommitment: computed(() => isAdmin.value || isSupervisor.value)
   }
 }

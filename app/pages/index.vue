@@ -1,6 +1,31 @@
 <script setup lang="ts">
-import type { ApiAttendance, ApiAttendanceListResult } from '~/types'
-import { unwrapList } from '~/utils/api/list'
+import type { DashboardTrack, DashboardWindowSelection } from '~/types'
+import {
+  formatKpiEthics,
+  formatKpiPages,
+  formatKpiRate,
+  formatKpiScore,
+  trendOf
+} from '~/utils/dashboard'
+
+/**
+ * The role-scoped KPI dashboard — the home screen.
+ *
+ * Every figure comes from `GET /dashboard/*`, which resolves the caller's scope
+ * server-side: principal/VP see the whole school, a supervisor their supervised
+ * halaqat, a teacher the halaqat they currently teach. That is why this page
+ * has no halaqa filter and no role branches around the data calls — a teacher
+ * hitting the same endpoints simply receives a narrower answer.
+ *
+ * Two things are deliberately NOT wired:
+ *  • The navbar halaqa picker. `/dashboard/*` takes no halaqa parameter, so a
+ *    teacher's pinned halaqa cannot narrow these numbers — they always cover
+ *    every halaqa in scope. Pretending otherwise would show a filter that does
+ *    nothing.
+ *  • Teacher commitment for the teacher role. That endpoint reports on staff and
+ *    403s below supervisor; `canViewTeacherCommitment` gates both the request
+ *    and the section.
+ */
 
 definePageMeta({
   breadcrumb: [
@@ -9,627 +34,305 @@ definePageMeta({
 })
 
 const { t, locale } = useI18n()
-const api = useApi()
 const { user, activeRole } = useAuth()
-const { selectedHalaqaId, halaqat, initializeHalaqa } = useGlobalHalaqa()
-const { students, fetchStudents } = useStudents()
+const { canViewTeacherCommitment } = usePermissions()
 
-const todayAttendance = ref<ApiAttendance[]>([])
-const isLoading = ref(true)
-const attendanceError = ref(false)
+const {
+  overview, topStudents, halaqat, teachers, alerts,
+  overviewError, topStudentsError, halaqatError, teachersError, alertsError,
+  isLoading,
+  fetchTopStudents, fetchAlerts, loadAll
+} = useDashboardStats()
 
-const today = new Date().toISOString().split('T')[0]
+// ── Window / filters ─────────────────────────────────────────────────────────
+const selection = ref<DashboardWindowSelection>({ mode: 'week' })
+const track = ref<DashboardTrack>('Hifz')
+const stalledDays = ref(7)
 
-const userRoleLabel = computed(() => {
-  return activeRole.value ?? 'parent'
-})
+const windowQuery = computed(() => ({
+  period: selection.value.mode === 'custom' ? undefined : selection.value.mode,
+  from: selection.value.from,
+  to: selection.value.to
+}))
 
-const presentToday = computed(() =>
-  todayAttendance.value.filter(a => a.status === 'present').length
+function reload() {
+  return loadAll({ ...windowQuery.value, track: track.value, limit: 5, stalledDays: stalledDays.value })
+}
+
+// Changing one filter refetches only the section it affects — reloading the
+// whole page for a track switch would flash five sections to reload one.
+watch(selection, reload, { deep: true })
+
+watch(track, newTrack =>
+  fetchTopStudents({ ...windowQuery.value, track: newTrack, limit: 5 })
 )
 
-const attendanceRate = computed(() =>
-  todayAttendance.value.length > 0
-    ? Math.round((presentToday.value / todayAttendance.value.length) * 100)
-    : 0
+watch(stalledDays, days =>
+  fetchAlerts({ ...windowQuery.value, stalled_days: days })
 )
 
-const dateLocale = computed(() => locale.value === 'ar' ? 'ar-SA' : 'en-US')
+onMounted(reload)
+
+// ── Header ───────────────────────────────────────────────────────────────────
+const dateLocale = computed(() => (locale.value === 'ar' ? 'ar-SA' : 'en-US'))
 
 const formattedToday = computed(() =>
-  new Date().toLocaleDateString(dateLocale.value, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  new Date().toLocaleDateString(dateLocale.value, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  })
 )
 
-const currentWeekday = computed(() =>
-  new Date().toLocaleDateString(dateLocale.value, { weekday: 'long' })
-)
+const userRoleLabel = computed(() => activeRole.value ?? 'parent')
 
-const mockStatTrends = {
-  students: [8, 8, 9, 9, 10, 10, 12],
-  halaqat: [1, 1, 1, 1, 1, 1, 1],
-  attendance: [65, 70, 80, 75, 85, 90, 78],
-  reviews: [5, 4, 6, 3, 7, 4, 3]
-}
+// ── KPI cards ────────────────────────────────────────────────────────────────
+const previous = computed(() => overview.value?.previous ?? null)
 
-const mockStatChanges = {
-  students: { value: 20, direction: 'up' as const },
-  halaqat: { value: 0, direction: 'same' as const },
-  attendance: { value: 12, direction: 'up' as const },
-  reviews: { value: -15, direction: 'down' as const }
-}
+/** The window the deltas compare against, named so the badge means something. */
+const comparisonLabel = computed(() => {
+  if (!previous.value) return ''
+  return selection.value.mode === 'month'
+    ? t('pages.home.period.vsPreviousMonth')
+    : t('pages.home.period.vsPreviousPeriod')
+})
 
-const mockSchedule = [
-  { id: 1, name: 'حلقة الفجر', time: '06:00 - 07:00', teacher: 'أ. محمد العلي', studentCount: 8 },
-  { id: 2, name: 'حلقة الظهر', time: '13:00 - 14:30', teacher: 'أ. أحمد الحسن', studentCount: 12 },
-  { id: 3, name: 'حلقة العصر', time: '16:00 - 17:30', teacher: 'أ. خالد السعيد', studentCount: 6 }
-]
+const attendanceTrend = computed(() =>
+  trendOf(overview.value?.student_attendance_rate, previous.value?.student_attendance_rate))
+const teacherAttendanceTrend = computed(() =>
+  trendOf(overview.value?.teacher_attendance_rate, previous.value?.teacher_attendance_rate))
+const pagesTrend = computed(() =>
+  trendOf(overview.value?.new_memorization_pages, previous.value?.new_memorization_pages))
+const planTrend = computed(() =>
+  trendOf(overview.value?.plan_completion_rate, previous.value?.plan_completion_rate))
+const scoreTrend = computed(() =>
+  trendOf(overview.value?.average_score, previous.value?.average_score))
+const ethicsTrend = computed(() =>
+  trendOf(overview.value?.ethics_average, previous.value?.ethics_average))
 
-const mockWeeklyAttendance = [
-  { day: 'sat', present: 10, absent: 2 },
-  { day: 'sun', present: 11, absent: 1 },
-  { day: 'mon', present: 9, absent: 3 },
-  { day: 'tue', present: 12, absent: 0 },
-  { day: 'wed', present: 8, absent: 4 },
-  { day: 'thu', present: 10, absent: 2 },
-  { day: 'fri', present: 0, absent: 0 }
-]
+/**
+ * `teacher_attendance_rate` is `null` for the teacher role — the API withholds
+ * staff commitment rather than zeroing it, so the card is hidden rather than
+ * showing a dash that looks like missing data.
+ */
+const showTeacherAttendance = computed(() =>
+  overview.value !== null && overview.value.teacher_attendance_rate !== null)
 
-const maxAttendanceTotal = computed(() =>
-  Math.max(...mockWeeklyAttendance.map(d => d.present + d.absent), 1)
-)
-
-const mockTopPerformers = [
-  { rank: 1, name: 'عبدالله أحمد', halaqa: 'حلقة الفجر', pages: 14, badge: 'i-lucide-crown' },
-  { rank: 2, name: 'يوسف محمد', halaqa: 'حلقة الظهر', pages: 11, badge: 'i-lucide-medal' },
-  { rank: 3, name: 'عمر خالد', halaqa: 'حلقة الفجر', pages: 9, badge: 'i-lucide-medal' },
-  { rank: 4, name: 'أنس سعيد', halaqa: 'حلقة العصر', pages: 7, badge: 'i-lucide-award' },
-  { rank: 5, name: 'حمزة علي', halaqa: 'حلقة الظهر', pages: 6, badge: 'i-lucide-award' }
-]
-
-const mockRecentActivity = [
-  { icon: 'i-lucide-book-open-check', text: t('pages.home.recentActivity.completedSurah', { student: 'عبدالله أحمد', surah: 'الملك' }), time: t('pages.home.recentActivity.timeAgo.minutes', { count: 30 }), color: 'var(--color-status-ok)' },
-  { icon: 'i-lucide-clipboard-check', text: t('pages.home.recentActivity.attendanceRecorded', { halaqa: 'حلقة الفجر' }), time: t('pages.home.recentActivity.timeAgo.hours', { count: 2 }), color: 'var(--color-primary)' },
-  { icon: 'i-lucide-star', text: t('pages.home.recentActivity.achievementLogged', { student: 'يوسف محمد' }), time: t('pages.home.recentActivity.timeAgo.hours', { count: 3 }), color: 'var(--color-secondary)' },
-  { icon: 'i-lucide-user-plus', text: t('pages.home.recentActivity.newStudent', { student: 'حمزة علي' }), time: t('pages.home.recentActivity.timeAgo.days', { count: 1 }), color: 'var(--color-status-info)' },
-  { icon: 'i-lucide-calendar-check', text: t('pages.home.recentActivity.planApproved', { halaqa: 'حلقة الظهر' }), time: t('pages.home.recentActivity.timeAgo.days', { count: 1 }), color: 'var(--color-track-hifz)' }
-]
-
-const mockAbsenceAlerts = [
-  { name: 'سعد إبراهيم', halaqa: 'حلقة الفجر', missedCount: 3 },
-  { name: 'طارق حسين', halaqa: 'حلقة الظهر', missedCount: 2 }
-]
-
-function sparklinePath(data: number[], width = 80, height = 24): string {
-  if (!data.length) return ''
-  const max = Math.max(...data)
-  const min = Math.min(...data)
-  const range = max - min || 1
-  const step = width / (data.length - 1)
-  return data.map((v, i) => {
-    const x = i * step
-    const y = height - ((v - min) / range) * (height - 4) - 2
-    return `${i === 0 ? 'M' : 'L'}${x},${y}`
-  }).join(' ')
-}
-
+// ── Quick actions ────────────────────────────────────────────────────────────
 const quickActions = computed(() => [
   {
     label: t('nav.attendance'),
     description: t('pages.home.quickActions.attendance'),
     icon: 'i-lucide-clipboard-check',
     href: '/attendance',
-    color: 'var(--color-track-hifz)',
-    bg: 'var(--color-track-hifz-bg)'
+    chip: 'bg-track-hifz-bg text-track-hifz'
   },
   {
     label: t('nav.students'),
     description: t('pages.home.quickActions.students'),
     icon: 'i-lucide-users',
     href: '/students',
-    color: 'var(--color-primary)',
-    bg: 'var(--color-primary-container)'
+    chip: 'bg-status-info-bg text-status-info'
   },
   {
     label: t('nav.achievements'),
     description: t('pages.home.quickActions.achievements'),
     icon: 'i-lucide-star',
     href: '/achievements',
-    color: 'var(--color-status-warning)',
-    bg: 'var(--color-status-warning-bg)'
+    chip: 'bg-status-warning-bg text-status-warning'
+  },
+  {
+    label: t('nav.dailyReport'),
+    description: t('pages.home.quickActions.dailyReport'),
+    icon: 'i-lucide-file-chart-column',
+    href: '/daily-report',
+    chip: 'bg-status-ok-bg text-status-ok'
   }
-  // Analytics quick action hidden for now — re-add alongside /analytics when ready.
 ])
-
-// halaqaId null = every student the caller may see (the whole school for a principal).
-async function loadDashboard(halaqaId: number | null) {
-  isLoading.value = true
-  attendanceError.value = false
-  try {
-    await fetchStudents({ halaqaId: halaqaId ?? undefined })
-    try {
-      todayAttendance.value = unwrapList<ApiAttendance>(
-        await api<ApiAttendanceListResult | ApiAttendance[]>(`/attendance/students?date=${today}&limit=100`)
-      )
-    } catch {
-      attendanceError.value = true
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
-watch(selectedHalaqaId, async newId => await loadDashboard(newId))
-
-onMounted(async () => {
-  await initializeHalaqa()
-  await loadDashboard(selectedHalaqaId.value)
-})
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <!-- Greeting -->
+    <div class="flex flex-col justify-between gap-6 md:flex-row md:items-end">
       <div class="space-y-1">
-        <span class="text-xs font-bold uppercase tracking-widest" style="color: var(--color-primary);">
+        <span class="text-xs font-bold uppercase tracking-widest text-primary">
           {{ formattedToday }}
         </span>
-        <h2 class="text-3xl font-bold leading-tight" style="color: var(--color-on-surface);">
-          {{ $t('pages.home.greeting', { name: user?.name || $t('pages.home.greetingFallback') }) }}
-        </h2>
-        <p class="text-sm" style="color: var(--color-on-surface-variant);">
-          {{ $t('pages.home.subtitle') }}
+        <h1 class="text-3xl font-bold leading-tight text-on-surface">
+          {{ t('pages.home.greeting', { name: user?.name || t('pages.home.greetingFallback') }) }}
+        </h1>
+        <p class="text-sm text-on-surface-variant">
+          {{ t('pages.home.subtitle') }}
         </p>
       </div>
-      <div
-        class="flex items-center gap-2 px-4 py-2 rounded-xl shrink-0"
-        style="background-color: var(--color-primary-container);">
-        <UIcon name="i-lucide-shield-check" class="w-4 h-4" style="color: var(--color-primary);" />
-        <span class="text-sm font-semibold" style="color: var(--color-primary);">
-          {{ $t(`roles.${userRoleLabel}`) }}
+      <div class="flex shrink-0 items-center gap-2 rounded-xl bg-track-hifz-bg px-4 py-2">
+        <UIcon name="i-lucide-shield-check" class="size-4 text-track-hifz" />
+        <span class="text-sm font-semibold text-track-hifz">
+          {{ t(`roles.${userRoleLabel}`) }}
         </span>
       </div>
     </div>
 
     <SchoolSummaryCard />
 
-    <div v-if="isLoading" class="flex justify-center py-16">
-      <UIcon name="i-lucide-loader-circle" class="w-10 h-10 animate-spin" style="color: var(--color-primary);" />
+    <!-- Reporting window -->
+    <DashboardPeriodFilter
+      v-model="selection"
+      :range="overview?.range ?? null"
+      :loading="isLoading"
+      @refresh="reload"
+    />
+
+    <!-- Headline KPIs -->
+    <section>
+      <div v-if="overviewError" class="flex items-center gap-3 rounded-2xl bg-status-conflict-bg px-4 py-3">
+        <UIcon name="i-lucide-triangle-alert" class="size-5 shrink-0 text-error" />
+        <p class="flex-1 text-sm text-on-surface">
+          {{ overviewError }}
+        </p>
+        <UButton size="xs" variant="soft" :label="t('common.tryAgain')" @click="reload" />
+      </div>
+
+      <div v-else-if="isLoading && !overview" class="flex items-center justify-center py-16">
+        <UIcon name="i-lucide-loader-circle" class="size-10 animate-spin text-primary" />
+      </div>
+
+      <template v-else-if="overview">
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <DashboardKpiCard
+            :label="t('pages.home.kpi.studentAttendance')"
+            :value="formatKpiRate(overview.student_attendance_rate)"
+            icon="i-lucide-user-check"
+            tone="hifz"
+            :meter="overview.student_attendance_rate"
+            :trend="attendanceTrend"
+          />
+
+          <DashboardKpiCard
+            v-if="showTeacherAttendance"
+            :label="t('pages.home.kpi.teacherAttendance')"
+            :value="formatKpiRate(overview.teacher_attendance_rate)"
+            icon="i-lucide-briefcase"
+            tone="ok"
+            :meter="overview.teacher_attendance_rate"
+            :trend="teacherAttendanceTrend"
+          />
+
+          <DashboardKpiCard
+            :label="t('pages.home.kpi.newMemorization')"
+            :value="formatKpiPages(overview.new_memorization_pages)"
+            :hint="t('pages.home.kpi.pagesHint')"
+            icon="i-lucide-book-open-check"
+            tone="gold"
+            :trend="pagesTrend"
+          />
+
+          <DashboardKpiCard
+            :label="t('pages.home.kpi.planCompletion')"
+            :value="formatKpiRate(overview.plan_completion_rate)"
+            icon="i-lucide-calendar-check"
+            tone="info"
+            :meter="overview.plan_completion_rate"
+            :trend="planTrend"
+          />
+
+          <DashboardKpiCard
+            :label="t('pages.home.kpi.averageScore')"
+            :value="formatKpiScore(overview.average_score)"
+            :hint="t('pages.home.kpi.scoreHint')"
+            icon="i-lucide-target"
+            tone="overdue"
+            :trend="scoreTrend"
+          />
+
+          <DashboardKpiCard
+            :label="t('pages.home.kpi.ethics')"
+            :value="formatKpiEthics(overview.ethics_average)"
+            :hint="t('pages.home.kpi.ethicsHint')"
+            icon="i-lucide-heart-handshake"
+            tone="near"
+            :trend="ethicsTrend"
+          />
+
+          <DashboardKpiCard
+            :label="t('pages.home.kpi.activeStudents')"
+            :value="String(overview.active_students)"
+            icon="i-lucide-users"
+            tone="far"
+          />
+
+          <DashboardKpiCard
+            :label="t('pages.home.kpi.activeHalaqat')"
+            :value="String(overview.active_halaqat)"
+            icon="i-lucide-layout-grid"
+            tone="conflict"
+          />
+        </div>
+
+        <p v-if="comparisonLabel" class="mt-3 text-xs text-on-surface-variant">
+          {{ comparisonLabel }}
+        </p>
+      </template>
+    </section>
+
+    <!-- Alerts + leaderboard -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <DashboardAlertsPanel
+        v-model:stalled-days="stalledDays"
+        :data="alerts"
+        :loading="isLoading && !alerts"
+        :error="alertsError"
+      />
+
+      <DashboardTopStudents
+        v-model:track="track"
+        :data="topStudents"
+        :loading="isLoading && !topStudents"
+        :error="topStudentsError"
+      />
     </div>
 
-    <template v-else>
-      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div
-          class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);">
-          <div class="flex items-start justify-between">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-primary-container);">
-              <UIcon name="i-lucide-users" class="w-5 h-5" style="color: var(--color-primary);" />
-            </div>
-            <svg width="80" height="24" class="opacity-60">
-              <path
-                :d="sparklinePath(mockStatTrends.students)"
-                fill="none"
-                stroke="var(--color-primary)"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
+    <!-- Per-halaqa performance -->
+    <DashboardHalaqatTable
+      :data="halaqat"
+      :loading="isLoading && !halaqat"
+      :error="halaqatError"
+    />
+
+    <!-- Teacher commitment — principal / VP / supervisor only -->
+    <DashboardTeachersTable
+      v-if="canViewTeacherCommitment"
+      :data="teachers"
+      :loading="isLoading && !teachers"
+      :error="teachersError"
+    />
+
+    <!-- Quick access -->
+    <section>
+      <h2 class="mb-4 text-base font-semibold text-on-surface">
+        {{ t('pages.home.quickAccess') }}
+      </h2>
+      <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <UButton
+          v-for="action in quickActions"
+          :key="action.href"
+          variant="ghost"
+          color="neutral"
+          class="flex flex-col items-start gap-3 rounded-2xl bg-surface-container-lowest p-5 text-start ring-1 ring-card-border"
+          @click="navigateTo(action.href)"
+        >
+          <div class="flex size-10 items-center justify-center rounded-xl" :class="action.chip">
+            <UIcon :name="action.icon" class="size-5" />
           </div>
           <div>
-            <p class="font-bold" style="font-size: 32px; line-height: 1; color: var(--color-on-surface);">
-              {{ students.length }}
+            <p class="text-sm font-semibold text-on-surface">
+              {{ action.label }}
             </p>
-            <p class="font-semibold mt-1.5" style="font-size: 13px; color: var(--color-on-surface-variant);">
-              {{ $t('pages.home.stats.totalStudents') }}
-            </p>
-          </div>
-          <div v-if="mockStatChanges.students.value !== 0" class="flex items-center gap-1">
-            <span
-              class="text-xs font-bold px-1.5 py-0.5 rounded-md"
-              :style="mockStatChanges.students.direction === 'up'
-                ? 'color: var(--color-status-ok); background-color: var(--color-status-ok-bg);'
-                : 'color: var(--color-error); background-color: var(--color-status-conflict-bg);'">
-              {{ mockStatChanges.students.direction === 'up' ? '↑' : '↓' }} {{ Math.abs(mockStatChanges.students.value) }}%
-            </span>
-            <span class="text-[11px]" style="color: var(--color-on-surface-variant);">
-              {{ $t('pages.home.stats.vsLastWeek') }}
-            </span>
-          </div>
-        </div>
-
-        <div
-          class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);">
-          <div class="flex items-start justify-between">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-track-hifz-bg);">
-              <UIcon name="i-lucide-layout-grid" class="w-5 h-5" style="color: var(--color-secondary);" />
-            </div>
-            <svg width="80" height="24" class="opacity-60">
-              <path
-                :d="sparklinePath(mockStatTrends.halaqat)"
-                fill="none"
-                stroke="var(--color-secondary)"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-          </div>
-          <div>
-            <p class="font-bold" style="font-size: 32px; line-height: 1; color: var(--color-on-surface);">
-              {{ halaqat.length }}
-            </p>
-            <p class="font-semibold mt-1.5" style="font-size: 13px; color: var(--color-on-surface-variant);">
-              {{ $t('pages.home.stats.activeHalaqat') }}
+            <p class="mt-0.5 text-xs text-on-surface-variant">
+              {{ action.description }}
             </p>
           </div>
-          <div class="h-5" />
-        </div>
-
-        <div
-          class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);">
-          <div class="flex items-start justify-between">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-conflict-bg);">
-              <UIcon name="i-lucide-user-check" class="w-5 h-5" style="color: var(--color-status-conflict);" />
-            </div>
-            <svg width="80" height="24" class="opacity-60">
-              <path
-                :d="sparklinePath(mockStatTrends.attendance)"
-                fill="none"
-                stroke="var(--color-status-conflict)"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-          </div>
-          <div>
-            <p class="font-bold" style="font-size: 32px; line-height: 1; color: var(--color-on-surface);">
-              {{ attendanceError ? '—' : todayAttendance.length > 0 ? `${attendanceRate}%` : '—' }}
-            </p>
-            <p class="font-semibold mt-1.5" style="font-size: 13px; color: var(--color-on-surface-variant);">
-              {{ attendanceError
-                ? $t('pages.home.stats.loadFailed')
-                : todayAttendance.length > 0
-                  ? $t('pages.home.stats.attendanceCount', { present: presentToday, total: todayAttendance.length })
-                  : $t('pages.home.stats.attendanceToday') }}
-            </p>
-          </div>
-          <div v-if="mockStatChanges.attendance.value !== 0" class="flex items-center gap-1">
-            <span
-              class="text-xs font-bold px-1.5 py-0.5 rounded-md"
-              :style="mockStatChanges.attendance.direction === 'up'
-                ? 'color: var(--color-status-ok); background-color: var(--color-status-ok-bg);'
-                : 'color: var(--color-error); background-color: var(--color-status-conflict-bg);'">
-              {{ mockStatChanges.attendance.direction === 'up' ? '↑' : '↓' }} {{ Math.abs(mockStatChanges.attendance.value) }}%
-            </span>
-            <span class="text-[11px]" style="color: var(--color-on-surface-variant);">
-              {{ $t('pages.home.stats.vsLastWeek') }}
-            </span>
-          </div>
-        </div>
-
-        <div
-          class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);">
-          <div class="flex items-start justify-between">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-ok-bg);">
-              <UIcon name="i-lucide-calendar-check" class="w-5 h-5" style="color: var(--color-status-ok);" />
-            </div>
-          </div>
-          <div>
-            <p class="font-bold" style="font-size: 26px; line-height: 1.2; color: var(--color-on-surface);">
-              {{ currentWeekday }}
-            </p>
-            <p class="font-semibold mt-1.5" style="font-size: 13px; color: var(--color-on-surface-variant);">
-              {{ $t('pages.home.stats.currentDay') }}
-            </p>
-          </div>
-          <div class="h-5" />
-        </div>
-
-        <div
-          class="rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);">
-          <div class="flex items-start justify-between">
-            <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background-color: var(--color-status-warning-bg);">
-              <UIcon name="i-lucide-clock-4" class="w-5 h-5" style="color: var(--color-status-warning);" />
-            </div>
-            <svg width="80" height="24" class="opacity-60">
-              <path
-                :d="sparklinePath(mockStatTrends.reviews)"
-                fill="none"
-                stroke="var(--color-status-warning)"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-          </div>
-          <div>
-            <p class="font-bold" style="font-size: 32px; line-height: 1; color: var(--color-on-surface);">
-              3
-            </p>
-            <p class="font-semibold mt-1.5" style="font-size: 13px; color: var(--color-on-surface-variant);">
-              {{ $t('pages.home.stats.pendingReviews') }}
-            </p>
-          </div>
-          <div v-if="mockStatChanges.reviews.value !== 0" class="flex items-center gap-1">
-            <span
-              class="text-xs font-bold px-1.5 py-0.5 rounded-md"
-              :style="mockStatChanges.reviews.direction === 'down'
-                ? 'color: var(--color-status-ok); background-color: var(--color-status-ok-bg);'
-                : 'color: var(--color-error); background-color: var(--color-status-conflict-bg);'">
-              {{ mockStatChanges.reviews.direction === 'down' ? '↓' : '↑' }} {{ Math.abs(mockStatChanges.reviews.value) }}%
-            </span>
-            <span class="text-[11px]" style="color: var(--color-on-surface-variant);">
-              {{ $t('pages.home.stats.vsLastWeek') }}
-            </span>
-          </div>
-        </div>
+        </UButton>
       </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div
-          class="rounded-2xl p-6 ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);">
-          <div class="flex items-center gap-2 mb-5">
-            <UIcon name="i-lucide-calendar-clock" class="w-5 h-5" style="color: var(--color-primary);" />
-            <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
-              {{ $t('pages.home.schedule.title') }}
-            </h3>
-          </div>
-          <div class="flex flex-col gap-3">
-            <div
-              v-for="session in mockSchedule"
-              :key="session.id"
-              class="flex items-center gap-4 p-4 rounded-xl"
-              style="background-color: var(--color-surface-container-low); border: 1px solid var(--color-card-border);">
-              <div
-                class="w-1 self-stretch rounded-full shrink-0"
-                style="background-color: var(--color-primary);" />
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold" style="color: var(--color-on-surface);">
-                  {{ session.name }}
-                </p>
-                <p class="text-xs mt-1" style="color: var(--color-on-surface-variant);">
-                  {{ session.teacher }}
-                </p>
-              </div>
-              <div class="text-end shrink-0">
-                <p class="text-sm font-semibold tabular-nums" style="color: var(--color-primary);">
-                  {{ session.time }}
-                </p>
-                <p class="text-xs mt-1" style="color: var(--color-on-surface-variant);">
-                  {{ session.studentCount }} {{ $t('pages.home.schedule.students') }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="rounded-2xl p-6 ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);">
-          <div class="flex items-center justify-between mb-5">
-            <div class="flex items-center gap-2">
-              <UIcon name="i-lucide-bar-chart-3" class="w-5 h-5" style="color: var(--color-primary);" />
-              <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
-                {{ $t('pages.home.weeklyAttendance.title') }}
-              </h3>
-            </div>
-            <div class="flex items-center gap-4 text-xs">
-              <div class="flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-sm" style="background-color: var(--color-status-ok);" />
-                <span style="color: var(--color-on-surface-variant);">{{ $t('pages.home.weeklyAttendance.present') }}</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-sm" style="background-color: var(--color-error);" />
-                <span style="color: var(--color-on-surface-variant);">{{ $t('pages.home.weeklyAttendance.absent') }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="flex items-end justify-between gap-2" style="height: 160px;">
-            <div
-              v-for="day in mockWeeklyAttendance"
-              :key="day.day"
-              class="flex flex-col items-center gap-2 flex-1">
-              <div class="flex flex-col w-full items-center" style="height: 130px; justify-content: flex-end;">
-                <div
-                  class="w-full max-w-[32px] rounded-t-md"
-                  :style="{
-                    height: `${((day.absent) / maxAttendanceTotal) * 120}px`,
-                    backgroundColor: 'var(--color-error)',
-                    opacity: day.absent > 0 ? 1 : 0.2,
-                    minHeight: day.absent > 0 ? '4px' : '0px'
-                  }" />
-                <div
-                  class="w-full max-w-[32px] rounded-b-md"
-                  :style="{
-                    height: `${((day.present) / maxAttendanceTotal) * 120}px`,
-                    backgroundColor: 'var(--color-status-ok)',
-                    opacity: day.present > 0 ? 1 : 0.2,
-                    minHeight: day.present > 0 ? '4px' : '0px'
-                  }" />
-              </div>
-              <span class="text-[11px] font-semibold" style="color: var(--color-on-surface-variant);">
-                {{ $t(`pages.home.days.${day.day}`) }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div
-          class="rounded-2xl p-6 ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);">
-          <div class="flex items-center gap-2 mb-5">
-            <UIcon name="i-lucide-trophy" class="w-5 h-5" style="color: var(--color-secondary);" />
-            <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
-              {{ $t('pages.home.topPerformers.title') }}
-            </h3>
-          </div>
-          <div class="flex flex-col gap-2">
-            <div
-              v-for="performer in mockTopPerformers"
-              :key="performer.rank"
-              class="flex items-center gap-3 p-3 rounded-xl"
-              :style="performer.rank <= 3
-                ? 'background-color: var(--color-surface-container-low); border: 1px solid var(--color-card-border);'
-                : ''">
-              <div
-                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                :style="performer.rank === 1
-                  ? 'background-color: var(--color-rank-gold-bg); color: var(--color-rank-gold);'
-                  : performer.rank === 2
-                    ? 'background-color: var(--color-rank-silver-bg); color: var(--color-rank-silver);'
-                    : performer.rank === 3
-                      ? 'background-color: var(--color-rank-bronze-bg); color: var(--color-rank-bronze);'
-                      : 'background-color: var(--color-surface-container); color: var(--color-on-surface-variant);'">
-                <UIcon v-if="performer.rank <= 3" :name="performer.badge" class="w-4 h-4" />
-                <span v-else class="text-xs font-bold">{{ performer.rank }}</span>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold truncate" style="color: var(--color-on-surface);">
-                  {{ performer.name }}
-                </p>
-                <p class="text-xs" style="color: var(--color-on-surface-variant);">
-                  {{ performer.halaqa }}
-                </p>
-              </div>
-              <div class="shrink-0 text-end">
-                <span class="text-sm font-bold tabular-nums" style="color: var(--color-primary);">
-                  {{ performer.pages }}
-                </span>
-                <span class="text-xs ms-0.5" style="color: var(--color-on-surface-variant);">
-                  {{ $t('pages.home.topPerformers.pages') }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="rounded-2xl p-6 ring ring-card-border"
-          style="background-color: var(--color-surface-container-lowest);">
-          <div class="flex items-center gap-2 mb-5">
-            <UIcon name="i-lucide-alert-triangle" class="w-5 h-5" style="color: var(--color-status-warning);" />
-            <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
-              {{ $t('pages.home.absenceAlerts.title') }}
-            </h3>
-          </div>
-          <div class="flex flex-col gap-3">
-            <div
-              v-for="alert in mockAbsenceAlerts"
-              :key="alert.name"
-              class="flex items-center gap-4 p-4 rounded-xl"
-              style="background-color: var(--color-status-warning-bg); border: 1px solid var(--color-status-warning-light);">
-              <div
-                class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style="background-color: var(--color-status-warning-light);">
-                <UIcon name="i-lucide-user-x" class="w-5 h-5" style="color: var(--color-status-warning);" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold" style="color: var(--color-on-surface);">
-                  {{ alert.name }}
-                </p>
-                <p class="text-xs mt-0.5" style="color: var(--color-on-surface-variant);">
-                  {{ alert.halaqa }} · {{ $t('pages.home.absenceAlerts.missedSessions', { count: alert.missedCount }) }}
-                </p>
-              </div>
-              <UButton
-                variant="soft"
-                size="xs"
-                class="shrink-0"
-                style="color: var(--color-status-warning);">
-                {{ $t('pages.home.absenceAlerts.contactParent') }}
-              </UButton>
-            </div>
-            <div
-              v-if="mockAbsenceAlerts.length === 0"
-              class="text-center py-8">
-              <UIcon name="i-lucide-check-circle" class="w-8 h-8 mx-auto mb-2" style="color: var(--color-status-ok);" />
-              <p class="text-sm" style="color: var(--color-on-surface-variant);">
-                {{ $t('pages.home.absenceAlerts.noAlerts') }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="rounded-2xl p-6 ring ring-card-border"
-        style="background-color: var(--color-surface-container-lowest);">
-        <div class="flex items-center gap-2 mb-5">
-          <UIcon name="i-lucide-activity" class="w-5 h-5" style="color: var(--color-primary);" />
-          <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
-            {{ $t('pages.home.recentActivity.title') }}
-          </h3>
-        </div>
-        <div class="flex flex-col">
-          <div
-            v-for="(activity, idx) in mockRecentActivity"
-            :key="idx"
-            class="flex items-start gap-4 py-3"
-            :style="idx < mockRecentActivity.length - 1 ? 'border-bottom: 1px solid var(--color-card-border);' : ''">
-            <div
-              class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
-              :style="`background-color: color-mix(in srgb, ${activity.color} 15%, transparent);`">
-              <UIcon :name="activity.icon" class="w-4.5 h-4.5" :style="`color: ${activity.color};`" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm leading-relaxed" style="color: var(--color-on-surface);">
-                {{ activity.text }}
-              </p>
-            </div>
-            <span class="text-xs shrink-0 pt-0.5" style="color: var(--color-on-surface-variant);">
-              {{ activity.time }}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <div class="flex items-center gap-2 mb-4">
-          <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
-            {{ $t('pages.home.quickAccess') }}
-          </h3>
-        </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <UButton
-            v-for="action in quickActions"
-            :key="action.href"
-            variant="ghost"
-            color="neutral"
-            class="rounded-2xl p-5 text-start flex flex-col items-start gap-3 bg-surface-container-lowest ring-1 ring-card-border"
-            @click="navigateTo(action.href)">
-            <div
-              class="w-10 h-10 rounded-xl flex items-center justify-center"
-              :style="`background-color: ${action.bg};`">
-              <UIcon :name="action.icon" class="w-5 h-5" :style="`color: ${action.color};`" />
-            </div>
-            <div>
-              <p class="text-sm font-semibold" style="color: var(--color-on-surface);">
-                {{ action.label }}
-              </p>
-              <p class="label-sm mt-0.5" style="color: var(--color-on-surface-variant);">
-                {{ action.description }}
-              </p>
-            </div>
-          </UButton>
-        </div>
-      </div>
-
-      <div v-if="students.length === 0 || true" class="flex flex-col items-center gap-4 py-16 rounded-2xl ring-1 ring-card-border">
-        <div class="w-16 h-16 rounded-2xl flex items-center justify-center bg-primary-container">
-          <UIcon name="i-lucide-book-open-text" class="w-8 h-8 text-primary" />
-        </div>
-        <h3 class="text-base font-semibold" style="color: var(--color-on-surface);">
-          {{ $t('pages.home.welcome.title') }}
-        </h3>
-        <p class="body-sm text-center max-w-xs" style="color: var(--color-on-surface-variant);">
-          {{ $t('pages.home.welcome.message') }}
-        </p>
-      </div>
-    </template>
+    </section>
   </div>
 </template>

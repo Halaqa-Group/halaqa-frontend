@@ -456,11 +456,13 @@ withDefaults(defineProps<QuranPlanProps>(), {
   padding-block: 0 1.25em;
 }
 
-.quran-plan[data-pdf-capture] .qp-title {
-  padding-bottom: 0.4em;
-}
-
 .quran-plan[data-pdf-capture] .qp-stamp-text {
   padding: 1mm 4.5mm 3.4mm;
 }
+
+/*
+ * The header is deliberately NOT compensated: its box must stay the same size in
+ * the preview and the export so they match (the title's residual low-sit is
+ * negligible). Keep it out of the capture overrides.
+ */
 </style>

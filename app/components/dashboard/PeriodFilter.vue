@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
-import type { DashboardRange, DashboardWindowSelection } from '~/types'
+import type { DashboardPeriod, DashboardRange, DashboardWindowSelection } from '~/types'
 import { formatKpiRange } from '~/utils/dashboard'
 
 /**
@@ -28,21 +28,20 @@ const emit = defineEmits<{ refresh: [] }>()
 
 const { t, locale } = useI18n()
 
-const MODES = [
+/** `custom` is rendered separately — it needs a popover, not a plain button. */
+const SIMPLE_MODES = [
   { value: 'week' as const, labelKey: 'pages.home.period.week' },
-  { value: 'month' as const, labelKey: 'pages.home.period.month' },
-  { value: 'custom' as const, labelKey: 'pages.home.period.custom' }
+  { value: 'month' as const, labelKey: 'pages.home.period.month' }
 ]
 
 const calendarOpen = ref(false)
 
-function selectMode(mode: DashboardWindowSelection['mode']) {
-  if (mode === 'custom') {
-    // Opening the picker is the whole interaction — don't commit until the user
-    // has actually chosen both ends, or we'd fire a request with no range.
-    calendarOpen.value = true
-    return
-  }
+/**
+ * Switches to a server-derived window. `custom` never comes through here — its
+ * button only opens the calendar, and nothing is committed until both ends are
+ * picked, so a half-made range can't trigger a fetch.
+ */
+function selectMode(mode: DashboardPeriod) {
   if (selection.value.mode === mode) return
   selection.value = { mode }
 }
@@ -80,36 +79,40 @@ const rangeLabel = computed(() => formatKpiRange(props.range, locale.value))
 
 <template>
   <div class="flex flex-wrap items-center gap-3">
-    <UButtonGroup size="sm">
-      <template v-for="mode in MODES" :key="mode.value">
-        <UPopover v-if="mode.value === 'custom'" v-model:open="calendarOpen">
-          <UButton
-            :variant="selection.mode === 'custom' ? 'solid' : 'outline'"
-            :color="selection.mode === 'custom' ? 'primary' : 'neutral'"
-            icon="i-lucide-calendar-range"
-            :label="t(mode.labelKey)"
-          />
-          <template #content>
-            <UCalendar
-              range
-              :model-value="calendarValue"
-              :max-value="maxCalendarValue"
-              color="primary"
-              class="p-2"
-              @update:model-value="onRangePick"
-            />
-          </template>
-        </UPopover>
+    <!-- A plain flex row, not a UButtonGroup: the custom-range trigger is
+         wrapped by UPopover, and a group cannot see through that wrapper to
+         join and align its edges. Explicit gaps keep all three identical. -->
+    <div class="flex flex-wrap items-center gap-2">
+      <UButton
+        v-for="mode in SIMPLE_MODES"
+        :key="mode.value"
+        size="sm"
+        :variant="selection.mode === mode.value ? 'solid' : 'outline'"
+        :color="selection.mode === mode.value ? 'primary' : 'neutral'"
+        :label="t(mode.labelKey)"
+        @click="selectMode(mode.value)"
+      />
 
+      <UPopover v-model:open="calendarOpen">
         <UButton
-          v-else
-          :variant="selection.mode === mode.value ? 'solid' : 'outline'"
-          :color="selection.mode === mode.value ? 'primary' : 'neutral'"
-          :label="t(mode.labelKey)"
-          @click="selectMode(mode.value)"
+          size="sm"
+          :variant="selection.mode === 'custom' ? 'solid' : 'outline'"
+          :color="selection.mode === 'custom' ? 'primary' : 'neutral'"
+          icon="i-lucide-calendar-range"
+          :label="t('pages.home.period.custom')"
         />
-      </template>
-    </UButtonGroup>
+        <template #content>
+          <UCalendar
+            range
+            :model-value="calendarValue"
+            :max-value="maxCalendarValue"
+            color="primary"
+            class="p-2"
+            @update:model-value="onRangePick"
+          />
+        </template>
+      </UPopover>
+    </div>
 
     <span v-if="rangeLabel" class="text-sm text-on-surface-variant" dir="ltr">
       {{ rangeLabel }}

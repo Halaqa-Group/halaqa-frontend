@@ -37,7 +37,7 @@ const scoreTone = computed(() => {
 })
 
 // Tap a word on the mushaf to cycle its severity down the spectrum
-// (red → orange → yellow → green → clear). The toolbar is a live legend of
+// (red → yellow → green → clear). The toolbar is a live legend of
 // how many words sit at each level, not a mode selector.
 const levels = SEVERITY_LEVELS
 

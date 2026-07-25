@@ -2,6 +2,7 @@
 import * as z from 'zod'
 import type { ManagedUser, UserStatus } from '~/composables/useUsers'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
+import { NAME_PART_MAX_LENGTH } from '~/data/constants'
 
 type Mode = 'add' | 'edit'
 
@@ -35,8 +36,20 @@ watch(isOpen, (v) => {
 
 const PHONE_PATTERN = /^\+\d{1,3}[\d\s-]{6,18}$/
 
+// The API stores the four Arabic name parts and derives the display `name` from
+// them; it rejects a `name` in the body.
+const NAME_PART_FIELDS = [
+  { key: 'first_name', labelKey: 'label.first_name' },
+  { key: 'second_name', labelKey: 'label.second_name' },
+  { key: 'third_name', labelKey: 'label.third_name' },
+  { key: 'family_name', labelKey: 'label.family_name' }
+] as const
+
 interface FormState {
-  name: string
+  first_name: string
+  second_name: string
+  third_name: string
+  family_name: string
   id_number: string
   email: string
   password: string
@@ -45,7 +58,17 @@ interface FormState {
 }
 
 function emptyState(): FormState {
-  return { name: '', id_number: '', email: '', password: '', phone: '', status: 'active' }
+  return {
+    first_name: '',
+    second_name: '',
+    third_name: '',
+    family_name: '',
+    id_number: '',
+    email: '',
+    password: '',
+    phone: '',
+    status: 'active'
+  }
 }
 
 const state = reactive<FormState>(emptyState())
@@ -77,8 +100,16 @@ const schema = computed(() => {
     .optional()
     .or(z.literal(''))
 
+  const namePart = z.string({ error: () => t('validation.required') })
+    .trim()
+    .min(1, t('validation.required'))
+    .max(NAME_PART_MAX_LENGTH, t('validation.max', { max: NAME_PART_MAX_LENGTH }))
+
   const base = {
-    name: z.string({ error: () => t('validation.required') }).min(1, t('validation.required')).max(100),
+    first_name: namePart,
+    second_name: namePart,
+    third_name: namePart,
+    family_name: namePart,
     phone,
     status: z.enum(['active', 'inactive', 'suspended'] as const)
   }
@@ -100,7 +131,10 @@ const error = ref('')
 
 function syncFromProps() {
   if (props.mode === 'edit' && props.user) {
-    state.name = props.user.name
+    state.first_name = props.user.firstName
+    state.second_name = props.user.secondName
+    state.third_name = props.user.thirdName
+    state.family_name = props.user.familyName
     state.email = props.user.email
     state.password = ''
     state.phone = props.user.phone ?? ''
@@ -121,13 +155,20 @@ watch(
   { immediate: true }
 )
 
+const nameParts = computed(() => NAME_PART_FIELDS.map(f => state[f.key]))
+
 const isDirty = computed(() => {
   if (props.mode === 'add') {
-    return !!state.name || !!state.id_number || !!state.email || !!state.password || !!state.phone
-      || selectedRoles.value.length > 0
+    return nameParts.value.some(Boolean) || !!state.id_number || !!state.email || !!state.password
+      || !!state.phone || selectedRoles.value.length > 0
   }
   if (!props.user) return false
-  const baseChanged = state.name !== props.user.name
+  const user = props.user
+  const nameChanged = state.first_name !== user.firstName
+    || state.second_name !== user.secondName
+    || state.third_name !== user.thirdName
+    || state.family_name !== user.familyName
+  const baseChanged = nameChanged
     || state.phone !== (props.user.phone ?? '')
     || state.status !== props.user.status
   const rolesChanged = selectedRoles.value.length !== originalRoles.value.length
@@ -159,7 +200,10 @@ async function onSubmit() {
   try {
     if (props.mode === 'add') {
       await usersApi.create({
-        name: state.name.trim(),
+        first_name: state.first_name.trim(),
+        second_name: state.second_name.trim(),
+        third_name: state.third_name.trim(),
+        family_name: state.family_name.trim(),
         id_number: state.id_number.trim(),
         email: state.email.trim().toLowerCase(),
         password: state.password,
@@ -175,7 +219,10 @@ async function onSubmit() {
       }
     } else if (props.user) {
       await usersApi.update(props.user.id, {
-        name: state.name.trim(),
+        first_name: state.first_name.trim(),
+        second_name: state.second_name.trim(),
+        third_name: state.third_name.trim(),
+        family_name: state.family_name.trim(),
         phone: state.phone.trim() || null,
         status: state.status
       })
@@ -292,8 +339,14 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
         @submit="onSubmit"
       >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <UFormField :label="$t('label.full_name')" name="name" required>
-            <UInput v-model="state.name" />
+          <UFormField
+            v-for="field in NAME_PART_FIELDS"
+            :key="field.key"
+            :label="$t(field.labelKey)"
+            :name="field.key"
+            required
+          >
+            <UInput v-model="state[field.key]" :maxlength="NAME_PART_MAX_LENGTH" />
           </UFormField>
 
           <UFormField v-if="mode === 'add'" :label="$t('label.id_number')" name="id_number" required>

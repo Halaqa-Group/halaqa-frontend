@@ -1,7 +1,10 @@
 import type { ApiTeacher } from '~/types'
 
 export interface SaveTeacherPayload {
-  name: string
+  first_name: string
+  second_name: string
+  third_name: string
+  family_name: string
   email: string
   password?: string
   phone: string | null
@@ -52,7 +55,10 @@ export function useSchoolTeachers() {
     const created = await api<ApiUser>('/users', {
       method: 'POST',
       body: {
-        name: payload.name,
+        first_name: payload.first_name,
+        second_name: payload.second_name,
+        third_name: payload.third_name,
+        family_name: payload.family_name,
         email: payload.email,
         password: payload.password,
         phone: payload.phone,
@@ -67,7 +73,10 @@ export function useSchoolTeachers() {
     const updated = await api<ApiUser>(`/users/${id}`, {
       method: 'PATCH',
       body: {
-        name: payload.name,
+        first_name: payload.first_name,
+        second_name: payload.second_name,
+        third_name: payload.third_name,
+        family_name: payload.family_name,
         phone: payload.phone,
         status: payload.status
       }

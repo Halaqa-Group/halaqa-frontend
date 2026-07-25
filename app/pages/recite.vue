@@ -795,7 +795,6 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
                   <span class="text-[11px] tabular-nums text-muted">
                     {{ t('pages.achievements.mistakes') }} {{ a.mistakes_count }}
                     · {{ t('pages.achievements.warnings') }} {{ a.warnings_count }}
-                    · {{ t('pages.achievements.tajweedErrors') }} {{ a.tajweed_errors_count }}
                     · {{ t('pages.achievements.harakat') }} {{ a.harakat_errors_count ?? 0 }}
                   </span>
                 </li>

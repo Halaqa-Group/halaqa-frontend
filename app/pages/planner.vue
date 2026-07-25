@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import { achievementStatusColor } from '~/utils/achievement'
+import { weeklyPlanToQuranPlan } from '~/utils/plan-pdf'
 
 definePageMeta({
   breadcrumb: [
@@ -17,7 +18,7 @@ const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 const {
   selectedStudentId, selectedWeekStart, plan, planStatus, viewMode,
   formOpen, editing, deleteOpen, deleteTarget,
-  wizardOpen, matrixDirty, matrixSummary, saveDraft,
+  wizardOpen, matrixDirty, matrixSummary, saveDraft, dateOfDay, studentName,
   loadStudents, loadPlan, approvePlan, unapprovePlan, deletePlan, deleteItem, openAdd
 } = useWeeklyPlan()
 
@@ -38,6 +39,16 @@ const deletePlanOpen = ref(false)
 function openDeletePlan() {
   deletePlanOpen.value = true
 }
+
+// Printable PDF: map the loaded plan onto the QuranPlan template. Available
+// whenever a plan with sessions exists, regardless of approval state.
+const printOpen = ref(false)
+const canPrint = computed(() => (plan.value?.items.length ?? 0) > 0)
+const pdfPlan = computed(() => weeklyPlanToQuranPlan(plan.value, {
+  studentName: selectedStudentId.value ? studentName(selectedStudentId.value) : '',
+  dateForDay: dateOfDay,
+  logo: '/images/logo/halaqa_logo.png'
+}))
 
 const planMenu = computed(() => {
   if (!plan.value || !canDeletePlan.value) return []
@@ -161,6 +172,15 @@ onMounted(async () => {
           {{ t('pages.planner.unapprove') }}
         </UButton>
         <UButton
+          v-if="canPrint"
+          icon="i-lucide-printer"
+          color="neutral"
+          variant="soft"
+          @click="printOpen = true"
+        >
+          {{ t('pages.planner.downloadPdf') }}
+        </UButton>
+        <UButton
           v-if="canModify && viewMode === 'matrix'"
           icon="i-lucide-wand-sparkles"
           variant="soft"
@@ -249,6 +269,8 @@ onMounted(async () => {
     </div>
 
     <PlannerCreateWizard />
+
+    <PlannerPrintDialog v-model:open="printOpen" :plan="pdfPlan" />
 
     <UModal
       v-model:open="formOpen"

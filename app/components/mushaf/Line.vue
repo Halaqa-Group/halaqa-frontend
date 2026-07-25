@@ -280,20 +280,13 @@ function onWordLeave(word: MushafWord) {
   }
 }
 
-/* Tarteel-style severity spectrum: red → orange → yellow → green.
+/* Tarteel-style severity spectrum: red → yellow → green.
    Yellow needs a touch more alpha to read against the page. */
 .mushaf-word--severe {
   background-color: rgba(220, 38, 38, 0.22);
 }
 .mushaf-word--severe:hover {
   background-color: rgba(220, 38, 38, 0.32);
-}
-
-.mushaf-word--medium {
-  background-color: rgba(234, 88, 12, 0.22);
-}
-.mushaf-word--medium:hover {
-  background-color: rgba(234, 88, 12, 0.32);
 }
 
 .mushaf-word--light {
@@ -353,7 +346,6 @@ function onWordLeave(word: MushafWord) {
 /* Group hover: hovering any word lights the whole block at the severity's hover
    shade (mirrors the per-word :hover values above), so the run reacts as one. */
 .mushaf-word--block-hover.mushaf-word--severe { background-color: rgba(220, 38, 38, 0.32); }
-.mushaf-word--block-hover.mushaf-word--medium { background-color: rgba(234, 88, 12, 0.32); }
 .mushaf-word--block-hover.mushaf-word--light { background-color: rgba(234, 179, 8, 0.42); }
 .mushaf-word--block-hover.mushaf-word--minor { background-color: rgba(22, 163, 74, 0.32); }
 </style>

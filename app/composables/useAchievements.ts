@@ -19,17 +19,17 @@ interface VerseRangeLike {
   end_verse: number
 }
 
-// Tally the four error types from an itemized errors[] list — the backend
-// derives the same counts server-side; we mirror it to compute the score and to
-// hydrate the numeric quick-entry form.
+// Tally the error types from an itemized errors[] list — the backend derives the
+// same counts server-side; we mirror it to compute the score and to hydrate the
+// numeric quick-entry form. Legacy `tajweed` rows on older records are ignored:
+// the type is retired on the frontend.
 export function tallyErrors(errors: PositionError[] | undefined | null): ScoreCounts {
   const c: ScoreCounts = {
-    mistakes_count: 0, warnings_count: 0, tajweed_errors_count: 0, harakat_errors_count: 0
+    mistakes_count: 0, warnings_count: 0, harakat_errors_count: 0
   }
   for (const e of errors ?? []) {
     if (e.error_type === 'mistake') c.mistakes_count++
     else if (e.error_type === 'warning') c.warnings_count++
-    else if (e.error_type === 'tajweed') c.tajweed_errors_count++
     else if (e.error_type === 'harakat') c.harakat_errors_count++
   }
   return c
@@ -51,7 +51,6 @@ export async function buildErrorsFromCounts(
   }
   push('mistake', counts.mistakes_count)
   push('warning', counts.warnings_count)
-  push('tajweed', counts.tajweed_errors_count)
   push('harakat', counts.harakat_errors_count)
   return errors
 }
@@ -59,7 +58,7 @@ export async function buildErrorsFromCounts(
 // Mushaf flow: each standalone marked word becomes one precisely-located error.
 // A drag-selected block (words sharing a group id) becomes a SINGLE error spanning
 // the run instead of one error per word. The marking spectrum has no harakat
-// notion, so this only emits mistake/warning/tajweed (green `minor` is dropped).
+// notion, so this only emits mistake/warning (green `minor` is dropped).
 export async function buildErrorsFromMarks(
   marks: Readonly<RecitationMarks>,
   groups: Readonly<MarkGroups> = {}
@@ -141,7 +140,8 @@ export async function buildTestPositions(
 // a contiguous word span + severity, ready to feed `setMarks` (a multi-word span
 // re-forms as one drag-block). The severity is the inverse of the severity →
 // scoreSlot(error_type) map. 'harakat' has no mushaf-severity equivalent (it's
-// only produced by the numeric quick-entry form), so those errors are skipped.
+// only produced by the numeric quick-entry form), so those errors are skipped —
+// as are legacy 'tajweed' rows, whose severity level no longer exists.
 export async function buildMarkRunsFromErrors(
   errors: readonly PositionError[]
 ): Promise<Array<{ keys: WordKey[], severity: Severity }>> {

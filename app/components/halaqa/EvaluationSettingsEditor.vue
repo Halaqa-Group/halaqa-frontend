@@ -24,10 +24,12 @@ const { updateHalaqa } = useHalaqat()
 
 type WeightKey = keyof EvaluationSettings
 
+// The editable weights. `tajweed_weight` is deliberately absent — the error type
+// is retired on the frontend — but it still travels through `form` so the
+// wholesale PATCH below doesn't reset whatever the backend has stored.
 const WEIGHTS: Array<{ key: WeightKey, labelKey: string }> = [
   { key: 'mistake_weight', labelKey: 'pages.achievements.mistakes' },
   { key: 'warning_weight', labelKey: 'pages.achievements.warnings' },
-  { key: 'tajweed_weight', labelKey: 'pages.achievements.tajweedErrors' },
   { key: 'harakat_weight', labelKey: 'pages.achievements.harakat' }
 ]
 
@@ -37,8 +39,10 @@ const form = reactive<Record<WeightKey, number | null>>({ ...DEFAULT_EVALUATION_
 const baseline = ref<EvaluationSettings>({ ...DEFAULT_EVALUATION_SETTINGS })
 const saving = ref(false)
 
+// Copies every weight, not just the editable ones, so the retired
+// `tajweed_weight` round-trips untouched instead of falling back to its default.
 function apply(settings: EvaluationSettings) {
-  for (const { key } of WEIGHTS) form[key] = settings[key]
+  for (const key of Object.keys(settings) as WeightKey[]) form[key] = settings[key]
 }
 
 watch(() => props.initial, (next) => {
@@ -69,7 +73,6 @@ const sampleScore = computed(() => {
   return computePercentageScore({
     mistakes_count: 1,
     warnings_count: 1,
-    tajweed_errors_count: 1,
     harakat_errors_count: 1
   }, form)
 })
@@ -85,9 +88,10 @@ function useDefaults() {
 async function save() {
   if (!isValid.value || saving.value) return
   saving.value = true
-  // PATCH replaces the stored object wholesale, so send all four weights.
-  // isValid already proved each one is a number in range; normalize just
-  // narrows the nullable form type back to EvaluationSettings.
+  // PATCH replaces the stored object wholesale, so send every weight the backend
+  // holds — the three editable ones plus the retired `tajweed_weight` carried
+  // through untouched. isValid already proved each editable one is a number in
+  // range; normalize just narrows the nullable form type back to EvaluationSettings.
   const payload: Record<string, unknown> = { ...normalizeEvaluationSettings(form) }
   try {
     const updated = await updateHalaqa(props.halaqaId, { evaluation_settings: payload })
@@ -117,7 +121,7 @@ async function save() {
       </p>
     </div>
 
-    <div v-if="readOnly" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <div v-if="readOnly" class="grid grid-cols-3 gap-3">
       <div
         v-for="w in WEIGHTS"
         :key="w.key"
@@ -133,7 +137,7 @@ async function save() {
     </div>
 
     <template v-else>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="grid grid-cols-3 gap-3">
         <UFormField
           v-for="w in WEIGHTS"
           :key="w.key"

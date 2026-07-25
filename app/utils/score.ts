@@ -3,6 +3,11 @@
 // number of points deducted per single error of that type. There is no stored
 // `base_score`/`min_score` — the 100-point base and 0 floor are frontend
 // conventions (see score-formula.md in the backend).
+//
+// `tajweed_weight` is retired on the frontend: it is no longer editable, shown,
+// or applied to any score. It stays in the type only because the backend PATCH
+// replaces `evaluation_settings` wholesale — carrying the stored value through
+// round-trips keeps it from being silently reset.
 export interface EvaluationSettings {
   mistake_weight: number
   warning_weight: number
@@ -13,7 +18,6 @@ export interface EvaluationSettings {
 export interface ScoreCounts {
   mistakes_count: number
   warnings_count: number
-  tajweed_errors_count: number
   harakat_errors_count: number
 }
 
@@ -67,7 +71,6 @@ export function computePercentageScore(
   const deduction = (
     counts.mistakes_count * s.mistake_weight
     + counts.warnings_count * s.warning_weight
-    + counts.tajweed_errors_count * s.tajweed_weight
     + counts.harakat_errors_count * s.harakat_weight
   ) / divisor
   const clamped = Math.max(MIN_SCORE, BASE_SCORE - deduction)

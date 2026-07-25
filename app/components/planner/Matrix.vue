@@ -14,21 +14,34 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const {
   restDays, copiedCell, dateOfDay, getCell, getCells, planStatus,
-  toggleRestDay, copyRowToAllDays, applyColumnToAllDays, pasteCell, moveCell
+  toggleRestDay, copyRowToAllDays, applyColumnToAllDays, pasteCell, moveCell, moveSession, reorderSession
 } = useWeeklyPlan()
 
 type CellRef = { day: number, track: TrackType }
-const dragSource = ref<CellRef | null>(null)
+// The drag unit is a single session (its index within the cell), not the whole
+// cell — so a cell holding more than one session moves them one at a time. The
+// mobile card can't grab individual sessions (it collapses them to one row), so
+// its pointer drag leaves `index` undefined and moves the whole cell instead.
+type SessionRef = CellRef & { index?: number }
+const dragSource = ref<SessionRef | null>(null)
 const dragOver = ref<CellRef | null>(null)
+// The specific session currently under the pointer — drives the drop-target
+// indicator used when reordering sessions inside a cell.
+const dragOverSession = ref<SessionRef | null>(null)
 
 const isDragOver = (day: number, track: TrackType) =>
   dragOver.value?.day === day && dragOver.value?.track === track
+const isDragSession = (day: number, track: TrackType, index: number) =>
+  dragSource.value?.day === day && dragSource.value?.track === track && dragSource.value?.index === index
+const isDropSession = (day: number, track: TrackType, index: number) =>
+  dragOverSession.value?.day === day && dragOverSession.value?.track === track
+  && dragOverSession.value?.index === index && !isDragSession(day, track, index)
 
-function onDragStart(day: number, track: TrackType, e: DragEvent) {
-  if (!props.editable || !getCell(day, track)) return
-  dragSource.value = { day, track }
+function onSessionDragStart(day: number, track: TrackType, index: number, e: DragEvent) {
+  if (!props.editable) return
+  dragSource.value = { day, track, index }
   e.dataTransfer!.effectAllowed = 'move'
-  e.dataTransfer!.setData('text/plain', `${day}:${track}`)
+  e.dataTransfer!.setData('text/plain', `${day}:${track}:${index}`)
 }
 
 function onDragEnter(day: number, track: TrackType) {
@@ -36,18 +49,38 @@ function onDragEnter(day: number, track: TrackType) {
   dragOver.value = { day, track }
 }
 
-function onDrop(day: number, track: TrackType) {
-  const src = dragSource.value
-  dragSource.value = null
-  dragOver.value = null
-  if (!src) return
-  moveCell(src.day, src.track, day, track)
+// Hovering a specific session: highlight it as the drop slot. Clear the cell-level
+// highlight so only the session indicator shows while reordering.
+function onSessionDragEnter(day: number, track: TrackType, index: number) {
+  if (!dragSource.value || restDays.has(day)) return
+  dragOverSession.value = { day, track, index }
 }
 
-function onDragEnd() {
+function onDrop(day: number, track: TrackType) {
+  const src = dragSource.value
+  resetDrag()
+  if (!src) return
+  if (src.index == null) moveCell(src.day, src.track, day, track)
+  else moveSession(src.day, src.track, src.index, day, track)
+}
+
+// Dropped onto a specific session. Within the same cell this reorders; across
+// cells it moves the session into the target cell (append). Stops the event from
+// also bubbling to the cell's own drop handler.
+function onSessionDrop(day: number, track: TrackType, index: number) {
+  const src = dragSource.value
+  resetDrag()
+  if (!src || src.index == null) return
+  if (src.day === day && src.track === track) reorderSession(day, track, src.index, index)
+  else moveSession(src.day, src.track, src.index, day, track)
+}
+
+function resetDrag() {
   dragSource.value = null
   dragOver.value = null
+  dragOverSession.value = null
 }
+const onDragEnd = resetDrag
 
 // Pointer-based drag for touch devices — the native HTML5 drag events above
 // don't fire on mobile, so the card layout uses a drag handle driven by pointer events.
@@ -259,21 +292,25 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
             </template>
             <div
               v-else-if="getCells(day.index, track).length"
-              :draggable="editable"
               class="w-full h-full min-h-[3.25rem] flex flex-col items-stretch justify-center gap-1 rounded-lg border bg-default px-2 py-1.5 transition hover:border-primary"
-              :class="[
-                editable && 'cursor-grab active:cursor-grabbing',
-                isDragOver(day.index, track) ? 'border-primary ring-2 ring-primary/40' : 'border-default',
-                dragSource?.day === day.index && dragSource?.track === track && 'opacity-40'
-              ]"
-              @dragstart="onDragStart(day.index, track, $event)"
-              @dragend="onDragEnd"
+              :class="isDragOver(day.index, track) ? 'border-primary ring-2 ring-primary/40' : 'border-default'"
             >
               <button
                 v-for="(s, i) in getCells(day.index, track)"
                 :key="s.id ?? `new-${i}`"
                 type="button"
+                :draggable="editable"
                 class="flex flex-col items-start gap-0.5 rounded-md px-1.5 py-1 text-start transition hover:bg-elevated"
+                :class="[
+                  editable && 'cursor-grab active:cursor-grabbing',
+                  isDragSession(day.index, track, i) && 'opacity-40',
+                  isDropSession(day.index, track, i) && 'ring-2 ring-primary/50 bg-primary/5'
+                ]"
+                @dragstart="onSessionDragStart(day.index, track, i, $event)"
+                @dragend="onDragEnd"
+                @dragover.prevent
+                @dragenter.prevent="editable && onSessionDragEnter(day.index, track, i)"
+                @drop.prevent.stop="editable && onSessionDrop(day.index, track, i)"
                 @click="openSession(day.index, track, i)"
               >
                 <span class="text-sm font-medium leading-tight">

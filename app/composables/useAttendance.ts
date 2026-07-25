@@ -9,6 +9,7 @@ import type {
   AttendanceSyncResult
 } from '~/types'
 import { unwrapList } from '~/utils/api/list'
+import { ETHICS_RATING_DEFAULT, ETHICS_RATING_MAX, ETHICS_RATING_MIN } from '~/data/constants'
 
 export interface AttendanceRow {
   studentId: string
@@ -16,17 +17,28 @@ export interface AttendanceRow {
   avatar: string
   currentSurah: string
   status: AttendanceStatus
+  /** تقييم الأخلاق — 1..5, starts at the full mark and is lowered by exception. */
+  ethicsRating: number
   notes: string
+  /**
+   * ملاحظة المحفّظ اليومية — teacher's daily note (report `teacher_note`). Saved
+   * through the single-row correction endpoint only; the attendance list does
+   * not return it yet, so it starts empty on every reload.
+   */
+  dailyNote: string
 }
 
 interface ExistingRecord {
   id: number
   status: AttendanceStatus
+  ethicsRating: number
   notes: string
+  dailyNote: string
 }
 
 interface RowSnapshot {
   status: AttendanceStatus
+  ethicsRating: number
   notes: string
 }
 
@@ -58,7 +70,7 @@ function isoOf(d: Date): string {
 function snapshotCurrentRows() {
   const snap = new Map<string, RowSnapshot>()
   attendanceRows.value.forEach((row) => {
-    snap.set(row.studentId, { status: row.status, notes: row.notes })
+    snap.set(row.studentId, { status: row.status, ethicsRating: row.ethicsRating, notes: row.notes })
   })
   originalSnapshot.value = snap
 }
@@ -77,7 +89,13 @@ export function useAttendance() {
   function indexByStudent(rows: ApiAttendance[]): Map<string, ExistingRecord> {
     const map = new Map<string, ExistingRecord>()
     rows.forEach((a) => {
-      map.set(String(a.student_id), { id: a.id, status: a.status, notes: a.excuse_note || '' })
+      map.set(String(a.student_id), {
+        id: a.id,
+        status: a.status,
+        ethicsRating: a.ethics_rating ?? ETHICS_RATING_DEFAULT,
+        notes: a.excuse_note || '',
+        dailyNote: a.daily_note || ''
+      })
     })
     return map
   }
@@ -117,7 +135,9 @@ export function useAttendance() {
           avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
           currentSurah: '—',
           status: ex ? ex.status : 'present' as AttendanceStatus,
-          notes: ex?.notes || ''
+          ethicsRating: ex ? ex.ethicsRating : ETHICS_RATING_DEFAULT,
+          notes: ex?.notes || '',
+          dailyNote: ex?.dailyNote || ''
         }
       })
       snapshotCurrentRows()
@@ -135,12 +155,16 @@ export function useAttendance() {
       const records: AttendanceSyncEntry[] = []
       for (const row of attendanceRows.value) {
         const snap = originalSnapshot.value.get(row.studentId)
-        const changed = !snap || snap.status !== row.status || snap.notes !== row.notes
+        const changed = !snap
+          || snap.status !== row.status
+          || snap.ethicsRating !== row.ethicsRating
+          || snap.notes !== row.notes
         if (!changed) continue
         records.push({
           student_id: Number(row.studentId),
           date: selectedDate.value,
           status: row.status,
+          ethics_rating: row.ethicsRating,
           excuse_note: row.notes || undefined
         })
       }
@@ -164,41 +188,101 @@ export function useAttendance() {
 
   // Single-row correction via the dedicated PATCH endpoint. Unlike the bulk /sync
   // path, this records a modification_reason and preserves original_status server-side.
+  // `status` and `ethicsRating` are both optional server-side; send whichever
+  // actually changed. Sending neither (or values equal to the stored row) is 400.
   async function correct(
     attendanceId: number,
-    payload: { status: AttendanceStatus, excuseNote?: string, modificationReason?: string }
+    payload: {
+      status?: AttendanceStatus
+      ethicsRating?: number
+      excuseNote?: string
+      dailyNote?: string
+      modificationReason?: string
+    }
   ): Promise<ApiAttendance> {
     const updated = await api<ApiAttendance>(`/attendance/students/${attendanceId}`, {
       method: 'PATCH',
       body: {
-        status: payload.status,
+        ...(payload.status !== undefined && { status: payload.status }),
+        ...(payload.ethicsRating !== undefined && { ethics_rating: payload.ethicsRating }),
+        ...(payload.dailyNote !== undefined && { daily_note: payload.dailyNote }),
         excuse_note: payload.excuseNote,
         modification_reason: payload.modificationReason
       }
     })
-    // Reflect the corrected row into local state.
+    // Reflect the corrected row into local state. `daily_note` is not returned by
+    // the endpoint yet, so keep whatever we just sent rather than blanking it.
     const studentId = String(updated.student_id)
+    const rating = updated.ethics_rating ?? ETHICS_RATING_DEFAULT
+    const prev = existingRecords.value.get(studentId)
+    const dailyNote = updated.daily_note ?? payload.dailyNote ?? prev?.dailyNote ?? ''
     existingRecords.value.set(studentId, {
       id: updated.id,
       status: updated.status,
-      notes: updated.excuse_note || ''
+      ethicsRating: rating,
+      notes: updated.excuse_note || '',
+      dailyNote
     })
     const row = attendanceRows.value.find(r => r.studentId === studentId)
     if (row) {
       row.status = updated.status
+      row.ethicsRating = rating
       row.notes = updated.excuse_note || ''
+      row.dailyNote = dailyNote
     }
     const snap = originalSnapshot.value.get(studentId)
     if (snap) {
       snap.status = updated.status
+      snap.ethicsRating = rating
       snap.notes = updated.excuse_note || ''
     }
     return updated
   }
 
+  // Whether the student already has a saved attendance row for the selected day.
+  // The daily note can only be written through the correction endpoint, which
+  // needs a row id — so the note editor is gated on this.
+  function hasSavedRecord(studentId: string): boolean {
+    return existingRecords.value.has(studentId)
+  }
+
+  // Save just the teacher's daily note via the single-row correction endpoint.
+  // The endpoint requires a modification reason (min 3 chars); a fixed one is
+  // used since editing a note is not an attendance correction per se.
+  async function saveDailyNote(studentId: string, note: string): Promise<void> {
+    const ex = existingRecords.value.get(studentId)
+    if (!ex) throw new Error('no-saved-record')
+    await correct(ex.id, {
+      dailyNote: note,
+      modificationReason: 'تحديث ملاحظة المحفّظ اليومية'
+    })
+  }
+
   function setStatus(studentId: string, status: AttendanceStatus) {
     const row = attendanceRows.value.find(r => r.studentId === studentId)
     if (row) row.status = status
+  }
+
+  // Back to the "nothing to report" state the seeder would have produced:
+  // present, full ethics mark, no excuse note.
+  function resetRow(studentId: string) {
+    const row = attendanceRows.value.find(r => r.studentId === studentId)
+    if (!row) return
+    row.status = 'present'
+    row.ethicsRating = ETHICS_RATING_DEFAULT
+    row.notes = ''
+  }
+
+  function isRowAtDefault(studentId: string): boolean {
+    const row = attendanceRows.value.find(r => r.studentId === studentId)
+    if (!row) return true
+    return row.status === 'present' && row.ethicsRating === ETHICS_RATING_DEFAULT && !row.notes
+  }
+
+  function setEthicsRating(studentId: string, rating: number) {
+    const row = attendanceRows.value.find(r => r.studentId === studentId)
+    if (!row) return
+    row.ethicsRating = Math.min(ETHICS_RATING_MAX, Math.max(ETHICS_RATING_MIN, Math.round(rating)))
   }
 
   function cycleStatus(studentId: string) {
@@ -233,6 +317,7 @@ export function useAttendance() {
   function markAllPresent(): RowSnapshot[] {
     const snap: RowSnapshot[] = attendanceRows.value.map(r => ({
       status: r.status,
+      ethicsRating: r.ethicsRating,
       notes: r.notes
     }))
     const ids = attendanceRows.value.map(r => r.studentId)
@@ -245,6 +330,7 @@ export function useAttendance() {
       const row = attendanceRows.value.find(r => r.studentId === s.studentId)
       if (row) {
         row.status = s.status
+        row.ethicsRating = s.ethicsRating
         row.notes = s.notes
       }
     })
@@ -255,6 +341,7 @@ export function useAttendance() {
       const snap = originalSnapshot.value.get(row.studentId)
       if (snap) {
         row.status = snap.status
+        row.ethicsRating = snap.ethicsRating
         row.notes = snap.notes
       }
     })
@@ -298,6 +385,7 @@ export function useAttendance() {
       const snap = originalSnapshot.value.get(row.studentId)
       if (!snap) return true
       if (snap.status !== row.status) return true
+      if (snap.ethicsRating !== row.ethicsRating) return true
       if (snap.notes !== row.notes) return true
     }
     return false
@@ -325,7 +413,12 @@ export function useAttendance() {
     loadSession,
     submitSession,
     correct,
+    hasSavedRecord,
+    saveDailyNote,
     setStatus,
+    setEthicsRating,
+    resetRow,
+    isRowAtDefault,
     cycleStatus,
     setNote,
     setFilter,

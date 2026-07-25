@@ -30,6 +30,10 @@ function apiToStudent(s: ApiStudent): Student {
   return {
     id,
     name: s.name,
+    firstName: s.first_name ?? '',
+    secondName: s.second_name ?? '',
+    thirdName: s.third_name ?? '',
+    familyName: s.family_name ?? '',
     gender: s.gender ?? 'male',
     status: s.status,
     idNumber: s.id_number ?? null,

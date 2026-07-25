@@ -76,6 +76,7 @@
     "users": "Users",
     "parentOverview": "My Children",
     "attendance": "Attendance",
+    "dailyReport": "Daily Report",
     "students": "Students",
     "achievements": "Achievements",
     "analytics": "Analytics",
@@ -341,6 +342,9 @@
         "restoreDefaults": "Default values",
         "weightRange": "Between 0 and 100",
         "noEvaluationSettings": "No settings",
+        "reportWeights": "Daily report weights",
+        "reportWeightsHint": "Splits a student's daily score across the tracks — hifz, near review, far review and ethics. The four weights must sum to exactly 100.",
+        "weightsTotal": "Total: {total} / 100",
         "studentsCount": "Students",
         "createdAt": "Created",
         "updatedAt": "Updated"
@@ -590,22 +594,6 @@
       "greetingFallback": "Welcome",
       "subtitle": "Here's an overview of your halaqa's activity today.",
       "quickAccess": "Quick access",
-      "stats": {
-        "totalStudents": "Total students",
-        "activeHalaqat": "Active halaqat",
-        "loadFailed": "Failed to load",
-        "attendanceToday": "Today's attendance",
-        "attendanceCount": "{present} of {total}",
-        "currentDay": "Today",
-        "pendingReviews": "Pending reviews",
-        "vsLastWeek": "vs last week"
-      },
-      "quickActions": {
-        "attendance": "Record daily attendance",
-        "students": "Manage learners",
-        "achievements": "Track recitation and memorization",
-        "analytics": "Performance reports and alerts"
-      },
       "schoolCard": {
         "title": "Your school",
         "subtitle": "Keep this information accurate for staff, parents, and records.",
@@ -625,52 +613,155 @@
         "toastError": "Could not save school",
         "validationName": "School name is required"
       },
-      "welcome": {
-        "title": "Welcome to Halaqa",
-        "message": "Halaqa not set up yet. Contact your admin to add students."
+      "period": {
+        "week": "This week",
+        "month": "This month",
+        "custom": "Custom range",
+        "refresh": "Refresh",
+        "vsPreviousPeriod": "Change compared with the previous week",
+        "vsPreviousMonth": "Change compared with the previous month"
       },
-      "schedule": {
-        "title": "Today's Schedule",
-        "noSessions": "No sessions scheduled for today",
-        "students": "students"
+      "kpi": {
+        "studentAttendance": "Student attendance",
+        "teacherAttendance": "Teacher attendance",
+        "newMemorization": "New memorization",
+        "pagesHint": "Pages in the period",
+        "planCompletion": "Plan completion",
+        "averageScore": "Average score",
+        "scoreHint": "Out of 100",
+        "ethics": "Ethics rating",
+        "ethicsHint": "Out of 5",
+        "activeStudents": "Active students",
+        "activeHalaqat": "Active halaqat"
       },
-      "weeklyAttendance": {
-        "title": "Weekly Attendance",
-        "present": "Present",
-        "absent": "Absent"
-      },
-      "topPerformers": {
-        "title": "Top Performers This Week",
+      "topStudents": {
+        "title": "Top students",
+        "trackLabel": "Track",
         "pages": "pages",
-        "noData": "Not enough data"
+        "positions": "{pages} recited",
+        "meta": "{count} achievements · average {score}",
+        "empty": "No approved achievements in this period"
       },
-      "recentActivity": {
-        "title": "Recent Activity",
-        "completedSurah": "{student} completed Surah {surah}",
-        "attendanceRecorded": "Attendance recorded for {halaqa}",
-        "newStudent": "New student {student} added",
-        "achievementLogged": "{student} logged a memorization achievement",
-        "planApproved": "Weekly plan approved for {halaqa}",
-        "timeAgo": {
-          "minutes": "{count} min ago",
-          "hours": "{count} hours ago",
-          "days": "{count} days ago"
+      "halaqat": {
+        "title": "Halaqa performance",
+        "empty": "No halaqat in this period",
+        "columns": {
+          "halaqa": "Halaqa",
+          "students": "Students",
+          "attendance": "Attendance",
+          "pages": "Pages",
+          "score": "Average score",
+          "planCompletion": "Plan completion"
         }
       },
-      "absenceAlerts": {
-        "title": "Absence Alerts",
-        "missedSessions": "Missed {count} consecutive sessions",
-        "contactParent": "Contact parent",
-        "noAlerts": "No absence alerts"
+      "teachers": {
+        "title": "Teacher commitment",
+        "empty": "No teachers in this period",
+        "columns": {
+          "teacher": "Teacher",
+          "ownAttendance": "Their attendance",
+          "halaqat": "Halaqat",
+          "students": "Students",
+          "studentAttendance": "Students' attendance",
+          "studentPages": "Students' pages"
+        }
       },
-      "days": {
-        "sat": "Sat",
-        "sun": "Sun",
-        "mon": "Mon",
-        "tue": "Tue",
-        "wed": "Wed",
-        "thu": "Thu",
-        "fri": "Fri"
+      "alerts": {
+        "title": "Needs attention",
+        "empty": "Nothing needs attention right now",
+        "staleWindow": "Last {days} days",
+        "staleWindowLabel": "Stall window",
+        "never": "No approved achievement yet",
+        "daysSince": "{days} days since the last achievement",
+        "stalled": {
+          "title": "Students with no achievement in {days} days",
+          "action": "Record an achievement"
+        },
+        "noTeacher": {
+          "title": "Halaqat with no main teacher"
+        },
+        "highAbsence": {
+          "title": "Teachers with high absence",
+          "detail": "{days} absent days · attendance {rate}%"
+        }
+      },
+      "errors": {
+        "overview": "Could not load the headline indicators",
+        "topStudents": "Could not load the top students",
+        "halaqat": "Could not load halaqa performance",
+        "teachers": "Could not load teacher commitment",
+        "alerts": "Could not load the alerts"
+      },
+      "quickActions": {
+        "attendance": "Record daily attendance",
+        "students": "Manage learners",
+        "achievements": "Track recitation and memorization",
+        "dailyReport": "Review the daily evaluation report"
+      }
+    },
+    "dailyReport": {
+      "title": "Daily Evaluation Report",
+      "subtitle": "Students' daily scores across tracks, computed from the approved plan, achievements and attendance.",
+      "weights": "Weights",
+      "ethics": "Ethics",
+      "prevDay": "Previous day",
+      "nextDay": "Next day",
+      "planCompletion": "Plan completion",
+      "totalScore": "Total score",
+      "teacherNote": "Teacher's note",
+      "noStudents": "No students in this report.",
+      "nonWorkingDay": "Non-working day",
+      "nonWorkingDayHint": "No scores are computed on non-working days.",
+      "source": {
+        "live": "Live",
+        "snapshot": "Saved snapshot"
+      },
+      "status": {
+        "complete": "Complete",
+        "partial": "Partial",
+        "failed": "Failed"
+      },
+      "attendance": {
+        "missing": "No attendance",
+        "missingHint": "The student's attendance was not recorded for this day, so no total score is computed."
+      },
+      "columns": {
+        "student": "Student",
+        "attendance": "Attendance",
+        "planCompletion": "Plan completion",
+        "total": "Total",
+        "alerts": "Alerts",
+        "actions": "Actions"
+      },
+      "rowActions": {
+        "label": "Row actions",
+        "viewDetails": "View details",
+        "viewProfile": "View student profile",
+        "logAchievement": "Log achievement"
+      },
+      "detail": {
+        "title": "Student details",
+        "loadError": "Could not load the student's details",
+        "ethics": "Ethics",
+        "tracks": "Track breakdown",
+        "plannedPages": "Planned pages",
+        "achievedPages": "Achieved pages",
+        "completionRate": "Completion rate",
+        "qualityRate": "Quality rate",
+        "weightRedistributed": "Weight redistributed ({base} → {effective})",
+        "plannedRanges": "Planned ranges: {n}",
+        "gaps": "Gaps: {n}",
+        "outsidePlan": "Outside plan: {n}"
+      },
+      "recalculate": {
+        "button": "Recalculate",
+        "title": "Recalculate report",
+        "description": "This day's report will be recomputed and the saved copy replaced. No second copy is created.",
+        "reasonLabel": "Reason for recalculation",
+        "reasonPlaceholder": "e.g. the student's recitation was corrected",
+        "confirm": "Recalculate",
+        "doneToast": "Report recalculated",
+        "errorToast": "Recalculation failed"
       }
     },
     "attendance": {
@@ -704,6 +795,11 @@
         "excused": "Excused"
       },
       "statusLabel": "Status",
+      "ethics": {
+        "label": "Ethics rating",
+        "valueLabel": "Ethics rating {rating} of {max}",
+        "setTo": "Set ethics rating to {rating}"
+      },
       "noMatch": "No matching results",
       "view": {
         "table": "Table view"
@@ -711,7 +807,14 @@
       "table": {
         "student": "Student",
         "note": "Note",
-        "staff": "Staff member"
+        "staff": "Staff member",
+        "actions": "Actions"
+      },
+      "rowActions": {
+        "label": "Row actions",
+        "viewProfile": "View student profile",
+        "logAchievement": "Log an achievement",
+        "reset": "Reset to present"
       },
       "markAllPresent": "Mark all present",
       "markedAllPresent": "All students marked present",
@@ -726,6 +829,15 @@
       "noteFor": "Note for {name}",
       "noteEmpty": "No note yet",
       "saveNote": "Save note",
+      "dailyNote": {
+        "label": "Teacher's daily note",
+        "title": "Daily note for {name}",
+        "hint": "Shown in the daily evaluation report as the teacher's note. Separate from the absence excuse.",
+        "placeholder": "Write your daily note about the student...",
+        "needsRecord": "Save the student's attendance for this day first before adding a note.",
+        "savedToast": "Daily note saved",
+        "errorToast": "Could not save the note"
+      },
       "viewFullCalendar": "View full calendar",
       "calendarTitle": "Full calendar",
       "statsLabels": {
@@ -832,8 +944,6 @@
         "halaqaPlaceholder": "Select one or more halaqat...",
         "photoUrl": "Photo URL",
         "photoUrlPlaceholder": "https://...",
-        "fullName": "Full name",
-        "fullNamePlaceholder": "Student's full name",
         "idNumber": "ID number",
         "idNumberPlaceholder": "9 digits",
         "gender": "Gender",
@@ -1025,7 +1135,6 @@
       "versesCount": "{count} verses",
       "mistakes": "Mistakes",
       "warnings": "Warnings",
-      "tajweedErrors": "Tajweed",
       "harakat": "Harakat",
       "notes": "Teacher notes",
       "notesPlaceholder": "Add notes on the student's performance... (optional)",
@@ -1138,6 +1247,16 @@
       "unapprovedToast": "Plan approval revoked",
       "approveErrorTitle": "Failed to approve plan",
       "addItem": "Add session",
+      "downloadPdf": "Download plan",
+      "print": {
+        "title": "Plan print preview",
+        "download": "Download PDF",
+        "downloadImage": "Download PNG image",
+        "fileName": "memorization-plan",
+        "empty": "This plan has no sessions to print",
+        "error": "Could not generate the PDF",
+        "errorImage": "Could not generate the image"
+      },
       "weekOf": "Week of {date}",
       "selectStudent": "Select a student",
       "noPlan": "No plan for this week yet",
@@ -1383,6 +1502,10 @@
     "password_confirmation": "Confirm password",
     "current_password": "Current password",
     "full_name": "Full name",
+    "first_name": "First name",
+    "second_name": "Father's name",
+    "third_name": "Grandfather's name",
+    "family_name": "Family name",
     "phone": "Phone number",
     "photo_url": "Photo URL"
   },

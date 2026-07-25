@@ -4,6 +4,7 @@ import type { FormSubmitEvent } from '#ui/types'
 import type { CalendarDate } from '@internationalized/date'
 import { DateFormatter, getLocalTimeZone, parseDate, today } from '@internationalized/date'
 import { normalizeDigits } from '~/composables/useValidation'
+import { NAME_PART_MAX_LENGTH } from '~/data/constants'
 import type { ApiStudent } from '~/types'
 
 const props = withDefaults(defineProps<{
@@ -60,26 +61,47 @@ interface GuardianRow {
   canPickup: boolean
 }
 
-const schema = computed(() => z.object({
-  name: z.string({ error: () => t('validation.required') }).trim().min(1, t('validation.required')),
-  gender: z.enum(['male', 'female'] as const),
-  status: z.enum(['active', 'inactive', 'graduated'] as const),
-  idNumber: palestinianId({ required: !isEditMode.value }),
-  dob: z.string(),
-  joinDate: z.string(),
-  memPages: z.number().min(CAPACITY.hifz.min).max(CAPACITY.hifz.max),
-  nearPages: z.number().min(CAPACITY.near.min).max(CAPACITY.near.max),
-  farPages: z.number().min(CAPACITY.far.min).max(CAPACITY.far.max),
-  notes: z.string(),
-  photoUrl: z.string(),
-  halaqaIds: z.array(z.number())
-}))
+// The four parts are each required and capped at 50 chars server-side; `name` is
+// derived there and rejected if sent.
+const NAME_PART_FIELDS = [
+  { key: 'firstName', apiKey: 'first_name', labelKey: 'label.first_name' },
+  { key: 'secondName', apiKey: 'second_name', labelKey: 'label.second_name' },
+  { key: 'thirdName', apiKey: 'third_name', labelKey: 'label.third_name' },
+  { key: 'familyName', apiKey: 'family_name', labelKey: 'label.family_name' }
+] as const
+
+const schema = computed(() => {
+  const namePart = z.string({ error: () => t('validation.required') })
+    .trim()
+    .min(1, t('validation.required'))
+    .max(NAME_PART_MAX_LENGTH, t('validation.max', { max: NAME_PART_MAX_LENGTH }))
+  return z.object({
+    firstName: namePart,
+    secondName: namePart,
+    thirdName: namePart,
+    familyName: namePart,
+    gender: z.enum(['male', 'female'] as const),
+    status: z.enum(['active', 'inactive', 'graduated'] as const),
+    idNumber: palestinianId({ required: !isEditMode.value }),
+    dob: z.string(),
+    joinDate: z.string(),
+    memPages: z.number().min(CAPACITY.hifz.min).max(CAPACITY.hifz.max),
+    nearPages: z.number().min(CAPACITY.near.min).max(CAPACITY.near.max),
+    farPages: z.number().min(CAPACITY.far.min).max(CAPACITY.far.max),
+    notes: z.string(),
+    photoUrl: z.string(),
+    halaqaIds: z.array(z.number())
+  })
+})
 
 type StudentForm = z.infer<typeof schema.value>
 
 function emptyState(): StudentForm {
   return {
-    name: '',
+    firstName: '',
+    secondName: '',
+    thirdName: '',
+    familyName: '',
     gender: 'male',
     status: 'active',
     idNumber: '',
@@ -142,7 +164,10 @@ onMounted(() => {
 
 watch(() => props.student, (student) => {
   if (!student) return
-  state.name = student.name
+  state.firstName = student.first_name ?? ''
+  state.secondName = student.second_name ?? ''
+  state.thirdName = student.third_name ?? ''
+  state.familyName = student.family_name ?? ''
   state.gender = student.gender ?? 'male'
   state.status = student.status
   state.idNumber = student.id_number ?? ''
@@ -254,7 +279,14 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       const patch: Record<string, any> = {}
 
       if (!lockBio.value) {
-        patch.name = state.name.trim()
+        // Send only the parts that actually changed — the API patches per part
+        // and rebuilds the display name itself.
+        for (const field of NAME_PART_FIELDS) {
+          const next = state[field.key].trim()
+          if (next !== (props.student[field.apiKey] ?? '')) {
+            patch[field.apiKey] = next
+          }
+        }
         patch.gender = state.gender
         patch.status = state.status
         patch.dob = state.dob || null
@@ -291,7 +323,10 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
     }
 
     const created = await createStudent({
-      name: state.name.trim(),
+      first_name: state.firstName.trim(),
+      second_name: state.secondName.trim(),
+      third_name: state.thirdName.trim(),
+      family_name: state.familyName.trim(),
       gender: state.gender,
       id_number: normalizeDigits(state.idNumber),
       ...(state.dob ? { dob: state.dob } : {}),
@@ -400,10 +435,16 @@ watch(modalOpen, (open) => {
         </UFormField>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <UFormField :label="t('pages.students.addModal.fullName')" name="name" class="sm:col-span-2" required>
+          <UFormField
+            v-for="field in NAME_PART_FIELDS"
+            :key="field.key"
+            :label="t(field.labelKey)"
+            :name="field.key"
+            required
+          >
             <UInput
-              v-model="state.name"
-              :placeholder="t('pages.students.addModal.fullNamePlaceholder')"
+              v-model="state[field.key]"
+              :maxlength="NAME_PART_MAX_LENGTH"
               :disabled="lockBio"
               class="w-full"
             />

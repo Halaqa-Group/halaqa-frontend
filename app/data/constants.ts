@@ -32,6 +32,16 @@ export const SURAH_NAMES: Record<number, string> = {
 
 export const SURAHS = Object.values(SURAH_NAMES)
 
+// تقييم الأخلاق — the daily behaviour score stored on a student attendance row.
+// Mirrors ETHICS_RATING_* in the backend attendance entity: a seeded row starts
+// at the maximum and teachers lower it only where warranted.
+export const ETHICS_RATING_MIN = 1
+export const ETHICS_RATING_MAX = 5
+export const ETHICS_RATING_DEFAULT = 5
+
+/** Max characters per name part, matching NAME_PART_MAX_LENGTH on the backend. */
+export const NAME_PART_MAX_LENGTH = 50
+
 export const STATUS_CYCLE = [
   'bg-[#A7D2CB]',
   'bg-[#93C6E7]',

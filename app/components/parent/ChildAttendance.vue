@@ -89,6 +89,11 @@ const statusOrder: AttendanceStatus[] = ['present', 'late', 'absent', 'excused']
                 {{ r.excuse_note }}
               </p>
             </div>
+            <AttendanceEthicsRating
+              v-if="r.ethics_rating != null"
+              :rating="r.ethics_rating"
+              readonly
+            />
             <UBadge variant="subtle" size="sm" :color="STATUS_META[r.status].color">
               {{ t(`attendance.status.${r.status}`) }}
             </UBadge>

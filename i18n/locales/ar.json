@@ -76,6 +76,7 @@
     "users": "المستخدمون",
     "parentOverview": "أبنائي",
     "attendance": "الحضور",
+    "dailyReport": "التقييم اليومي",
     "students": "الطلاب",
     "achievements": "الإنجازات",
     "analytics": "التحليلات",
@@ -341,6 +342,9 @@
         "restoreDefaults": "القيم الافتراضية",
         "weightRange": "من ٠ إلى ١٠٠",
         "noEvaluationSettings": "لا توجد إعدادات",
+        "reportWeights": "أوزان التقييم اليومي",
+        "reportWeightsHint": "توزيع درجة الطالب اليومية على المسارات: الحفظ والمراجعة القريبة والبعيدة والأخلاق. يجب أن يكون مجموع الأوزان ١٠٠ بالضبط.",
+        "weightsTotal": "المجموع: {total} / ١٠٠",
         "studentsCount": "عدد الطلاب",
         "createdAt": "تاريخ الإنشاء",
         "updatedAt": "آخر تحديث"
@@ -590,22 +594,6 @@
       "greetingFallback": "مرحباً بك",
       "subtitle": "هذه نظرة عامة على نشاط حلقتك اليوم.",
       "quickAccess": "الوصول السريع",
-      "stats": {
-        "totalStudents": "إجمالي الطلاب",
-        "activeHalaqat": "حلقات نشطة",
-        "loadFailed": "تعذّر التحميل",
-        "attendanceToday": "الحضور اليوم",
-        "attendanceCount": "{present} من {total}",
-        "currentDay": "اليوم الحالي",
-        "pendingReviews": "في انتظار المراجعة",
-        "vsLastWeek": "مقارنة بالأسبوع الماضي"
-      },
-      "quickActions": {
-        "attendance": "تسجيل الحضور اليومي",
-        "students": "إدارة المتعلمين",
-        "achievements": "متابعة التلاوة والحفظ",
-        "analytics": "تقارير الأداء والتنبيهات"
-      },
       "schoolCard": {
         "title": "مدرستك",
         "subtitle": "حافظ على صحة هذه البيانات للموظفين وأولياء الأمور والسجلات.",
@@ -625,52 +613,155 @@
         "toastError": "تعذّر حفظ بيانات المدرسة",
         "validationName": "اسم المدرسة مطلوب"
       },
-      "welcome": {
-        "title": "مرحباً بك في حلقة",
-        "message": "لم يتم إعداد الحلقة بعد. تواصل مع المشرف لإضافة الطلاب."
+      "period": {
+        "week": "هذا الأسبوع",
+        "month": "هذا الشهر",
+        "custom": "مدة مخصصة",
+        "refresh": "تحديث",
+        "vsPreviousPeriod": "التغير مقارنة بالأسبوع السابق",
+        "vsPreviousMonth": "التغير مقارنة بالشهر السابق"
       },
-      "schedule": {
-        "title": "جدول اليوم",
-        "noSessions": "لا توجد جلسات مجدولة لهذا اليوم",
-        "students": "طالب"
+      "kpi": {
+        "studentAttendance": "حضور الطلاب",
+        "teacherAttendance": "حضور المحفظين",
+        "newMemorization": "الحفظ الجديد",
+        "pagesHint": "صفحات خلال المدة",
+        "planCompletion": "إنجاز الخطة",
+        "averageScore": "متوسط الدرجة",
+        "scoreHint": "من ١٠٠",
+        "ethics": "تقييم الأخلاق",
+        "ethicsHint": "من ٥",
+        "activeStudents": "الطلاب النشطون",
+        "activeHalaqat": "الحلقات النشطة"
       },
-      "weeklyAttendance": {
-        "title": "الحضور الأسبوعي",
-        "present": "حاضر",
-        "absent": "غائب"
+      "topStudents": {
+        "title": "الأكثر إنجازاً",
+        "trackLabel": "المسار",
+        "pages": "صفحة",
+        "positions": "{pages} صفحة مواضع",
+        "meta": "{count} إنجاز · بمتوسط {score}",
+        "empty": "لا توجد إنجازات معتمدة في هذه المدة"
       },
-      "topPerformers": {
-        "title": "المتميزون هذا الأسبوع",
-        "pages": "صفحات",
-        "noData": "لا توجد بيانات كافية"
-      },
-      "recentActivity": {
-        "title": "آخر الأنشطة",
-        "completedSurah": "أتمّ {student} سورة {surah}",
-        "attendanceRecorded": "تم تسجيل حضور حلقة {halaqa}",
-        "newStudent": "تم إضافة الطالب {student}",
-        "achievementLogged": "سجّل {student} إنجازاً في الحفظ",
-        "planApproved": "تم اعتماد خطة الأسبوع لحلقة {halaqa}",
-        "timeAgo": {
-          "minutes": "منذ {count} دقيقة",
-          "hours": "منذ {count} ساعة",
-          "days": "منذ {count} يوم"
+      "halaqat": {
+        "title": "أداء الحلقات",
+        "empty": "لا توجد حلقات في هذه المدة",
+        "columns": {
+          "halaqa": "الحلقة",
+          "students": "الطلاب",
+          "attendance": "الحضور",
+          "pages": "الصفحات",
+          "score": "متوسط الدرجة",
+          "planCompletion": "إنجاز الخطة"
         }
       },
-      "absenceAlerts": {
-        "title": "تنبيهات الغياب",
-        "missedSessions": "غاب {count} جلسات متتالية",
-        "contactParent": "تواصل مع ولي الأمر",
-        "noAlerts": "لا توجد تنبيهات غياب"
+      "teachers": {
+        "title": "معدل التزام المحفظين",
+        "empty": "لا يوجد محفظون في هذه المدة",
+        "columns": {
+          "teacher": "المحفظ",
+          "ownAttendance": "حضوره",
+          "halaqat": "الحلقات",
+          "students": "الطلاب",
+          "studentAttendance": "حضور طلابه",
+          "studentPages": "صفحات طلابه"
+        }
       },
-      "days": {
-        "sat": "السبت",
-        "sun": "الأحد",
-        "mon": "الاثنين",
-        "tue": "الثلاثاء",
-        "wed": "الأربعاء",
-        "thu": "الخميس",
-        "fri": "الجمعة"
+      "alerts": {
+        "title": "بحاجة إلى متابعة",
+        "empty": "لا يوجد ما يستدعي المتابعة حالياً",
+        "staleWindow": "آخر {days} يوم",
+        "staleWindowLabel": "مدة التوقف",
+        "never": "لا يوجد إنجاز معتمد بعد",
+        "daysSince": "مضى {days} يوم على آخر إنجاز",
+        "stalled": {
+          "title": "طلاب بلا إنجاز منذ {days} يوم",
+          "action": "تسجيل إنجاز"
+        },
+        "noTeacher": {
+          "title": "حلقات بلا محفظ أساسي"
+        },
+        "highAbsence": {
+          "title": "محفظون كثيرو الغياب",
+          "detail": "{days} أيام غياب · الحضور {rate}٪"
+        }
+      },
+      "errors": {
+        "overview": "تعذّر تحميل المؤشرات الرئيسية",
+        "topStudents": "تعذّر تحميل قائمة الأكثر إنجازاً",
+        "halaqat": "تعذّر تحميل أداء الحلقات",
+        "teachers": "تعذّر تحميل التزام المحفظين",
+        "alerts": "تعذّر تحميل التنبيهات"
+      },
+      "quickActions": {
+        "attendance": "تسجيل الحضور اليومي",
+        "students": "إدارة المتعلمين",
+        "achievements": "متابعة التلاوة والحفظ",
+        "dailyReport": "مراجعة تقرير التقييم اليومي"
+      }
+    },
+    "dailyReport": {
+      "title": "تقرير التقييم اليومي",
+      "subtitle": "درجات الطلاب اليومية موزّعة على المسارات، محسوبة من الخطة المعتمدة والإنجازات والحضور.",
+      "weights": "الأوزان",
+      "ethics": "الأخلاق",
+      "prevDay": "اليوم السابق",
+      "nextDay": "اليوم التالي",
+      "planCompletion": "تحقيق الخطة",
+      "totalScore": "الدرجة الكلية",
+      "teacherNote": "ملاحظة المعلم",
+      "noStudents": "لا يوجد طلاب في هذا التقرير.",
+      "nonWorkingDay": "يوم غير دراسي",
+      "nonWorkingDayHint": "لا تُحتسب درجات في الأيام غير الدراسية.",
+      "source": {
+        "live": "مباشر",
+        "snapshot": "لقطة محفوظة"
+      },
+      "status": {
+        "complete": "مكتمل",
+        "partial": "جزئي",
+        "failed": "فشل"
+      },
+      "attendance": {
+        "missing": "لم يُسجّل الحضور",
+        "missingHint": "لم يُسجّل حضور الطالب لهذا اليوم، لذا لا تُحتسب درجة كلية."
+      },
+      "columns": {
+        "student": "الطالب",
+        "attendance": "الحضور",
+        "planCompletion": "تحقيق الخطة",
+        "total": "الكلي",
+        "alerts": "تنبيهات",
+        "actions": "إجراءات"
+      },
+      "rowActions": {
+        "label": "إجراءات الصف",
+        "viewDetails": "عرض التفاصيل",
+        "viewProfile": "عرض ملف الطالب",
+        "logAchievement": "تسجيل إنجاز"
+      },
+      "detail": {
+        "title": "تفاصيل الطالب",
+        "loadError": "تعذّر تحميل تفاصيل الطالب",
+        "ethics": "الأخلاق",
+        "tracks": "تفصيل المسارات",
+        "plannedPages": "الصفحات المخطّطة",
+        "achievedPages": "الصفحات المنجزة",
+        "completionRate": "نسبة الإنجاز",
+        "qualityRate": "نسبة الجودة",
+        "weightRedistributed": "أُعيد توزيع الوزن ({base} ← {effective})",
+        "plannedRanges": "نطاقات مخطّطة: {n}",
+        "gaps": "فجوات: {n}",
+        "outsidePlan": "خارج الخطة: {n}"
+      },
+      "recalculate": {
+        "button": "إعادة الاحتساب",
+        "title": "إعادة احتساب التقرير",
+        "description": "سيُعاد حساب تقرير هذا اليوم واستبدال النسخة المحفوظة. لا تُنشأ نسخة ثانية.",
+        "reasonLabel": "سبب إعادة الاحتساب",
+        "reasonPlaceholder": "مثال: تم تصحيح تسميع الطالب",
+        "confirm": "إعادة الاحتساب",
+        "doneToast": "تمت إعادة احتساب التقرير",
+        "errorToast": "تعذّرت إعادة الاحتساب"
       }
     },
     "attendance": {
@@ -704,6 +795,11 @@
         "excused": "المعذورون"
       },
       "statusLabel": "الحالة",
+      "ethics": {
+        "label": "تقييم الأخلاق",
+        "valueLabel": "تقييم الأخلاق {rating} من {max}",
+        "setTo": "ضبط تقييم الأخلاق على {rating}"
+      },
       "noMatch": "لا توجد نتائج مطابقة",
       "view": {
         "table": "عرض جدول"
@@ -711,7 +807,14 @@
       "table": {
         "student": "الطالب",
         "note": "ملاحظة",
-        "staff": "عضو الطاقم"
+        "staff": "عضو الطاقم",
+        "actions": "إجراءات"
+      },
+      "rowActions": {
+        "label": "إجراءات الصف",
+        "viewProfile": "عرض ملف الطالب",
+        "logAchievement": "تسجيل إنجاز",
+        "reset": "إعادة إلى حاضر"
       },
       "markAllPresent": "تحديد الكل حاضر",
       "markedAllPresent": "تم تحديد جميع الطلاب كحاضرين",
@@ -726,6 +829,15 @@
       "noteFor": "ملاحظة عن {name}",
       "noteEmpty": "لا توجد ملاحظة بعد",
       "saveNote": "حفظ الملاحظة",
+      "dailyNote": {
+        "label": "ملاحظة المحفّظ اليومية",
+        "title": "ملاحظة المحفّظ عن {name}",
+        "hint": "تظهر في تقرير التقييم اليومي كملاحظة المعلم. منفصلة عن سبب الغياب.",
+        "placeholder": "اكتب ملاحظتك اليومية عن الطالب...",
+        "needsRecord": "يجب حفظ حضور الطالب لهذا اليوم أولاً قبل إضافة الملاحظة.",
+        "savedToast": "تم حفظ ملاحظة المحفّظ",
+        "errorToast": "تعذّر حفظ الملاحظة"
+      },
       "viewFullCalendar": "عرض التقويم الكامل",
       "calendarTitle": "التقويم الكامل",
       "statsLabels": {
@@ -832,8 +944,6 @@
         "halaqaPlaceholder": "اختر حلقة أو أكثر...",
         "photoUrl": "رابط الصورة",
         "photoUrlPlaceholder": "https://...",
-        "fullName": "الاسم الكامل",
-        "fullNamePlaceholder": "اسم الطالب الرباعي",
         "idNumber": "رقم الهوية",
         "idNumberPlaceholder": "9 أرقام",
         "gender": "الجنس",
@@ -1025,7 +1135,6 @@
       "versesCount": "{count} آية",
       "mistakes": "أخطاء",
       "warnings": "تنبيهات",
-      "tajweedErrors": "تجويد",
       "harakat": "حركات",
       "notes": "ملاحظات المعلم",
       "notesPlaceholder": "أضف ملاحظاتك على أداء الطالب... (اختياري)",
@@ -1138,6 +1247,16 @@
       "unapprovedToast": "تم إلغاء اعتماد الخطة",
       "approveErrorTitle": "خطأ في اعتماد الخطة",
       "addItem": "إضافة جلسة",
+      "downloadPdf": "تحميل الخطة",
+      "print": {
+        "title": "معاينة طباعة الخطة",
+        "download": "تحميل PDF",
+        "downloadImage": "تحميل صورة PNG",
+        "fileName": "خطة-الحافظ",
+        "empty": "لا توجد جلسات في هذه الخطة لطباعتها",
+        "error": "تعذّر إنشاء ملف PDF",
+        "errorImage": "تعذّر إنشاء الصورة"
+      },
       "weekOf": "أسبوع {date}",
       "selectStudent": "اختر الطالب",
       "noPlan": "لا توجد خطة لهذا الأسبوع بعد",
@@ -1383,6 +1502,10 @@
     "password_confirmation": "تأكيد كلمة المرور",
     "current_password": "كلمة المرور الحالية",
     "full_name": "الاسم الكامل",
+    "first_name": "الاسم الأول",
+    "second_name": "اسم الأب",
+    "third_name": "اسم الجد",
+    "family_name": "اسم العائلة",
     "phone": "رقم الجوال",
     "photo_url": "رابط الصورة"
   },

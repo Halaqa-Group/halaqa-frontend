@@ -4,7 +4,7 @@ import { SEVERITY_ORDER } from '~/types/recitation'
 // Marks are NOT persisted client-side. They used to be cached in localStorage
 // per session, which meant a half-finished marking session outlived the visit
 // and was shown in place of what the server actually stored — the achievement
-// said 5 mistakes + 2 tajweed while the mushaf showed a stale 4/3/1, and the
+// said 5 mistakes + 2 warnings while the mushaf showed a stale 4/3/1, and the
 // restore was skipped entirely because local marks "already existed".
 // The backend is the source of truth; this state lives for one visit only.
 const LEGACY_STORAGE_PREFIXES = ['recitation:', 'recitation-spots:']
@@ -39,8 +39,8 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
   })
 
   // Each tap steps the mark one notch down the severity spectrum
-  //   (unmarked) → severe → medium → light → minor → (unmarked)
-  // matching Tarteel's red→orange→yellow→green highlighting. Tapping any word of a
+  //   (unmarked) → severe → light → minor → (unmarked)
+  // matching Tarteel's red→yellow→green highlighting. Tapping any word of a
   // block cycles the WHOLE block as one unit (it stays grouped); a standalone word
   // cycles on its own.
   function tap(wordKey: WordKey) {
@@ -120,7 +120,7 @@ export function useRecitationSession(sessionId: MaybeRefOrGetter<string>) {
   // A block counts once (all its words share one severity); standalone words each
   // count on their own.
   const counts = computed<MarkCounts>(() => {
-    const c: MarkCounts = { severe: 0, medium: 0, light: 0, minor: 0, total: 0 }
+    const c: MarkCounts = { severe: 0, light: 0, minor: 0, total: 0 }
     const countedGroups = new Set<string>()
     for (const [key, sev] of Object.entries(marks.value)) {
       const g = groups.value[key]

@@ -1,19 +1,6 @@
 import type { ApiWeeklyPlan, ApiWeeklyPlanItem } from '~/types'
 import { unwrapList } from '~/utils/api/list'
-
-function todayYmd(): string {
-  const d = new Date()
-  return ymd(d)
-}
-
-function ymd(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function parseYmd(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number)
-  return new Date(y!, (m ?? 1) - 1, d ?? 1)
-}
+import { parseYmd, todayYmd, toYmd } from '~/utils/date'
 
 export function useTodayPlanItems(
   studentId: MaybeRefOrGetter<number | null>,
@@ -42,7 +29,7 @@ export function useTodayPlanItems(
 
     try {
       const target = parseYmd(d)
-      const weekStart = ymd(startOfWeekSat(target))
+      const weekStart = toYmd(startOfWeekSat(target))
       const dow = backendDayOfWeek(target)
 
       const raw = await api<unknown>(

@@ -3,8 +3,10 @@ import type {
   ApiStudent, ApiStudentListResult, ApiWeeklyPlan, ApiWeeklyPlanItem, StudentWithAttendance
 } from '~/types'
 import { unwrapList } from '~/utils/api/list'
+import { toYmd } from '~/utils/date'
+import { planDirectionOf, startOfWeekSat } from '~/utils/plan'
 import { totalVersesInRange } from '~/utils/quran'
-import type { VerseRange } from '~/utils/quran-structure'
+import type { PlanDirection, VerseRange } from '~/utils/quran-structure'
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
 type ItemStatus = 'due' | 'partial' | 'completed' | 'overdue'
@@ -45,13 +47,9 @@ function sameRange(a: VerseRange, b: VerseRange): boolean {
     && a.end_surah === b.end_surah && a.end_verse === b.end_verse
 }
 
-function ymd(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 const students = ref<StudentWithAttendance[]>([])
 const selectedStudentId = ref<number | undefined>(undefined)
-const selectedWeekStart = ref<string>(ymd(startOfWeekSat(new Date())))
+const selectedWeekStart = ref<string>(toYmd(startOfWeekSat(new Date())))
 const plan = ref<ApiWeeklyPlan | null>(null)
 const isLoading = ref(false)
 const isSaving = ref(false)
@@ -82,7 +80,8 @@ export function useWeeklyPlan() {
       id: s.id,
       name: s.name,
       avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
-      attendanceStatus: null
+      attendanceStatus: null,
+      memorizationDirection: s.memorization_direction
     }))
   }
 
@@ -527,13 +526,20 @@ export function useWeeklyPlan() {
     return studentById.value.get(id)?.avatar ?? `https://api.dicebear.com/9.x/notionists/svg?seed=${id}`
   }
 
+  // Every plan default that has to pick a side of the mushaf — the wizard's anchor
+  // surah, a new session's range — reads it from here rather than assuming forwards.
+  const selectedStudentDirection = computed<PlanDirection>(() => {
+    const id = selectedStudentId.value
+    return planDirectionOf(id ? studentById.value.get(id)?.memorizationDirection : null)
+  })
+
   function shiftWeek(deltaDays: number) {
     const d = new Date(selectedWeekStart.value)
     d.setDate(d.getDate() + deltaDays)
-    selectedWeekStart.value = ymd(startOfWeekSat(d))
+    selectedWeekStart.value = toYmd(startOfWeekSat(d))
   }
   function setWeekFromDate(d: Date) {
-    selectedWeekStart.value = ymd(startOfWeekSat(d))
+    selectedWeekStart.value = toYmd(startOfWeekSat(d))
   }
   const prevWeek = () => shiftWeek(-7)
   const nextWeek = () => shiftWeek(7)
@@ -590,6 +596,7 @@ export function useWeeklyPlan() {
     studentById,
     studentName,
     studentAvatar,
+    selectedStudentDirection,
     dateOfDay,
 
     loadStudents,

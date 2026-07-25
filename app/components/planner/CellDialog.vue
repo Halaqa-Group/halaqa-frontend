@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { SURAH_NAMES } from '~/data/constants'
-import { formatVerseRange, isValidVerseRange, totalVersesInRange } from '~/utils/quran'
+import { formatVerseRange, totalVersesInRange } from '~/utils/quran'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
-import { planItemStatusColor } from '~/utils/plan'
-import { unwrapList } from '~/utils/api/list'
-import type { ApiAchievement } from '~/types'
+import { defaultSessionRange, planItemStatusColor } from '~/utils/plan'
+import { toYmd, todayYmd } from '~/utils/date'
+import type { VerseRange } from '~/utils/quran-structure'
+import type { DraftCell } from '~/composables/useWeeklyPlan'
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
 
@@ -12,30 +13,26 @@ const props = defineProps<{
   day: number
   track: TrackType
   editable: boolean
-  // Which view to open in: null/undefined = session list, -1 = add form,
-  // >= 0 = edit that session's form directly.
-  editSession?: number | null
+  // 'add' appends a blank session to edit right away (the "+" affordances);
+  // 'list' just opens the cell's sessions.
+  initialView?: 'list' | 'add'
 }>()
 const open = defineModel<boolean>('open', { required: true })
 
 const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-const api = useApi()
-const router = useRouter()
-const { canApproveAchievement: canApprove } = usePermissions()
+const { canRecordAchievement: canRecord } = usePermissions()
 const { selectedHalaqaId } = useGlobalHalaqa()
+const { openRecordForPlanItem } = useAchievements()
 const {
-  dateOfDay, selectedStudentId, getCells,
+  dateOfDay, selectedStudentId, selectedStudentDirection, getCells, matrixDirty, saveDraft,
   addSession, updateSession, removeSession, clearCell, copyCell, pasteCell, copiedCell
 } = useWeeklyPlan()
 
 const sessions = computed(() => getCells(props.day, props.track))
 
-const isoDate = computed(() => {
-  const d = dateOfDay(props.day)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-})
+const isoDate = computed(() => toYmd(dateOfDay(props.day)))
 const dateLabel = computed(() => {
   const d = dateOfDay(props.day)
   try {
@@ -45,143 +42,114 @@ const dateLabel = computed(() => {
   }
 })
 
-function sessionRange(c: { start_surah: number, start_verse: number, end_surah: number, end_verse: number }) {
+function sessionRange(c: VerseRange) {
   return formatVerseRange(c.start_surah, c.start_verse, c.end_surah, c.end_verse, SURAH_NAMES)
 }
-function sessionProgress(c: { achieved_verses?: number, total_verses?: number }): number | null {
+// How big the session is, in both units the teacher plans by: ayahs and mushaf
+// pages. Page coverage is fractional — half a page reads 0.5 — so it's shown to
+// one decimal unless it lands on a whole page.
+function sessionSize(c: VerseRange): string {
+  const parts: string[] = []
+  const verses = totalVersesInRange(c.start_surah, c.start_verse, c.end_surah, c.end_verse)
+  if (verses > 0) parts.push(t('pages.achievements.versesCount', { count: verses }))
+  const pages = pageCoverage(c)
+  if (pages > 0) {
+    const rounded = Math.round(pages * 10) / 10
+    parts.push(t('pages.achievements.pagesCount', {
+      count: Number.isInteger(rounded) ? rounded : rounded.toFixed(1)
+    }))
+  }
+  return parts.join(' · ')
+}
+function sessionProgress(c: DraftCell): number | null {
   if (!c.total_verses) return null
   return Math.round(((c.achieved_verses ?? 0) / c.total_verses) * 100)
 }
 
-// ── Add / edit one session ──────────────────────────────────────────────────
-// editIndex: null = not editing, -1 = adding a new session, >=0 = editing that session.
-const editIndex = ref<number | null>(null)
-const form = reactive({ start_surah: 1, start_verse: 1, end_surah: 1, end_verse: 7 })
-
-function beginAdd() {
-  Object.assign(form, { start_surah: 1, start_verse: 1, end_surah: 1, end_verse: 7 })
-  editIndex.value = -1
+// Every session in the list edits in place — the range pickers write straight into
+// the plan draft, which the planner's "save draft" then persists. A new session
+// opens on the student's own memorization direction (An-Nas going backwards,
+// Al-Fatihah going forwards) rather than always at the front of the mushaf.
+function onRangeUpdate(index: number, range: VerseRange) {
+  updateSession(props.day, props.track, index, range)
 }
-function beginEdit(index: number) {
-  const c = sessions.value[index]
-  if (c) Object.assign(form, { start_surah: c.start_surah, start_verse: c.start_verse, end_surah: c.end_surah, end_verse: c.end_verse })
-  editIndex.value = index
-}
-const rangeValid = computed(() => isValidVerseRange(form.start_surah, form.start_verse, form.end_surah, form.end_verse))
-const editCount = computed(() =>
-  rangeValid.value.valid ? totalVersesInRange(form.start_surah, form.start_verse, form.end_surah, form.end_verse) : 0
-)
-function saveEdit() {
-  if (!rangeValid.value.valid) {
-    toast.add({ title: rangeValid.value.error, color: 'error' })
-    return
-  }
-  if (editIndex.value === -1) addSession(props.day, props.track, { ...form })
-  else if (editIndex.value !== null) updateSession(props.day, props.track, editIndex.value, { ...form })
-  editIndex.value = null
+function addBlankSession() {
+  addSession(props.day, props.track, defaultSessionRange(selectedStudentDirection.value))
 }
 
-function onRemove(index: number) {
-  removeSession(props.day, props.track, index)
-}
 function onCopy() {
   copyCell(props.day, props.track)
   toast.add({ title: t('pages.planner.cellCopiedToast'), color: 'success' })
-}
-function onPaste() {
-  pasteCell(props.day, props.track)
 }
 function onClear() {
   clearCell(props.day, props.track)
   open.value = false
 }
 
-const achievements = ref<ApiAchievement[]>([])
-const loadingAch = ref(false)
-async function loadAchievements() {
-  const halaqaId = selectedHalaqaId.value
+// ── Record an achievement for one session ───────────────────────────────────
+// The achievement is dated by the cell's own day, except for a cell still in the
+// future — nothing can be recited yet, so it falls back to today (the record
+// form's calendar refuses future dates anyway).
+const recordDate = computed(() => (isoDate.value > todayYmd() ? todayYmd() : isoDate.value))
+
+const recordingIndex = ref<number | null>(null)
+
+async function recordForSession(index: number) {
   const studentId = selectedStudentId.value
-  if (!halaqaId || !studentId) return
-  loadingAch.value = true
+  if (!studentId || recordingIndex.value !== null) return
+  recordingIndex.value = index
   try {
-    const raw = await api<unknown>(
-      `/achievements?student_id=${studentId}&halaqa_id=${halaqaId}&date=${isoDate.value}&track_type=${props.track}`
-    )
-    achievements.value = unwrapList<ApiAchievement>(raw)
-  } catch {
-    achievements.value = []
-  } finally {
-    loadingAch.value = false
-  }
-}
-
-function achRange(a: ApiAchievement) {
-  return formatVerseRange(a.start_surah, a.start_verse, a.end_surah, a.end_verse, SURAH_NAMES)
-}
-
-// Approve a still-pending achievement in place, then refresh the list badge.
-const approvingId = ref<number | null>(null)
-async function approveAch(a: ApiAchievement) {
-  approvingId.value = a.id
-  try {
-    await api<ApiAchievement>(`/achievements/${a.id}/approve`, { method: 'POST' })
-    toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
-    await loadAchievements()
+    // A session added or edited in this sitting has no server id yet. Persisting
+    // the draft first lets the achievement link to a real plan item instead of
+    // degrading to a range-only prefill — and keeps the edit from being lost when
+    // we navigate away.
+    if (props.editable && matrixDirty.value) await saveDraft()
   } catch (e: any) {
-    toast.add({ title: apiError.format(e, t('pages.achievements.approveErrorTitle')), color: 'error' })
-  } finally {
-    approvingId.value = null
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
+    recordingIndex.value = null
+    return
   }
-}
-
-function todayIso(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function recordAchievement() {
-  // Open the create form with this cell's student pre-filled, dated today, and
-  // the cell's first session pre-selected as the lesson.
-  const { selectedDate, editing, duplicateFrom, prefillStudentId, prefillPlanItem } = useAchievements()
-  editing.value = null
-  duplicateFrom.value = null
-  selectedDate.value = todayIso()
-  prefillStudentId.value = selectedStudentId.value ?? null
-  const first = sessions.value[0]
-  prefillPlanItem.value = first
-    ? {
-        id: first.id ?? null,
-        track_type: props.track,
-        start_surah: first.start_surah,
-        start_verse: first.start_verse,
-        end_surah: first.end_surah,
-        end_verse: first.end_verse
-      }
-    : null
+  // Re-read after the save: loadPlan re-hydrates the draft, so this is the same
+  // session — now carrying its id.
+  const session = sessions.value[index]
+  recordingIndex.value = null
+  if (!session) return
   open.value = false
-  router.push('/achievements/record')
+  openRecordForPlanItem({
+    studentId,
+    date: recordDate.value,
+    item: {
+      id: session.id ?? null,
+      track_type: props.track,
+      start_surah: session.start_surah,
+      start_verse: session.start_verse,
+      end_surah: session.end_surah,
+      end_verse: session.end_verse
+    }
+  })
 }
+
+// An empty cell has no lesson to carry over — record with just the student and
+// date, leaving the form's own lesson picker to fill the rest.
+function recordWithoutSession() {
+  const studentId = selectedStudentId.value
+  if (!studentId) return
+  open.value = false
+  openRecordForPlanItem({ studentId, date: recordDate.value, item: null })
+}
+
+const showRecord = computed(() => canRecord.value && selectedStudentId.value != null)
 
 watch(open, (v) => {
-  if (v) {
-    // Open directly into the requested view: edit a session, add a new one, or
-    // the session list.
-    if (props.editSession == null) editIndex.value = null
-    else if (props.editSession < 0) beginAdd()
-    else if (props.editSession < sessions.value.length) beginEdit(props.editSession)
-    else editIndex.value = null
-    loadAchievements()
-  } else {
-    editIndex.value = null
-  }
-}, { immediate: true })
+  if (v && props.initialView === 'add' && props.editable) addBlankSession()
+})
 </script>
 
 <template>
   <UModal
     v-model:open="open"
     :title="t('pages.planner.cellDialog.title')"
-    :ui="{ content: 'sm:max-w-lg rounded-2xl' }"
+    :ui="{ content: 'sm:max-w-xl rounded-2xl' }"
   >
     <template #body>
       <div class="space-y-5">
@@ -192,162 +160,146 @@ watch(open, (v) => {
           </UBadge>
         </div>
 
-        <!-- Session list -->
-        <div v-if="editIndex === null" class="space-y-3">
-          <p v-if="!sessions.length" class="text-sm text-muted text-center py-3 rounded-xl border border-default bg-elevated">
-            {{ t('pages.planner.cellDialog.empty') }}
-          </p>
+        <!-- Every session in this cell, each editable in place -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-medium">{{ t('pages.planner.cellDialog.sessions') }}</span>
+            <UBadge v-if="sessions.length > 1" variant="subtle" color="neutral" size="sm" class="tabular-nums">
+              {{ sessions.length }}
+            </UBadge>
+          </div>
+
+          <div
+            v-if="!sessions.length"
+            class="rounded-xl border border-default bg-elevated py-4 px-3 space-y-3 text-center"
+          >
+            <p class="text-sm text-muted">
+              {{ t('pages.planner.cellDialog.empty') }}
+            </p>
+            <UButton
+              v-if="showRecord"
+              size="xs"
+              variant="soft"
+              icon="i-lucide-award"
+              @click="recordWithoutSession"
+            >
+              {{ t('pages.planner.cellDialog.record') }}
+            </UButton>
+          </div>
 
           <ul v-else class="space-y-2">
             <li
               v-for="(s, i) in sessions"
               :key="s.id ?? `new-${i}`"
-              class="rounded-xl border border-default bg-elevated p-3 space-y-2"
+              class="rounded-xl border border-default bg-elevated p-3 space-y-2.5"
             >
               <div class="flex items-center justify-between gap-2">
-                <span class="font-semibold">{{ sessionRange(s) }}</span>
-                <UBadge v-if="s.status" variant="subtle" size="sm" :color="planItemStatusColor(s.status)">
-                  {{ t(`pages.planner.itemStatus.${s.status}`) }}
-                </UBadge>
+                <div class="min-w-0 flex items-center gap-2">
+                  <UBadge v-if="sessions.length > 1" variant="subtle" color="neutral" size="sm">
+                    {{ t('pages.planner.cellDialog.sessionNumber', { n: i + 1 }) }}
+                  </UBadge>
+                  <span class="text-sm font-semibold truncate">{{ sessionRange(s) }}</span>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                  <UBadge v-if="s.status" variant="subtle" size="sm" :color="planItemStatusColor(s.status)">
+                    {{ t(`pages.planner.itemStatus.${s.status}`) }}
+                  </UBadge>
+                  <UButton
+                    v-if="editable"
+                    size="xs"
+                    variant="ghost"
+                    color="error"
+                    icon="i-lucide-trash-2"
+                    square
+                    :aria-label="t('pages.planner.cell.removeSession')"
+                    @click="removeSession(day, track, i)"
+                  />
+                </div>
               </div>
+
+              <p class="text-xs text-muted">
+                {{ sessionSize(s) }}
+              </p>
+
+              <PlannerSessionRangeFields
+                v-if="editable"
+                :range="s"
+                :direction="selectedStudentDirection"
+                @update="r => onRangeUpdate(i, r)"
+              />
+
               <div v-if="sessionProgress(s) !== null" class="flex items-center gap-2">
                 <div class="flex-1 h-1.5 rounded-full bg-default overflow-hidden">
                   <div class="h-full rounded-full bg-primary" :style="{ width: `${sessionProgress(s)}%` }" />
                 </div>
                 <span class="text-xs text-muted tabular-nums">{{ s.achieved_verses }}/{{ s.total_verses }}</span>
               </div>
-              <div v-if="editable" class="flex gap-2 pt-0.5">
-                <UButton size="xs" variant="soft" icon="i-lucide-pencil" @click="beginEdit(i)">
-                  {{ t('pages.planner.cell.edit') }}
-                </UButton>
-                <UButton
-                  size="xs"
-                  variant="soft"
-                  color="error"
-                  icon="i-lucide-trash-2"
-                  :aria-label="t('pages.planner.cell.removeSession')"
-                  @click="onRemove(i)"
-                >
-                  {{ t('pages.planner.cell.removeSession') }}
-                </UButton>
-              </div>
+
+              <UButton
+                v-if="showRecord"
+                size="xs"
+                variant="soft"
+                icon="i-lucide-award"
+                block
+                :loading="recordingIndex === i"
+                :disabled="recordingIndex !== null"
+                :aria-label="t('pages.planner.cellDialog.recordForSession', { range: sessionRange(s) })"
+                @click="recordForSession(i)"
+              >
+                {{ t('pages.planner.cellDialog.record') }}
+              </UButton>
             </li>
           </ul>
 
-          <div v-if="editable" class="flex flex-wrap gap-2">
-            <UButton size="sm" variant="soft" icon="i-lucide-plus" @click="beginAdd">
-              {{ t('pages.planner.cell.popoverTitleNew') }}
-            </UButton>
-            <UButton
-              v-if="sessions.length"
-              size="sm"
-              variant="soft"
-              color="neutral"
-              icon="i-lucide-copy"
-              @click="onCopy"
-            >
-              {{ t('pages.planner.copy') }}
-            </UButton>
-            <UButton
-              v-if="copiedCell?.length"
-              size="sm"
-              variant="soft"
-              color="neutral"
-              icon="i-lucide-clipboard-paste"
-              @click="onPaste"
-            >
-              {{ t('pages.planner.paste', { count: copiedCell.length }) }}
-            </UButton>
-            <UButton
-              v-if="sessions.length"
-              size="sm"
-              variant="soft"
-              color="error"
-              icon="i-lucide-trash-2"
-              @click="onClear"
-            >
-              {{ t('pages.planner.cell.clear') }}
-            </UButton>
+          <!-- Cell-level actions -->
+          <div v-if="editable" class="space-y-2">
+            <div class="flex flex-wrap gap-2">
+              <UButton size="sm" variant="soft" icon="i-lucide-plus" @click="addBlankSession">
+                {{ t('pages.planner.cell.popoverTitleNew') }}
+              </UButton>
+              <UButton
+                v-if="sessions.length"
+                size="sm"
+                variant="soft"
+                color="neutral"
+                icon="i-lucide-copy"
+                @click="onCopy"
+              >
+                {{ t('pages.planner.copy') }}
+              </UButton>
+              <UButton
+                v-if="copiedCell?.length"
+                size="sm"
+                variant="soft"
+                color="neutral"
+                icon="i-lucide-clipboard-paste"
+                @click="pasteCell(day, track)"
+              >
+                {{ t('pages.planner.paste', { count: copiedCell.length }) }}
+              </UButton>
+              <UButton
+                v-if="sessions.length"
+                size="sm"
+                variant="soft"
+                color="error"
+                icon="i-lucide-trash-2"
+                @click="onClear"
+              >
+                {{ t('pages.planner.cell.clear') }}
+              </UButton>
+            </div>
+            <p v-if="sessions.length" class="text-xs text-muted">
+              {{ t('pages.planner.cellDialog.editHint') }}
+            </p>
           </div>
         </div>
 
-        <!-- Add / edit range form -->
-        <div v-else class="rounded-xl border border-default p-4 space-y-4">
-          <div class="space-y-2">
-            <span class="text-xs font-medium text-muted">{{ t('pages.planner.cell.startLabel') }}</span>
-            <PlannerAyahSelect v-model:surah="form.start_surah" v-model:verse="form.start_verse" />
-          </div>
-          <div class="space-y-2">
-            <span class="text-xs font-medium text-muted">{{ t('pages.planner.cell.endLabel') }}</span>
-            <PlannerAyahSelect v-model:surah="form.end_surah" v-model:verse="form.end_verse" />
-          </div>
-          <p v-if="!rangeValid.valid" class="text-xs text-error">
-            {{ rangeValid.error }}
-          </p>
-          <p v-else-if="editCount > 0" class="text-xs text-muted">
-            {{ t('pages.achievements.versesCount', { count: editCount }) }}
-          </p>
-          <div class="flex justify-end gap-2">
-            <UButton size="sm" variant="soft" color="neutral" @click="editIndex = null">
-              {{ t('common.cancel') }}
-            </UButton>
-            <UButton size="sm" icon="i-lucide-check" :disabled="!rangeValid.valid" @click="saveEdit">
-              {{ t('pages.planner.cell.confirm') }}
-            </UButton>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-sm font-medium">{{ t('pages.planner.cellDialog.achievements') }}</span>
-            <UButton size="xs" variant="ghost" icon="i-lucide-plus" @click="recordAchievement">
-              {{ t('pages.planner.cellDialog.record') }}
-            </UButton>
-          </div>
-
-          <div v-if="loadingAch" class="flex justify-center py-4">
-            <UIcon name="i-lucide-loader-circle" class="w-5 h-5 animate-spin text-primary" />
-          </div>
-          <p v-else-if="achievements.length === 0" class="text-xs text-muted text-center py-3">
-            {{ t('pages.planner.cellDialog.noAchievements') }}
-          </p>
-          <ul v-else class="space-y-2">
-            <li
-              v-for="a in achievements"
-              :key="a.id"
-              class="flex items-center justify-between gap-2 rounded-lg border border-default px-3 py-2"
-            >
-              <div class="min-w-0">
-                <p class="text-sm truncate">
-                  {{ achRange(a) }}
-                </p>
-                <p class="text-xs text-muted">
-                  {{ Math.round(Number(a.percentage_score)) }}%
-                </p>
-              </div>
-              <div class="flex items-center gap-2 shrink-0">
-                <UBadge
-                  variant="subtle"
-                  size="sm"
-                  :color="a.status === 'approved' ? 'success' : 'neutral'"
-                >
-                  {{ a.status === 'approved' ? t('pages.achievements.statusApproved') : t('pages.achievements.statusPending') }}
-                </UBadge>
-                <UButton
-                  v-if="canApprove && a.status !== 'approved'"
-                  size="xs"
-                  color="success"
-                  variant="soft"
-                  icon="i-lucide-check-check"
-                  :loading="approvingId === a.id"
-                  @click="approveAch(a)"
-                >
-                  {{ t('pages.achievements.approve') }}
-                </UButton>
-              </div>
-            </li>
-          </ul>
-        </div>
+        <PlannerCellAchievements
+          :student-id="selectedStudentId ?? null"
+          :halaqa-id="selectedHalaqaId ?? null"
+          :date="isoDate"
+          :track="track"
+        />
       </div>
     </template>
 

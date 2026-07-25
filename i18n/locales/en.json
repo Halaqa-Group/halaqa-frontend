@@ -1400,9 +1400,13 @@
       "cellPastedToast": "Cell pasted",
       "cellDialog": {
         "title": "Session details",
+        "sessions": "Planned sessions",
+        "sessionNumber": "Session {n}",
+        "editHint": "Edits apply right away — save the draft to keep them",
         "empty": "No session planned for this cell",
         "achievements": "Linked achievements",
         "record": "Record achievement",
+        "recordForSession": "Record achievement for {range}",
         "noAchievements": "No achievements recorded yet"
       },
       "units": {

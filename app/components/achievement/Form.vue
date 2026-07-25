@@ -8,6 +8,7 @@ import { isValidVerseRange, totalVersesInRange, formatVerseRange } from '~/utils
 import { verseToGlobal } from '~/utils/quran-structure'
 import { computePercentageScore, type ScoreCounts } from '~/utils/score'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
+import { defaultSessionRange, planDirectionOf } from '~/utils/plan'
 import type { AchievementTestPosition, ApiWeeklyPlanItem, CreateAchievementDto, RecitationMethod } from '~/types'
 
 const emit = defineEmits<{ saved: [] }>()
@@ -132,6 +133,15 @@ type PickerItem = Pick<ApiWeeklyPlanItem, 'id' | 'track_type' | 'start_surah' | 
 const prefilledItem = ref<PickerItem | null>(null)
 const prefilledStudentId = ref<number | null>(null)
 
+// Which end of the mushaf an un-picked range starts from: the student's own
+// `memorization_direction` (`descending` → An-Nas), not a fixed Al-Fatihah.
+const studentDirection = computed(() =>
+  planDirectionOf(students.value.find(s => s.id === state.student_id)?.memorizationDirection)
+)
+function applyDefaultRange() {
+  Object.assign(state, defaultSessionRange(studentDirection.value))
+}
+
 // Restore the tested positions of an existing record. Duplicating keeps the
 // passages but drops their counts — same rule the top-level counters follow.
 function hydratePositions() {
@@ -202,10 +212,7 @@ function hydrate() {
     } else {
       prefilledItem.value = null
       state.track_type = 'Hifz'
-      state.start_surah = 1
-      state.start_verse = 1
-      state.end_surah = 1
-      state.end_verse = 7
+      applyDefaultRange()
     }
     state.mistakes_count = 0
     state.warnings_count = 0
@@ -267,6 +274,12 @@ watch(() => state.student_id, (sid) => {
     if (selectedPlanItemId.value != null && !planItems.value.some(i => i.id === selectedPlanItemId.value)) {
       selectedPlanItemId.value = null
     }
+  }
+  // No lesson chosen yet, so the range is still a default — re-seed it from the
+  // new student's direction rather than leaving the previous student's end of the
+  // mushaf in place.
+  if (!isEdit.value && !fromPlanner.value && !manualRange.value && selectedPlanItemId.value == null) {
+    applyDefaultRange()
   }
 })
 
@@ -684,7 +697,11 @@ defineExpose({ saving: isSaving, setContinueToRecite })
           </div>
           <div class="space-y-1">
             <span class="text-xs font-medium text-muted">{{ t('pages.achievements.toLabel') }}</span>
-            <PlannerAyahSelect v-model:surah="state.end_surah" v-model:verse="state.end_verse" />
+            <PlannerAyahSelect
+              v-model:surah="state.end_surah"
+              v-model:verse="state.end_verse"
+              :snap-to="studentDirection === 'desc' ? 'last' : 'first'"
+            />
           </div>
         </div>
         <p v-if="rangeSummary" class="mt-1.5 text-xs text-muted">

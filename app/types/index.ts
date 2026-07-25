@@ -78,6 +78,12 @@ export interface AttendanceEntry {
   notes: string
 }
 
+/**
+ * How the student walks the mushaf while memorizing: `descending` (the API
+ * default) starts at An-Nas and works backwards, `ascending` starts at Al-Fatihah.
+ */
+export type MemorizationDirection = 'ascending' | 'descending'
+
 export interface ApiStudent extends ApiPersonName {
   id: number
   gender: 'male' | 'female'
@@ -89,6 +95,7 @@ export interface ApiStudent extends ApiPersonName {
   daily_hifz_pages_capacity: number | string
   daily_near_pages_capacity: number | string
   daily_far_pages_capacity: number | string
+  memorization_direction: MemorizationDirection
   notes: string | null
   photo_url: string | null
   guardians?: ApiGuardian[]
@@ -646,6 +653,9 @@ export interface StudentWithAttendance {
   name: string
   avatar: string
   attendanceStatus: AttendanceStatus | null
+  // Carried through so plan defaults (wizard anchor, new-session range) follow the
+  // student's own memorization direction instead of a hardcoded guess.
+  memorizationDirection?: MemorizationDirection
 }
 
 // ─── Daily evaluation report ──────────────────────────────────────────────────

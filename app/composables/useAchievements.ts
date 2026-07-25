@@ -11,6 +11,7 @@ import { unwrapList } from '~/utils/api/list'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { computePercentageScore, type ScoreCounts } from '~/utils/score'
 import { ensureQuranWordData, locateError, wordId } from '~/utils/quran-words'
+import { todayYmd } from '~/utils/date'
 
 interface VerseRangeLike {
   start_surah: number
@@ -165,11 +166,6 @@ export async function buildMarkRunsFromErrors(
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
 
-function todayYmd(): string {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 const students = ref<StudentWithAttendance[]>([])
 const achievements = ref<ApiAchievement[]>([])
 const selectedDate = ref(todayYmd())
@@ -267,7 +263,8 @@ export function useAchievements() {
       id: s.id,
       name: s.name,
       avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
-      attendanceStatus: attendanceMap.get(s.id)?.status ?? null
+      attendanceStatus: attendanceMap.get(s.id)?.status ?? null,
+      memorizationDirection: s.memorization_direction
     }))
   }
 
@@ -452,6 +449,17 @@ export function useAchievements() {
     prefillPlanItem.value = null
     navigateTo('/achievements/record')
   }
+  // Record against a specific planned session (the planner's cell dialog). The
+  // student, the lesson (track + range, and its plan-item id when it's saved) and
+  // the date all carry over, so the form opens with everything preselected.
+  function openRecordForPlanItem(opts: { studentId: number, item: PrefillPlanItem | null, date?: string }) {
+    editing.value = null
+    duplicateFrom.value = null
+    selectedDate.value = opts.date ?? todayYmd()
+    prefillStudentId.value = opts.studentId
+    prefillPlanItem.value = opts.item
+    navigateTo('/achievements/record')
+  }
   function openEdit(a: ApiAchievement) {
     duplicateFrom.value = null
     editing.value = a
@@ -510,6 +518,7 @@ export function useAchievements() {
     approveAchievement,
     unapproveAchievement,
     openRecord,
+    openRecordForPlanItem,
     openEdit,
     openDuplicate,
     requestDelete

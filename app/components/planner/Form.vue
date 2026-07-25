@@ -4,13 +4,14 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { SURAH_NAMES } from '~/data/constants'
 import { isValidVerseRange, totalVersesInRange, VERSE_COUNTS } from '~/utils/quran'
 import type { CreatePlanItemDto } from '~/composables/useWeeklyPlan'
+import { defaultSessionRange } from '~/utils/plan'
 
 const emit = defineEmits<{ saved: [] }>()
 
 const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-const { editing, isSaving, dateOfDay, addItem, updateItem } = useWeeklyPlan()
+const { editing, isSaving, dateOfDay, selectedStudentDirection, addItem, updateItem } = useWeeklyPlan()
 
 type TrackKey = 'Hifz' | 'Near' | 'Far'
 
@@ -26,10 +27,7 @@ const state = reactive<{
 }>({
   day_of_week: 0,
   track_type: 'Hifz',
-  start_surah: 1,
-  start_verse: 1,
-  end_surah: 1,
-  end_verse: 7
+  ...defaultSessionRange(selectedStudentDirection.value)
 })
 
 function hydrate() {
@@ -42,12 +40,11 @@ function hydrate() {
     state.end_surah = src.end_surah
     state.end_verse = src.end_verse
   } else {
+    // A fresh item opens where the student's memorization direction points — the
+    // last surah going backwards, the first one going forwards.
     state.day_of_week = 0
     state.track_type = 'Hifz'
-    state.start_surah = 1
-    state.start_verse = 1
-    state.end_surah = 1
-    state.end_verse = 7
+    Object.assign(state, defaultSessionRange(selectedStudentDirection.value))
   }
 }
 watch(editing, hydrate, { immediate: true })
@@ -58,7 +55,7 @@ const dayItems = computed(() =>
     let label = String(i)
     try {
       label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long' })
-    } catch { }
+    } catch { /* fall back to the numeric day label */ }
     return { label, value: i }
   })
 )

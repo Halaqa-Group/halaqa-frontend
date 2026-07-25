@@ -183,22 +183,18 @@ function rangeLabel(day: number, track: TrackType) {
 }
 
 const dialogOpen = ref(false)
-// edit: null = session list, -1 = add form, >= 0 = edit that session directly.
-const active = ref<{ day: number, track: TrackType, edit: number | null }>({ day: 0, track: 'Hifz', edit: null })
+const active = ref<{ day: number, track: TrackType, view: 'list' | 'add' }>({ day: 0, track: 'Hifz', view: 'list' })
 
-function openDialog(day: number, track: TrackType, edit: number | null) {
-  active.value = { day, track, edit }
+function openDialog(day: number, track: TrackType, view: 'list' | 'add') {
+  active.value = { day, track, view }
   dialogOpen.value = true
 }
-// Clicking a session goes straight to its edit form; clicking an empty cell goes
-// to the add form; the "list" view is reached by cancelling out of the form.
-const openSession = (day: number, track: TrackType, index: number) => openDialog(day, track, index)
-const openAdd = (day: number, track: TrackType) => openDialog(day, track, -1)
+// Anywhere in a filled cell — the cell itself or one of its sessions — opens the
+// full session list, where each session can be edited, removed, or turned into an
+// achievement. Only the explicit "+" affordances jump straight to the add form.
+const openAdd = (day: number, track: TrackType) => openDialog(day, track, 'add')
 function openCell(day: number, track: TrackType) {
-  // A tapped multi-session cell (mobile) opens its list so the user can pick one;
-  // a single-session cell edits it directly.
-  const list = getCells(day, track)
-  openDialog(day, track, list.length === 1 ? 0 : list.length ? null : -1)
+  openDialog(day, track, getCells(day, track).length ? 'list' : 'add')
 }
 
 function onPaste(day: number, track: TrackType) {
@@ -311,7 +307,7 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
                 @dragover.prevent
                 @dragenter.prevent="editable && onSessionDragEnter(day.index, track, i)"
                 @drop.prevent.stop="editable && onSessionDrop(day.index, track, i)"
-                @click="openSession(day.index, track, i)"
+                @click="openCell(day.index, track)"
               >
                 <span class="text-sm font-medium leading-tight">
                   {{ formatVerseRange(s.start_surah, s.start_verse, s.end_surah, s.end_verse, SURAH_NAMES) }}
@@ -456,7 +452,7 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
       :day="active.day"
       :track="active.track"
       :editable="editable"
-      :edit-session="active.edit"
+      :initial-view="active.view"
     />
   </div>
 </template>

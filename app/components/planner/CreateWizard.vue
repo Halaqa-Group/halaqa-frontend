@@ -2,6 +2,7 @@
 import { expandPlan, UNIT_TOTALS, type PlanUnit, type PlanDirection, type VerseRange } from '~/utils/quran-structure'
 import { TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
 import { PLAN_TRACKS, type CreatePlanItemDto } from '~/composables/useWeeklyPlan'
+import { defaultSessionRange } from '~/utils/plan'
 import { SURAH_NAMES } from '~/data/constants'
 import { VERSE_COUNTS } from '~/utils/quran'
 
@@ -14,7 +15,7 @@ const toast = useToast()
 const apiError = useApiError()
 const {
   wizardOpen, activeDays, applyTrackGeneration,
-  students, selectedStudentId, applyPlanToStudents, isSaving
+  students, selectedStudentId, selectedStudentDirection, applyPlanToStudents, isSaving
 } = useWeeklyPlan()
 const { boundariesFor, unitAvailable } = useQuranStructure()
 
@@ -35,14 +36,19 @@ interface TrackConfig {
   unit: PlanUnit
   direction: PlanDirection
 }
-// `asc` mirrors how a student's memorization is stored — with the order of the
-// mushaf. Only the Hifz track exposes the switch: a review track (قريبة/بعيدة)
-// always walks with the mushaf, so it stays on the default.
-function defaults(enabled: boolean): TrackConfig {
-  return { enabled, surah: 1, verse: 1, amount: 1, unit: 'page', direction: 'asc' }
+// Memorization opens on the student's own `memorization_direction`: `desc` (the
+// API default) is anchored at the last ayah of An-Nas and grows backwards, `asc`
+// at the first ayah of Al-Fatihah. Only the Hifz track exposes the switch — a
+// review track (قريبة/بعيدة) always walks with the mushaf, so it stays on `asc`.
+function defaults(enabled: boolean, direction: PlanDirection = 'asc'): TrackConfig {
+  const range = defaultSessionRange(direction)
+  const anchor = direction === 'desc'
+    ? { surah: range.end_surah, verse: range.end_verse }
+    : { surah: range.start_surah, verse: range.start_verse }
+  return { enabled, surah: anchor.surah, verse: anchor.verse, amount: 1, unit: 'page', direction }
 }
 const config = reactive<Record<TrackType, TrackConfig>>({
-  Hifz: defaults(true),
+  Hifz: defaults(true, selectedStudentDirection.value),
   Near: defaults(false),
   Far: defaults(false)
 })
@@ -70,7 +76,9 @@ const resolvedStudentIds = computed<number[]>(() => {
 
 watch(wizardOpen, (v) => {
   if (v) {
-    Object.assign(config.Hifz, defaults(true))
+    // Re-seeded on every open: the direction belongs to the student who's selected
+    // now, not whoever was selected the last time the wizard ran.
+    Object.assign(config.Hifz, defaults(true, selectedStudentDirection.value))
     Object.assign(config.Near, defaults(false))
     Object.assign(config.Far, defaults(false))
     target.value = 'this'

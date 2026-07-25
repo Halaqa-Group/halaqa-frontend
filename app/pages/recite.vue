@@ -511,12 +511,35 @@ async function hydrateFromAchievement(detail: ApiAchievement) {
   // Re-assert after the await, for the same reason as above.
   if (isTestRun) captureMode.value = 'mark'
   for (const run of runs) setMarks(run.keys, run.severity)
+  // What's on the mushaf now IS what the server holds — make that the autosync
+  // baseline, or the first tick would re-send the record its own contents back.
+  markSynced()
 }
 // Waits for the session too: marks are stored per session id, so seeding before
 // `selectedItem` resolves would file them under the wrong key.
 watch([achievementDetail, selectedItem], () => {
   const detail = achievementDetail.value
   if (detail && selectedItem.value) void hydrateFromAchievement(detail)
+}, { immediate: true })
+
+// The other entry points (planner, achievements list without an id) don't carry a
+// detail, yet the session may already have a record from earlier today. Autosync
+// replaces that record wholesale, so seed the mushaf from it first: the teacher
+// then continues from what's stored instead of overwriting it with a blank slate.
+// The day's list may not embed the positions — fetch the detail when it doesn't.
+watch([selectedItem, priorAchievements], async () => {
+  if (achievementId.value != null) return
+  const existing = existingAchievement.value
+  if (!existing || hydratedFor.value === String(existing.id)) return
+  try {
+    const detail = existing.recitation_positions
+      ? existing
+      : await api<ApiAchievement>(`/achievements/${existing.id}`)
+    await hydrateFromAchievement(detail)
+  } catch {
+    // Couldn't read it back — leave the mushaf as-is; autosync only ever writes
+    // state that has marks in it, so nothing is silently emptied.
+  }
 }, { immediate: true })
 
 function onSubmitRequest() {
@@ -630,59 +653,105 @@ async function unapproveExisting(id: number) {
   }
 }
 
-async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number) {
-  submitting.value = true
-  try {
-    const settings = await loadEvaluationSettings(hid)
+// A 2xx on the save is NOT proof the errors were stored: a payload whitelist,
+// a dropped carrier (`errors` vs `test_positions`) or a partial write all return
+// the record just the same, and clearing the marks then would lose the whole
+// recitation with no way to re-enter it. So read the persisted breakdown back and
+// compare it against what we sent; the caller throws on a mismatch, before
+// anything is cleared, leaving every mark on the mushaf for a retry.
+async function verifyErrorsPersisted(
+  saved: ApiAchievement,
+  sentErrors: PositionError[],
+  sentPositions: number
+): Promise<void> {
+  const expected = tallyErrors(sentErrors)
+  const expectedTotal = sentErrors.length
+  if (expectedTotal === 0 && sentPositions === 0) return
 
-    // Build the recitation payload + score for the chosen method. `test` sends
-    // one position per tested spot (each with its own errors); `full` sends the
-    // whole-range errors. Score is derived from the errors that actually count.
-    let payload: { errors?: PositionError[], test_positions?: AchievementTestPosition[] }
-    let score: number
-    // Weights are per mushaf page — a longer lesson divides each deduction by
-    // the number of pages it spans.
-    const pages = lessonPages.value
-    if (isTest.value) {
-      const positions = await buildTestPositions(spots.value, marks.value, groups.value)
-      const allErrors = positions.flatMap(p => p.errors ?? [])
-      score = computePercentageScore(tallyErrors(allErrors), settings, pages)
-      payload = { test_positions: positions }
-    } else {
-      // Standalone words become one error each; a drag-selected block becomes one.
-      const errors = await buildErrorsFromMarks(marks.value, groups.value)
-      score = computePercentageScore(toScoreCounts(counts.value), settings, pages)
-      payload = { errors }
-    }
+  // The write response doesn't always embed the positions; re-read the record
+  // once when it doesn't rather than assuming the write took.
+  let record = saved
+  if (!record.recitation_positions) {
+    record = await api<ApiAchievement>(`/achievements/${saved.id}`)
+  }
+  const positions = record.recitation_positions
+  const storedErrors = (positions ?? []).flatMap(p => p.errors ?? [])
 
-    const existing = findExistingAchievement(item)
-
-    let saved: ApiAchievement
-    if (existing) {
-      if (existing.status === 'approved') {
-        throw new Error('هذا الإنجاز معتمد ولا يمكن تعديله. ألغِ الاعتماد أولاً.')
+  // Prefer the itemized rows; fall back to the derived top-level totals when the
+  // API serves counts without positions.
+  const hasItemized = positions != null && positions.length > 0
+  const stored = hasItemized
+    ? tallyErrors(storedErrors)
+    : {
+        mistakes_count: record.mistakes_count ?? -1,
+        warnings_count: record.warnings_count ?? -1,
+        harakat_errors_count: record.harakat_errors_count ?? -1
       }
-      // Update the same session instead of creating a duplicate.
-      saved = await api<ApiAchievement>(`/achievements/${existing.id}`, {
-        method: 'PATCH',
-        body: {
-          track_type: item.track_type,
-          completion_method: 'mushaf',
-          recitation_method: recitationMethod.value,
-          start_surah: item.start_surah,
-          start_verse: item.start_verse,
-          end_surah: item.end_surah,
-          end_verse: item.end_verse,
-          ...payload,
-          percentage_score: score
-        }
-      })
-      priorAchievements.value = priorAchievements.value.map(a => a.id === existing.id ? saved : a)
-    } else {
-      const dto: CreateAchievementDto = {
-        student_id: sid,
-        halaqa_id: hid,
-        date: dateStr.value,
+
+  const short
+    = stored.mistakes_count < expected.mistakes_count
+      || stored.warnings_count < expected.warnings_count
+      || stored.harakat_errors_count < expected.harakat_errors_count
+  // A test also has to keep every tested spot — a position dropped server-side
+  // takes its errors with it.
+  const lostPositions = hasItemized && positions!.length < sentPositions
+
+  if (short || lostPositions) {
+    throw new Error(
+      'تم حفظ الإنجاز لكن الأخطاء المُعلَّمة لم تُحفَظ على الخادم. '
+      + 'لم يتم مسح العلامات — يرجى إعادة المحاولة.'
+    )
+  }
+}
+
+// Write the marks currently on the mushaf to the backend — creating the session's
+// achievement the first time and updating that same record afterwards — and only
+// return once the stored breakdown has been verified against what was sent.
+// Shared by the 5-second autosync and the explicit submit, so both write exactly
+// the same record from exactly the same state.
+async function saveRecitation(
+  item: ApiWeeklyPlanItem, sid: number, hid: number
+): Promise<ApiAchievement> {
+  const settings = await loadEvaluationSettings(hid)
+
+  // Build the recitation payload + score for the chosen method. `test` sends
+  // one position per tested spot (each with its own errors); `full` sends the
+  // whole-range errors. Score is derived from the errors that actually count.
+  let payload: { errors?: PositionError[], test_positions?: AchievementTestPosition[] }
+  let score: number
+  // Kept for the post-save verification below — what we sent, to compare
+  // against what the backend actually stored.
+  let sentErrors: PositionError[]
+  let sentPositions = 0
+  // Weights are per mushaf page — a longer lesson divides each deduction by
+  // the number of pages it spans.
+  const pages = lessonPages.value
+  if (isTest.value) {
+    const positions = await buildTestPositions(spots.value, marks.value, groups.value)
+    const allErrors = positions.flatMap(p => p.errors ?? [])
+    score = computePercentageScore(tallyErrors(allErrors), settings, pages)
+    payload = { test_positions: positions }
+    sentErrors = allErrors
+    sentPositions = positions.length
+  } else {
+    // Standalone words become one error each; a drag-selected block becomes one.
+    const errors = await buildErrorsFromMarks(marks.value, groups.value)
+    score = computePercentageScore(toScoreCounts(counts.value), settings, pages)
+    payload = { errors }
+    sentErrors = errors
+  }
+
+  const existing = findExistingAchievement(item)
+
+  let saved: ApiAchievement
+  if (existing) {
+    if (existing.status === 'approved') {
+      throw new Error('هذا الإنجاز معتمد ولا يمكن تعديله. ألغِ الاعتماد أولاً.')
+    }
+    // Update the same session instead of creating a duplicate.
+    saved = await api<ApiAchievement>(`/achievements/${existing.id}`, {
+      method: 'PATCH',
+      body: {
         track_type: item.track_type,
         completion_method: 'mushaf',
         recitation_method: recitationMethod.value,
@@ -693,17 +762,200 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
         ...payload,
         percentage_score: score
       }
-      saved = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
-      priorAchievements.value = [saved, ...priorAchievements.value]
+    })
+    priorAchievements.value = priorAchievements.value.map(a => a.id === existing.id ? saved : a)
+  } else {
+    const dto: CreateAchievementDto = {
+      student_id: sid,
+      halaqa_id: hid,
+      date: dateStr.value,
+      track_type: item.track_type,
+      completion_method: 'mushaf',
+      recitation_method: recitationMethod.value,
+      start_surah: item.start_surah,
+      start_verse: item.start_verse,
+      end_surah: item.end_surah,
+      end_verse: item.end_verse,
+      ...payload,
+      percentage_score: score
     }
+    saved = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
+    priorAchievements.value = [saved, ...priorAchievements.value]
+  }
 
-    clearAll()
-    if (isTest.value) clearSpots()
+  // Nothing downstream treats the save as done until the backend confirms it
+  // holds the errors: this throws otherwise, so the marks stay on screen (and
+  // stay dirty for the next autosync tick) instead of being cleared.
+  await verifyErrorsPersisted(saved, sentErrors, sentPositions)
+  return saved
+}
+
+// ── Autosync ────────────────────────────────────────────────────────────────
+// A recitation is marked word-by-word over several minutes and used to live only
+// in this tab's memory until the teacher pressed save — a refresh, a phone lock
+// or a dropped connection took the whole session with it. So every 5 seconds the
+// marks are compared against what the backend last confirmed, and any difference
+// is written straight away: the first tick creates the session's achievement
+// (unapproved — the explicit submit is still what approves it), later ticks
+// update that same record. `saveRecitation` verifies the stored breakdown, so a
+// tick only counts as synced once the errors are provably on the server.
+const AUTOSYNC_MS = 5000
+
+type SyncStatus = 'idle' | 'saving' | 'saved' | 'error'
+const syncStatus = ref<SyncStatus>('idle')
+const lastSyncedAt = ref<string | null>(null)
+// Signature of the state the backend last confirmed. Everything that ends up in
+// the payload goes in, so a change of severity, of grouping, of tested spot or of
+// method all read as dirty — not just the number of marks.
+const lastSyncedSignature = ref<string | null>(null)
+// The in-flight tick, awaited by the explicit submit so the two can't both create.
+let syncInFlight: Promise<void> | null = null
+let syncTimer: ReturnType<typeof setInterval> | null = null
+
+const currentSignature = computed(() => JSON.stringify({
+  method: recitationMethod.value,
+  // Sorted: the marks object is rebuilt on every edit, so insertion order alone
+  // would flag unchanged state as dirty.
+  marks: Object.entries(marks.value).sort(([a], [b]) => a.localeCompare(b)),
+  groups: Object.entries(groups.value).sort(([a], [b]) => a.localeCompare(b)),
+  spots: spots.value.map(s => `${s.startSurah}:${s.startVerse}-${s.endSurah}:${s.endVerse}`)
+}))
+
+const isDirty = computed(() => currentSignature.value !== lastSyncedSignature.value)
+
+// Adopt the state on screen as synced — after a tick lands, after hydration
+// seeds the marks from the server, and after a submit clears them.
+function markSynced() {
+  lastSyncedSignature.value = currentSignature.value
+}
+
+// Autosync runs only where an update is both possible and wanted: an editable
+// session (parents and approved records are read-only), with the ids the write
+// needs, and a test only once it has a موضع to attach its errors to.
+const canAutosync = computed(() =>
+  !isParentReadOnly.value
+  && !markingLocked.value
+  && !!selectedItem.value
+  && !!studentId.value
+  && !!halaqaId.value
+  && (!isTest.value || spots.value.length > 0)
+)
+
+// Autosync only ever writes state that HAS something in it. Two reasons: opening
+// the page to read shouldn't leave an empty achievement behind, and — since an
+// update replaces the stored errors wholesale — an empty mushaf must never be
+// able to blank a record automatically. Clearing everything is therefore a
+// deliberate act that goes through the explicit submit.
+const hasSomethingToSync = computed(() =>
+  Object.keys(marks.value).length > 0 || spots.value.length > 0
+)
+
+async function runSync() {
+  const item = selectedItem.value
+  const sid = studentId.value
+  const hid = halaqaId.value
+  if (!item || !sid || !hid) return
+
+  // Snapshot first: marks made *during* the request belong to the next tick, and
+  // adopting the post-request state would silently swallow them.
+  const attempted = currentSignature.value
+  // Read before the state changes: it decides whether this failure is the start
+  // of a streak (and so worth a toast) or another tick of one already reported.
+  const wasFailing = syncStatus.value === 'error'
+  syncStatus.value = 'saving'
+  try {
+    const saved = await saveRecitation(item, sid, hid)
+    // The record now mirrors the mushaf, so claim it as hydrated: the seeding
+    // watchers skip it instead of fetching the state back over the live marks.
+    hydratedFor.value = String(saved.id)
+    lastSyncedSignature.value = attempted
+    lastSyncedAt.value = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+    syncStatus.value = 'saved'
+  } catch (e) {
+    // Leave the signature dirty so the next tick retries. The marks are never
+    // touched here, so nothing is lost while the backend is unreachable.
+    syncStatus.value = 'error'
+    if (!wasFailing) {
+      // Announce the first failure of a streak only — a toast every 5 seconds
+      // would bury the mushaf.
+      const err = e as { data?: { message?: string }, message?: string }
+      toast.add({
+        title: 'تعذّر الحفظ التلقائي',
+        description: apiError.format(err, err.message || 'سيُعاد المحاولة تلقائيًا — لا تغلق الصفحة.'),
+        color: 'warning',
+        icon: 'i-lucide-cloud-off'
+      })
+    }
+  }
+}
+
+function tickAutosync() {
+  // Never overlap: a tick still in flight, or the explicit submit running, owns
+  // the record until it's done.
+  if (syncInFlight || submitting.value) return
+  if (!canAutosync.value || !isDirty.value || !hasSomethingToSync.value) return
+  syncInFlight = runSync().finally(() => {
+    syncInFlight = null
+  })
+}
+
+onMounted(() => {
+  syncTimer = setInterval(tickAutosync, AUTOSYNC_MS)
+})
+
+onBeforeUnmount(() => {
+  if (syncTimer) clearInterval(syncTimer)
+  syncTimer = null
+  // Leaving with unsaved marks: fire one last write on the way out. It can't be
+  // awaited in an unmount hook, but the request outlives the component.
+  if (!syncInFlight && !submitting.value && canAutosync.value && isDirty.value && hasSomethingToSync.value) {
+    void runSync()
+  }
+})
+
+// Switching session resets the mushaf; the new session's baseline is its own.
+watch(sessionId, () => {
+  lastSyncedSignature.value = null
+  syncStatus.value = 'idle'
+  lastSyncedAt.value = null
+})
+
+// What the header chip shows. `saving`/`error` speak for themselves; `saved`
+// carries the time so a teacher can tell at a glance how current it is.
+const syncLabel = computed(() => {
+  if (syncStatus.value === 'saving') return 'جارٍ الحفظ…'
+  if (syncStatus.value === 'error') return 'تعذّر الحفظ — إعادة المحاولة'
+  if (isDirty.value && hasSomethingToSync.value) return 'تغييرات غير محفوظة'
+  if (syncStatus.value === 'saved') return `تم الحفظ ${lastSyncedAt.value}`
+  return 'حفظ تلقائي'
+})
+
+async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number) {
+  submitting.value = true
+  try {
+    // An autosync tick may be mid-flight on this very session — let it finish so
+    // its create can't race this one into a duplicate record.
+    await syncInFlight
+    const saved = await saveRecitation(item, sid, hid)
 
     // The recitation is done — the errors were just marked word-by-word on the
     // mushaf — so approve the achievement on the spot rather than leaving it
     // pending. The caller then returns to the achievements list.
     await api(`/achievements/${saved.id}/approve`, { method: 'POST' })
+    // Reflect the approval locally so the autosync sees a locked record and stops
+    // touching it (an approved achievement rejects updates).
+    priorAchievements.value = priorAchievements.value.map(
+      a => a.id === saved.id ? { ...a, status: 'approved' as const } : a
+    )
+
+    // Only now — saved, verified and approved — are the marks safe to drop.
+    clearAll()
+    if (isTest.value) clearSpots()
+    // Clearing is a state change like any other; adopt it as the synced baseline
+    // so the next tick doesn't read the empty mushaf as "unsaved work" and wipe
+    // the record that was just approved.
+    markSynced()
+
     // A general message: the per-error summary can't be shown here — the marks were
     // just cleared above — and the approve response carries no message to relay.
     toast.add({
@@ -774,6 +1026,25 @@ console.log('mushaf page setup complete');
         </div>
         <UBadge color="neutral" variant="subtle" size="sm" class="shrink-0 tabular-nums hidden sm:inline-flex">
           {{ dateStr }}
+        </UBadge>
+
+        <!-- Autosync state: the marks are written to the backend on their own, so
+             say plainly whether the server currently has them. -->
+        <UBadge
+          v-if="canAutosync || syncStatus !== 'idle'"
+          :color="syncStatus === 'error' ? 'warning' : (isDirty && hasSomethingToSync ? 'neutral' : 'success')"
+          variant="subtle"
+          size="sm"
+          class="shrink-0 gap-1"
+        >
+          <UIcon
+            :name="syncStatus === 'saving'
+              ? 'i-lucide-loader-2'
+              : (syncStatus === 'error' ? 'i-lucide-cloud-off' : (isDirty && hasSomethingToSync ? 'i-lucide-cloud' : 'i-lucide-cloud-check'))"
+            class="w-3.5 h-3.5"
+            :class="syncStatus === 'saving' ? 'animate-spin' : ''"
+          />
+          <span class="text-[11px] hidden sm:inline">{{ syncLabel }}</span>
         </UBadge>
 
         <!-- "Recorded today" collapsed into a chip + popover to save vertical space -->

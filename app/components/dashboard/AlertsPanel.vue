@@ -7,21 +7,27 @@ import type { ApiDashboardAlerts } from '~/types'
  * Three independent lists, each rendered only when it has rows:
  *  • stalled_students        — no approved achievement in `stalled_days` days
  *  • halaqat_without_teacher — active halaqa with no active main teacher
- *  • high_absence_teachers   — staff commitment; the API returns this EMPTY for
- *                              the teacher role, so no client-side gate is
- *                              needed, and adding one would be a second source
- *                              of truth for the same rule.
+ *  • high_absence_teachers   — staff commitment, gated by `showStaffCommitment`
+ *
+ * The API already returns `high_absence_teachers` empty for a caller with no
+ * supervisor/admin role, but it authorizes on the union of a user's roles — so a
+ * principal who also teaches still receives it while acting as a teacher.
+ * `showStaffCommitment` reflects the ACTING role and closes that gap.
  *
  * `stalled_days` is read back off the response rather than from the request:
  * the server clamps it to 1..90, so the label always states the window that was
  * actually applied.
  */
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   data: ApiDashboardAlerts | null
   loading?: boolean
   error?: string | null
-}>()
+  showStaffCommitment?: boolean
+}>(), {
+  error: null,
+  showStaffCommitment: true
+})
 
 /** The requested staleness window; the applied one is read back off `data`. */
 const stalledDays = defineModel<number>('stalledDays', { default: 7 })
@@ -34,10 +40,14 @@ const staleItems = computed(() =>
   STALE_WINDOWS.map(days => ({ label: t('pages.home.alerts.staleWindow', { days }), value: days }))
 )
 
+/** Teachers the acting role may actually be shown — drives both the list and the count. */
+const highAbsenceTeachers = computed(() =>
+  (props.showStaffCommitment ? props.data?.high_absence_teachers : []) ?? [])
+
 const totalAlerts = computed(() => {
   const d = props.data
   if (!d) return 0
-  return d.stalled_students.length + d.halaqat_without_teacher.length + d.high_absence_teachers.length
+  return d.stalled_students.length + d.halaqat_without_teacher.length + highAbsenceTeachers.value.length
 })
 
 /** "12 days ago", or "never" when the student has no approved achievement at all. */
@@ -157,18 +167,18 @@ function staleLabel(daysSince: number | null): string {
         </ul>
       </section>
 
-      <!-- Staff commitment — absent for the teacher role by design -->
-      <section v-if="data && data.high_absence_teachers.length > 0" class="p-4">
+      <!-- Staff commitment — hidden below supervisor, by API and by acting role -->
+      <section v-if="highAbsenceTeachers.length > 0" class="p-4">
         <div class="mb-3 flex items-center gap-2">
           <UIcon name="i-lucide-calendar-x" class="size-4 text-status-overdue" />
           <h4 class="text-sm font-semibold text-on-surface">
             {{ t('pages.home.alerts.highAbsence.title') }}
           </h4>
-          <UBadge color="neutral" variant="subtle" size="sm" :label="String(data.high_absence_teachers.length)" />
+          <UBadge color="neutral" variant="subtle" size="sm" :label="String(highAbsenceTeachers.length)" />
         </div>
         <ul class="flex flex-col gap-2">
           <li
-            v-for="teacher in data.high_absence_teachers"
+            v-for="teacher in highAbsenceTeachers"
             :key="teacher.teacher_id"
             class="flex items-center gap-3 rounded-xl bg-status-overdue-bg px-3 py-2.5"
           >

@@ -109,12 +109,16 @@ const ethicsTrend = computed(() =>
   trendOf(overview.value?.ethics_average, previous.value?.ethics_average))
 
 /**
- * `teacher_attendance_rate` is `null` for the teacher role — the API withholds
- * staff commitment rather than zeroing it, so the card is hidden rather than
- * showing a dash that looks like missing data.
+ * Staff-commitment figures are hidden on TWO conditions, and both are needed.
+ *
+ * The API withholds `teacher_attendance_rate` (sends `null`) for a caller whose
+ * roles contain no supervisor/admin — but it authorizes on the UNION of a user's
+ * roles, so a principal who also teaches still receives it while acting as a
+ * teacher. `canViewTeacherCommitment` reads `activeRole`, so adding it keeps the
+ * role switcher honest: acting as a lesser role only ever narrows the UI.
  */
-const showTeacherAttendance = computed(() =>
-  overview.value !== null && overview.value.teacher_attendance_rate !== null)
+const showStaffCommitment = computed(() =>
+  canViewTeacherCommitment.value && overview.value?.teacher_attendance_rate !== null)
 
 // ── Quick actions ────────────────────────────────────────────────────────────
 const quickActions = computed(() => [
@@ -208,7 +212,7 @@ const quickActions = computed(() => [
           />
 
           <DashboardKpiCard
-            v-if="showTeacherAttendance"
+            v-if="showStaffCommitment"
             :label="t('pages.home.kpi.teacherAttendance')"
             :value="formatKpiRate(overview.teacher_attendance_rate)"
             icon="i-lucide-briefcase"
@@ -281,6 +285,7 @@ const quickActions = computed(() => [
         :data="alerts"
         :loading="isLoading && !alerts"
         :error="alertsError"
+        :show-staff-commitment="showStaffCommitment"
       />
 
       <DashboardTopStudents

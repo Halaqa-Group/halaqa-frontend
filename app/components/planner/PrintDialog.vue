@@ -12,7 +12,11 @@ const open = defineModel<boolean>('open', { default: false })
 
 const { t } = useI18n()
 const toast = useToast()
-const { exportPdf, exportPng, isExporting } = usePdf()
+const { exportPdf, exportPng } = usePdf()
+
+// Which export is in flight, so each button shows its OWN spinner. The shared
+// `isExporting` from usePdf would light up both buttons at once.
+const exportingKind = ref<'pdf' | 'image' | null>(null)
 
 const hasRows = computed(() => props.plan.rows.length > 0)
 
@@ -27,6 +31,8 @@ const previewHeight = computed(() => PLAN_H_PX * scale.value)
 const fileName = computed(() => `${t('pages.planner.print.fileName')}-${props.plan.studentName}`)
 
 async function download() {
+  if (exportingKind.value) return
+  exportingKind.value = 'pdf'
   try {
     await exportPdf(PLAN_PDF_ELEMENT_ID, {
       fileName: fileName.value,
@@ -35,10 +41,14 @@ async function download() {
     })
   } catch {
     toast.add({ title: t('pages.planner.print.error'), color: 'error' })
+  } finally {
+    exportingKind.value = null
   }
 }
 
 async function downloadImage() {
+  if (exportingKind.value) return
+  exportingKind.value = 'image'
   try {
     await exportPng(PLAN_PDF_ELEMENT_ID, {
       fileName: fileName.value,
@@ -47,6 +57,8 @@ async function downloadImage() {
     })
   } catch {
     toast.add({ title: t('pages.planner.print.errorImage'), color: 'error' })
+  } finally {
+    exportingKind.value = null
   }
 }
 </script>
@@ -82,16 +94,16 @@ async function downloadImage() {
           color="neutral"
           variant="outline"
           icon="i-lucide-image-down"
-          :loading="isExporting"
-          :disabled="!hasRows"
+          :loading="exportingKind === 'image'"
+          :disabled="!hasRows || exportingKind !== null"
           @click="downloadImage"
         >
           {{ t('pages.planner.print.downloadImage') }}
         </UButton>
         <UButton
           icon="i-lucide-download"
-          :loading="isExporting"
-          :disabled="!hasRows"
+          :loading="exportingKind === 'pdf'"
+          :disabled="!hasRows || exportingKind !== null"
           @click="download"
         >
           {{ t('pages.planner.print.download') }}

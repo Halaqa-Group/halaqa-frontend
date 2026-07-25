@@ -461,8 +461,15 @@ withDefaults(defineProps<QuranPlanProps>(), {
 }
 
 /*
- * The header is deliberately NOT compensated: its box must stay the same size in
- * the preview and the export so they match (the title's residual low-sit is
- * negligible). Keep it out of the capture overrides.
+ * Header: the title + student group is drawn low by html2canvas too, but the
+ * header is a prominent bordered box whose SIZE must stay identical in the
+ * preview and the export. So instead of adding padding (which would grow the
+ * box) we REDISTRIBUTE the existing vertical padding — less on top, more on the
+ * bottom, same total (1.2 + 4.8 = 6mm = the preview's 3 + 3) — which shifts the
+ * group up to centre without changing the header's height (verified 22.5mm in
+ * both, title offset 8% → 0%).
  */
+.quran-plan[data-pdf-capture] .qp-header {
+  padding: 1.2mm 5mm 4.8mm;
+}
 </style>

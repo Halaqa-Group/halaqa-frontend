@@ -120,6 +120,7 @@ const columns = computed<TableColumn<StudentReportRow>[]>(() => [
   { accessorKey: 'hifz_score', header: t('tracks.hifz'), meta: { class: { th: 'text-center', td: 'text-center' } } },
   { accessorKey: 'near_score', header: t('tracks.near'), meta: { class: { th: 'text-center', td: 'text-center' } } },
   { accessorKey: 'far_score', header: t('tracks.far'), meta: { class: { th: 'text-center', td: 'text-center' } } },
+  { accessorKey: 'ethics_score', header: t('pages.dailyReport.ethics'), meta: { class: { th: 'text-center', td: 'text-center' } } },
   { accessorKey: 'plan_completion_rate', header: t('pages.dailyReport.columns.planCompletion'), meta: { class: { th: 'text-center', td: 'text-center' } } },
   { accessorKey: 'total_score', header: t('pages.dailyReport.columns.total'), meta: { class: { th: 'text-center', td: 'text-center' } } },
   { id: 'alerts', header: t('pages.dailyReport.columns.alerts') },
@@ -318,7 +319,7 @@ async function onRecalculate(reason: string) {
           :columns="columns"
           :loading="isLoading"
           :on-select="onRowSelect"
-          class="min-w-[720px]"
+          class="min-w-[800px]"
           :ui="{ tr: 'cursor-pointer' }"
         >
         <template #student_name-cell="{ row }">
@@ -357,6 +358,12 @@ async function onRecalculate(reason: string) {
         <template #far_score-cell="{ row }">
           <span class="tabular-nums">
             {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.far_score) }}
+          </span>
+        </template>
+
+        <template #ethics_score-cell="{ row }">
+          <span class="tabular-nums">
+            {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.ethics_score) }}
           </span>
         </template>
 

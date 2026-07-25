@@ -234,6 +234,15 @@ function formatDate(iso: string) {
                 @saved="loadDetail"
               />
             </UCard>
+
+            <UCard class="md:col-span-3">
+              <HalaqaReportWeightsEditor
+                :halaqa-id="halaqa.id"
+                :initial="halaqa.report_weights"
+                :read-only="!canEditEvaluation"
+                @saved="loadDetail"
+              />
+            </UCard>
           </div>
 
           <div v-else-if="item.value === 'teachers'" class="space-y-4 mt-4">

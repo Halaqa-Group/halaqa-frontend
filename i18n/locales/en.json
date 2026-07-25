@@ -76,6 +76,7 @@
     "users": "Users",
     "parentOverview": "My Children",
     "attendance": "Attendance",
+    "dailyReport": "Daily Report",
     "students": "Students",
     "achievements": "Achievements",
     "analytics": "Analytics",
@@ -341,6 +342,9 @@
         "restoreDefaults": "Default values",
         "weightRange": "Between 0 and 100",
         "noEvaluationSettings": "No settings",
+        "reportWeights": "Daily report weights",
+        "reportWeightsHint": "Splits a student's daily score across the tracks — hifz, near review, far review and ethics. The four weights must sum to exactly 100.",
+        "weightsTotal": "Total: {total} / 100",
         "studentsCount": "Students",
         "createdAt": "Created",
         "updatedAt": "Updated"
@@ -673,6 +677,71 @@
         "fri": "Fri"
       }
     },
+    "dailyReport": {
+      "title": "Daily Evaluation Report",
+      "subtitle": "Students' daily scores across tracks, computed from the approved plan, achievements and attendance.",
+      "weights": "Weights",
+      "ethics": "Ethics",
+      "prevDay": "Previous day",
+      "nextDay": "Next day",
+      "planCompletion": "Plan completion",
+      "totalScore": "Total score",
+      "teacherNote": "Teacher's note",
+      "noStudents": "No students in this report.",
+      "nonWorkingDay": "Non-working day",
+      "nonWorkingDayHint": "No scores are computed on non-working days.",
+      "source": {
+        "live": "Live",
+        "snapshot": "Saved snapshot"
+      },
+      "status": {
+        "complete": "Complete",
+        "partial": "Partial",
+        "failed": "Failed"
+      },
+      "attendance": {
+        "missing": "No attendance",
+        "missingHint": "The student's attendance was not recorded for this day, so no total score is computed."
+      },
+      "columns": {
+        "student": "Student",
+        "attendance": "Attendance",
+        "planCompletion": "Plan completion",
+        "total": "Total",
+        "alerts": "Alerts",
+        "actions": "Actions"
+      },
+      "rowActions": {
+        "label": "Row actions",
+        "viewDetails": "View details",
+        "viewProfile": "View student profile",
+        "logAchievement": "Log achievement"
+      },
+      "detail": {
+        "title": "Student details",
+        "loadError": "Could not load the student's details",
+        "ethics": "Ethics",
+        "tracks": "Track breakdown",
+        "plannedPages": "Planned pages",
+        "achievedPages": "Achieved pages",
+        "completionRate": "Completion rate",
+        "qualityRate": "Quality rate",
+        "weightRedistributed": "Weight redistributed ({base} → {effective})",
+        "plannedRanges": "Planned ranges: {n}",
+        "gaps": "Gaps: {n}",
+        "outsidePlan": "Outside plan: {n}"
+      },
+      "recalculate": {
+        "button": "Recalculate",
+        "title": "Recalculate report",
+        "description": "This day's report will be recomputed and the saved copy replaced. No second copy is created.",
+        "reasonLabel": "Reason for recalculation",
+        "reasonPlaceholder": "e.g. the student's recitation was corrected",
+        "confirm": "Recalculate",
+        "doneToast": "Report recalculated",
+        "errorToast": "Recalculation failed"
+      }
+    },
     "attendance": {
       "recordLabel": "Record",
       "title": "Attendance",
@@ -738,6 +807,15 @@
       "noteFor": "Note for {name}",
       "noteEmpty": "No note yet",
       "saveNote": "Save note",
+      "dailyNote": {
+        "label": "Teacher's daily note",
+        "title": "Daily note for {name}",
+        "hint": "Shown in the daily evaluation report as the teacher's note. Separate from the absence excuse.",
+        "placeholder": "Write your daily note about the student...",
+        "needsRecord": "Save the student's attendance for this day first before adding a note.",
+        "savedToast": "Daily note saved",
+        "errorToast": "Could not save the note"
+      },
       "viewFullCalendar": "View full calendar",
       "calendarTitle": "Full calendar",
       "statsLabels": {

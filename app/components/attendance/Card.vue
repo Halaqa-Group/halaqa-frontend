@@ -8,6 +8,7 @@ const props = defineProps<{
   status: AttendanceStatus
   ethicsRating: number
   notes: string
+  dailyNote?: string
 }>()
 
 const { canMarkStudentAttendance: canEdit } = usePermissions()
@@ -38,6 +39,7 @@ const absentYesterday = computed(() => wasAbsentYesterday(props.studentId))
         :student-id="studentId"
         :name="name"
         :notes="notes"
+        :daily-note="dailyNote"
         :can-edit="canEdit"
       />
     </div>

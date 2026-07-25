@@ -70,6 +70,7 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
         :status="row.status"
         :ethics-rating="row.ethicsRating"
         :notes="row.notes"
+        :daily-note="row.dailyNote"
       />
     </div>
 
@@ -132,6 +133,7 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
               :student-id="row.original.studentId"
               :name="row.original.name"
               :notes="row.original.notes"
+              :daily-note="row.original.dailyNote"
               :can-edit="canEdit"
             />
           </template>

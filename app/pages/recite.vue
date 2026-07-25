@@ -732,6 +732,8 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
 
 // The mark toolbar shows as a sticky bottom bar while a lesson is selected.
 const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.value)
+
+console.log('mushaf page setup complete');
 </script>
 
 <template>

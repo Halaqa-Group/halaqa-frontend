@@ -57,8 +57,8 @@ export async function buildErrorsFromCounts(
 
 // Mushaf flow: each standalone marked word becomes one precisely-located error.
 // A drag-selected block (words sharing a group id) becomes a SINGLE error spanning
-// the run instead of one error per word. The marking spectrum has no harakat
-// notion, so this only emits mistake/warning (green `minor` is dropped).
+// the run instead of one error per word. Every severity maps to a scored error
+// type (red→mistake, yellow→warning, green→harakat), so all three are emitted.
 export async function buildErrorsFromMarks(
   marks: Readonly<RecitationMarks>,
   groups: Readonly<MarkGroups> = {}
@@ -70,7 +70,7 @@ export async function buildErrorsFromMarks(
 
   for (const [key, severity] of Object.entries(marks)) {
     const slot = SEVERITY_LEVELS.find(l => l.key === severity)?.scoreSlot
-    if (!slot || slot === 'none') continue
+    if (!slot) continue
     // key = "surah:ayah:position"
     const [s, a, p] = key.split(':').map(Number)
     if (!s || !a || !p) continue
@@ -82,19 +82,19 @@ export async function buildErrorsFromMarks(
       blocks.set(groupId, block)
       continue
     }
-    errors.push({ error_type: slot as AchievementErrorType, ...locateError(s, a, p) })
+    errors.push({ error_type: slot, ...locateError(s, a, p) })
   }
 
   // One error per block: span start→end when the run stays within one ayah,
   // otherwise anchor it at the run's first word.
   for (const { severity, words } of blocks.values()) {
     const slot = SEVERITY_LEVELS.find(l => l.key === severity)?.scoreSlot
-    if (!slot || slot === 'none' || !words.length) continue
+    if (!slot || !words.length) continue
     const sorted = words.slice().sort((x, y) => wordId(x[0], x[1], x[2]) - wordId(y[0], y[1], y[2]))
     const [s1, a1, p1] = sorted[0]!
     const [s2, a2, p2] = sorted[sorted.length - 1]!
     const loc = s1 === s2 && a1 === a2 ? locateError(s1, a1, p1, p2) : locateError(s1, a1, p1)
-    errors.push({ error_type: slot as AchievementErrorType, ...loc })
+    errors.push({ error_type: slot, ...loc })
   }
 
   return errors
@@ -139,9 +139,10 @@ export async function buildTestPositions(
 // the words that were marked (the local marks are cleared on submit). Each run is
 // a contiguous word span + severity, ready to feed `setMarks` (a multi-word span
 // re-forms as one drag-block). The severity is the inverse of the severity →
-// scoreSlot(error_type) map. 'harakat' has no mushaf-severity equivalent (it's
-// only produced by the numeric quick-entry form), so those errors are skipped —
-// as are legacy 'tajweed' rows, whose severity level no longer exists.
+// scoreSlot(error_type) map, which now covers all three types — including the
+// 'harakat' rows the quick-entry form produces, which re-hydrate as green marks
+// (all at the range's start word, since that flow has no per-word location).
+// Legacy 'tajweed' rows are skipped: their severity level no longer exists.
 export async function buildMarkRunsFromErrors(
   errors: readonly PositionError[]
 ): Promise<Array<{ keys: WordKey[], severity: Severity }>> {

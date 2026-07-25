@@ -292,6 +292,19 @@ const rangeSummary = computed(() => {
   return total > 0 ? t('pages.achievements.versesCount', { count: total }) : null
 })
 
+// How much of the mushaf the lesson range covers, in pages — the same measure the
+// score divides by. Fractional (half a page is 0.5), so show one decimal unless
+// it lands on a whole page.
+const rangePagesSummary = computed(() => {
+  if (!rangeValid.value.valid) return null
+  const pages = pageCoverage(state)
+  if (!(pages > 0)) return null
+  const rounded = Math.round(pages * 10) / 10
+  return t('pages.achievements.pagesCount', {
+    count: Number.isInteger(rounded) ? rounded : rounded.toFixed(1)
+  })
+})
+
 // Weights are per mushaf page, so the pages actually recited scale the deduction:
 // the lesson range for `full`, the sum of the مواضع (fractional) for `test`.
 const rangePages = computed(() =>
@@ -676,6 +689,7 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         </div>
         <p v-if="rangeSummary" class="mt-1.5 text-xs text-muted">
           {{ rangeSummary }}
+          <span v-if="rangePagesSummary"> · {{ rangePagesSummary }}</span>
         </p>
       </UFormField>
     </template>
@@ -690,8 +704,12 @@ defineExpose({ saving: isSaving, setContinueToRecite })
           </UBadge>
           <span class="truncate">{{ formatVerseRange(state.start_surah, state.start_verse, state.end_surah, state.end_verse, SURAH_NAMES) }}</span>
         </span>
-        <UIcon v-if="isEdit" name="i-lucide-lock" class="w-4 h-4 text-muted shrink-0" />
-        <span v-else-if="rangeSummary" class="text-xs text-muted shrink-0">{{ rangeSummary }}</span>
+        <span class="inline-flex items-center gap-2 shrink-0">
+          <span v-if="rangeSummary" class="text-xs text-muted">
+            {{ rangeSummary }}<template v-if="rangePagesSummary"> · {{ rangePagesSummary }}</template>
+          </span>
+          <UIcon v-if="isEdit" name="i-lucide-lock" class="w-4 h-4 text-muted" />
+        </span>
       </div>
     </UFormField>
 

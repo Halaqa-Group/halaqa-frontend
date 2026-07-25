@@ -37,9 +37,10 @@ export interface MarkCounts {
   total: number
 }
 
-// Which weighted achievement bucket a severity feeds when scoring. 'none' =
-// green: a "watch" flag that carries no penalty.
-export type ScoreSlot = 'mistake' | 'warning' | 'none'
+// Which weighted achievement bucket a severity feeds when scoring. Every level
+// charges against one of the halaqa's إعدادات التقييم weights — there is no
+// unscored severity. Mirrors `AchievementErrorType`.
+export type ScoreSlot = 'mistake' | 'warning' | 'harakat'
 
 export interface SeverityMeta {
   key: Severity
@@ -62,25 +63,27 @@ export interface SeverityMeta {
 export const SEVERITY_LEVELS: readonly SeverityMeta[] = [
   { key: 'severe', labelKey: 'pages.achievements.mistakes', icon: 'i-lucide-circle-x', rgb: '220 38 38', scoreSlot: 'mistake' },
   { key: 'light', labelKey: 'pages.achievements.warnings', icon: 'i-lucide-circle-dot', rgb: '234 179 8', scoreSlot: 'warning' },
-  { key: 'minor', labelKey: 'pages.achievements.harakat', icon: 'i-lucide-circle', rgb: '22 163 74', scoreSlot: 'none' }
+  { key: 'minor', labelKey: 'pages.achievements.harakat', icon: 'i-lucide-circle', rgb: '22 163 74', scoreSlot: 'harakat' }
 ] as const
 
 export const SEVERITY_ORDER: readonly Severity[] = SEVERITY_LEVELS.map(l => l.key)
 
+/** The `ScoreCounts` field each severity's weighted bucket accumulates into. */
+const SLOT_FIELD: Record<ScoreSlot, keyof ScoreCounts> = {
+  mistake: 'mistakes_count',
+  warning: 'warnings_count',
+  harakat: 'harakat_errors_count'
+}
+
 /**
  * Collapse the severity counts onto the weighted score buckets the backend
- * expects. Green (`minor`) is intentionally dropped — it carries no penalty.
- * The mushaf severity spectrum has no `harakat` concept (that error type is only
- * captured via the numeric quick-entry form), so `harakat_errors_count` is 0
- * from this flow.
+ * expects. Every level charges its own weight from the halaqa's إعدادات التقييم:
+ * green (`minor`) feeds `harakat_errors_count` — the same bucket the numeric
+ * quick-entry form fills — so a mushaf recitation and a quick entry of the same
+ * mistakes score identically.
  */
 export function toScoreCounts(counts: MarkCounts): ScoreCounts {
-  let mistakes_count = 0
-  let warnings_count = 0
-  for (const lvl of SEVERITY_LEVELS) {
-    const n = counts[lvl.key]
-    if (lvl.scoreSlot === 'mistake') mistakes_count += n
-    else if (lvl.scoreSlot === 'warning') warnings_count += n
-  }
-  return { mistakes_count, warnings_count, harakat_errors_count: 0 }
+  const out: ScoreCounts = { mistakes_count: 0, warnings_count: 0, harakat_errors_count: 0 }
+  for (const lvl of SEVERITY_LEVELS) out[SLOT_FIELD[lvl.scoreSlot]] += counts[lvl.key]
+  return out
 }

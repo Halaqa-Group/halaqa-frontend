@@ -1133,6 +1133,7 @@
       "noResults": "لا توجد إنجازات في هذا اليوم",
       "noMatch": "لا توجد نتائج مطابقة",
       "versesCount": "{count} آية",
+      "pagesCount": "{count} صفحة",
       "mistakes": "أخطاء",
       "warnings": "تنبيهات",
       "harakat": "حركات",

@@ -1133,6 +1133,7 @@
       "noResults": "No achievements for this day",
       "noMatch": "No matching results",
       "versesCount": "{count} verses",
+      "pagesCount": "{count} pages",
       "mistakes": "Mistakes",
       "warnings": "Warnings",
       "harakat": "Harakat",

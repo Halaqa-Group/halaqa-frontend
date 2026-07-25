@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cp .env.prod .env && pnpm setup:quran && nuxt build && pnpm verify:quran",
+    "build": "cp .env.prod .env && nuxt build",
     "build:app": "cp .env.prod .env && nuxt build && pnpm verify:quran",
     "dev": "nuxt dev --host",
     "preview": "nuxt preview",

@@ -1418,6 +1418,16 @@
         "open": "Create plan",
         "generate": "Generate schedule",
         "startAyah": "Start from",
+        "direction": {
+          "label": "Plan direction",
+          "asc": "With the mushaf order",
+          "desc": "Against the mushaf order",
+          "help": "Pick which way the plan travels through the mushaf before generating — mushaf order by default"
+        },
+        "preview": {
+          "label": "The plan will run",
+          "days": "({count} days)"
+        },
         "dailyAmount": "Daily amount",
         "unit": "Amount unit",
         "maxAmount": "Max {count}",

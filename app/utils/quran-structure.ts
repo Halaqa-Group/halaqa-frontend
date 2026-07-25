@@ -36,6 +36,14 @@ export function verseToGlobal(surah: number, verse: number): number {
   return SURAH_OFFSETS[surah]! + verse
 }
 
+export function surahStartGlobal(surah: number): number {
+  return SURAH_OFFSETS[surah]! + 1
+}
+
+export function surahEndGlobal(surah: number): number {
+  return SURAH_OFFSETS[surah]! + VERSE_COUNTS[surah]!
+}
+
 export function globalToVerse(global: number): { surah: number, verse: number } {
   const g = Math.min(Math.max(global, 1), TOTAL_VERSES)
   for (let s = 114; s >= 1; s--) {
@@ -81,12 +89,41 @@ export function pageStartsFromMap(verseToPage: Record<string, number>): string[]
     })
 }
 
+// اتجاه الخطة: مع ترتيب المصحف (الفاتحة ← البقرة) أو عكسه (البقرة ← الفاتحة).
+export type PlanDirection = 'asc' | 'desc'
+
+export interface ExpandPlanOptions {
+  direction?: PlanDirection
+  // A day never mixes two surahs: it stops at the surah's edge and the next day
+  // opens the neighbouring surah. Without it a 2-page day starting in السجدة
+  // spills a page of الأحزاب (or لقمان when descending) into the same day.
+  //
+  // It never overrides نوع المقدار though — see `surahHoldsWholeUnit`.
+  keepWithinSurah?: boolean
+}
+
+// Trimming a day at the surah edge only makes sense when the surah is big enough
+// to hold at least one whole unit of the chosen نوع المقدار. A juz is wider than
+// most surahs, so trimming there would hand back a fragment instead of the juz
+// the teacher asked for (a juz-a-day plan would open with الفاتحة alone). Same for
+// the short surahs of جزء عمّ, several of which share a single page.
+function surahHoldsWholeUnit(sortedGlobals: number[], surah: number): boolean {
+  const surahStart = surahStartGlobal(surah)
+  const surahEnd = surahEndGlobal(surah)
+  const idx = firstBoundaryAtOrAfter(sortedGlobals, surahStart)
+  if (idx < 0) return false
+  const unitEnd = idx + 1 < sortedGlobals.length ? sortedGlobals[idx + 1]! - 1 : TOTAL_VERSES
+  return unitEnd <= surahEnd
+}
+
 export function expandPlan(
   startKey: string,
   dailyAmount: number,
   boundaries: string[],
-  activeDayCount: number
+  activeDayCount: number,
+  options: ExpandPlanOptions = {}
 ): VerseRange[] {
+  const { direction = 'asc', keepWithinSurah = true } = options
   const bg = boundaries.map(verseKeyToGlobal).sort((a, b) => a - b)
   if (bg.length === 0 || activeDayCount <= 0) return []
 
@@ -94,26 +131,66 @@ export function expandPlan(
   const ranges: VerseRange[] = []
   let cursor = verseKeyToGlobal(startKey)
 
-  for (let day = 0; day < activeDayCount && cursor <= TOTAL_VERSES; day++) {
-    const startG = cursor
-    const unitIdx = lastBoundaryAtOrBefore(bg, startG)
-    const nextIdx = unitIdx + amount
-    const endG = nextIdx < bg.length ? bg[nextIdx]! - 1 : TOTAL_VERSES
-    const clampedEnd = Math.min(endG, TOTAL_VERSES)
-
+  function push(startG: number, endG: number) {
     const start = globalToVerse(startG)
-    const end = globalToVerse(clampedEnd)
+    const end = globalToVerse(endG)
     ranges.push({
       start_surah: start.surah,
       start_verse: start.verse,
       end_surah: end.surah,
       end_verse: end.verse
     })
+  }
 
-    cursor = clampedEnd + 1
+  for (let day = 0; day < activeDayCount; day++) {
+    if (direction === 'asc') {
+      if (cursor > TOTAL_VERSES) break
+      const startG = cursor
+      const unitIdx = lastBoundaryAtOrBefore(bg, startG)
+      const nextIdx = unitIdx + amount
+      let endG = nextIdx < bg.length ? bg[nextIdx]! - 1 : TOTAL_VERSES
+      const startSurah = globalToVerse(startG).surah
+      if (keepWithinSurah && surahHoldsWholeUnit(bg, startSurah)) {
+        endG = Math.min(endG, surahEndGlobal(startSurah))
+      }
+      endG = Math.min(endG, TOTAL_VERSES)
+      push(startG, endG)
+      cursor = endG + 1
+    } else {
+      // Walking backwards: the cursor is the *end* of the day, and the day grows
+      // towards the beginning of the mushaf.
+      if (cursor < 1) break
+      const endG = cursor
+      const unitIdx = lastBoundaryAtOrBefore(bg, endG)
+      const firstIdx = unitIdx - (amount - 1)
+      let startG = firstIdx >= 0 ? bg[firstIdx]! : 1
+      const endSurah = globalToVerse(endG).surah
+      if (keepWithinSurah && surahHoldsWholeUnit(bg, endSurah)) {
+        startG = Math.max(startG, surahStartGlobal(endSurah))
+      }
+      startG = Math.max(startG, 1)
+      push(startG, endG)
+      cursor = startG - 1
+    }
   }
 
   return ranges
+}
+
+function firstBoundaryAtOrAfter(sortedGlobals: number[], target: number): number {
+  let lo = 0
+  let hi = sortedGlobals.length - 1
+  let ans = -1
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1
+    if (sortedGlobals[mid]! >= target) {
+      ans = mid
+      hi = mid - 1
+    } else {
+      lo = mid + 1
+    }
+  }
+  return ans
 }
 
 function lastBoundaryAtOrBefore(sortedGlobals: number[], target: number): number {

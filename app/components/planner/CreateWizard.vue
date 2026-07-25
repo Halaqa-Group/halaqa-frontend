@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { expandPlan, UNIT_TOTALS, type PlanUnit } from '~/utils/quran-structure'
+import { expandPlan, UNIT_TOTALS, type PlanUnit, type PlanDirection, type VerseRange } from '~/utils/quran-structure'
 import { TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
 import { PLAN_TRACKS, type CreatePlanItemDto } from '~/composables/useWeeklyPlan'
+import { SURAH_NAMES } from '~/data/constants'
+import { VERSE_COUNTS } from '~/utils/quran'
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
 type Target = 'this' | 'all' | 'selected'
@@ -18,15 +20,26 @@ const { boundariesFor, unitAvailable } = useQuranStructure()
 
 const UNITS: PlanUnit[] = ['page', 'juz', 'hizb', 'quarter', 'surah']
 
+// Units small enough to sit inside a surah, so a day can be trimmed at the surah
+// edge without shrinking the نوع المقدار the teacher picked. A جزء or حزب is wider
+// than most surahs and a سورة is one by definition — trimming those would hand
+// back a fragment instead of the unit that was asked for, so the option is not
+// offered for them.
+const SURAH_AWARE_UNITS: PlanUnit[] = ['page', 'quarter']
+
 interface TrackConfig {
   enabled: boolean
   surah: number
   verse: number
   amount: number
   unit: PlanUnit
+  direction: PlanDirection
 }
+// `asc` mirrors how a student's memorization is stored — with the order of the
+// mushaf. Only the Hifz track exposes the switch: a review track (قريبة/بعيدة)
+// always walks with the mushaf, so it stays on the default.
 function defaults(enabled: boolean): TrackConfig {
-  return { enabled, surah: 1, verse: 1, amount: 1, unit: 'page' }
+  return { enabled, surah: 1, verse: 1, amount: 1, unit: 'page', direction: 'asc' }
 }
 const config = reactive<Record<TrackType, TrackConfig>>({
   Hifz: defaults(true),
@@ -92,6 +105,64 @@ const unitItems = computed(() =>
   }))
 )
 
+// Both the direction and the surah-boundary rule belong to memorization only —
+// a review track just sweeps the mushaf by the chosen unit, so it keeps neither.
+// The rule is always on for حفظ: a memorization day never opens the next surah
+// before the current one is finished, so it needs no switch of its own.
+function keepsWithinSurah(track: TrackType, cfg: TrackConfig): boolean {
+  return track === 'Hifz' && SURAH_AWARE_UNITS.includes(cfg.unit)
+}
+
+function expandFor(track: TrackType, cfg: TrackConfig, days: number): VerseRange[] {
+  if (!boundariesReady(cfg.unit)) return []
+  return expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundariesFor(cfg.unit), days, {
+    direction: track === 'Hifz' ? cfg.direction : 'asc',
+    keepWithinSurah: keepsWithinSurah(track, cfg)
+  })
+}
+
+function setDirection(track: TrackType, dir: PlanDirection) {
+  const cfg = config[track]
+  if (cfg.direction === dir) return
+  cfg.direction = dir
+  // A backwards plan is anchored at the end of the chosen surah and grows towards
+  // the start of the mushaf, so the start ayah follows the direction.
+  cfg.verse = dir === 'desc' ? (VERSE_COUNTS[cfg.surah] || 1) : 1
+}
+
+function surahName(n: number): string | undefined {
+  return SURAH_NAMES[n]
+}
+
+function directionOptions(cfg: TrackConfig) {
+  return [
+    { value: 'asc' as PlanDirection, from: surahName(cfg.surah), to: surahName(cfg.surah + 1), label: t('pages.planner.wizard.direction.asc') },
+    { value: 'desc' as PlanDirection, from: surahName(cfg.surah), to: surahName(cfg.surah - 1), label: t('pages.planner.wizard.direction.desc') }
+  ]
+}
+
+function ayahLabel(surah: number, verse: number): string {
+  return `${surahName(surah) ?? surah} ${verse}`
+}
+
+// What the teacher sees before approving: the exact span the generated week will
+// cover, read in the plan's own direction.
+const previews = computed(() => {
+  const out: Partial<Record<TrackType, { from: string, to: string, days: number }>> = {}
+  for (const track of PLAN_TRACKS as TrackType[]) {
+    const cfg = config[track]
+    if (!cfg.enabled) continue
+    const ranges = expandFor(track, cfg, activeDays.value.length)
+    const first = ranges[0]
+    const last = ranges[ranges.length - 1]
+    if (!first || !last) continue
+    out[track] = track !== 'Hifz' || cfg.direction === 'asc'
+      ? { from: ayahLabel(first.start_surah, first.start_verse), to: ayahLabel(last.end_surah, last.end_verse), days: ranges.length }
+      : { from: ayahLabel(first.end_surah, first.end_verse), to: ayahLabel(last.start_surah, last.start_verse), days: ranges.length }
+  }
+  return out
+})
+
 const dayCount = computed(() => activeDays.value.length)
 const anyEnabled = computed(() => PLAN_TRACKS.some(tk => config[tk as TrackType].enabled))
 const isMulti = computed(() => target.value !== 'this')
@@ -109,9 +180,7 @@ function buildItems(): CreatePlanItemDto[] {
   for (const track of PLAN_TRACKS as TrackType[]) {
     const cfg = config[track]
     if (!cfg.enabled) continue
-    if (!boundariesReady(cfg.unit)) continue
-    const boundaries = boundariesFor(cfg.unit)
-    const ranges = expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundaries, days.length)
+    const ranges = expandFor(track, cfg, days.length)
     ranges.forEach((r, i) => {
       const day = days[i]
       if (day === undefined) return
@@ -148,9 +217,7 @@ async function submit() {
         incomplete = true
         continue
       }
-      const boundaries = boundariesFor(cfg.unit)
-      const ranges = expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundaries, dayCount.value)
-      applyTrackGeneration(track, ranges)
+      applyTrackGeneration(track, expandFor(track, cfg, dayCount.value))
       generatedAny = true
     }
     if (!generatedAny) {
@@ -265,7 +332,41 @@ async function submit() {
 
           <div v-if="config[track].enabled" class="px-4 pb-4 space-y-4 border-t border-default pt-4">
             <UFormField :label="t('pages.planner.wizard.startAyah')">
-              <PlannerAyahSelect v-model:surah="config[track].surah" v-model:verse="config[track].verse" />
+              <PlannerAyahSelect
+                v-model:surah="config[track].surah"
+                v-model:verse="config[track].verse"
+                :snap-to="config[track].direction === 'desc' ? 'last' : 'first'"
+              />
+            </UFormField>
+
+            <UFormField
+              v-if="track === 'Hifz'"
+              :label="t('pages.planner.wizard.direction.label')"
+              :help="t('pages.planner.wizard.direction.help')"
+            >
+              <div class="flex gap-1 rounded-md border border-default p-0.5">
+                <UButton
+                  v-for="opt in directionOptions(config[track])"
+                  :key="opt.value"
+                  :variant="config[track].direction === opt.value ? 'soft' : 'ghost'"
+                  color="primary"
+                  size="sm"
+                  class="flex-1 justify-center"
+                  @click="setDirection(track, opt.value)"
+                >
+                  <span class="inline-flex items-center gap-1.5 min-w-0">
+                    <template v-if="opt.to">
+                      <span class="truncate">{{ opt.from }}</span>
+                      <UIcon name="i-lucide-arrow-right" class="w-4 h-4 shrink-0 rtl:rotate-180" />
+                      <span class="truncate">{{ opt.to }}</span>
+                    </template>
+                    <template v-else>
+                      <UIcon name="i-lucide-arrow-right" class="w-4 h-4 shrink-0 rtl:rotate-180" />
+                      <span class="truncate">{{ opt.label }}</span>
+                    </template>
+                  </span>
+                </UButton>
+              </div>
             </UFormField>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -283,6 +384,17 @@ async function submit() {
               <UFormField :label="t('pages.planner.wizard.unit')">
                 <USelect v-model="config[track].unit" :items="unitItems" value-key="value" class="w-full" />
               </UFormField>
+            </div>
+
+            <div
+              v-if="previews[track]"
+              class="rounded-lg bg-elevated px-3 py-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm"
+            >
+              <span class="text-muted text-xs">{{ t('pages.planner.wizard.preview.label') }}</span>
+              <span class="font-semibold">{{ previews[track]!.from }}</span>
+              <UIcon name="i-lucide-arrow-right" class="w-4 h-4 text-primary rtl:rotate-180" />
+              <span class="font-semibold">{{ previews[track]!.to }}</span>
+              <span class="text-muted text-xs">{{ t('pages.planner.wizard.preview.days', { count: previews[track]!.days }) }}</span>
             </div>
           </div>
         </section>

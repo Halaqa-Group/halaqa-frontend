@@ -3,6 +3,12 @@ import { SURAH_NAMES } from '~/data/constants'
 import { VERSE_COUNTS } from '~/utils/quran'
 import { verseToGlobal, globalToVerse } from '~/utils/quran-structure'
 
+const props = withDefaults(defineProps<{
+  // Which ayah to land on when the surah changes — the last one when the plan
+  // walks backwards through the mushaf.
+  snapTo?: 'first' | 'last'
+}>(), { snapTo: 'first' })
+
 const surah = defineModel<number>('surah', { required: true })
 const verse = defineModel<number>('verse', { required: true })
 
@@ -32,7 +38,8 @@ const verseItems = computed(() => {
 
 watch(surah, () => {
   const max = VERSE_COUNTS[surah.value] || 1
-  if (verse.value > max || verse.value < 1) verse.value = 1
+  if (props.snapTo === 'last') verse.value = max
+  else if (verse.value > max || verse.value < 1) verse.value = 1
 })
 </script>
 

@@ -64,11 +64,38 @@ Build the application for production:
 pnpm build
 ```
 
+That is `.env.prod` → `.env`, then `setup:quran`, then `nuxt build`, then
+`verify:quran`. **Use `pnpm build`, not `nuxt build` directly.** The mushaf
+corpus is gitignored, so a build that skips `setup:quran` still succeeds and
+still boots — the assets simply 404, the host answers with the SPA shell under
+a `.woff2`/`.json` URL, and every recitation screen reads *تعذّر عرض الصفحة N*.
+Nothing fails until a user opens the page. `verify:quran` is the backstop: it
+checks all 604 page JSONs and 604 fonts are in `.output/public/quran` and exits
+non-zero if any are missing.
+
 Locally preview production build:
 
 ```bash
 pnpm preview
 ```
+
+### Deploying
+
+The origin server builds from a checkout, behind Cloudflare:
+
+```bash
+git pull
+pnpm install --frozen-lockfile
+pnpm build
+# then restart the Node process (pm2 / systemd / whatever supervises it)
+```
+
+Requires Node ≥ 22.5 — `build-mushaf-layout.mjs` runs with
+`--experimental-sqlite`.
+
+`setup:quran` skips any corpus file already on disk, and `public/quran` is
+gitignored so it survives `git pull` — only the first build on a machine pays
+the ~46 MB download.
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
 

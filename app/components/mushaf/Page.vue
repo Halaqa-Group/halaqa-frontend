@@ -22,6 +22,15 @@ provide(MUSHAF_HOVERED_GROUP, hoveredGroup)
 
 const { page, loading, error } = useMushafPage(() => props.pageNumber)
 
+// A missing mushaf asset is not a connectivity problem — telling the user to
+// check their wifi sends them chasing the wrong thing. `useMushafPage` tags
+// those failures; anything else keeps the generic network wording.
+const errorDetail = computed(() =>
+  error.value?.message.startsWith('Mushaf ')
+    ? 'ملفات المصحف غير متوفرة على الخادم. أبلغ المسؤول عن هذه المشكلة.'
+    : 'تأكد من اتصالك بالشبكة ثم أعد المحاولة.'
+)
+
 const renderedLines = computed(() => {
   if (!page.value) return []
   return synthesizeLines(page.value)
@@ -72,7 +81,7 @@ onBeforeUnmount(clearSkeletonTimer)
             تعذّر عرض الصفحة {{ pageNumber }}
           </p>
           <p class="mushaf-page__error-detail">
-            تأكد من اتصالك بالشبكة ثم أعد المحاولة.
+            {{ errorDetail }}
           </p>
           <p class="mushaf-page__error-tech" dir="ltr">
             {{ error.message }}

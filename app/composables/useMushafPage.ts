@@ -57,18 +57,43 @@ function injectClassBinding(page: number) {
   document.head.appendChild(style)
 }
 
+// `/quran/**` is served `immutable` for a year, but that header is applied by
+// URL pattern — a request made while the file was missing pinned the SPA shell
+// under an asset URL, and the browser will not revalidate it. Re-fetching past
+// the HTTP cache is the only way a poisoned client recovers on its own.
+async function refetchAsset(url: string, expectedType: string): Promise<Response> {
+  const res = await fetch(url, { cache: 'reload' })
+  const type = res.headers.get('content-type') || ''
+  if (!res.ok || !type.includes(expectedType)) {
+    throw new Error(`Mushaf asset not available: ${url}`)
+  }
+  return res
+}
+
 function ensureFontLoaded(page: number): Promise<void> {
   const cached = fontLoaded.get(page)
   if (cached) return cached
-  const ff = new FontFace(
-    `p${page}-v1`,
-    `local(QCF_P${paddedPage(page)}), url(${FONT_URL(page)}) format('woff2')`,
-    { display: 'block' }
-  )
-  const p = ff.load().then((loaded) => {
+  const family = `p${page}-v1`
+
+  function register(loaded: FontFace) {
     document.fonts.add(loaded)
     injectClassBinding(page)
     fontReady.add(page)
+  }
+
+  const ff = new FontFace(
+    family,
+    `local(QCF_P${paddedPage(page)}), url(${FONT_URL(page)}) format('woff2')`,
+    { display: 'block' }
+  )
+  const p = ff.load().then(register, async () => {
+    // FontFace rejects with a bare "A network error occurred." whether the
+    // file is missing, blocked, or not actually a font — which reads as "the
+    // user is offline" and sends people to check their wifi. Retry past the
+    // cache, and if that fails too, name the asset instead.
+    const res = await refetchAsset(FONT_URL(page), 'woff2')
+    const retry = new FontFace(family, await res.arrayBuffer(), { display: 'block' })
+    register(await retry.load())
   })
   fontLoaded.set(page, p)
   p.catch(() => {
@@ -83,13 +108,29 @@ function loadPageJson(page: number): Promise<MushafPageData> {
   if (cached) return Promise.resolve(cached)
   const existing = inflight.get(page)
   if (existing) return existing
+  const url = `/quran/pages/${page}.json`
+  // A missing page file does not 404 — the host answers unmatched paths with
+  // the SPA shell (200, text/html), which ofetch hands back as a string.
+  // Without this check the failure surfaces as `wire.lines.map is not a
+  // function` several frames away from the actual cause.
+  const isWirePage = (wire: unknown): wire is WirePage =>
+    !!wire && typeof wire === 'object' && Array.isArray((wire as WirePage).lines)
+
   // `force-cache`: the page files are immutable, so a copy already in the HTTP
   // cache is served without a revalidation round-trip.
-  const p = $fetch<WirePage>(`/quran/pages/${page}.json`, { cache: 'force-cache' }).then((wire) => {
+  const p = $fetch<WirePage>(url, { cache: 'force-cache' }).then(async (first) => {
+    // Same poisoned-cache recovery as the font — see refetchAsset.
+    const wire = isWirePage(first) ? first : await (await refetchAsset(url, 'json')).json()
+    if (!isWirePage(wire)) throw new Error(`Mushaf page data not available: ${url}`)
     const data = normalizePage(wire)
     pageCache.set(page, data)
     inflight.delete(page)
     return data
+  })
+  // Drop the rejected promise from `inflight`, otherwise every later attempt
+  // at this page replays the same failure and retrying can never recover.
+  p.catch(() => {
+    if (inflight.get(page) === p) inflight.delete(page)
   })
   inflight.set(page, p)
   return p

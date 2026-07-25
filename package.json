@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cp .env.prod .env && pnpm setup:quran && nuxt build",
-    "build:app": "cp .env.prod .env && nuxt build",
+    "build": "cp .env.prod .env && pnpm setup:quran && nuxt build && pnpm verify:quran",
+    "build:app": "cp .env.prod .env && nuxt build && pnpm verify:quran",
     "dev": "nuxt dev --host",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "setup:quran": "node scripts/build-quran-assets.mjs && node --experimental-sqlite scripts/build-mushaf-layout.mjs",
+    "verify:quran": "node scripts/verify-quran-assets.mjs",
     "build:quran": "node scripts/build-quran-assets.mjs",
     "build:mushaf-layout": "node --experimental-sqlite scripts/build-mushaf-layout.mjs"
   },

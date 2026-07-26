@@ -51,6 +51,22 @@ export function useGlobalHalaqa() {
     viewAllHalaqat.value = false
   }
 
+  // Pages whose API calls demand a halaqa_id (planner, achievement recording) call
+  // this so unscoped roles land on their first halaqa instead of an empty state.
+  // The list is already scoped by the API to what the caller may see, so list[0] is
+  // "the first halaqa I'm assigned to". Returns null only when there is none.
+  // May run before the layout's initializeHalaqa (pages mount before layouts), so
+  // it fetches the list itself when empty.
+  async function ensureHalaqaSelected(): Promise<ApiHalaqaListItem | null> {
+    if (selectedHalaqa.value) return selectedHalaqa.value
+    if (halaqat.value.length === 0) await fetchHalaqat({ status: 'active', limit: 100 })
+    // A concurrent initializeHalaqa may have settled the scope while we fetched.
+    if (selectedHalaqa.value) return selectedHalaqa.value
+    const first = halaqat.value[0]
+    if (first) selectHalaqa(first)
+    return first ?? null
+  }
+
   function selectAllHalaqat() {
     viewAllHalaqat.value = true
     selectedHalaqa.value = null
@@ -74,6 +90,7 @@ export function useGlobalHalaqa() {
     isLoading,
 
     initializeHalaqa,
+    ensureHalaqaSelected,
     selectHalaqa,
     selectAllHalaqat
   }

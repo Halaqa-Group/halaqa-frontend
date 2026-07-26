@@ -14,7 +14,7 @@ const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 const { canApprovePlan, canEditPlanItems, canDeletePlan, canUnapprovePlan } = usePermissions()
-const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
+const { selectedHalaqaId, isHalaqaScoped, ensureHalaqaSelected } = useGlobalHalaqa()
 const {
   selectedStudentId, selectedWeekStart, plan, planStatus, viewMode,
   formOpen, editing, deleteOpen, deleteTarget,
@@ -119,16 +119,42 @@ async function onDeletePlan() {
   }
 }
 
+// Unscoped roles (principal, supervisor…) arrive here with no halaqa picked. Since
+// the page can't work without one, default to the first halaqa they are assigned to
+// rather than parking them on the empty state — the filter bar still lets them switch.
+// Only reaches the empty state when they have no halaqa at all.
+const resolvingHalaqa = ref(false)
+
+async function autoSelectHalaqa() {
+  resolvingHalaqa.value = true
+  try {
+    // Selecting fires the watch below, which loads that halaqa's students.
+    await ensureHalaqaSelected()
+  } finally {
+    resolvingHalaqa.value = false
+  }
+}
+
 watch(selectedHalaqaId, async (id) => {
   selectedStudentId.value = undefined
   plan.value = null
-  if (id) await loadStudents(id)
+  if (id) {
+    await loadStudents(id)
+    return
+  }
+  // Switching roles re-resolves the global scope to "unscoped"; re-pin so the
+  // planner never sits without a halaqa.
+  await autoSelectHalaqa()
 })
 watch(selectedStudentId, () => loadPlan())
 watch(selectedWeekStart, () => loadPlan())
 
 onMounted(async () => {
-  if (selectedHalaqaId.value) await loadStudents(selectedHalaqaId.value)
+  if (!selectedHalaqaId.value) {
+    await autoSelectHalaqa()
+    return
+  }
+  await loadStudents(selectedHalaqaId.value)
   // A student may already be selected — e.g. deep-linked from the achievements
   // page's "View in planner". The selectedStudentId watch isn't immediate, so
   // load the plan here too.
@@ -213,7 +239,14 @@ onMounted(async () => {
     <!-- Weekly plans are written per halaqa, so a halaqa is mandatory here even for
          roles that browse the rest of the app unscoped. -->
     <div
-      v-if="!selectedHalaqaId"
+      v-if="resolvingHalaqa"
+      class="flex items-center justify-center py-12 rounded-xl border border-default bg-default"
+    >
+      <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
+    </div>
+
+    <div
+      v-else-if="!selectedHalaqaId"
       class="flex flex-col items-center gap-3 py-12 rounded-xl border border-default bg-default"
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10 text-muted" />

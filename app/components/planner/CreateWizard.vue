@@ -20,13 +20,6 @@ const { boundariesFor, unitAvailable } = useQuranStructure()
 
 const UNITS: PlanUnit[] = ['page', 'juz', 'hizb', 'quarter', 'surah']
 
-// Units small enough to sit inside a surah, so a day can be trimmed at the surah
-// edge without shrinking the نوع المقدار the teacher picked. A جزء or حزب is wider
-// than most surahs and a سورة is one by definition — trimming those would hand
-// back a fragment instead of the unit that was asked for, so the option is not
-// offered for them.
-const SURAH_AWARE_UNITS: PlanUnit[] = ['page', 'quarter']
-
 interface TrackConfig {
   enabled: boolean
   surah: number
@@ -109,19 +102,13 @@ const unitItems = computed(() =>
   }))
 )
 
-// Both the direction and the surah-boundary rule belong to memorization only —
-// a review track just sweeps the mushaf by the chosen unit, so it keeps neither.
-// The rule is always on for حفظ: a memorization day never opens the next surah
-// before the current one is finished, so it needs no switch of its own.
-function keepsWithinSurah(track: TrackType, cfg: TrackConfig): boolean {
-  return track === 'Hifz' && SURAH_AWARE_UNITS.includes(cfg.unit)
-}
-
+// Direction belongs to memorization only — a review track just sweeps the mushaf
+// forwards by the chosen unit. Either way a day carries its full مقدار in one session,
+// reading straight through ختام السورة into the surah after it.
 function expandFor(track: TrackType, cfg: TrackConfig, days: number): VerseRange[][] {
   if (!boundariesReady(cfg.unit)) return []
   return expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundariesFor(cfg.unit), days, {
-    direction: track === 'Hifz' ? cfg.direction : 'asc',
-    keepWithinSurah: keepsWithinSurah(track, cfg)
+    direction: track === 'Hifz' ? cfg.direction : 'asc'
   })
 }
 

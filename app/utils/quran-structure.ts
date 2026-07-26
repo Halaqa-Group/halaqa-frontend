@@ -94,28 +94,6 @@ export type PlanDirection = 'asc' | 'desc'
 
 export interface ExpandPlanOptions {
   direction?: PlanDirection
-  // `asc` only. A forward day never mixes two surahs: it stops at the surah's edge
-  // and the next day opens the following surah. Without it a 2-page day starting in
-  // السجدة spills a page of الأحزاب into the same day.
-  //
-  // It never overrides نوع المقدار though — see `surahHoldsWholeUnit`. `desc` ignores
-  // it: عكس اتجاه المصحف walks the daily amount continuously across surah edges (a
-  // day can hold آخر صفحة السجدة + أول صفحة لقمان) — see `expandReverse`.
-  keepWithinSurah?: boolean
-}
-
-// Trimming a day at the surah edge only makes sense when the surah is big enough
-// to hold at least one whole unit of the chosen نوع المقدار. A juz is wider than
-// most surahs, so trimming there would hand back a fragment instead of the juz
-// the teacher asked for (a juz-a-day plan would open with الفاتحة alone). Same for
-// the short surahs of جزء عمّ, several of which share a single page.
-function surahHoldsWholeUnit(sortedGlobals: number[], surah: number): boolean {
-  const surahStart = surahStartGlobal(surah)
-  const surahEnd = surahEndGlobal(surah)
-  const idx = firstBoundaryAtOrAfter(sortedGlobals, surahStart)
-  if (idx < 0) return false
-  const unitEnd = idx + 1 < sortedGlobals.length ? sortedGlobals[idx + 1]! - 1 : TOTAL_VERSES
-  return unitEnd <= surahEnd
 }
 
 function rangeOf(startG: number, endG: number): VerseRange {
@@ -124,9 +102,9 @@ function rangeOf(startG: number, endG: number): VerseRange {
   return { start_surah: start.surah, start_verse: start.verse, end_surah: end.surah, end_verse: end.verse }
 }
 
-// One entry per day. A day is usually a single range, but عكس اتجاه المصحف can hand
-// back a day that straddles a surah boundary (آخر صفحة السجدة + أول صفحة لقمان) — two
-// non-contiguous ranges the mushaf can't fold into one — so every day is an array.
+// One entry per day. A forward day is always a single range — it reads straight through
+// ختام السورة. عكس اتجاه المصحف is what needs the array: a day there can hold آخر صفحة
+// السجدة + أول صفحة لقمان, two ranges the mushaf can't fold into one.
 export function expandPlan(
   startKey: string,
   dailyAmount: number,
@@ -134,7 +112,7 @@ export function expandPlan(
   activeDayCount: number,
   options: ExpandPlanOptions = {}
 ): VerseRange[][] {
-  const { direction = 'asc', keepWithinSurah = true } = options
+  const { direction = 'asc' } = options
   const bg = boundaries.map(verseKeyToGlobal).sort((a, b) => a - b)
   if (bg.length === 0 || activeDayCount <= 0) return []
 
@@ -142,19 +120,18 @@ export function expandPlan(
 
   if (direction === 'desc') return expandReverse(startKey, amount, bg, activeDayCount)
 
+  // Every day is one continuous slice of exactly `amount` units, counted straight
+  // through ختام السورة — the mushaf's own order, which is how the student reads it.
+  // يوم ختم التوبة هو "آخر صفحة التوبة + أول صفحتين من يونس" في جلسة واحدة: three pages,
+  // one session. Stopping the day at the surah's edge instead would either cut the
+  // مقدار short or split it in two, and the teacher asked for neither.
   const days: VerseRange[][] = []
   let cursor = verseKeyToGlobal(startKey)
   for (let day = 0; day < activeDayCount; day++) {
     if (cursor > TOTAL_VERSES) break
     const startG = cursor
-    const unitIdx = lastBoundaryAtOrBefore(bg, startG)
-    const nextIdx = unitIdx + amount
-    let endG = nextIdx < bg.length ? bg[nextIdx]! - 1 : TOTAL_VERSES
-    const startSurah = globalToVerse(startG).surah
-    if (keepWithinSurah && surahHoldsWholeUnit(bg, startSurah)) {
-      endG = Math.min(endG, surahEndGlobal(startSurah))
-    }
-    endG = Math.min(endG, TOTAL_VERSES)
+    const nextIdx = lastBoundaryAtOrBefore(bg, startG) + amount
+    const endG = Math.min(nextIdx < bg.length ? bg[nextIdx]! - 1 : TOTAL_VERSES, TOTAL_VERSES)
     days.push([rangeOf(startG, endG)])
     cursor = endG + 1
   }

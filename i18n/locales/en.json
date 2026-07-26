@@ -1286,7 +1286,8 @@
         "fileName": "memorization-plan",
         "empty": "This plan has no sessions to print",
         "error": "Could not generate the PDF",
-        "errorImage": "Could not generate the image"
+        "errorImage": "Could not generate the image",
+        "preparing": "Preparing the plan files…"
       },
       "weekOf": "Week of {date}",
       "selectStudent": "Select a student",

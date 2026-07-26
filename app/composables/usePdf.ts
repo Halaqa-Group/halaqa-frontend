@@ -74,15 +74,65 @@ export interface SharePngOptions extends ExportPngOptions {
  */
 export type ShareResult = 'shared' | 'cancelled' | 'unsupported'
 
+/**
+ * Both export formats produced from a single capture, ready to hand to
+ * {@link UsePdf.saveBlob} / {@link UsePdf.shareBlob} the instant a button is
+ * clicked. See {@link UsePdf.renderExports} for why they are rendered ahead of
+ * time rather than on click.
+ */
+export interface PreparedExports {
+  /** The capture as a PNG image (`image/png`). */
+  png: Blob
+  /** The capture placed on a paper-sized page (`application/pdf`). */
+  pdf: Blob
+}
+
+/** Share-sheet metadata for {@link UsePdf.shareBlob}. */
+export interface ShareBlobOptions {
+  /** File name, extension included — what the receiving app sees. */
+  fileName: string
+  /** Title passed to the share sheet. */
+  title?: string
+  /** Message body passed to the share sheet — becomes the WhatsApp caption. */
+  text?: string
+}
+
 export interface UsePdf {
-  /** Export the element carrying the given `id` to a downloaded PDF. */
+  /**
+   * Render both export formats from ONE off-screen capture, without touching
+   * the filesystem or the share sheet.
+   *
+   * Call this ahead of the user's click (e.g. when a print dialog opens) and
+   * keep the result: Safari — desktop *and* iOS — only permits a download or
+   * `navigator.share()` while the page holds a **transient user activation**,
+   * which a multi-second html2canvas capture destroys. Rendering up-front keeps
+   * the click handler synchronous, so the activation is still valid.
+   */
+  renderExports: (elementId: string, options?: ExportPdfOptions) => Promise<PreparedExports>
+  /**
+   * Save a blob as `fileName`. Synchronous on purpose — call it directly from a
+   * click handler, before any `await`, or Safari will silently drop the download.
+   */
+  saveBlob: (blob: Blob, fileName: string) => void
+  /** Whether this browser can share `blob` as a file. Synchronous, so a click handler can branch without awaiting. */
+  canShareBlob: (blob: Blob, fileName: string) => boolean
+  /**
+   * Offer a blob to the native share sheet as a file (WhatsApp, Telegram, …).
+   * Call it as the first statement of a click handler — see {@link renderExports}.
+   */
+  shareBlob: (blob: Blob, options: ShareBlobOptions) => Promise<ShareResult>
+  /**
+   * Capture + download a PDF in one go. Convenient, but the download fires after
+   * the capture, so **Safari blocks it** — prefer {@link renderExports} +
+   * {@link saveBlob} anywhere iOS/macOS users are expected.
+   */
   exportPdf: (elementId: string, options?: ExportPdfOptions) => Promise<void>
-  /** Export the element carrying the given `id` to a downloaded PNG image. */
+  /** Capture + download a PNG. Same Safari caveat as {@link exportPdf}. */
   exportPng: (elementId: string, options?: ExportPngOptions) => Promise<void>
   /**
    * Capture the element as a PNG and offer it to the native share sheet as a
-   * file (WhatsApp, Telegram, …). Only sends the image on browsers that support
-   * sharing files — returns `unsupported` otherwise so the caller can fall back.
+   * file. Same Safari caveat as {@link exportPdf} — WebKit rejects a `share()`
+   * that follows the capture with `NotAllowedError`.
    */
   sharePng: (elementId: string, options?: SharePngOptions) => Promise<ShareResult>
   /** True while a capture/render is in flight — bind to a button's `:loading`. */
@@ -102,6 +152,14 @@ const PX_TO_MM = MM_PER_INCH / CSS_DPI
  * its full millimetre size, only the DPI drops, and only for very tall plans.
  */
 const MAX_CANVAS_PIXELS = 16_777_216
+
+/**
+ * Hard stop for a single capture. html2canvas has no internal timeout: on WebKit
+ * it awaits every image in the *whole cloned document* before rendering, so one
+ * request that never settles hangs the promise forever — which reaches the user
+ * as a button that does nothing at all. Failing loudly is far easier to debug.
+ */
+const CAPTURE_TIMEOUT_MS = 30_000
 
 /** A capture rasterised off-screen, plus the natural (unscaled) CSS box it came from. */
 interface CaptureResult {
@@ -192,7 +250,15 @@ export function usePdf(): UsePdf {
       const maxScale = area > 0 ? Math.sqrt(MAX_CANVAS_PIXELS / area) : scale
       const safeScale = Math.max(1, Math.min(scale, maxScale))
 
-      const canvas = await html2canvas(clone, {
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`usePdf: capture timed out after ${CAPTURE_TIMEOUT_MS} ms`)),
+          CAPTURE_TIMEOUT_MS
+        )
+      })
+
+      const rendering = html2canvas(clone, {
         scale: safeScale,
         backgroundColor: background,
         useCORS: true,
@@ -222,34 +288,143 @@ export function usePdf(): UsePdf {
         }
       })
 
+      const canvas = await Promise.race([rendering, timeout]).finally(() => clearTimeout(timer))
+
       return { canvas, widthPx, heightPx }
     } finally {
       stage.remove()
     }
   }
 
-  /** Save a canvas as a PNG file. Uses a Blob URL — mobile Safari chokes on huge data URLs. */
-  async function downloadCanvas(canvas: HTMLCanvasElement, fileName: string): Promise<void> {
-    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
-    const href = blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png')
+  /** Decode a `data:` URL into a Blob without a network round-trip (CSP-safe). */
+  function dataUrlToBlob(dataUrl: string): Blob {
+    const [header = '', base64 = ''] = dataUrl.split(',')
+    const mime = /:(.*?);/.exec(header)?.[1] ?? 'image/png'
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    return new Blob([bytes], { type: mime })
+  }
 
+  /** Canvas → PNG blob, falling back to the data URL when `toBlob` yields null (large canvases on iOS). */
+  async function canvasToPngBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
+    return blob ?? dataUrlToBlob(canvas.toDataURL('image/png'))
+  }
+
+  /** Place a capture on a paper-sized jsPDF page and return it as a blob. */
+  function canvasToPdfBlob(
+    canvas: HTMLCanvasElement,
+    layout: {
+      widthPx: number
+      format: string | [number, number]
+      orientation: 'portrait' | 'landscape'
+      margin: number
+      verticalAlign: 'top' | 'center'
+    }
+  ): Blob {
+    const { widthPx, format, orientation, margin, verticalAlign } = layout
+
+    const pdf = new jsPDF({ orientation, unit: 'mm', format, compress: true })
+    const pageWidth = pdf.internal.pageSize.getWidth()
+    const pageHeight = pdf.internal.pageSize.getHeight()
+
+    // Fit the capture to the printable width, preserving aspect ratio. The
+    // millimetre size comes from the off-screen clone's natural box, so a phone
+    // export lands on paper at exactly the desktop size.
+    const usableWidth = pageWidth - margin * 2
+    const naturalWidthMm = widthPx * PX_TO_MM
+    const renderWidth = Math.min(usableWidth, naturalWidthMm)
+    const renderHeight = (canvas.height / canvas.width) * renderWidth
+
+    const x = margin + (usableWidth - renderWidth) / 2
+    const y = verticalAlign === 'center'
+      ? Math.max(margin, (pageHeight - renderHeight) / 2)
+      : margin
+
+    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, renderWidth, renderHeight, undefined, 'FAST')
+
+    // `output('blob')` instead of `save()`: jsPDF's bundled saveAs clicks an
+    // anchor that is never inserted into the document, from inside a
+    // `setTimeout(…, 0)`. WebKit ignores such a download — silently. We hand the
+    // blob to `saveBlob` from the click handler instead.
+    return pdf.output('blob')
+  }
+
+  /**
+   * Trigger a file download. Deliberately synchronous: Safari (macOS and iOS)
+   * only performs a programmatic download while the page holds a transient user
+   * activation, and any `await` before this call gives that away. The anchor is
+   * also inserted into the document — WebKit ignores clicks on detached nodes.
+   */
+  function saveBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
-    link.download = `${fileName}.png`
-    link.href = href
+    link.href = url
+    link.download = fileName
     link.rel = 'noopener'
-    // Safari only honours a click on a node that is actually in the document.
+    link.style.display = 'none'
     document.body.appendChild(link)
     link.click()
     link.remove()
-
-    if (blob) setTimeout(() => URL.revokeObjectURL(href), 60_000)
+    // Revoked late: iOS starts reading the blob after the handler returns.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000)
   }
 
-  async function exportPdf(elementId: string, options: ExportPdfOptions = {}): Promise<void> {
-    if (!import.meta.client) return
+  /**
+   * The share-capable slice of `navigator`, or null. `lib.dom` declares
+   * `share`/`canShare` as always present, but they are genuinely missing on
+   * desktop browsers and on any non-secure origin — hence the `typeof` probes.
+   */
+  function shareApi(): (Navigator & { canShare?: (data?: ShareData) => boolean }) | null {
+    if (!import.meta.client) return null
+    const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
+    return typeof nav.share === 'function' && typeof nav.canShare === 'function' ? nav : null
+  }
 
+  function canShareBlob(blob: Blob, fileName: string): boolean {
+    const nav = shareApi()
+    if (!nav) {
+      // A non-secure origin (plain http://…, e.g. a phone hitting the dev server
+      // over the LAN) hides the whole Web Share API. Worth saying out loud —
+      // otherwise "share does nothing" looks like an app bug.
+      if (import.meta.client && !window.isSecureContext) {
+        console.warn('usePdf: Web Share is unavailable because the page is not a secure context (https/localhost).')
+      }
+      return false
+    }
+    return nav.canShare?.({ files: [new File([blob], fileName, { type: blob.type || 'image/png' })] }) ?? false
+  }
+
+  async function shareBlob(blob: Blob, options: ShareBlobOptions): Promise<ShareResult> {
+    const { fileName, title, text } = options
+    const nav = shareApi()
+    if (!nav) return 'unsupported'
+
+    const file = new File([blob], fileName, { type: blob.type || 'image/png' })
+    if (!nav.canShare?.({ files: [file] })) return 'unsupported'
+
+    // Some WebKit builds reject a payload that mixes files with title/text, so
+    // fall back to sharing the file alone rather than failing outright.
+    const full: ShareData = { files: [file], title, text }
+    const payload = nav.canShare?.(full) ? full : { files: [file] }
+
+    try {
+      await nav.share(payload)
+      return 'shared'
+    } catch (err) {
+      // The user dismissing the share sheet rejects with AbortError — that's a
+      // normal outcome, not a failure the caller should report.
+      if (err instanceof DOMException && err.name === 'AbortError') return 'cancelled'
+      throw err
+    }
+  }
+
+  async function renderExports(
+    elementId: string,
+    options: ExportPdfOptions = {}
+  ): Promise<PreparedExports> {
     const {
-      fileName = 'document',
       format = 'a4',
       orientation = 'portrait',
       scale = 3,
@@ -265,103 +440,51 @@ export function usePdf(): UsePdf {
 
     isExporting.value = true
     try {
-      const { canvas, widthPx, heightPx } = await capture(elementId, { scale, background, wordSpacing })
-
-      const pdf = new jsPDF({ orientation, unit: 'mm', format, compress: true })
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-
-      // Fit the capture to the printable width, preserving aspect ratio. The
-      // millimetre size comes from the off-screen clone's natural box, so a phone
-      // export lands on paper at exactly the desktop size.
-      const usableWidth = pageWidth - margin * 2
-      const naturalWidthMm = widthPx * PX_TO_MM
-      const naturalHeightMm = heightPx * PX_TO_MM
-      const renderWidth = Math.min(usableWidth, naturalWidthMm)
-      const renderHeight = (canvas.height / canvas.width) * renderWidth
-
-      const x = margin + (usableWidth - renderWidth) / 2
-      const y = verticalAlign === 'center'
-        ? Math.max(margin, (pageHeight - renderHeight) / 2)
-        : margin
-
-      const image = canvas.toDataURL('image/png')
-      pdf.addImage(image, 'PNG', x, y, renderWidth, renderHeight, undefined, 'FAST')
-      pdf.save(`${fileName}.pdf`)
-
-      // naturalHeightMm is exposed for callers that want to validate the block
-      // truly fits the requested paper region; unused here but cheap to compute.
-      void naturalHeightMm
-    } finally {
-      isExporting.value = false
-    }
-  }
-
-  async function exportPng(elementId: string, options: ExportPngOptions = {}): Promise<void> {
-    if (!import.meta.client) return
-
-    const {
-      fileName = 'image',
-      scale = 3,
-      background = '#ffffff',
-      wordSpacing
-    } = options
-
-    // Web fonts must be fully loaded before capture, otherwise html2canvas
-    // rasterises a fallback face with different metrics.
-    if (document.fonts?.ready) await document.fonts.ready
-
-    isExporting.value = true
-    try {
-      const { canvas } = await capture(elementId, { scale, background, wordSpacing })
-      await downloadCanvas(canvas, fileName)
-    } finally {
-      isExporting.value = false
-    }
-  }
-
-  async function sharePng(elementId: string, options: SharePngOptions = {}): Promise<ShareResult> {
-    if (!import.meta.client) return 'unsupported'
-
-    const {
-      fileName = 'image',
-      scale = 3,
-      background = '#ffffff',
-      wordSpacing,
-      title,
-      text
-    } = options
-
-    // Bail out before the expensive capture on browsers with no file sharing
-    // (most desktops). A probe File keeps the `canShare` check honest.
-    const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
-    const probe = new File([''], `${fileName}.png`, { type: 'image/png' })
-    if (!nav.share || !nav.canShare?.({ files: [probe] })) return 'unsupported'
-
-    if (document.fonts?.ready) await document.fonts.ready
-
-    isExporting.value = true
-    try {
-      const { canvas } = await capture(elementId, { scale, background, wordSpacing })
-      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
-      if (!blob) throw new Error('usePdf: canvas.toBlob returned null')
-
-      const file = new File([blob], `${fileName}.png`, { type: 'image/png' })
-      if (!nav.canShare?.({ files: [file] })) return 'unsupported'
-
-      try {
-        await nav.share({ files: [file], title, text })
-        return 'shared'
-      } catch (err) {
-        // The user dismissing the share sheet rejects with AbortError — that's a
-        // normal outcome, not a failure the caller should report.
-        if (err instanceof DOMException && err.name === 'AbortError') return 'cancelled'
-        throw err
+      const { canvas, widthPx } = await capture(elementId, { scale, background, wordSpacing })
+      return {
+        png: await canvasToPngBlob(canvas),
+        pdf: canvasToPdfBlob(canvas, { widthPx, format, orientation, margin, verticalAlign })
       }
     } finally {
       isExporting.value = false
     }
   }
 
-  return { exportPdf, exportPng, sharePng, isExporting }
+  async function exportPdf(elementId: string, options: ExportPdfOptions = {}): Promise<void> {
+    if (!import.meta.client) return
+    const { fileName = 'document' } = options
+    const { pdf } = await renderExports(elementId, options)
+    saveBlob(pdf, `${fileName}.pdf`)
+  }
+
+  async function exportPng(elementId: string, options: ExportPngOptions = {}): Promise<void> {
+    if (!import.meta.client) return
+    const { fileName = 'image' } = options
+    const { png } = await renderExports(elementId, options)
+    saveBlob(png, `${fileName}.png`)
+  }
+
+  async function sharePng(elementId: string, options: SharePngOptions = {}): Promise<ShareResult> {
+    if (!import.meta.client) return 'unsupported'
+
+    const { fileName = 'image', title, text } = options
+
+    // Bail out before the expensive capture on browsers with no file sharing
+    // (most desktops). A probe File keeps the `canShare` check honest.
+    if (!canShareBlob(new Blob([''], { type: 'image/png' }), `${fileName}.png`)) return 'unsupported'
+
+    const { png } = await renderExports(elementId, options)
+    return shareBlob(png, { fileName: `${fileName}.png`, title, text })
+  }
+
+  return {
+    renderExports,
+    saveBlob,
+    canShareBlob,
+    shareBlob,
+    exportPdf,
+    exportPng,
+    sharePng,
+    isExporting
+  }
 }

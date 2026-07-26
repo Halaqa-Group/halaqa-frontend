@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
 import QuranPlan, { type QuranPlanProps } from '~/components/pdf/QuranPlan.vue'
+import type { PreparedExports } from '~/composables/usePdf'
 import { PLAN_PDF_ELEMENT_ID } from '~/utils/plan-pdf'
 
 // Print-preview dialog for a mapped weekly plan. Shows a WYSIWYG, responsively
@@ -12,11 +13,7 @@ const open = defineModel<boolean>('open', { default: false })
 
 const { t } = useI18n()
 const toast = useToast()
-const { exportPdf, exportPng, sharePng } = usePdf()
-
-// Which export is in flight, so each button shows its OWN spinner. The shared
-// `isExporting` from usePdf would light up both buttons at once.
-const exportingKind = ref<'pdf' | 'image' | 'share' | null>(null)
+const { renderExports, saveBlob, canShareBlob, shareBlob } = usePdf()
 
 const hasRows = computed(() => props.plan.rows.length > 0)
 
@@ -30,61 +27,94 @@ const previewHeight = computed(() => PLAN_H_PX * scale.value)
 
 const fileName = computed(() => `${t('pages.planner.print.fileName')}-${props.plan.studentName}`)
 
-async function download() {
-  if (exportingKind.value) return
-  exportingKind.value = 'pdf'
+// ── Pre-rendered exports ──────────────────────────────────────────────────
+// Both files are rendered as soon as the dialog opens, NOT when a button is
+// clicked. Safari (macOS + iOS) only allows a download or `navigator.share()`
+// while the page holds a transient user activation, and the multi-second
+// html2canvas capture consumed it — which is why every button silently did
+// nothing there. With the blobs ready, each handler stays synchronous.
+const exports = shallowRef<PreparedExports | null>(null)
+const isPreparing = ref(false)
+// The share sheet is busy until the user picks a target / dismisses it.
+const isSharing = ref(false)
+
+const isReady = computed(() => exports.value !== null)
+
+async function prepareExports() {
+  if (!hasRows.value) return
+  isPreparing.value = true
   try {
-    await exportPdf(PLAN_PDF_ELEMENT_ID, {
-      fileName: fileName.value,
+    // Let the modal body (and the plan inside it) commit to the DOM first.
+    await nextTick()
+    exports.value = await renderExports(PLAN_PDF_ELEMENT_ID, {
       scale: 3,
       wordSpacing: '0.18em'
     })
-  } catch {
+  } catch (err) {
+    // Surfaced immediately rather than on click: a failed capture is the one
+    // case where the buttons genuinely cannot work, and the console detail is
+    // what makes a device-specific failure debuggable.
+    console.error('[PrintDialog] could not prepare the plan exports', err)
     toast.add({ title: t('pages.planner.print.error'), color: 'error' })
   } finally {
-    exportingKind.value = null
+    isPreparing.value = false
   }
 }
 
-async function downloadImage() {
-  if (exportingKind.value) return
-  exportingKind.value = 'image'
-  try {
-    await exportPng(PLAN_PDF_ELEMENT_ID, {
-      fileName: fileName.value,
-      scale: 3,
-      wordSpacing: '0.18em'
-    })
-  } catch {
-    toast.add({ title: t('pages.planner.print.errorImage'), color: 'error' })
-  } finally {
-    exportingKind.value = null
-  }
+// Re-render whenever the dialog opens or the plan behind it changes.
+watch(
+  () => [open.value, props.plan] as const,
+  ([isOpen]) => {
+    exports.value = null
+    if (isOpen) void prepareExports()
+  },
+  { deep: true, flush: 'post' }
+)
+
+// NOTE: every handler below must reach `saveBlob`/`shareBlob` without awaiting
+// anything first — see the comment on `exports`.
+
+function download() {
+  const blob = exports.value?.pdf
+  if (!blob) return
+  saveBlob(blob, `${fileName.value}.pdf`)
+}
+
+function downloadImage() {
+  const blob = exports.value?.png
+  if (!blob) return
+  saveBlob(blob, `${fileName.value}.png`)
 }
 
 // Share the plan image itself via the native share sheet — on a phone that lists
-// WhatsApp for a one-tap send. Desktop browsers can't share files, so we fall back
-// to downloading the PNG for the teacher to attach manually.
-async function shareWhatsApp() {
-  if (exportingKind.value) return
-  exportingKind.value = 'share'
-  try {
-    const result = await sharePng(PLAN_PDF_ELEMENT_ID, {
-      fileName: fileName.value,
-      scale: 3,
-      wordSpacing: '0.18em',
-      title: t('pages.planner.print.shareTitle'),
-      text: t('pages.planner.print.shareText', { student: props.plan.studentName })
-    })
-    if (result === 'unsupported') {
-      await exportPng(PLAN_PDF_ELEMENT_ID, { fileName: fileName.value, scale: 3, wordSpacing: '0.18em' })
-      toast.add({ title: t('pages.planner.print.shareFallback'), color: 'info' })
-    }
-  } catch {
-    toast.add({ title: t('pages.planner.print.shareError'), color: 'error' })
-  } finally {
-    exportingKind.value = null
+// WhatsApp for a one-tap send. Browsers without file sharing (most desktops, and
+// any page served over plain http) fall back to downloading the PNG so the
+// teacher can attach it manually.
+function shareWhatsApp() {
+  const blob = exports.value?.png
+  if (!blob || isSharing.value) return
+  const name = `${fileName.value}.png`
+
+  // Checked synchronously so the fallback download still runs inside the click.
+  if (!canShareBlob(blob, name)) {
+    saveBlob(blob, name)
+    toast.add({ title: t('pages.planner.print.shareFallback'), color: 'info' })
+    return
   }
+
+  isSharing.value = true
+  shareBlob(blob, {
+    fileName: name,
+    title: t('pages.planner.print.shareTitle'),
+    text: t('pages.planner.print.shareText', { student: props.plan.studentName })
+  })
+    .catch((err) => {
+      console.error('[PrintDialog] share failed', err)
+      toast.add({ title: t('pages.planner.print.shareError'), color: 'error' })
+    })
+    .finally(() => {
+      isSharing.value = false
+    })
 }
 </script>
 
@@ -101,6 +131,10 @@ async function shareWhatsApp() {
             <QuranPlan v-bind="plan" />
           </div>
         </div>
+        <p v-if="isPreparing" class="flex items-center gap-2 text-sm text-muted">
+          <UIcon name="i-lucide-loader-circle" class="w-4 h-4 animate-spin" />
+          {{ t('pages.planner.print.preparing') }}
+        </p>
       </div>
       <div v-else class="flex flex-col items-center gap-3 py-10 text-center">
         <UIcon name="i-lucide-file-x" class="w-10 h-10 text-muted" />
@@ -130,13 +164,13 @@ async function shareWhatsApp() {
           color="success"
           variant="soft"
           class="w-full sm:w-auto justify-center"
-          :loading="exportingKind === 'share'"
-          :disabled="!hasRows || exportingKind !== null"
+          :loading="isPreparing || isSharing"
+          :disabled="!hasRows || !isReady || isSharing"
           @click="shareWhatsApp"
         >
           <template #leading>
             <svg
-              v-if="exportingKind !== 'share'"
+              v-if="!isPreparing && !isSharing"
               viewBox="0 0 24 24"
               class="w-4 h-4"
               aria-hidden="true"
@@ -154,8 +188,8 @@ async function shareWhatsApp() {
           variant="outline"
           icon="i-lucide-image-down"
           class="w-full sm:w-auto justify-center"
-          :loading="exportingKind === 'image'"
-          :disabled="!hasRows || exportingKind !== null"
+          :loading="isPreparing"
+          :disabled="!hasRows || !isReady"
           @click="downloadImage"
         >
           {{ t('pages.planner.print.downloadImage') }}
@@ -163,8 +197,8 @@ async function shareWhatsApp() {
         <UButton
           icon="i-lucide-download"
           class="w-full sm:w-auto justify-center"
-          :loading="exportingKind === 'pdf'"
-          :disabled="!hasRows || exportingKind !== null"
+          :loading="isPreparing"
+          :disabled="!hasRows || !isReady"
           @click="download"
         >
           {{ t('pages.planner.print.download') }}

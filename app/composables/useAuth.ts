@@ -11,6 +11,8 @@ export interface AuthUser {
   phone?: string | null
   photoUrl?: string | null
   roles: string[]
+  // Stamped when the user consumed a verification link; null while unverified.
+  emailVerifiedAt?: string | null
 }
 
 // PATCH /me — self-edit whitelist. Name parts go up in snake_case; `name` is
@@ -53,6 +55,7 @@ export function useAuth() {
   const user = useState<AuthUser | null>('auth_user', () => null)
   const activeRole = useState<string | null>('auth_active_role', () => null)
   const isLoggedIn = computed(() => !!token.value)
+  const isEmailVerified = computed(() => !!user.value?.emailVerifiedAt)
   const activeRoleStorageKey = computed(() => {
     const userId = user.value?.id
     return userId ? `auth_active_role_${userId}` : null
@@ -142,6 +145,17 @@ export function useAuth() {
     })
   }
 
+  // POST /auth/verify-email/request — authenticated; the backend answers with the
+  // same message whether or not the email is already verified, so nothing leaks.
+  async function requestEmailVerification() {
+    await api('/auth/verify-email/request', { method: 'POST' })
+  }
+
+  // POST /auth/verify-email — public; the raw token arrives in the emailed link.
+  async function verifyEmail(t: string) {
+    await api('/auth/verify-email', { method: 'POST', body: { token: t } })
+  }
+
   async function updateMe(payload: UpdateMePayload): Promise<AuthUser> {
     const updated = await api<AuthUser & { photoUrl: string | null }>('/me', {
       method: 'PATCH',
@@ -157,7 +171,8 @@ export function useAuth() {
       email: updated.email,
       phone: updated.phone ?? null,
       photoUrl: updated.photoUrl ?? null,
-      roles: updated.roles
+      roles: updated.roles,
+      emailVerifiedAt: updated.emailVerifiedAt ?? null
     }
     return user.value
   }
@@ -189,12 +204,15 @@ export function useAuth() {
     user,
     activeRole,
     isLoggedIn,
+    isEmailVerified,
     login,
     fetchMe,
     logout,
     forgotPassword,
     validateResetToken,
     resetPassword,
+    requestEmailVerification,
+    verifyEmail,
     updateMe,
     changePassword,
     listSessions,

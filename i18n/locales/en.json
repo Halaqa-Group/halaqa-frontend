@@ -122,6 +122,19 @@
       "requestNew": "Request a new link",
       "successToast": "Password updated. You can sign in with your new password."
     },
+    "verifyEmail": {
+      "verifying": "Verifying your email...",
+      "successTitle": "Email verified",
+      "successDescription": "Your email address is now confirmed.",
+      "successDescriptionFor": "{email} is now confirmed.",
+      "continue": "Continue to the app",
+      "failedTitle": "This link is no longer valid",
+      "failedDescription": "Verification links expire after 24 hours and can only be used once.",
+      "resend": "Send a new link",
+      "resendIn": "Send a new link ({seconds}s)",
+      "resentToast": "A verification link has been sent to your email.",
+      "signInToResend": "Sign in and request a new link from your profile page."
+    },
     "users": {
       "title": "User management",
       "subtitle": "Add, edit, deactivate, and reset passwords for everyone in your school.",
@@ -210,6 +223,13 @@
         "emailHint": "Email cannot be changed. Contact an administrator if you need to update it.",
         "saveButton": "Save changes",
         "savedToast": "Profile updated"
+      },
+      "email": {
+        "verified": "Verified",
+        "unverified": "Not verified",
+        "verifiedOn": "Verified on {date}",
+        "unverifiedTitle": "Your email is not verified",
+        "unverifiedDescription": "Send yourself a link to confirm you own this address. The link is valid for 24 hours."
       },
       "securityCard": {
         "title": "Change password",

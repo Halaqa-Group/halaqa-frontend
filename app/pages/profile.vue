@@ -6,7 +6,7 @@ definePageMeta({
 })
 
 const { t } = useI18n()
-const { user } = useAuth()
+const { user, isEmailVerified } = useAuth()
 
 const tab = ref('profile')
 const tabs = computed<TabsItem[]>(() => [
@@ -41,9 +41,20 @@ const roleLabels = computed(() => (user.value?.roles ?? []).map(r => t(`roles.${
         <h3 class="text-lg font-bold text-highlighted">
           {{ user?.name }}
         </h3>
-        <p class="text-sm text-muted" dir="ltr">
-          {{ user?.email }}
-        </p>
+        <div class="flex items-center gap-2 flex-wrap">
+          <p class="text-sm text-muted" dir="ltr">
+            {{ user?.email }}
+          </p>
+          <UBadge
+            v-if="user"
+            :color="isEmailVerified ? 'success' : 'warning'"
+            variant="soft"
+            size="sm"
+            :icon="isEmailVerified ? 'i-lucide-badge-check' : 'i-lucide-badge-alert'"
+          >
+            {{ isEmailVerified ? $t('pages.profile.email.verified') : $t('pages.profile.email.unverified') }}
+          </UBadge>
+        </div>
         <div v-if="roleLabels.length" class="flex flex-wrap gap-1.5 mt-2">
           <UBadge v-for="r in roleLabels" :key="r" color="primary" variant="soft" size="sm">
             {{ r }}

@@ -3,10 +3,19 @@ import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { NAME_PART_MAX_LENGTH } from '~/data/constants'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
-const { user, updateMe } = useAuth()
+const { user, updateMe, isEmailVerified } = useAuth()
+const { sending, cooldown, resend, resendLabel } = useEmailVerification()
 const apiError = useApiError()
+
+const verifiedOn = computed(() => {
+  const iso = user.value?.emailVerifiedAt
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString(locale.value === 'ar' ? 'ar-SA' : 'en-US', {
+    dateStyle: 'medium'
+  })
+})
 
 // PATCH /me takes the four name parts; the display name is derived server-side.
 const NAME_PART_FIELDS = [
@@ -102,7 +111,33 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
 
       <UFormField :label="$t('label.email_address')" :hint="$t('pages.profile.profileCard.emailHint')">
         <UInput :model-value="user?.email ?? ''" disabled dir="ltr" />
+        <template #help>
+          <span v-if="isEmailVerified" class="inline-flex items-center gap-1 text-success">
+            <UIcon name="i-lucide-badge-check" />
+            {{ $t('pages.profile.email.verifiedOn', { date: verifiedOn }) }}
+          </span>
+        </template>
       </UFormField>
+
+      <UAlert
+        v-if="user && !isEmailVerified"
+        color="warning"
+        variant="soft"
+        icon="i-lucide-badge-alert"
+        :title="$t('pages.profile.email.unverifiedTitle')"
+        :description="$t('pages.profile.email.unverifiedDescription')"
+      >
+        <template #actions>
+          <UButton
+            color="warning"
+            size="sm"
+            :label="resendLabel"
+            :loading="sending"
+            :disabled="cooldown > 0"
+            @click="resend"
+          />
+        </template>
+      </UAlert>
 
       <UFormField :label="$t('label.phone')" name="phone">
         <UInput v-model="state.phone" dir="ltr" placeholder="+970599123456" />

@@ -20,11 +20,14 @@ function createClient(): ApiClient {
     baseURL: config.public.apiBase as string,
     credentials: 'include',
     onRequest({ options }) {
-      if (token.value) {
-        const headers = new Headers(options.headers)
-        headers.set('Authorization', `Bearer ${token.value}`)
-        options.headers = headers
-      }
+      const headers = new Headers(options.headers)
+      if (token.value) headers.set('Authorization', `Bearer ${token.value}`)
+      // The backend negotiates the language of the emails it sends (verification,
+      // password reset) from this header — read live so a locale switch applies
+      // to the very next request, not just to clients created after it.
+      const locale = currentLocale()
+      if (locale) headers.set('Accept-Language', locale)
+      options.headers = headers
     },
     onResponseError({ request, response }) {
       if (import.meta.client && response.status === 400) {
@@ -83,6 +86,15 @@ function createClient(): ApiClient {
   }
 
   return Object.assign(api, { lastWarnings }) as ApiClient
+}
+
+/**
+ * `useApi()` may be called outside a component setup, so reach for the locale
+ * through the Nuxt app rather than `useI18n()`.
+ */
+function currentLocale(): string | null {
+  const i18n = useNuxtApp().$i18n as { locale?: Ref<string> } | undefined
+  return i18n?.locale?.value ?? null
 }
 
 function unwrap<T>(raw: unknown, lastWarnings: Ref<string[]>): T {

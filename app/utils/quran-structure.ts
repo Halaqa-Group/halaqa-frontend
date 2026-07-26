@@ -94,11 +94,13 @@ export type PlanDirection = 'asc' | 'desc'
 
 export interface ExpandPlanOptions {
   direction?: PlanDirection
-  // A day never mixes two surahs: it stops at the surah's edge and the next day
-  // opens the neighbouring surah. Without it a 2-page day starting in السجدة
-  // spills a page of الأحزاب (or لقمان when descending) into the same day.
+  // `asc` only. A forward day never mixes two surahs: it stops at the surah's edge
+  // and the next day opens the following surah. Without it a 2-page day starting in
+  // السجدة spills a page of الأحزاب into the same day.
   //
-  // It never overrides نوع المقدار though — see `surahHoldsWholeUnit`.
+  // It never overrides نوع المقدار though — see `surahHoldsWholeUnit`. `desc` ignores
+  // it: عكس اتجاه المصحف walks the daily amount continuously across surah edges (a
+  // day can hold آخر صفحة السجدة + أول صفحة لقمان) — see `expandReverse`.
   keepWithinSurah?: boolean
 }
 
@@ -116,65 +118,100 @@ function surahHoldsWholeUnit(sortedGlobals: number[], surah: number): boolean {
   return unitEnd <= surahEnd
 }
 
+function rangeOf(startG: number, endG: number): VerseRange {
+  const start = globalToVerse(startG)
+  const end = globalToVerse(endG)
+  return { start_surah: start.surah, start_verse: start.verse, end_surah: end.surah, end_verse: end.verse }
+}
+
+// One entry per day. A day is usually a single range, but عكس اتجاه المصحف can hand
+// back a day that straddles a surah boundary (آخر صفحة السجدة + أول صفحة لقمان) — two
+// non-contiguous ranges the mushaf can't fold into one — so every day is an array.
 export function expandPlan(
   startKey: string,
   dailyAmount: number,
   boundaries: string[],
   activeDayCount: number,
   options: ExpandPlanOptions = {}
-): VerseRange[] {
+): VerseRange[][] {
   const { direction = 'asc', keepWithinSurah = true } = options
   const bg = boundaries.map(verseKeyToGlobal).sort((a, b) => a - b)
   if (bg.length === 0 || activeDayCount <= 0) return []
 
   const amount = Math.max(1, dailyAmount)
-  const ranges: VerseRange[] = []
+
+  if (direction === 'desc') return expandReverse(startKey, amount, bg, activeDayCount)
+
+  const days: VerseRange[][] = []
   let cursor = verseKeyToGlobal(startKey)
-
-  function push(startG: number, endG: number) {
-    const start = globalToVerse(startG)
-    const end = globalToVerse(endG)
-    ranges.push({
-      start_surah: start.surah,
-      start_verse: start.verse,
-      end_surah: end.surah,
-      end_verse: end.verse
-    })
-  }
-
   for (let day = 0; day < activeDayCount; day++) {
-    if (direction === 'asc') {
-      if (cursor > TOTAL_VERSES) break
-      const startG = cursor
-      const unitIdx = lastBoundaryAtOrBefore(bg, startG)
-      const nextIdx = unitIdx + amount
-      let endG = nextIdx < bg.length ? bg[nextIdx]! - 1 : TOTAL_VERSES
-      const startSurah = globalToVerse(startG).surah
-      if (keepWithinSurah && surahHoldsWholeUnit(bg, startSurah)) {
-        endG = Math.min(endG, surahEndGlobal(startSurah))
-      }
-      endG = Math.min(endG, TOTAL_VERSES)
-      push(startG, endG)
-      cursor = endG + 1
-    } else {
-      // Walking backwards: the cursor is the *end* of the day, and the day grows
-      // towards the beginning of the mushaf.
-      if (cursor < 1) break
-      const endG = cursor
-      const unitIdx = lastBoundaryAtOrBefore(bg, endG)
-      const firstIdx = unitIdx - (amount - 1)
-      let startG = firstIdx >= 0 ? bg[firstIdx]! : 1
-      const endSurah = globalToVerse(endG).surah
-      if (keepWithinSurah && surahHoldsWholeUnit(bg, endSurah)) {
-        startG = Math.max(startG, surahStartGlobal(endSurah))
-      }
-      startG = Math.max(startG, 1)
-      push(startG, endG)
-      cursor = startG - 1
+    if (cursor > TOTAL_VERSES) break
+    const startG = cursor
+    const unitIdx = lastBoundaryAtOrBefore(bg, startG)
+    const nextIdx = unitIdx + amount
+    let endG = nextIdx < bg.length ? bg[nextIdx]! - 1 : TOTAL_VERSES
+    const startSurah = globalToVerse(startG).surah
+    if (keepWithinSurah && surahHoldsWholeUnit(bg, startSurah)) {
+      endG = Math.min(endG, surahEndGlobal(startSurah))
     }
+    endG = Math.min(endG, TOTAL_VERSES)
+    days.push([rangeOf(startG, endG)])
+    cursor = endG + 1
+  }
+  return days
+}
+
+// عكس اتجاه المصحف: السور تُزار تنازليًا (السجدة ← لقمان ← الروم) لكن كل سورة تُحفظ
+// للأمام من أول آية — وهي طريقة "من الآخر" المعتادة. المقدار اليومي يُقتطع متصلاً عبر
+// حدود السور، فقد يجمع اليوم آخر صفحة من سورة وأول صفحة من التي قبلها؛ عندها يُمثَّل
+// اليوم بنطاقين لأن الآيتين غير متجاورتين في المصحف.
+function expandReverse(
+  startKey: string,
+  amount: number,
+  bg: number[],
+  activeDayCount: number
+): VerseRange[][] {
+  const start = globalToVerse(verseKeyToGlobal(startKey))
+  const startG = verseToGlobal(start.surah, start.verse)
+  const needed = amount * activeDayCount
+
+  // A flat, forward-ordered page list walking from the anchor surah down to
+  // الفاتحة. Every surah opens a fresh page at its first ayah (a page shared across a
+  // surah edge is split there), so a page — and therefore a day — always ends on a
+  // page boundary. This is the slight flex in page size the teacher asked for.
+  const units: { startG: number, endG: number }[] = []
+  for (let s = start.surah; s >= 1 && units.length < needed; s--) {
+    const sStart = s === start.surah ? startG : surahStartGlobal(s)
+    const sEnd = surahEndGlobal(s)
+    let prev = sStart
+    for (const g of bg) {
+      if (g <= sStart || g > sEnd) continue
+      units.push({ startG: prev, endG: g - 1 })
+      prev = g
+    }
+    units.push({ startG: prev, endG: sEnd })
   }
 
-  return ranges
+  const days: VerseRange[][] = []
+  for (let day = 0; day < activeDayCount; day++) {
+    const dayUnits = units.slice(day * amount, day * amount + amount)
+    if (dayUnits.length === 0) break
+    // Fold consecutive pages of the same surah into one range; a page from the next
+    // surah down opens a new range since its verses aren't contiguous with the last.
+    const ranges: VerseRange[] = []
+    for (const u of dayUnits) {
+      const last = ranges[ranges.length - 1]
+      if (last && verseToGlobal(last.end_surah, last.end_verse) + 1 === u.startG) {
+        const end = globalToVerse(u.endG)
+        last.end_surah = end.surah
+        last.end_verse = end.verse
+      } else {
+        ranges.push(rangeOf(u.startG, u.endG))
+      }
+    }
+    days.push(ranges)
+  }
+  return days
 }
 
 function firstBoundaryAtOrAfter(sortedGlobals: number[], target: number): number {

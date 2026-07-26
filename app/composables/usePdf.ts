@@ -53,11 +53,38 @@ export interface ExportPngOptions {
   wordSpacing?: string
 }
 
+/**
+ * Options for sharing a PNG capture through the native share sheet
+ * ({@link https://developer.mozilla.org/docs/Web/API/Navigator/share Web Share API}).
+ * Extends {@link ExportPngOptions} with the share-sheet metadata.
+ */
+export interface SharePngOptions extends ExportPngOptions {
+  /** Title passed to the share sheet. */
+  title?: string
+  /** Message body passed to the share sheet — becomes the WhatsApp caption. */
+  text?: string
+}
+
+/**
+ * Outcome of {@link UsePdf.sharePng}:
+ * - `shared` — handed to the OS share sheet successfully.
+ * - `cancelled` — the user dismissed the sheet (not an error).
+ * - `unsupported` — this browser can't share files (e.g. most desktops); the
+ *   caller should fall back to a plain download.
+ */
+export type ShareResult = 'shared' | 'cancelled' | 'unsupported'
+
 export interface UsePdf {
   /** Export the element carrying the given `id` to a downloaded PDF. */
   exportPdf: (elementId: string, options?: ExportPdfOptions) => Promise<void>
   /** Export the element carrying the given `id` to a downloaded PNG image. */
   exportPng: (elementId: string, options?: ExportPngOptions) => Promise<void>
+  /**
+   * Capture the element as a PNG and offer it to the native share sheet as a
+   * file (WhatsApp, Telegram, …). Only sends the image on browsers that support
+   * sharing files — returns `unsupported` otherwise so the caller can fall back.
+   */
+  sharePng: (elementId: string, options?: SharePngOptions) => Promise<ShareResult>
   /** True while a capture/render is in flight — bind to a button's `:loading`. */
   isExporting: Ref<boolean>
 }
@@ -211,5 +238,48 @@ export function usePdf(): UsePdf {
     }
   }
 
-  return { exportPdf, exportPng, isExporting }
+  async function sharePng(elementId: string, options: SharePngOptions = {}): Promise<ShareResult> {
+    if (!import.meta.client) return 'unsupported'
+
+    const {
+      fileName = 'image',
+      scale = 3,
+      background = '#ffffff',
+      wordSpacing,
+      title,
+      text
+    } = options
+
+    // Bail out before the expensive capture on browsers with no file sharing
+    // (most desktops). A probe File keeps the `canShare` check honest.
+    const nav = navigator as Navigator & { canShare?: (data?: ShareData) => boolean }
+    const probe = new File([''], `${fileName}.png`, { type: 'image/png' })
+    if (!nav.share || !nav.canShare?.({ files: [probe] })) return 'unsupported'
+
+    if (document.fonts?.ready) await document.fonts.ready
+
+    isExporting.value = true
+    try {
+      const canvas = await capture(elementId, { scale, background, wordSpacing })
+      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
+      if (!blob) throw new Error('usePdf: canvas.toBlob returned null')
+
+      const file = new File([blob], `${fileName}.png`, { type: 'image/png' })
+      if (!nav.canShare?.({ files: [file] })) return 'unsupported'
+
+      try {
+        await nav.share({ files: [file], title, text })
+        return 'shared'
+      } catch (err) {
+        // The user dismissing the share sheet rejects with AbortError — that's a
+        // normal outcome, not a failure the caller should report.
+        if (err instanceof DOMException && err.name === 'AbortError') return 'cancelled'
+        throw err
+      }
+    } finally {
+      isExporting.value = false
+    }
+  }
+
+  return { exportPdf, exportPng, sharePng, isExporting }
 }

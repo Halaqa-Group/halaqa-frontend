@@ -195,11 +195,13 @@ export function useWeeklyPlan() {
 
   const activeDays = computed(() => Array.from({ length: 7 }, (_, i) => i).filter(d => !restDays.has(d)))
 
-  function applyTrackGeneration(track: TrackType, ranges: VerseRange[]) {
+  // `plan` is one entry per day; a day carries one range normally, or more when عكس
+  // اتجاه المصحف straddles a surah edge (آخر صفحة السجدة + أول صفحة لقمان).
+  function applyTrackGeneration(track: TrackType, plan: VerseRange[][]) {
     for (let d = 0; d < 7; d++) clearCell(d, track)
     const days = activeDays.value
-    ranges.forEach((r, i) => {
-      if (i < days.length) setCell(days[i]!, track, r)
+    plan.forEach((ranges, i) => {
+      if (i < days.length) setCellSessions(days[i]!, track, ranges)
     })
   }
 

@@ -29,6 +29,13 @@ function formatDateOnly(iso: string | null): string {
   return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
 }
 
+// wa.me wants the full international number with no `+` and no separators.
+const whatsappUrl = computed(() =>
+  props.student.phoneE164
+    ? `https://wa.me/${props.student.phoneE164.replace(/\D/g, '')}`
+    : null
+)
+
 const ageLabel = computed(() => {
   const dob = props.student.dob
   if (!dob) return null
@@ -71,6 +78,27 @@ const ageLabel = computed(() => {
           </dt>
           <dd class="font-medium tabular-nums" dir="ltr">
             {{ student.idNumber ?? '—' }}
+          </dd>
+        </div>
+        <div class="flex items-center justify-between gap-3 p-4 text-sm">
+          <dt class="text-muted">
+            {{ t('pages.students.viewModal.whatsapp') }}
+          </dt>
+          <dd class="font-medium">
+            <UButton
+              v-if="whatsappUrl"
+              :to="whatsappUrl"
+              target="_blank"
+              rel="noopener"
+              color="success"
+              variant="soft"
+              size="xs"
+              icon="i-lucide-message-circle"
+              class="tabular-nums"
+            >
+              <span dir="ltr">{{ student.phoneE164 }}</span>
+            </UButton>
+            <span v-else>—</span>
           </dd>
         </div>
         <div class="flex items-center justify-between gap-3 p-4 text-sm">

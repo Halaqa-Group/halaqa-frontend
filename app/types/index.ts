@@ -55,6 +55,12 @@ export interface Student {
   gender: 'male' | 'female'
   status: 'active' | 'inactive' | 'graduated'
   idNumber: string | null
+  /** WhatsApp dial code, e.g. `+970`. Null together with `phone`. */
+  phoneCountryCode: string | null
+  /** WhatsApp number without the dial code. */
+  phone: string | null
+  /** Both halves joined — ready for a wa.me link, null when the number is unset. */
+  phoneE164: string | null
   dob: string | null
   joinDate: string
   deletedAt: string | null
@@ -88,6 +94,10 @@ export interface ApiStudent extends ApiPersonName {
   id: number
   gender: 'male' | 'female'
   id_number: string | null
+  phone_country_code: string | null
+  phone: string | null
+  /** Derived server-side from the two fields above; null unless both are set. */
+  phone_e164: string | null
   dob: string | null
   join_date: string
   status: 'active' | 'inactive' | 'graduated'

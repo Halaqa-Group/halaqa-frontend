@@ -4,7 +4,6 @@ import { TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
 import { PLAN_TRACKS, type CreatePlanItemDto } from '~/composables/useWeeklyPlan'
 import { defaultSessionRange } from '~/utils/plan'
 import { SURAH_NAMES } from '~/data/constants'
-import { VERSE_COUNTS } from '~/utils/quran'
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
 type Target = 'this' | 'all' | 'selected'
@@ -36,16 +35,13 @@ interface TrackConfig {
   unit: PlanUnit
   direction: PlanDirection
 }
-// Memorization opens on the student's own `memorization_direction`: `desc` (the
-// API default) is anchored at the last ayah of An-Nas and grows backwards, `asc`
-// at the first ayah of Al-Fatihah. Only the Hifz track exposes the switch — a
-// review track (قريبة/بعيدة) always walks with the mushaf, so it stays on `asc`.
+// Memorization opens on the student's own `memorization_direction`: `desc` (the API
+// default, عكس اتجاه المصحف) anchors at the first ayah of An-Nas and walks surahs
+// downwards reading each forwards; `asc` anchors at Al-Fatihah. Only the Hifz track
+// exposes the switch — a review track (قريبة/بعيدة) always walks with the mushaf.
 function defaults(enabled: boolean, direction: PlanDirection = 'asc'): TrackConfig {
   const range = defaultSessionRange(direction)
-  const anchor = direction === 'desc'
-    ? { surah: range.end_surah, verse: range.end_verse }
-    : { surah: range.start_surah, verse: range.start_verse }
-  return { enabled, surah: anchor.surah, verse: anchor.verse, amount: 1, unit: 'page', direction }
+  return { enabled, surah: range.start_surah, verse: range.start_verse, amount: 1, unit: 'page', direction }
 }
 const config = reactive<Record<TrackType, TrackConfig>>({
   Hifz: defaults(true, selectedStudentDirection.value),
@@ -121,7 +117,7 @@ function keepsWithinSurah(track: TrackType, cfg: TrackConfig): boolean {
   return track === 'Hifz' && SURAH_AWARE_UNITS.includes(cfg.unit)
 }
 
-function expandFor(track: TrackType, cfg: TrackConfig, days: number): VerseRange[] {
+function expandFor(track: TrackType, cfg: TrackConfig, days: number): VerseRange[][] {
   if (!boundariesReady(cfg.unit)) return []
   return expandPlan(`${cfg.surah}:${cfg.verse}`, cfg.amount, boundariesFor(cfg.unit), days, {
     direction: track === 'Hifz' ? cfg.direction : 'asc',
@@ -133,9 +129,9 @@ function setDirection(track: TrackType, dir: PlanDirection) {
   const cfg = config[track]
   if (cfg.direction === dir) return
   cfg.direction = dir
-  // A backwards plan is anchored at the end of the chosen surah and grows towards
-  // the start of the mushaf, so the start ayah follows the direction.
-  cfg.verse = dir === 'desc' ? (VERSE_COUNTS[cfg.surah] || 1) : 1
+  // Both directions read each surah forwards, so the anchor is always its first
+  // ayah — عكس اتجاه المصحف only changes which surah comes next, not the reading order.
+  cfg.verse = 1
 }
 
 function surahName(n: number): string | undefined {
@@ -154,19 +150,20 @@ function ayahLabel(surah: number, verse: number): string {
 }
 
 // What the teacher sees before approving: the exact span the generated week will
-// cover, read in the plan's own direction.
+// cover. Every day is read forwards now — even عكس اتجاه المصحف — so the span runs
+// from the first day's opening ayah to the last day's closing ayah.
 const previews = computed(() => {
   const out: Partial<Record<TrackType, { from: string, to: string, days: number }>> = {}
   for (const track of PLAN_TRACKS as TrackType[]) {
     const cfg = config[track]
     if (!cfg.enabled) continue
-    const ranges = expandFor(track, cfg, activeDays.value.length)
-    const first = ranges[0]
-    const last = ranges[ranges.length - 1]
+    const days = expandFor(track, cfg, activeDays.value.length)
+    const firstDay = days[0]
+    const lastDay = days[days.length - 1]
+    const first = firstDay?.[0]
+    const last = lastDay?.[lastDay.length - 1]
     if (!first || !last) continue
-    out[track] = track !== 'Hifz' || cfg.direction === 'asc'
-      ? { from: ayahLabel(first.start_surah, first.start_verse), to: ayahLabel(last.end_surah, last.end_verse), days: ranges.length }
-      : { from: ayahLabel(first.end_surah, first.end_verse), to: ayahLabel(last.start_surah, last.start_verse), days: ranges.length }
+    out[track] = { from: ayahLabel(first.start_surah, first.start_verse), to: ayahLabel(last.end_surah, last.end_verse), days: days.length }
   }
   return out
 })
@@ -188,17 +185,22 @@ function buildItems(): CreatePlanItemDto[] {
   for (const track of PLAN_TRACKS as TrackType[]) {
     const cfg = config[track]
     if (!cfg.enabled) continue
-    const ranges = expandFor(track, cfg, days.length)
-    ranges.forEach((r, i) => {
+    const plan = expandFor(track, cfg, days.length)
+    plan.forEach((ranges, i) => {
       const day = days[i]
       if (day === undefined) return
-      items.push({
-        day_of_week: day,
-        track_type: track,
-        start_surah: r.start_surah,
-        start_verse: r.start_verse,
-        end_surah: r.end_surah,
-        end_verse: r.end_verse
+      // A straddling عكس اتجاه المصحف day becomes several same-day sessions, ordered
+      // as the mushaf reads them.
+      ranges.forEach((r, order) => {
+        items.push({
+          day_of_week: day,
+          track_type: track,
+          order,
+          start_surah: r.start_surah,
+          start_verse: r.start_verse,
+          end_surah: r.end_surah,
+          end_verse: r.end_verse
+        })
       })
     })
   }
@@ -343,7 +345,7 @@ async function submit() {
               <PlannerAyahSelect
                 v-model:surah="config[track].surah"
                 v-model:verse="config[track].verse"
-                :snap-to="config[track].direction === 'desc' ? 'last' : 'first'"
+                snap-to="first"
               />
             </UFormField>
 

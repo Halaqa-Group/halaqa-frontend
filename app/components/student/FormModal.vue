@@ -5,6 +5,7 @@ import type { CalendarDate } from '@internationalized/date'
 import { DateFormatter, getLocalTimeZone, parseDate, today } from '@internationalized/date'
 import { normalizeDigits } from '~/composables/useValidation'
 import { NAME_PART_MAX_LENGTH } from '~/data/constants'
+import { COUNTRY_DIAL_CODES, DEFAULT_DIAL_CODE, dialCodeFlag } from '~/data/country-dial-codes'
 import type { ApiStudent } from '~/types'
 
 const props = withDefaults(defineProps<{
@@ -33,6 +34,15 @@ const CAPACITY = {
   near: { min: 0, max: 50 },
   far: { min: 0, max: 100 }
 } as const
+
+// National number only — the dial code lives in its own field, and the API caps
+// the two together at E.164's 15 digits.
+const PHONE_DIGITS_PATTERN = /^\d{4,15}$/
+
+/** ASCII digits, no separators, no national trunk zero — what the API stores. */
+function normalizePhone(input: string) {
+  return normalizeDigits(input).replace(/^0+/, '')
+}
 
 // A teacher's PATCH body is limited to capacities + notes; sending bio fields
 // as a teacher is a 400, so lock them rather than let the form submit them.
@@ -83,6 +93,13 @@ const schema = computed(() => {
     gender: z.enum(['male', 'female'] as const),
     status: z.enum(['active', 'inactive', 'graduated'] as const),
     idNumber: palestinianId({ required: !isEditMode.value }),
+    // Optional, but once a number is typed it must be a plausible national
+    // number — the API rejects anything outside 4..15 digits.
+    phoneCountryCode: z.string(),
+    phone: z.string().refine(
+      v => !v || PHONE_DIGITS_PATTERN.test(normalizePhone(v)),
+      { message: t('validation.contact_format') }
+    ),
     dob: z.string(),
     joinDate: z.string(),
     memPages: z.number().min(CAPACITY.hifz.min).max(CAPACITY.hifz.max),
@@ -105,6 +122,8 @@ function emptyState(): StudentForm {
     gender: 'male',
     status: 'active',
     idNumber: '',
+    phoneCountryCode: DEFAULT_DIAL_CODE,
+    phone: '',
     dob: '',
     joinDate: today(getLocalTimeZone()).toString(),
     memPages: 1,
@@ -142,6 +161,15 @@ const genderItems = computed(() => [
   { label: t('pages.students.addModal.genderFemale'), value: 'female' }
 ])
 
+const dialCodeItems = computed(() =>
+  COUNTRY_DIAL_CODES.map(c => ({
+    value: c.dial,
+    // The dial code is LTR text inside an RTL list, so it is bracketed to keep
+    // the sign glued to its digits.
+    label: `${dialCodeFlag(c.iso)} ${locale.value === 'ar' ? c.nameAr : c.nameEn} (${c.dial})`
+  }))
+)
+
 const statusItems = computed(() => [
   { label: t('pages.students.addModal.statusActive'), value: 'active' },
   { label: t('pages.students.addModal.statusInactive'), value: 'inactive' },
@@ -171,6 +199,8 @@ watch(() => props.student, (student) => {
   state.gender = student.gender ?? 'male'
   state.status = student.status
   state.idNumber = student.id_number ?? ''
+  state.phoneCountryCode = student.phone_country_code || DEFAULT_DIAL_CODE
+  state.phone = student.phone ?? ''
   state.dob = student.dob ? student.dob.slice(0, 10) : ''
   state.joinDate = student.join_date ? student.join_date.slice(0, 10) : today(getLocalTimeZone()).toString()
   state.memPages = Number(student.daily_hifz_pages_capacity) || 0
@@ -293,6 +323,19 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
         patch.join_date = state.joinDate
         patch.photo_url = state.photoUrl.trim() || null
 
+        // Both halves travel together or not at all: nulls clear the number,
+        // and the API rejects a dial code with no number behind it.
+        const phone = normalizePhone(state.phone)
+        const nextCode = phone ? state.phoneCountryCode : null
+        const nextPhone = phone || null
+        if (
+          nextCode !== (props.student.phone_country_code ?? null)
+          || nextPhone !== (props.student.phone ?? null)
+        ) {
+          patch.phone_country_code = nextCode
+          patch.phone = nextPhone
+        }
+
         const originalId = props.student.id_number ?? ''
         const currentId = normalizeDigits(state.idNumber)
         const idChanged = currentId !== originalId
@@ -322,6 +365,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       return
     }
 
+    const phone = normalizePhone(state.phone)
     const created = await createStudent({
       first_name: state.firstName.trim(),
       second_name: state.secondName.trim(),
@@ -329,6 +373,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       family_name: state.familyName.trim(),
       gender: state.gender,
       id_number: normalizeDigits(state.idNumber),
+      ...(phone ? { phone_country_code: state.phoneCountryCode, phone } : {}),
       ...(state.dob ? { dob: state.dob } : {}),
       join_date: state.joinDate,
       daily_hifz_pages_capacity: state.memPages,
@@ -467,6 +512,31 @@ watch(modalOpen, (open) => {
               :disabled="lockBio"
               class="w-full"
             />
+          </UFormField>
+          <UFormField
+            :label="t('pages.students.addModal.phone')"
+            name="phone"
+            :hint="t('pages.students.addModal.phoneHint')"
+            class="sm:col-span-2"
+          >
+            <div class="flex gap-2">
+              <USelectMenu
+                v-model="state.phoneCountryCode"
+                :items="dialCodeItems"
+                value-key="value"
+                :search-input="{ placeholder: t('pages.students.addModal.phoneCountrySearch') }"
+                :disabled="lockBio"
+                class="w-56 shrink-0"
+              />
+              <UInput
+                v-model="state.phone"
+                :placeholder="t('pages.students.addModal.phonePlaceholder')"
+                inputmode="tel"
+                dir="ltr"
+                :disabled="lockBio"
+                class="flex-1"
+              />
+            </div>
           </UFormField>
           <UFormField :label="t('pages.students.addModal.dob')" name="dob">
             <UPopover :disabled="lockBio">

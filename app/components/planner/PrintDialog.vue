@@ -111,13 +111,25 @@ async function shareWhatsApp() {
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton color="neutral" variant="ghost" @click="open = false">
+      <!--
+        Phones: one full-width button per line (`flex-col-reverse` keeps the
+        primary PDF action on top and "close" at the bottom), so the Arabic
+        labels stop wrapping into two cramped lines. sm+ keeps the classic
+        right-aligned row.
+      -->
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 w-full">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          class="w-full sm:w-auto justify-center"
+          @click="open = false"
+        >
           {{ t('common.close') }}
         </UButton>
         <UButton
           color="success"
           variant="soft"
+          class="w-full sm:w-auto justify-center"
           :loading="exportingKind === 'share'"
           :disabled="!hasRows || exportingKind !== null"
           @click="shareWhatsApp"
@@ -141,6 +153,7 @@ async function shareWhatsApp() {
           color="neutral"
           variant="outline"
           icon="i-lucide-image-down"
+          class="w-full sm:w-auto justify-center"
           :loading="exportingKind === 'image'"
           :disabled="!hasRows || exportingKind !== null"
           @click="downloadImage"
@@ -149,6 +162,7 @@ async function shareWhatsApp() {
         </UButton>
         <UButton
           icon="i-lucide-download"
+          class="w-full sm:w-auto justify-center"
           :loading="exportingKind === 'pdf'"
           :disabled="!hasRows || exportingKind !== null"
           @click="download"
@@ -174,5 +188,13 @@ async function shareWhatsApp() {
 .qp-preview-scaler {
   transform-origin: top center;
   width: fit-content;
+  /*
+   * `transform: scale()` shrinks the plan visually but NOT its layout box, which
+   * stays a full 210mm wide. As a flex item that box would otherwise be shrunk
+   * to the shell width on a phone, moving `top center` off the plan's real centre
+   * and pushing the preview sideways. Never shrink it — the shell clips the
+   * overflow symmetrically instead.
+   */
+  flex: 0 0 auto;
 }
 </style>

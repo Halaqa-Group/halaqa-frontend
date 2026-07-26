@@ -9,8 +9,9 @@
  * template reusable across students and halaqat.
  *
  * Responsive sizing is the parent's job: wrap this component in a
- * `transform: scale()` container. html2canvas-pro captures the element's own
- * layout box, so ancestor scaling never degrades export resolution.
+ * `transform: scale()` container. That only affects the preview — `usePdf`
+ * rasterises an off-screen, unscaled copy, so a phone export comes out at the
+ * same A5 size and resolution as a desktop one.
  */
 
 export interface QuranPlanRow {

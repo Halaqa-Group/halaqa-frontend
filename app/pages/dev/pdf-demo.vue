@@ -127,5 +127,8 @@ const previewHeight = computed(() => PLAN_H_PX * scale.value)
 .qp-preview-scaler {
   transform-origin: top center;
   width: fit-content;
+  /* Scaling doesn't shrink the layout box; never let flex shrink it either, or
+     `top center` stops matching the plan's real centre on narrow screens. */
+  flex: 0 0 auto;
 }
 </style>

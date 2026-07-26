@@ -161,6 +161,12 @@ const MAX_CANVAS_PIXELS = 16_777_216
  */
 const CAPTURE_TIMEOUT_MS = 30_000
 
+/**
+ * How long to wait for stylesheets that are still downloading. Short: the point
+ * is to lose a race, not to block the UI if a stylesheet never arrives.
+ */
+const STYLESHEET_TIMEOUT_MS = 5_000
+
 /** A capture rasterised off-screen, plus the natural (unscaled) CSS box it came from. */
 interface CaptureResult {
   canvas: HTMLCanvasElement
@@ -209,6 +215,114 @@ export function usePdf(): UsePdf {
    * (e.g. a 210 mm A5 block — CSS mm is viewport-independent), so a phone export
    * matches a desktop print exactly.
    */
+  /** Resolve on the next painted frame, so freshly-applied CSS is in effect. */
+  function nextFrame(): Promise<void> {
+    return new Promise(resolve => requestAnimationFrame(() => resolve()))
+  }
+
+  /**
+   * Wait for every stylesheet that is still downloading.
+   *
+   * A component's CSS is code-split alongside its JS chunk (the plan's rules ship
+   * in `usePdf.*.css`, not the entry sheet), so opening a dialog *starts* a
+   * stylesheet download. Capturing right away races it — and on a phone the
+   * capture wins, rasterising the DOM before a single rule applies: no borders,
+   * no colours, an unscaled logo, and serif fallback text.
+   *
+   * `document.fonts.ready` is no defence: with the `@font-face` rules not yet
+   * parsed there is nothing pending, so it resolves immediately.
+   *
+   * A `<link>` exposes `sheet` only once it has loaded; `error` counts as settled
+   * too, since a stylesheet that failed will never arrive.
+   */
+  function stylesheetsReady(doc: Document): Promise<void> {
+    const pending = Array.from(doc.querySelectorAll<HTMLLinkElement>('link[rel~="stylesheet"]'))
+      .filter(link => !link.disabled && !link.sheet)
+    if (!pending.length) return Promise.resolve()
+
+    const loaded = Promise.all(pending.map(link => new Promise<void>((resolve) => {
+      link.addEventListener('load', () => resolve(), { once: true })
+      link.addEventListener('error', () => resolve(), { once: true })
+    }))).then(() => undefined)
+
+    // Never let a stalled stylesheet block the export outright.
+    return Promise.race([
+      loaded,
+      new Promise<void>(resolve => setTimeout(resolve, STYLESHEET_TIMEOUT_MS))
+    ])
+  }
+
+  /**
+   * Copy every readable stylesheet of the live page into the clone as one inline
+   * `<style>`. Last-resort repair for {@link ensureClonedStylesApplied} — costly
+   * enough (the whole Tailwind sheet) that it only runs when the clone is proven
+   * unstyled. Cross-origin sheets throw on `cssRules` and are skipped; relative
+   * urls inside the rules still resolve, because html2canvas gives the clone a
+   * `<base>` pointing at the source document.
+   */
+  function inlineStylesheets(clonedDoc: Document): void {
+    const css = Array.from(document.styleSheets)
+      .map((sheet) => {
+        try {
+          return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n')
+        } catch {
+          return ''
+        }
+      })
+      .filter(Boolean)
+      .join('\n')
+    if (!css) return
+
+    const style = clonedDoc.createElement('style')
+    style.dataset.pdfInlinedCss = ''
+    style.textContent = css
+    clonedDoc.head.appendChild(style)
+  }
+
+  /**
+   * Guarantee the cloned document is actually styled before it is rasterised.
+   *
+   * html2canvas rebuilds the page inside an `about:blank` iframe, so every
+   * `<link rel=stylesheet>` is re-resolved there. It waits for the iframe's
+   * `readyState`, which can reach `complete` while those sheets are still in
+   * flight. Blink hides the gap — it blocks style reads on pending sheets — but
+   * WebKit hands back computed styles from whatever has loaded so far, and
+   * html2canvas reads every element's computed style when it parses the tree.
+   * The result on iPhone was a plan rasterised with **no CSS at all**: no frame,
+   * no table borders, an unscaled logo, serif fallback text.
+   *
+   * Rather than guess, this measures: the clone must lay out at the same width as
+   * the off-screen stage it was copied from. If it doesn't, the sheets have not
+   * applied, so we inline them and re-check.
+   */
+  async function ensureClonedStylesApplied(
+    clonedDoc: Document,
+    captureId: string,
+    expectedWidth: number
+  ): Promise<void> {
+    await stylesheetsReady(clonedDoc)
+
+    const styled = () => {
+      const el = clonedDoc.getElementById(captureId)
+      // No element yet is not a styling verdict — leave it to the caller.
+      return !el || Math.abs(el.offsetWidth - expectedWidth) <= 1
+    }
+    if (styled()) return
+
+    inlineStylesheets(clonedDoc)
+    // The sheets carry the @font-face rules, so the webfonts only start loading
+    // now; without this the capture falls back to a serif face.
+    if (clonedDoc.fonts?.ready) await clonedDoc.fonts.ready
+
+    if (!styled()) {
+      console.warn(
+        '[usePdf] the cloned document is still unstyled after inlining the page CSS — '
+        + 'the export will not match the preview.',
+        { expectedWidth, actualWidth: clonedDoc.getElementById(captureId)?.offsetWidth }
+      )
+    }
+  }
+
   /**
    * Make every text range report a single client rect, so html2canvas draws each
    * word with one `fillText` call.
@@ -316,9 +430,13 @@ export function usePdf(): UsePdf {
         scrollX: 0,
         scrollY: 0,
         // Patch the cloned document only — leaves the live preview untouched.
-        onclone: (clonedDoc: Document) => {
+        // Async on purpose: html2canvas awaits whatever onclone returns, which is
+        // the only hook that runs after the clone exists but before it is parsed.
+        onclone: async (clonedDoc: Document) => {
           // Keeps Arabic joined on WebKit — see coalesceTextRangeRects.
           coalesceTextRangeRects(clonedDoc)
+          // Must settle before the tree is parsed, or the raster has no CSS.
+          await ensureClonedStylesApplied(clonedDoc, captureId, widthPx)
           const cloned = clonedDoc.getElementById(captureId)
           // Tag the captured clone so templates can apply capture-only styles
           // under `[data-pdf-capture]`. html2canvas rasterises text differently
@@ -480,8 +598,13 @@ export function usePdf(): UsePdf {
       wordSpacing
     } = options
 
-    // Web fonts must be fully loaded before capture, otherwise html2canvas
-    // rasterises a fallback face with different metrics.
+    // Order matters. Stylesheets first — until they land the element has no
+    // layout worth capturing and no @font-face rules exist; then a frame so the
+    // new rules apply and the webfonts they reference start loading; only then is
+    // `fonts.ready` meaningful. Skipping straight to fonts.ready rasterises an
+    // unstyled, serif-fallback document (see stylesheetsReady).
+    await stylesheetsReady(document)
+    await nextFrame()
     if (document.fonts?.ready) await document.fonts.ready
 
     isExporting.value = true

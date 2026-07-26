@@ -520,6 +520,10 @@ export interface AchievementTestPosition {
   start_verse: number
   end_surah: number
   end_verse: number
+  // صفحات الموضع — mushaf pages this position covers, fractional. Computed on the
+  // frontend and stored as-is; the backend sums them into `positions_pages`.
+  // Omit (undefined) when the range can't be resolved — NULL means "not supplied".
+  pages?: number | null
   errors?: PositionError[]
 }
 
@@ -654,6 +658,12 @@ export interface CreateAchievementDto {
   // top-level `errors`, which the backend rejects for a test recitation.
   test_positions?: AchievementTestPosition[]
   percentage_score: number
+  // الصفحات الكلية — mushaf pages the whole [start,end] range covers, fractional.
+  // The backend never derives this; whatever the client sends is what the
+  // dashboard (`total_pages`) and the daily report read back. For `full` it also
+  // becomes the single position's pages; for `test` the per-position `pages`
+  // inside `test_positions` roll up into `positions_pages` separately.
+  total_pages?: number | null
   teacher_notes?: string
   approve?: boolean
 }

@@ -726,6 +726,10 @@ async function saveRecitation(
   // Weights are per mushaf page — a longer lesson divides each deduction by
   // the number of pages it spans.
   const pages = lessonPages.value
+  // Stored alongside the record (الصفحات الكلية). Distinct from `pages` above:
+  // this is the breadth of the whole lesson range, never the tested subset —
+  // the موضع pages ride inside each test position (see buildTestPositions).
+  const totalPages = pagesForRange(item)
   if (isTest.value) {
     const positions = await buildTestPositions(spots.value, marks.value, groups.value)
     const allErrors = positions.flatMap(p => p.errors ?? [])
@@ -760,7 +764,8 @@ async function saveRecitation(
         end_surah: item.end_surah,
         end_verse: item.end_verse,
         ...payload,
-        percentage_score: score
+        percentage_score: score,
+        total_pages: totalPages
       }
     })
     priorAchievements.value = priorAchievements.value.map(a => a.id === existing.id ? saved : a)
@@ -777,7 +782,8 @@ async function saveRecitation(
       end_surah: item.end_surah,
       end_verse: item.end_verse,
       ...payload,
-      percentage_score: score
+      percentage_score: score,
+      total_pages: totalPages
     }
     saved = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
     priorAchievements.value = [saved, ...priorAchievements.value]
@@ -984,8 +990,6 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
 
 // The mark toolbar shows as a sticky bottom bar while a lesson is selected.
 const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.value)
-
-console.log('mushaf page setup complete');
 </script>
 
 <template>

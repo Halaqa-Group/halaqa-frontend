@@ -7,6 +7,7 @@ import type {
 import type { MarkGroups, RecitationMarks, Severity, WordKey } from '~/types/recitation'
 import { SEVERITY_LEVELS } from '~/types/recitation'
 import type { TestSpot } from '~/composables/useTestSpots'
+import { pageCoverage, pagesRecited } from '~/composables/useVerseToPage'
 import { unwrapList } from '~/utils/api/list'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { computePercentageScore, type ScoreCounts } from '~/utils/score'
@@ -18,6 +19,23 @@ interface VerseRangeLike {
   start_verse: number
   end_surah: number
   end_verse: number
+}
+
+/**
+ * Mushaf pages a range covers, in the shape the API stores: the backend keeps
+ * page counts verbatim (`achievements.total_pages` / `positions_pages`, and each
+ * position's `pages`) and never derives them, so anything the client omits stays
+ * NULL — which is what leaves الصفحات الكلية / صفحات المواضع empty on the
+ * dashboard and in the daily report.
+ *
+ * Both columns are decimal(8,4), hence the 4-place rounding rather than raw
+ * float noise. An unresolvable range returns `undefined` (dropped from the JSON
+ * body → NULL, "not supplied") instead of 0, which would read as "no pages".
+ */
+export function pagesForRange(range: VerseRangeLike): number | undefined {
+  const pages = pageCoverage(range)
+  if (!Number.isFinite(pages) || pages <= 0) return undefined
+  return Math.round(pages * 10_000) / 10_000
 }
 
 // Tally the error types from an itemized errors[] list — the backend derives the
@@ -124,11 +142,16 @@ export async function buildTestPositions(
       const g = groups[key]
       if (g) spotGroups[key] = g
     }
-    positions.push({
+    const range = {
       start_surah: spot.startSurah,
       start_verse: spot.startVerse,
       end_surah: spot.endSurah,
-      end_verse: spot.endVerse,
+      end_verse: spot.endVerse
+    }
+    positions.push({
+      ...range,
+      // صفحات الموضع — the backend sums these into `positions_pages`.
+      pages: pagesForRange(range),
       errors: await buildErrorsFromMarks(spotMarks, spotGroups)
     })
   }
@@ -350,9 +373,22 @@ export function useAchievements() {
       : (data.errors ?? [])
   }
 
+  // `total_pages` is the breadth of the whole lesson range; each tested موضع
+  // carries its own `pages`, which the backend sums into `positions_pages` (a
+  // `full` recitation gets its position's pages from total_pages server-side).
+  // See pagesForRange for why an unresolvable range is omitted rather than 0.
+  function withPageCounts(data: CreateAchievementDto): CreateAchievementDto {
+    return {
+      ...data,
+      total_pages: pagesForRange(data),
+      test_positions: data.test_positions?.map(p => ({ ...p, pages: pagesForRange(p) }))
+    }
+  }
+
   // percentage_score is computed on the frontend from the error counts (derived
   // from the itemized errors[]), the halaqa's weights, and the range's page span
-  // (weights are per page), then stored as-is.
+  // (weights are per page), then stored as-is. Page counts ride along — see
+  // withPageCounts.
   async function withComputedScore(data: CreateAchievementDto): Promise<CreateAchievementDto> {
     const settings = await loadEvaluationSettings(data.halaqa_id)
     // A test is scored over the positions actually recited, not the lesson span.
@@ -361,7 +397,7 @@ export function useAchievements() {
       data.recitation_method === 'test' ? data.test_positions : null
     )
     const percentage_score = computePercentageScore(tallyErrors(allErrorsOf(data)), settings, pages)
-    return { ...data, percentage_score }
+    return withPageCounts({ ...data, percentage_score })
   }
 
   // The API accepts exactly one error carrier per method and 400s on the other:
@@ -412,6 +448,8 @@ export function useAchievements() {
         end_surah: full.end_surah,
         end_verse: full.end_verse,
         percentage_score: full.percentage_score,
+        // The range can be edited, so the page span has to be resent with it.
+        total_pages: full.total_pages,
         teacher_notes: full.teacher_notes
       }
       // Same one-carrier rule as create.

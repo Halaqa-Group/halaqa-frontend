@@ -7,7 +7,8 @@ export interface AuthUser {
   thirdName: string
   familyName: string
   name: string
-  email: string
+  // Null for accounts created without one; they log in with `id_number`.
+  email: string | null
   phone?: string | null
   photoUrl?: string | null
   roles: string[]

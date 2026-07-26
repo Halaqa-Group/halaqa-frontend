@@ -8,6 +8,7 @@
   },
   "common": {
     "save": "Save",
+    "optional": "Optional",
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",

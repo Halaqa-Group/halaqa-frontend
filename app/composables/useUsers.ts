@@ -9,7 +9,9 @@ export interface ManagedUser {
   thirdName: string
   familyName: string
   name: string
-  email: string
+  // Null when the account was created without one — `id_number` is the
+  // required identifier and also works as a login handle.
+  email: string | null
   phone: string | null
   photoUrl: string | null
   status: UserStatus
@@ -43,7 +45,7 @@ export interface CreateUserPayload {
   // National ID — required by the backend on user creation, unique per school,
   // and usable as a login identifier. A bad checksum is stored with a warning.
   id_number: string
-  email: string
+  email?: string | null
   password: string
   phone?: string | null
   photo_url?: string | null

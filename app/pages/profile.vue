@@ -46,7 +46,7 @@ const roleLabels = computed(() => (user.value?.roles ?? []).map(r => t(`roles.${
             {{ user?.email }}
           </p>
           <UBadge
-            v-if="user"
+            v-if="user?.email"
             :color="isEmailVerified ? 'success' : 'warning'"
             variant="soft"
             size="sm"

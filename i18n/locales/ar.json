@@ -8,6 +8,7 @@
   },
   "common": {
     "save": "حفظ",
+    "optional": "اختياري",
     "cancel": "إلغاء",
     "delete": "حذف",
     "edit": "تعديل",

@@ -120,7 +120,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       </UFormField>
 
       <UAlert
-        v-if="user && !isEmailVerified"
+        v-if="user?.email && !isEmailVerified"
         color="warning"
         variant="soft"
         icon="i-lucide-badge-alert"

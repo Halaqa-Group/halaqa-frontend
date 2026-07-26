@@ -119,7 +119,9 @@ const schema = computed(() => {
       id_number: z.string({ error: () => t('validation.required') })
         .min(1, t('validation.required'))
         .max(20),
-      email: z.email({ error: () => t('validation.email') }),
+      // Optional — the national ID is the required identifier and doubles as a
+      // login handle, so a user may have no email at all.
+      email: z.email({ error: () => t('validation.email') }).or(z.literal('')),
       password: z.string({ error: () => t('validation.required') }).min(8, t('validation.min', { min: 8 }))
     })
   }
@@ -135,7 +137,7 @@ function syncFromProps() {
     state.second_name = props.user.secondName
     state.third_name = props.user.thirdName
     state.family_name = props.user.familyName
-    state.email = props.user.email
+    state.email = props.user.email ?? ''
     state.password = ''
     state.phone = props.user.phone ?? ''
     state.status = props.user.status
@@ -205,7 +207,7 @@ async function onSubmit() {
         third_name: state.third_name.trim(),
         family_name: state.family_name.trim(),
         id_number: state.id_number.trim(),
-        email: state.email.trim().toLowerCase(),
+        email: state.email.trim().toLowerCase() || null,
         password: state.password,
         phone: state.phone.trim() || null,
         status: state.status,
@@ -353,7 +355,11 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
             <UInput v-model="state.id_number" dir="ltr" :placeholder="$t('placeholder.id_number')" />
           </UFormField>
 
-          <UFormField :label="$t('label.email_address')" name="email" :required="mode === 'add'">
+          <UFormField
+            :label="$t('label.email_address')"
+            name="email"
+            :hint="mode === 'add' ? $t('common.optional') : undefined"
+          >
             <UInput
               v-model="state.email"
               type="email"

@@ -209,6 +209,50 @@ export function usePdf(): UsePdf {
    * (e.g. a 210 mm A5 block — CSS mm is viewport-independent), so a phone export
    * matches a desktop print exactly.
    */
+  /**
+   * Make every text range report a single client rect, so html2canvas draws each
+   * word with one `fillText` call.
+   *
+   * html2canvas measures a word with `Range.getClientRects()`; when that returns
+   * MORE than one rect it gives up on the word and redraws it grapheme by
+   * grapheme (`parseTextBounds` in the library). Latin survives that, but Arabic
+   * is cursive: drawing letters individually severs their joining forms and
+   * stacks them at wrong advances — "الحفظ" comes out as "لحفظ" with the alef
+   * sitting on top of the lam.
+   *
+   * Blink returns one rect per word, so Android/Chrome never hit the path.
+   * WebKit splits a range into several rects far more readily (per text/bidi run
+   * — Arabic next to Latin digits is enough), which is why the exact same export
+   * was mangled on iPhone and macOS Safari only.
+   *
+   * Rects that all sit on one line are just fragments of one box, so collapsing
+   * them to the range's bounding rect loses nothing. A genuinely wrapped range
+   * (rects on different lines) is left untouched — there the per-grapheme path is
+   * the lesser evil.
+   *
+   * Patched on the CLONED iframe's `Range` — a throwaway realm html2canvas
+   * discards after the capture — so the live page's DOM APIs are never touched.
+   */
+  function coalesceTextRangeRects(clonedDoc: Document): void {
+    const view = clonedDoc.defaultView
+    if (!view?.Range) return
+
+    const original = view.Range.prototype.getClientRects
+    view.Range.prototype.getClientRects = function (this: Range): DOMRectList {
+      const rects = original.call(this)
+      if (rects.length < 2) return rects
+
+      const first = rects[0]
+      if (!first) return rects
+      for (let i = 1; i < rects.length; i++) {
+        // Sub-pixel jitter is normal within a line; a real wrap is a whole line apart.
+        if (Math.abs((rects[i]?.top ?? 0) - first.top) > 1) return rects
+      }
+      // Array, not a DOMRectList — the library reads it via `Array.from`.
+      return [this.getBoundingClientRect()] as unknown as DOMRectList
+    }
+  }
+
   async function capture(
     elementId: string,
     opts: { scale: number, background: string, wordSpacing?: string }
@@ -273,6 +317,8 @@ export function usePdf(): UsePdf {
         scrollY: 0,
         // Patch the cloned document only — leaves the live preview untouched.
         onclone: (clonedDoc: Document) => {
+          // Keeps Arabic joined on WebKit — see coalesceTextRangeRects.
+          coalesceTextRangeRects(clonedDoc)
           const cloned = clonedDoc.getElementById(captureId)
           // Tag the captured clone so templates can apply capture-only styles
           // under `[data-pdf-capture]`. html2canvas rasterises text differently

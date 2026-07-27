@@ -275,12 +275,32 @@ const lessonRange = computed(() =>
 const { spots, pendingStart, isSelecting, isVerseTaken, pickBoundary, cancelPending, removeSpot, setSpots, clearSpots }
   = useTestSpots(sessionId, lessonRange)
 
-// While picking a new موضع, the verses already inside one are inert — a verse
-// belongs to at most one passage. Only applies in spot mode: marking errors
-// requires tapping words inside those very passages.
-const lockedAt = computed<VerseLock | undefined>(() =>
-  isTest.value && captureMode.value === 'spot' ? inAnySpot : undefined
-)
+// A page is a whole page: the mushaf shows the verses either side of the lesson as
+// well, dimmed. Dimmed is not the same as inert, and `buildErrorsFromMarks` submits
+// every mark it is given — so a tap on a neighbouring verse was recorded against
+// this lesson. Nothing outside the lesson's own range is markable.
+const inLessonRange = computed<(verseKey: string) => boolean>(() => {
+  const r = lessonRange.value
+  if (!r) return () => false
+  return makeRangePredicate(r.startSurah, r.startVerse, r.endSurah, r.endVerse)
+})
+
+// Which verses are out of bounds right now. Locked verses lose the tap handler and
+// the `--tappable` class, so they take no taps, no hover and no drag-selection —
+// every rule below is enforced at the word, not after the fact at submit.
+const lockedAt = computed<VerseLock | undefined>(() => {
+  const inRange = inLessonRange.value
+  // Marking a straight recitation: the lesson range and nothing else.
+  if (!isTest.value) return (verseKey: string) => !inRange(verseKey)
+  // Picking a موضع: inside the lesson, and not already spoken for — a verse
+  // belongs to at most one passage.
+  if (captureMode.value === 'spot') {
+    return (verseKey: string) => !inRange(verseKey) || inAnySpot(verseKey)
+  }
+  // Marking inside a test: an error has to fall within the position it is recorded
+  // against, and the positions are themselves bounded by the lesson.
+  return (verseKey: string) => !inAnySpot(verseKey)
+})
 
 // Delimit each موضع with the mushaf's own ayah ornaments: the one on its first
 // verse and the one on its last. A single-verse موضع colours just the one.
@@ -307,9 +327,14 @@ function inAnySpot(verseKey: string): boolean {
   )
 }
 // A word key is "surah:ayah:position"; its verse is the first two segments.
-function wordInAnySpot(wordKey: string): boolean {
+function verseOfWord(wordKey: string): string {
   const [s, a] = wordKey.split(':')
-  return inAnySpot(`${s}:${a}`)
+  return `${s}:${a}`
+}
+/** Whether a word may carry an error at all, under the rules `lockedAt` enforces. */
+function wordMarkable(wordKey: string): boolean {
+  const verseKey = verseOfWord(wordKey)
+  return isTest.value ? inAnySpot(verseKey) : inLessonRange.value(verseKey)
 }
 
 // ── Live score ──────────────────────────────────────────────────────────────
@@ -343,24 +368,34 @@ const spotHighlight = computed<((verseKey: string) => boolean) | undefined>(() =
   isTest.value && captureMode.value === 'mark' ? inAnySpot : undefined
 )
 
-// Route a word tap: define a spot boundary (spot-mode), or mark an error — but in
-// test mode only inside a defined spot (taps on dimmed, out-of-spot words are inert,
-// so what's marked always matches what gets submitted).
+// A mark can never outlive the bounds it was made in. Switching to test, dropping a
+// passage or landing on a different lesson strands whatever was marked outside them:
+// a stranded mark still counted toward the live score, still went to the server in a
+// straight recitation, and — now that out-of-bounds words are locked — could not even
+// be tapped away. Drop them the moment they fall out of range. Watching the bounds
+// rather than the marks keeps this clear of `hydrateFromAchievement`, which restores
+// the passages first and the marks inside them after.
+watch([isTest, spots, lessonRange], () => {
+  const stranded = Object.keys(marks.value).filter(k => !wordMarkable(k))
+  if (stranded.length) setMarks(stranded, null)
+})
+
+// Route a word tap: define a spot boundary (spot-mode), or mark an error. Both
+// modes withhold the handler from out-of-bounds verses (see `lockedAt`), so these
+// checks only guard a stray call.
 function onWordTap(wordKey: string, verseKey: string) {
   if (isTest.value && captureMode.value === 'spot') {
-    // Belt and braces: the mushaf already withholds the tap handler from these
-    // verses (see `lockedAt`), so this only guards a stray call.
     if (isVerseTaken(verseKey)) return
     pickBoundary(verseKey)
     return
   }
-  if (isTest.value && !wordInAnySpot(wordKey)) return
+  if (!wordMarkable(wordKey)) return
   tap(wordKey)
 }
-// Drag-select marking: in test mode keep only the in-spot words, so nothing marked
-// outside a tested passage is silently dropped at submit.
+// Drag-select marking: keep only the words that may carry an error, so a run that
+// strays past the lesson (or past a tested passage) marks nothing outside it.
 function onWordsMark(keys: string[], severity: Severity | null) {
-  const applied = isTest.value ? keys.filter(wordInAnySpot) : keys
+  const applied = keys.filter(wordMarkable)
   if (!applied.length) return
   setMarks(applied, severity)
 }

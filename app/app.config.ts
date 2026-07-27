@@ -129,6 +129,13 @@ export default defineAppConfig({
       }
     },
 
+    // Same dim as the modal overlay below, so drawers and modals read as one system.
+    drawer: {
+      slots: {
+        overlay: 'bg-gray-950/60'
+      }
+    },
+
     modal: {
       slots: {
         overlay: 'fixed inset-0',

@@ -159,8 +159,10 @@ const { startedOnWord } = useWordDragSelect({
 useSwipe(pageEl, {
   threshold: 40,
   onSwipeEnd(_e, direction) {
-    // A horizontal gesture that began on a word is a range-selection, not a
-    // page swipe — don't navigate.
+    // The gesture was claimed by a press-and-drag range selection, so it is not a
+    // page turn. On touch that only happens after the finger has been held still —
+    // an ordinary swipe across the text still pages, which on a full page of words
+    // is the only way paging is reachable at all.
     if (startedOnWord.value) return
     // Mirrored for RTL: a mushaf is flipped left-to-right, so dragging the sheet
     // toward the right brings the next (higher-numbered) page in from the left.

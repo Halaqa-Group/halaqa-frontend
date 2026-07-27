@@ -1426,10 +1426,16 @@ watch(selectedItem, () => {
 }
 
 @media (min-width: 1024px) {
+  /* Back in flow inside the dashboard panel, but claiming the panel's full height
+     rather than growing to whatever 15 lines come to. The panel body is a flex
+     column of definite height, so the reader can hand a real height down to the
+     mushaf and the page fits the screen the way it does on a phone. */
   .reader {
     position: static;
     z-index: auto;
     inset: auto;
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100%;
     max-width: 640px;
     margin: 0 auto;
@@ -1437,7 +1443,7 @@ watch(selectedItem, () => {
   }
 
   .reader__body {
-    overflow: visible;
+    overflow: hidden;
   }
 }
 </style>

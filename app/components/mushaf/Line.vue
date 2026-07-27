@@ -175,33 +175,17 @@ function onWordLeave(word: MushafWord) {
   font-display: swap;
 }
 
+/* The 15 lines share out the page's height evenly (see Page.vue) rather than each
+   sizing to its own content — that is what makes a page fit the screen it is on.
+   `--mushaf-line-h` is only the fallback for a page laid out by its own content. */
 .mushaf-line {
   display: flex;
   align-items: center;
-  height: var(--mushaf-line-h, 2.4rem);
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
   line-height: 1;
   justify-content: center;
-}
-
-/* Phone: the 15 lines share out the page's height evenly (see Page.vue), rather
-   than each sizing to its own content. */
-@media (max-width: 1023px) {
-  .mushaf-line {
-    flex: 1 1 0;
-    height: auto;
-    min-height: 0;
-  }
-}
-
-/* Desktop only. Off the phone the page is laid out by its own content, so a line has
-   to be free to grow to whatever the fitted glyphs need — pinned to the fixed box
-   above, the enlarged words overlap their neighbours. Kept in its own min-width
-   block rather than relaxing the base rule, so the phone layout is untouched. */
-@media (min-width: 1024px) {
-  .mushaf-line {
-    height: auto;
-    min-height: var(--mushaf-line-h, 2.4rem);
-  }
 }
 
 /* A printed mushaf sets its body lines flush to both margins and centres only the
@@ -219,8 +203,10 @@ function onWordLeave(word: MushafWord) {
   /* Full measure, like the printed mushaf. Every one of the 114 banner glyphs is
      cut to exactly 3.302em, so 100cqi / 3.302 ≈ 30.25cqi sets any surah's frame
      flush to both margins — no per-surah measuring. Rounded down, not up: at 30.3
-     the frame cleared the measure by a hair and clipped. */
-  font-size: clamp(56px, 30.25cqi, 200px);
+     the frame cleared the measure by a hair and clipped. No lower bound either — a
+     px floor stops tracking the measure the moment it bites, and the frame runs off
+     both sides of a small page. */
+  font-size: min(30.25cqi, 200px);
   line-height: 1;
 }
 
@@ -229,18 +215,16 @@ function onWordLeave(word: MushafWord) {
   justify-content: center;
 }
 
-/* The banner is now cut to the full measure, which makes it taller than the 1/15th
-   of the page a phone hands every line — its frame ended up sitting on the basmala
+/* The banner is cut to the full measure, which makes it taller than the fifteenth of
+   the page every line is handed — its frame ended up sitting on the basmala
    underneath. Give it a larger share of the column so the two keep their air; the
    body lines give up a couple of pixels each, which is how a printed mushaf spaces
    an opening page anyway. */
-@media (max-width: 1023px) {
-  .mushaf-line--surah {
-    flex-grow: 1.8;
-  }
-  .mushaf-line--basmala {
-    flex-grow: 1.15;
-  }
+.mushaf-line--surah {
+  flex-grow: 1.8;
+}
+.mushaf-line--basmala {
+  flex-grow: 1.15;
 }
 
 /* No font-family here: the `p1-v1` class the loader injects into <head> supplies it,
@@ -250,8 +234,9 @@ function onWordLeave(word: MushafWord) {
   /* Sized off the measure like the surah banner above it, not off a px range: a px
      clamp bottomed out on the phone, leaving the basmala smaller than the body
      words it sits between. The four glyphs run 4.52em, so 9.5cqi ≈ 43% of the
-     measure — set in from both margins, well clear of the banner above it. */
-  font-size: clamp(18px, 9.5cqi, 52px);
+     measure — set in from both margins, well clear of the banner above it. Same
+     reason as the banner for having no floor. */
+  font-size: min(9.5cqi, 52px);
   line-height: 1;
 }
 
@@ -263,23 +248,18 @@ function onWordLeave(word: MushafWord) {
     the surah banner, the basmala, a surah's short last line — carry no fit and just
     use the base.
   */
-  --mushaf-word-size: max(11px, min(36px, 5.5cqi));
+  /* Capped against the page's width AND its height: each of the 15 lines gets about
+     a fifteenth of the block size, and a word stands ~1.8× its font-size tall once
+     its padding counts — hence ~3.4% of the block. No lower floor: a floor that
+     bites cannot be undone by `--line-fit`, and the line overflows the margin
+     instead. Small text on a short window is honest; a page that spills is not. */
+  --mushaf-word-size: min(36px, 5.5cqi, 3.4cqb);
   display: inline-block;
   font-size: calc(var(--mushaf-word-size) * var(--line-fit, 1));
   color: inherit;
   padding: 0 1px;
   border-radius: 3px;
   transition: background-color 0.12s ease;
-}
-
-@media (max-width: 1023px) {
-  /* Phone only: also cap against the page's height, so on a short screen (landscape,
-     a small device) the glyphs shrink to stay inside their line instead of spilling
-     over it. A word is ~1.8× its font-size tall once its padding counts, and each of
-     the 15 lines gets ~1/15th of the page — hence ~3.4% of the block size. */
-  .mushaf-word {
-    --mushaf-word-size: max(11px, min(36px, 5.5cqi, 3.4cqb));
-  }
 }
 
 .mushaf-word--marker {

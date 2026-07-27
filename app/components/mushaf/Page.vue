@@ -55,7 +55,10 @@ const pageEl = ref<HTMLElement | null>(null)
 // A line marked non-centred that is nonetheless short (bad layout data) would be
 // blown up grotesquely — cap the correction well inside the range real pages need.
 const MAX_FIT = 1.3
-const MIN_FIT = 0.8
+// Low enough to stay out of the way. A floor that bites is a line that overflows:
+// the fit is the only thing standing between a short window and text running past
+// the margin, so it must always have room to shrink.
+const MIN_FIT = 0.6
 
 function fitLines() {
   const root = pageEl.value
@@ -209,10 +212,19 @@ onBeforeUnmount(clearSkeletonTimer)
 
 <style scoped>
 .mushaf-page {
-  /* Fallback line box, used wherever the page is laid out by its own content
-     (desktop, PDF export). On a phone the 15 lines divide the available height
-     instead — see the flex rules below. */
+  /* Fallback line box, for anywhere the page is laid out by its own content rather
+     than given a height. With the flex chain below in place the 15 lines divide the
+     height they are handed instead. */
   --mushaf-line-h: 2.4rem;
+  /* The page fills the height the reader gives it and splits that between its 15
+     lines, so a page always lands whole on the screen with nothing to scroll — on a
+     phone and on a desktop alike. Done with flex rather than by measuring the gap in
+     JS and feeding a pixel height back through a custom property: the measurement
+     raced its own first paint and silently left the page at a fallback size. */
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 640px;
   margin: 0 auto;
@@ -221,7 +233,10 @@ onBeforeUnmount(clearSkeletonTimer)
   border: 1px solid var(--color-mushaf-border);
   border-radius: 8px;
   padding: clamp(0.75rem, 3.5vw, 2rem) clamp(0.5rem, 3vw, 1.5rem);
-  container-type: inline-size;
+  /* `size`, not `inline-size`: a word caps its font against the page's *height* as
+     well as its width (see Line.vue). It needs a definite block size, which the
+     flex chain above provides. */
+  container-type: size;
   container-name: mushaf;
   /* The page is a marking surface, not a document to copy from: a drag across
      words means "select this run and pick a severity", and a long-press on a
@@ -232,38 +247,34 @@ onBeforeUnmount(clearSkeletonTimer)
   -webkit-touch-callout: none;
 }
 
-/*
-  Phone: the page fills the gap the reader leaves between its two bars, and its 15
-  lines split that height evenly — so the whole page lands on screen with nothing
-  to scroll. Done with flex rather than by measuring the gap in JS and feeding a
-  pixel height back through a custom property: the measurement raced its own first
-  paint and silently left the page at a fallback size.
-
-  `container-type: size` (rather than inline-size) is what lets a word cap its font
-  against the page's *height* too — see Line.vue. It needs a definite block size,
-  which the flex chain above now provides.
-*/
+/* Phone: the sheet meets the screen edge, so only the top and bottom rules survive
+   and it reads as a page between the two bars. */
 @media (max-width: 1023px) {
   .mushaf-page {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    container-type: size;
     padding: 0.5rem clamp(0.5rem, 3vw, 1.5rem);
-    /* The page meets the screen edge; only the top and bottom rules survive, so
-       it still reads as a sheet between the two bars. */
     border-inline: 0;
     border-radius: 0;
   }
+}
 
-  .mushaf-page__inner {
-    flex: 1 1 auto;
-    min-height: 0;
+/* Desktop: height-driven. The reader hands over the panel's height, and the sheet
+   takes only as much width as a mushaf page's proportions allow — centred, framed,
+   the shape of the printed page. Stretching it to the panel's full width instead
+   would leave the lines short and squat, or run the page off the bottom.
+   `max-width` catches the other case: on a window too narrow for the ratio the
+   sheet fills the width and just runs taller, exactly as it does on a phone. */
+@media (min-width: 1024px) {
+  .mushaf-page {
+    align-self: center;
+    width: auto;
+    aspect-ratio: 3 / 5;
+    max-width: min(100%, 640px);
   }
 }
 
 .mushaf-page__inner {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }

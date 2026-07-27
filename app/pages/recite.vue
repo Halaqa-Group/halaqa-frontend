@@ -378,7 +378,17 @@ function spotLabel(s: { startSurah: number, startVerse: number, endSurah: number
 // often on a page that isn't the one currently shown — then pulses its two
 // ornaments so the eye lands on the passage rather than hunting for it.
 const FLASH_MS = 1600
-const viewerRef = ref<{ goToVerse: (verseKey: string) => void } | null>(null)
+// The viewer owns which page of the lesson is on screen; the reader's bars draw
+// that position, so its paging state is read back off the exposed instance.
+const viewerRef = ref<{
+  goToVerse: (verseKey: string) => void
+  currentPage: number | undefined
+  pages: number[]
+  canPrev: boolean
+  canNext: boolean
+  prev: () => void
+  next: () => void
+} | null>(null)
 const flashedVerses = ref<Set<string> | null>(null)
 let flashTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -990,10 +1000,309 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
 
 // The mark toolbar shows as a sticky bottom bar while a lesson is selected.
 const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.value)
+
+// ── Reader chrome ───────────────────────────────────────────────────────────
+// On a phone the page is the screen: a thin bar top and bottom, the mushaf filling
+// everything between. The session's identity (who, which lesson, what was already
+// recorded today) moves behind the header's middle button, and the committing
+// actions behind «إنهاء التسميع» — see MushafReaderBottomSheet.
+const sheetOpen = ref(false)
+const sessionPanelOpen = ref(false)
+
+const currentPage = computed(() => viewerRef.value?.currentPage)
+const lessonPageCount = computed(() => viewerRef.value?.pages.length ?? 0)
+const pagePosition = computed(() => {
+  const pages = viewerRef.value?.pages
+  const page = currentPage.value
+  if (!pages || !page) return 0
+  return pages.indexOf(page) + 1
+})
+
+const { surahName: currentSurahName, juz: currentJuz, hizb: currentHizb } = useMushafPageMeta(currentPage)
+
+// Marking must never be one mis-tap from a wipe or an approval, so the drawer that
+// holds them shuts again as soon as the teacher goes back to the mushaf.
+watch(selectedItem, () => {
+  sheetOpen.value = false
+})
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 w-full max-w-[640px] lg:max-w-5xl mx-auto pb-6">
+  <!--
+    The reader. On a phone it takes the whole viewport — over the dashboard navbar,
+    not inside it — so the mushaf reads the way a printed page does. From `lg` it
+    drops back in flow inside the dashboard panel and the desktop layout is unchanged.
+  -->
+  <div
+    v-if="!missingArgs && selectedItem"
+    class="reader"
+  >
+    <MushafReaderTopBar
+      :surah-name="currentSurahName"
+      :juz="currentJuz"
+      :muted="markingLocked"
+      @back="router.push('/achievements')"
+      @menu="sessionPanelOpen = true"
+    />
+
+    <div class="reader__body">
+      <MushafRangeViewer
+        ref="viewerRef"
+        :start-surah="selectedItem.start_surah"
+        :start-verse="selectedItem.start_verse"
+        :end-surah="selectedItem.end_surah"
+        :end-verse="selectedItem.end_verse"
+        :marks="marks"
+        :groups="groups"
+        :highlight-override="spotHighlight"
+        :pending-verse="isTest && captureMode === 'spot' ? pendingVerseKey : null"
+        :locked-at="lockedAt"
+        :spot-edge-at="spotEdgeAt"
+        :flash-at="flashAt"
+        :on-word-tap="markingLocked ? undefined : onWordTap"
+        :on-words-mark="(markingLocked || !canDragMark) ? undefined : onWordsMark"
+      />
+    </div>
+
+    <MushafReaderBottomSheet
+      v-model:expanded="sheetOpen"
+      :page="currentPage"
+      :hizb="currentHizb"
+      :score="showToolbar ? liveScore : undefined"
+      :sync-status="syncStatus"
+      :sync-label="syncLabel"
+      :sync-pending="isDirty && hasSomethingToSync"
+      :show-sync="canAutosync || syncStatus !== 'idle'"
+      :position="pagePosition"
+      :total-pages="lessonPageCount"
+      :can-prev="viewerRef?.canPrev"
+      :can-next="viewerRef?.canNext"
+      :show-finish="showToolbar"
+      @prev="viewerRef?.prev()"
+      @next="viewerRef?.next()"
+    >
+      <!--
+        اختبار capture steers the mushaf itself — which tap defines a موضع and which
+        marks an error — so it stays on screen with the sheet shut. Everything below
+        only matters once the teacher is done reciting.
+      -->
+      <template v-if="isTest && !isParentReadOnly && !markingLocked" #context>
+        <div dir="rtl" class="flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <div class="inline-flex shrink-0 rounded-lg border border-default bg-default p-0.5">
+              <button
+                type="button"
+                class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+                :class="captureMode === 'spot' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
+                @click="captureMode = 'spot'"
+              >
+                تحديد موضع
+              </button>
+              <button
+                type="button"
+                class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+                :class="captureMode === 'mark' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
+                @click="captureMode = 'mark'"
+              >
+                تعليم أخطاء
+              </button>
+            </div>
+            <p class="min-w-0 flex-1 text-xs" :class="isSelecting ? 'text-primary font-medium' : 'text-muted'">
+              {{ captureHint }}
+            </p>
+            <!-- Picked the wrong start? Back out without defining a موضع. -->
+            <UButton
+              v-if="isSelecting"
+              size="xs"
+              variant="soft"
+              color="neutral"
+              class="shrink-0"
+              @click="cancelPending"
+            >
+              إلغاء
+            </UButton>
+          </div>
+        </div>
+      </template>
+
+      <!-- Recitation method: full recitation vs. partial test. Hidden while
+           locked (approved view) — the method can't be changed. -->
+      <div
+        v-if="showMethodSelector && !markingLocked"
+        dir="rtl"
+        class="flex items-center gap-2"
+      >
+        <span class="inline-flex items-center gap-1 text-xs font-medium text-muted shrink-0">
+          <UIcon name="i-lucide-list-checks" class="w-3.5 h-3.5" />
+          نوع التسميع
+        </span>
+        <div class="inline-flex rounded-lg border border-default bg-default p-0.5">
+          <button
+            type="button"
+            class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+            :class="recitationMethod === 'full'
+              ? 'bg-primary text-inverted'
+              : 'text-muted hover:text-default'"
+            @click="selectMethod('full')"
+          >
+            تسميع كامل
+          </button>
+          <button
+            type="button"
+            class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+            :class="recitationMethod === 'test'
+              ? 'bg-primary text-inverted'
+              : 'text-muted hover:text-default'"
+            @click="selectMethod('test')"
+          >
+            اختبار
+          </button>
+        </div>
+      </div>
+      <div
+        v-else-if="!isParentReadOnly && currentTrack === 'Hifz'"
+        dir="rtl"
+        class="inline-flex items-center gap-1.5 text-xs text-muted"
+      >
+        <UIcon name="i-lucide-lock" class="w-3.5 h-3.5" />
+        تسميع كامل — إلزامي للحفظ الجديد
+      </div>
+
+      <!-- The tested مواضع, each a jump target into the mushaf. -->
+      <div v-if="isTest && !isParentReadOnly" dir="rtl" class="flex flex-col gap-2">
+        <div v-if="spots.length" class="flex flex-wrap gap-1.5">
+          <span
+            v-for="(s, i) in spots"
+            :key="s.id"
+            class="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 ps-2 pe-1 py-1 text-xs"
+          >
+            <!-- Tapping the موضع takes the mushaf to it. Kept a sibling of
+                 the remove button — a button can't nest inside a button. -->
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 rounded-full transition hover:opacity-70"
+              :aria-label="`الذهاب إلى الموضع ${i + 1}`"
+              @click="focusSpot(s); sheetOpen = false"
+            >
+              <span class="font-bold text-primary">{{ i + 1 }}</span>
+              <span>{{ spotLabel(s) }}</span>
+            </button>
+            <button
+              v-if="!markingLocked"
+              type="button"
+              class="text-muted hover:text-error px-0.5"
+              :aria-label="'حذف الموضع'"
+              @click="removeSpot(s.id)"
+            >
+              <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
+            </button>
+          </span>
+        </div>
+        <p v-else-if="!markingLocked" class="text-xs text-muted">
+          لا مواضع بعد — حدّد موضعًا واحدًا على الأقل للاختبار.
+        </p>
+      </div>
+
+      <MushafMarkToolbar
+        v-if="showToolbar"
+        :counts="counts"
+        :can-submit="canSubmit"
+        :submitting="submitting"
+        :approved="isApproved"
+        @clear="clearAll"
+        @submit="onToolbarSubmit"
+      />
+    </MushafReaderBottomSheet>
+
+    <!-- Who, which lesson, and what has already been recorded today — everything
+         the old header bar carried, moved off the reading surface. -->
+    <UModal v-model:open="sessionPanelOpen" :ui="{ content: 'sm:max-w-md' }">
+      <template #header>
+        <div class="flex items-start justify-between gap-3 w-full" dir="rtl">
+          <div class="min-w-0">
+            <p class="text-[11px] font-bold tracking-wide text-primary">
+              {{ isParentReadOnly ? 'تلاوة اليوم — للعرض فقط' : (isApproved ? 'تلاوة في المصحف — معتمد (للعرض)' : 'تلاوة في المصحف') }}
+            </p>
+            <p class="text-base font-bold truncate">
+              {{ studentPending && !studentName ? '…' : (studentName ?? `طالب #${studentId}`) }}
+            </p>
+          </div>
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            square
+            :aria-label="'إغلاق'"
+            @click="sessionPanelOpen = false"
+          />
+        </div>
+      </template>
+
+      <template #body>
+        <div class="flex flex-col gap-3" dir="rtl">
+          <div class="flex flex-wrap items-center gap-2">
+            <UBadge color="neutral" variant="subtle" size="sm" class="tabular-nums">
+              {{ dateStr }}
+            </UBadge>
+            <UBadge
+              v-if="currentTrack"
+              :color="TRACK_BADGE_COLOR[currentTrack as AchievementTrack]"
+              variant="subtle"
+              size="sm"
+            >
+              {{ trackLabel(currentTrack) }}
+            </UBadge>
+            <UBadge color="neutral" variant="subtle" size="sm">
+              {{ rangeLabel(selectedItem) }}
+            </UBadge>
+          </div>
+
+          <!-- Autosync state: the marks are written to the backend on their own, so
+               say plainly whether the server currently has them. -->
+          <div
+            v-if="canAutosync || syncStatus !== 'idle'"
+            class="flex items-center gap-1.5 text-xs"
+            :class="syncStatus === 'error' ? 'text-warning' : 'text-muted'"
+          >
+            <UIcon
+              :name="syncStatus === 'saving'
+                ? 'i-lucide-loader-2'
+                : (syncStatus === 'error' ? 'i-lucide-cloud-off' : (isDirty && hasSomethingToSync ? 'i-lucide-cloud' : 'i-lucide-cloud-check'))"
+              class="w-3.5 h-3.5"
+              :class="syncStatus === 'saving' ? 'animate-spin' : ''"
+            />
+            {{ syncLabel }}
+          </div>
+
+          <div v-if="priorAchievements.length" class="flex flex-col gap-2">
+            <p class="text-xs font-semibold text-muted">
+              تم تسجيله اليوم ({{ priorAchievements.length }})
+            </p>
+            <ul class="flex flex-col items-start gap-2 max-h-64 overflow-auto">
+              <li v-for="a in priorAchievements" :key="a.id" class="flex flex-col items-start gap-1">
+                <UBadge :color="TRACK_BADGE_COLOR[a.track_type as AchievementTrack]" variant="subtle" class="gap-1.5">
+                  <span class="font-bold">{{ trackLabel(a.track_type) }}</span>
+                  <span class="opacity-80">{{ rangeLabel(a) }}</span>
+                </UBadge>
+                <!-- Spelled out rather than the old «خ ت ج ح» initials, which
+                     were ambiguous against the legend right above. -->
+                <span class="text-[11px] tabular-nums text-muted">
+                  {{ t('pages.achievements.mistakes') }} {{ a.mistakes_count }}
+                  · {{ t('pages.achievements.warnings') }} {{ a.warnings_count }}
+                  · {{ t('pages.achievements.harakat') }} {{ a.harakat_errors_count ?? 0 }}
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </template>
+    </UModal>
+  </div>
+
+  <!-- Nothing to read yet. These keep the ordinary page layout: a full-screen
+       empty state with no navigation would be a dead end. -->
+  <div v-else class="flex flex-col gap-3 w-full max-w-[640px] mx-auto pb-6">
     <div
       v-if="missingArgs"
       class="mx-auto my-8 max-w-sm w-full flex flex-col items-center gap-3 text-center px-6 py-10 rounded-2xl border border-default bg-default"
@@ -1010,273 +1319,90 @@ const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.val
       </UButton>
     </div>
 
-    <template v-else>
-      <div class="flex items-center gap-3 rounded-xl border border-default bg-default px-3 py-2.5">
-        <UButton
-          icon="i-lucide-arrow-right"
-          variant="ghost"
-          color="neutral"
-          square
-          :aria-label="'رجوع'"
-          @click="router.push('/achievements')"
-        />
-        <div class="flex-1 min-w-0">
-          <p class="text-[11px] font-bold uppercase tracking-wide text-primary">
-            {{ isParentReadOnly ? 'تلاوة اليوم — للعرض فقط' : (isApproved ? 'تلاوة في المصحف — معتمد (للعرض)' : 'تلاوة في المصحف') }}
-          </p>
-          <p class="text-base font-bold truncate">
-            {{ studentPending && !studentName ? '…' : (studentName ?? `طالب #${studentId}`) }}
-          </p>
-        </div>
-        <UBadge color="neutral" variant="subtle" size="sm" class="shrink-0 tabular-nums hidden sm:inline-flex">
-          {{ dateStr }}
-        </UBadge>
+    <div v-else-if="planLoading" class="flex items-center justify-center gap-2 py-6 text-sm text-muted">
+      <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
+      جارٍ تحميل خطة اليوم…
+    </div>
 
-        <!-- Autosync state: the marks are written to the backend on their own, so
-             say plainly whether the server currently has them. -->
-        <UBadge
-          v-if="canAutosync || syncStatus !== 'idle'"
-          :color="syncStatus === 'error' ? 'warning' : (isDirty && hasSomethingToSync ? 'neutral' : 'success')"
-          variant="subtle"
-          size="sm"
-          class="shrink-0 gap-1"
-        >
-          <UIcon
-            :name="syncStatus === 'saving'
-              ? 'i-lucide-loader-2'
-              : (syncStatus === 'error' ? 'i-lucide-cloud-off' : (isDirty && hasSomethingToSync ? 'i-lucide-cloud' : 'i-lucide-cloud-check'))"
-            class="w-3.5 h-3.5"
-            :class="syncStatus === 'saving' ? 'animate-spin' : ''"
-          />
-          <span class="text-[11px] hidden sm:inline">{{ syncLabel }}</span>
-        </UBadge>
+    <div v-else-if="planError" class="flex items-center justify-center gap-2 py-6 text-sm text-error" dir="ltr">
+      <UIcon name="i-lucide-alert-triangle" class="w-4 h-4" />
+      Couldn't load this week's plan — {{ planError.message }}
+    </div>
 
-        <!-- "Recorded today" collapsed into a chip + popover to save vertical space -->
-        <UPopover v-if="priorAchievements.length">
-          <UButton size="sm" variant="soft" color="primary" icon="i-lucide-check-square" class="shrink-0 tabular-nums">
-            {{ priorAchievements.length }}
-          </UButton>
-          <template #content>
-            <div class="p-3 w-64 max-h-72 overflow-auto" dir="rtl">
-              <p class="text-xs font-semibold text-muted mb-2">
-                تم تسجيله اليوم ({{ priorAchievements.length }})
-              </p>
-              <ul class="flex flex-col items-start gap-2">
-                <li v-for="a in priorAchievements" :key="a.id" class="flex flex-col items-start gap-1">
-                  <UBadge :color="TRACK_BADGE_COLOR[a.track_type as AchievementTrack]" variant="subtle" class="gap-1.5">
-                    <span class="font-bold">{{ trackLabel(a.track_type) }}</span>
-                    <span class="opacity-80">{{ rangeLabel(a) }}</span>
-                  </UBadge>
-                  <!-- Spelled out rather than the old «خ ت ج ح» initials, which
-                       were ambiguous against the legend right above. -->
-                  <span class="text-[11px] tabular-nums text-muted">
-                    {{ t('pages.achievements.mistakes') }} {{ a.mistakes_count }}
-                    · {{ t('pages.achievements.warnings') }} {{ a.warnings_count }}
-                    · {{ t('pages.achievements.harakat') }} {{ a.harakat_errors_count ?? 0 }}
-                  </span>
-                </li>
-              </ul>
-            </div>
-          </template>
-        </UPopover>
-      </div>
+    <div
+      v-else-if="!plan"
+      class="mx-auto max-w-sm w-full flex flex-col items-center gap-2 text-center px-6 py-8 rounded-2xl border border-default bg-default"
+    >
+      <UIcon name="i-lucide-calendar-off" class="w-8 h-8 text-muted opacity-70" />
+      <p class="text-sm font-medium">
+        لا توجد خطة أسبوعية معتمدة لهذا الطالب.
+      </p>
+      <p v-if="!isParentReadOnly" class="text-xs text-muted">
+        يجب إنشاء الخطة من صفحة المخطط أولاً.
+      </p>
+      <UButton v-if="!isParentReadOnly" to="/planner" variant="soft" color="primary" size="sm">
+        فتح المخطط
+      </UButton>
+    </div>
 
-      <!-- A session carried in via the query resolves synchronously, so skip the
-           plan-loading / empty states below and render the mushaf directly. -->
-      <div v-if="!selectedItem && planLoading" class="flex items-center justify-center gap-2 py-6 text-sm text-muted">
-        <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
-        جارٍ تحميل خطة اليوم…
-      </div>
-
-      <div v-else-if="!selectedItem && planError" class="flex items-center justify-center gap-2 py-6 text-sm text-error" dir="ltr">
-        <UIcon name="i-lucide-alert-triangle" class="w-4 h-4" />
-        Couldn't load this week's plan — {{ planError.message }}
-      </div>
-
-      <div
-        v-else-if="!selectedItem && !plan"
-        class="mx-auto max-w-sm w-full flex flex-col items-center gap-2 text-center px-6 py-8 rounded-2xl border border-default bg-default"
-      >
-        <UIcon name="i-lucide-calendar-off" class="w-8 h-8 text-muted opacity-70" />
-        <p class="text-sm font-medium">
-          لا توجد خطة أسبوعية معتمدة لهذا الطالب.
-        </p>
-        <p v-if="!isParentReadOnly" class="text-xs text-muted">
-          يجب إنشاء الخطة من صفحة المخطط أولاً.
-        </p>
-        <UButton v-if="!isParentReadOnly" to="/planner" variant="soft" color="primary" size="sm">
-          فتح المخطط
-        </UButton>
-      </div>
-
-      <div
-        v-else-if="!selectedItem && !todayItems.length"
-        class="mx-auto max-w-sm w-full flex flex-col items-center gap-2 text-center px-6 py-8 rounded-2xl border border-default bg-default"
-      >
-        <UIcon name="i-lucide-coffee" class="w-8 h-8 text-muted opacity-70" />
-        <p class="text-sm font-medium">
-          لا يوجد مقرر مخطط لهذا اليوم.
-        </p>
-      </div>
-
-      <template v-else>
-        <!-- The session is fixed by the achievement the teacher came from — no
-             in-page switcher. Just the centered reading column. -->
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-5">
-          <!-- Reading column: mushaf + marking bar, centered and readable. -->
-          <div class="min-w-0 flex-1">
-            <div class="mx-auto flex w-full max-w-[640px] flex-col gap-3">
-              <!-- Recitation method: full recitation vs. partial test. Hidden while
-                   locked (approved view) — the method can't be changed. -->
-              <div
-                v-if="showMethodSelector && !markingLocked"
-                dir="rtl"
-                class="flex items-center gap-2"
-              >
-                <span class="inline-flex items-center gap-1 text-xs font-medium text-muted shrink-0">
-                  <UIcon name="i-lucide-list-checks" class="w-3.5 h-3.5" />
-                  نوع التسميع
-                </span>
-                <div class="inline-flex rounded-lg border border-default bg-default p-0.5">
-                  <button
-                    type="button"
-                    class="rounded-md px-3 py-1.5 text-sm font-medium transition"
-                    :class="recitationMethod === 'full'
-                      ? 'bg-primary text-inverted'
-                      : 'text-muted hover:text-default'"
-                    @click="selectMethod('full')"
-                  >
-                    تسميع كامل
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded-md px-3 py-1.5 text-sm font-medium transition"
-                    :class="recitationMethod === 'test'
-                      ? 'bg-primary text-inverted'
-                      : 'text-muted hover:text-default'"
-                    @click="selectMethod('test')"
-                  >
-                    اختبار
-                  </button>
-                </div>
-              </div>
-              <div
-                v-else-if="!isParentReadOnly && selectedItem && currentTrack === 'Hifz'"
-                dir="rtl"
-                class="inline-flex items-center gap-1.5 text-xs text-muted"
-              >
-                <UIcon name="i-lucide-lock" class="w-3.5 h-3.5" />
-                تسميع كامل — إلزامي للحفظ الجديد
-              </div>
-
-              <!-- Test capture: pick spots on the mushaf, then mark errors inside them. -->
-              <div
-                v-if="isTest && !isParentReadOnly && selectedItem"
-                dir="rtl"
-                class="flex flex-col gap-2 rounded-xl border border-default bg-elevated/40 p-2.5"
-              >
-                <div v-if="!markingLocked" class="flex items-center gap-2">
-                  <div class="inline-flex shrink-0 rounded-lg border border-default bg-default p-0.5">
-                    <button
-                      type="button"
-                      class="rounded-md px-3 py-1.5 text-xs font-medium transition"
-                      :class="captureMode === 'spot' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
-                      @click="captureMode = 'spot'"
-                    >
-                      تحديد موضع
-                    </button>
-                    <button
-                      type="button"
-                      class="rounded-md px-3 py-1.5 text-xs font-medium transition"
-                      :class="captureMode === 'mark' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
-                      @click="captureMode = 'mark'"
-                    >
-                      تعليم أخطاء
-                    </button>
-                  </div>
-                  <p class="min-w-0 flex-1 text-xs" :class="isSelecting ? 'text-primary font-medium' : 'text-muted'">
-                    {{ captureHint }}
-                  </p>
-                  <!-- Picked the wrong start? Back out without defining a موضع. -->
-                  <UButton
-                    v-if="isSelecting"
-                    size="xs"
-                    variant="soft"
-                    color="neutral"
-                    class="shrink-0"
-                    @click="cancelPending"
-                  >
-                    إلغاء
-                  </UButton>
-                </div>
-
-                <div v-if="spots.length" class="flex flex-wrap gap-1.5">
-                  <span
-                    v-for="(s, i) in spots"
-                    :key="s.id"
-                    class="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 ps-2 pe-1 py-1 text-xs"
-                  >
-                    <!-- Tapping the موضع takes the mushaf to it. Kept a sibling of
-                         the remove button — a button can't nest inside a button. -->
-                    <button
-                      type="button"
-                      class="inline-flex items-center gap-1.5 rounded-full transition hover:opacity-70"
-                      :aria-label="`الذهاب إلى الموضع ${i + 1}`"
-                      @click="focusSpot(s)"
-                    >
-                      <span class="font-bold text-primary">{{ i + 1 }}</span>
-                      <span>{{ spotLabel(s) }}</span>
-                    </button>
-                    <button
-                      v-if="!markingLocked"
-                      type="button"
-                      class="text-muted hover:text-error px-0.5"
-                      :aria-label="'حذف الموضع'"
-                      @click="removeSpot(s.id)"
-                    >
-                      <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
-                    </button>
-                  </span>
-                </div>
-                <p v-else-if="!markingLocked" class="text-xs text-muted">
-                  لا مواضع بعد — حدّد موضعًا واحدًا على الأقل للاختبار.
-                </p>
-              </div>
-
-              <MushafRangeViewer
-                v-if="selectedItem"
-                ref="viewerRef"
-                :start-surah="selectedItem.start_surah"
-                :start-verse="selectedItem.start_verse"
-                :end-surah="selectedItem.end_surah"
-                :end-verse="selectedItem.end_verse"
-                :marks="marks"
-                :groups="groups"
-                :highlight-override="spotHighlight"
-                :pending-verse="isTest && captureMode === 'spot' ? pendingVerseKey : null"
-                :locked-at="lockedAt"
-                :spot-edge-at="spotEdgeAt"
-                :flash-at="flashAt"
-                :on-word-tap="markingLocked ? undefined : onWordTap"
-                :on-words-mark="(markingLocked || !canDragMark) ? undefined : onWordsMark"
-              />
-
-              <!-- Marking controls pinned to the bottom, aligned with the mushaf. -->
-              <div v-if="showToolbar" class="sticky bottom-3 z-30">
-                <MushafMarkToolbar
-                  :counts="counts"
-                  :score="liveScore"
-                  :can-submit="canSubmit"
-                  :submitting="submitting"
-                  :approved="isApproved"
-                  @clear="clearAll"
-                  @submit="onToolbarSubmit"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </template>
-    </template>
+    <div
+      v-else
+      class="mx-auto max-w-sm w-full flex flex-col items-center gap-2 text-center px-6 py-8 rounded-2xl border border-default bg-default"
+    >
+      <UIcon name="i-lucide-coffee" class="w-8 h-8 text-muted opacity-70" />
+      <p class="text-sm font-medium">
+        لا يوجد مقرر مخطط لهذا اليوم.
+      </p>
+    </div>
   </div>
 </template>
+
+<style scoped>
+.reader {
+  position: fixed;
+  inset: 0;
+  /* Above UDashboardNavbar, which the reader deliberately covers on a phone. */
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-mushaf-bg);
+  /* Nothing in the reader is meant to be selected — every drag here is a marking
+     gesture, and a stray text selection leaves highlight the teacher then has to
+     tap away. Inputs opt back in below. */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Anything the user actually types into keeps native selection. `:deep` because
+   the fields live inside child components, past the scope attribute. */
+.reader :deep(input),
+.reader :deep(textarea) {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.reader__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+@media (min-width: 1024px) {
+  .reader {
+    position: static;
+    z-index: auto;
+    inset: auto;
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    background: transparent;
+  }
+
+  .reader__body {
+    overflow: visible;
+  }
+}
+</style>

@@ -107,19 +107,15 @@ function countFor(key: Severity): number {
 </template>
 
 <style scoped>
+/* Sits flush inside the reader's bottom sheet — the sheet is the surface, so the
+   toolbar brings no card of its own. */
 .mark-toolbar {
   display: flex;
   align-items: center;
   gap: 0.5rem 0.75rem;
-  padding: 0.5rem 0.6rem;
-  background: white;
-  border: 1px solid #e7e5e4;
-  border-radius: 10px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  max-width: 720px;
-  margin: 0 auto;
   width: 100%;
   flex-wrap: wrap;
+  color: var(--color-mushaf-fg);
 }
 
 .mark-toolbar__legend {
@@ -242,11 +238,12 @@ function countFor(key: Severity): number {
 }
 
 .mark-toolbar__btn--ghost {
-  color: #57534e;
+  color: var(--color-mushaf-muted);
   background: transparent;
+  border-color: rgb(var(--mushaf-ink-rgb) / 0.14);
 }
 .mark-toolbar__btn--ghost:not(:disabled):hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: rgb(var(--mushaf-ink-rgb) / 0.06);
 }
 
 .mark-toolbar__btn--primary {
@@ -283,20 +280,16 @@ function countFor(key: Severity): number {
 
 @media (max-width: 480px) {
   .mark-toolbar {
-    padding: 0.45rem 0.5rem;
-    gap: 0.3rem;
+    gap: 0.35rem;
   }
-  .mark-toolbar__btn-label {
-    display: none;
+  /* The buttons keep their labels here — inside the sheet the bar owns the full
+     screen width and wraps, instead of competing with the mushaf for one row. */
+  .mark-toolbar__actions {
+    flex: 1 1 auto;
   }
   .mark-toolbar__btn {
-    padding: 0.45rem 0.55rem;
-  }
-  .mark-toolbar__score {
-    padding: 0.35rem 0.5rem;
-  }
-  .mark-toolbar__score-label {
-    display: none;
+    flex: 1 1 auto;
+    justify-content: center;
   }
 }
 </style>

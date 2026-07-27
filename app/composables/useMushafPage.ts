@@ -7,6 +7,8 @@ interface WireLine {
   w?: WireWord[]
   lt?: 'ayah' | 'surah_name' | 'basmallah'
   sn?: number
+  /** QUL's `is_centered` — false for a body line that should justify edge to edge. */
+  c?: boolean
 }
 interface WirePage { page: number, surahs: number[], verses: string[], lines: WireLine[] }
 
@@ -28,7 +30,8 @@ function normalizePage(wire: WirePage): MushafPageData {
     n: line.n,
     words: (line.w ?? []).map(t => normalizeWord(t, line.k)),
     lt: line.lt,
-    surah: line.sn
+    surah: line.sn,
+    centered: line.c
   }))
   return { page: wire.page, surahs: wire.surahs, verses: wire.verses, lines }
 }
@@ -188,6 +191,16 @@ export function useMushafPage(pageNumber: MaybeRefOrGetter<number>) {
   watch(() => toValue(pageNumber), p => load(p), { immediate: true })
 
   return { page: data, loading, error }
+}
+
+/**
+ * Load a page's QCF font without its text. The basmala needs page 1's font on
+ * every page that starts a surah — QUL marks the line but ships no words for it,
+ * so the glyphs are borrowed from 1:1, where the same four words are typeset.
+ */
+export function ensureMushafFont(page: number): Promise<void> {
+  if (page < 1 || page > 604) return Promise.resolve()
+  return ensureFontLoaded(page)
 }
 
 export function prefetchMushafPage(page: number) {

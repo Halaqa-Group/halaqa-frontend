@@ -4,6 +4,9 @@ import type { Ref } from 'vue'
 export type ApiClient = {
   <T = unknown>(url: string, opts?: FetchOptions): Promise<T>
   lastWarnings: Ref<string[]>
+  // Spends the HttpOnly refresh cookie for a fresh access token. Resolves
+  // false instead of throwing when there is no live session to restore.
+  refresh: () => Promise<boolean>
 }
 
 export interface LessonItem {

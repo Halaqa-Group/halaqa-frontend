@@ -13,7 +13,7 @@ export function useApi(): ApiClient {
 
 function createClient(): ApiClient {
   const config = useRuntimeConfig()
-  const token = useCookie<string | null>('auth_token')
+  const token = useAuthToken()
   const lastWarnings = ref<string[]>([])
 
   const network = $fetch.create({
@@ -85,7 +85,7 @@ function createClient(): ApiClient {
     }
   }
 
-  return Object.assign(api, { lastWarnings }) as ApiClient
+  return Object.assign(api, { lastWarnings, refresh: attemptRefresh }) as ApiClient
 }
 
 /**

@@ -52,7 +52,7 @@ interface LoginResponse {
 
 export function useAuth() {
   const api = useApi()
-  const token = useCookie<string | null>('auth_token', { maxAge: 60 * 60 * 24 * 7 })
+  const token = useAuthToken()
   const user = useState<AuthUser | null>('auth_user', () => null)
   const activeRole = useState<string | null>('auth_active_role', () => null)
   const isLoggedIn = computed(() => !!token.value)

@@ -13,7 +13,7 @@ const UNGATED_ROUTES = new Set([
 export default defineNuxtRouteMiddleware(async (to) => {
   if (to.path.startsWith('/dev/')) return
 
-  const token = useCookie('auth_token')
+  const token = useAuthToken()
   const isPublic = PUBLIC_ROUTES.has(to.path)
   const { user, activeRole, fetchMe } = useAuth()
 
@@ -22,6 +22,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // the token in the URL before the page ever got to spend it. The page hydrates
   // the profile itself once verification has gone through.
   if (UNGATED_ROUTES.has(to.path)) return
+
+  // The access token only lives 15 minutes and can be dropped by the browser
+  // long before the session ends; the HttpOnly refresh cookie is what actually
+  // holds a remembered login (30 days). Spend it before writing the user off —
+  // without this, a cleared access cookie logs out someone who ticked
+  // "remember me". Only on guarded routes, so the login page doesn't fire a
+  // doomed refresh on every visit.
+  if (!token.value && !isPublic) {
+    await useApi().refresh()
+  }
 
   if (!token.value && !isPublic) {
     return navigateTo('/auth/login')

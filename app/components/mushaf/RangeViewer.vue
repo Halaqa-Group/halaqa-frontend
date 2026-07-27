@@ -65,6 +65,15 @@ function next() {
   if (canNext.value) current.value++
 }
 
+// Which way the last move went, so the outgoing and incoming pages slide the way
+// the reader turned. Derived from `current` rather than set inside prev()/next(),
+// so a jump from goToVerse animates correctly too. `flush: 'pre'` matters: the name
+// has to be settled before the Transition renders.
+const slide = ref<'fwd' | 'back'>('fwd')
+watch(current, (next, prevIdx) => {
+  slide.value = next >= prevIdx ? 'fwd' : 'back'
+})
+
 // Only reset the position. The whole range used to be prefetched here — for a
 // long revision that is dozens of page JSONs + fonts on arrival. `useMushafPage`
 // loads the page being shown and warms its immediate neighbours on idle, which
@@ -91,8 +100,12 @@ function clearScrollTimer() {
 function scrollToVerse(verseKey: string, attempt = 0) {
   const root = pageEl.value
   if (!root) return
-  // First match is word 1 of that verse — the words render in reading order.
-  const el = root.querySelector<HTMLElement>(`[data-word-key="${verseKey}"]`)
+  // First match is word 1 of that verse — the words render in reading order. The
+  // page being turned away from is still in the DOM for the length of the
+  // animation, and it holds the same verse keys, so it is skipped: scrolling to
+  // the outgoing copy lands the reader nowhere.
+  const el = Array.from(root.querySelectorAll<HTMLElement>(`[data-word-key="${verseKey}"]`))
+    .find(w => !w.closest('.mushaf-page--leaving'))
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' })
     return
@@ -181,18 +194,24 @@ useSwipe(pageEl, {
 
     <!-- One page at a time; swipeable on touch devices -->
     <div v-else ref="pageEl" class="mushaf-range-viewer__page">
-      <MushafPage
-        v-if="currentPage"
-        :page-number="currentPage"
-        :highlight="highlight"
-        :marks="marks"
-        :groups="groups"
-        :pending-verse="pendingVerse"
-        :locked-at="lockedAt"
-        :spot-edge-at="spotEdgeAt"
-        :flash-at="flashAt"
-        :on-word-tap="onWordTap"
-      />
+      <Transition
+        :name="`mushaf-slide-${slide}`"
+        :leave-active-class="`mushaf-slide-${slide}-leave-active mushaf-page--leaving`"
+      >
+        <MushafPage
+          v-if="currentPage"
+          :key="currentPage"
+          :page-number="currentPage"
+          :highlight="highlight"
+          :marks="marks"
+          :groups="groups"
+          :pending-verse="pendingVerse"
+          :locked-at="lockedAt"
+          :spot-edge-at="spotEdgeAt"
+          :flash-at="flashAt"
+          :on-word-tap="onWordTap"
+        />
+      </Transition>
     </div>
 
     <!-- Severity picker for a drag-selected run of words -->
@@ -250,6 +269,66 @@ useSwipe(pageEl, {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+  /* Anchors the leaving page, which goes absolute for the duration of the turn.
+     `clip` rather than `hidden` on the one axis: the outgoing sheet must not spill
+     sideways, but the desktop page is taller than the viewport and scrolls, so the
+     vertical axis has to stay visible. */
+  position: relative;
+  overflow-x: clip;
+}
+
+/* ── Page turn ────────────────────────────────────────────────────────────────
+   The sheet follows the hand: forward (toward the higher page number) the current
+   page leaves to the right and the next one follows it in from the left, mirroring
+   how a mushaf is flipped. Transform and opacity only — nothing here changes the
+   page's layout size, so the per-page font fit is never re-measured mid-turn. */
+.mushaf-slide-fwd-enter-active,
+.mushaf-slide-fwd-leave-active,
+.mushaf-slide-back-enter-active,
+.mushaf-slide-back-leave-active {
+  transition:
+    transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 200ms ease;
+}
+
+/* Out of flow while it leaves, so the incoming page takes its place immediately
+   instead of the two stacking and the reader jumping. */
+.mushaf-slide-fwd-leave-active,
+.mushaf-slide-back-leave-active {
+  position: absolute;
+  inset: 0;
+}
+
+.mushaf-slide-fwd-enter-from {
+  transform: translateX(-7%);
+  opacity: 0;
+}
+.mushaf-slide-fwd-leave-to {
+  transform: translateX(7%);
+  opacity: 0;
+}
+.mushaf-slide-back-enter-from {
+  transform: translateX(7%);
+  opacity: 0;
+}
+.mushaf-slide-back-leave-to {
+  transform: translateX(-7%);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mushaf-slide-fwd-enter-active,
+  .mushaf-slide-fwd-leave-active,
+  .mushaf-slide-back-enter-active,
+  .mushaf-slide-back-leave-active {
+    transition: opacity 120ms ease;
+  }
+  .mushaf-slide-fwd-enter-from,
+  .mushaf-slide-fwd-leave-to,
+  .mushaf-slide-back-enter-from,
+  .mushaf-slide-back-leave-to {
+    transform: none;
+  }
 }
 
 .mushaf-range-viewer__error {

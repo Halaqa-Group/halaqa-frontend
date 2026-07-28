@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "cp .env.prod .env && nuxt build",
-    "build:app": "cp .env.prod .env && nuxt build && pnpm verify:quran",
+    "build:app": "nuxt build && pnpm verify:quran",
     "dev": "nuxt dev --host",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",

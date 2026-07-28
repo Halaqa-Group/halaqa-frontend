@@ -363,7 +363,19 @@ onBeforeUnmount(clearSkeletonTimer)
     align-self: center;
     width: auto;
     aspect-ratio: 3 / 5;
-    max-width: min(100%, 640px);
+    /* Wider ceiling than the phone's: a desktop reader gives the page the whole
+       panel height, and the ratio turns that height into width — clamping at 640
+       capped tall screens at a page smaller than they had room for. */
+    max-width: min(100%, 760px);
+    /* …and a floor under it, for the other end: in a short window the ratio turns
+       a small height into a page barely wider than a phone's, adrift in a column
+       three times that. The floor only bites there — a normal desktop height puts
+       the ratio well past it — and it costs nothing but the printed proportion,
+       which is the cheaper of the two things to give up. */
+    min-width: min(100%, 26rem);
+    /* A sheet lying on a desk, not a panel butted into a frame. Only on desktop,
+       where the page floats inside a column wider than itself. */
+    box-shadow: 0 2px 16px rgb(var(--mushaf-ink-rgb) / 0.09);
   }
 }
 

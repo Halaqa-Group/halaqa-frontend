@@ -14,6 +14,10 @@ const props = defineProps<{
   // When the recitation's achievement is already approved, the primary action
   // toggles to "unapprove" instead of "approve".
   approved?: boolean
+  // Two rows instead of one, for the desktop rail: the row is ~21rem there, and
+  // three buttons abreast would clip their labels. اعتماد takes the first row on
+  // its own — it is the one being aimed at — and the other two share the second.
+  stacked?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,7 +50,7 @@ const saveDisabled = computed(() => props.approved || !props.canSubmit || busy.v
 <template>
   <!-- One row, full width, ordered by weight: clearing at the start edge, the
        ending of the session at the end. -->
-  <div class="mark-toolbar" dir="rtl">
+  <div class="mark-toolbar" :class="{ 'mark-toolbar--stacked': stacked }" dir="rtl">
     <button
       type="button"
       class="mark-toolbar__btn mark-toolbar__btn--ghost"
@@ -125,6 +129,19 @@ const saveDisabled = computed(() => props.approved || !props.canSubmit || busy.v
 
 .mark-toolbar__btn--wide {
   flex: 1.6 1 0;
+}
+
+/* `order` rather than reordering the markup: the DOM keeps مسح → حفظ → اعتماد,
+   which is the order a keyboard should tab them in either way. */
+.mark-toolbar--stacked {
+  flex-wrap: wrap;
+}
+.mark-toolbar--stacked .mark-toolbar__btn--wide {
+  order: -1;
+  flex: 1 0 100%;
+}
+.mark-toolbar--stacked .mark-toolbar__btn--ghost {
+  flex: 1 1 0;
 }
 
 .mark-toolbar__btn:disabled {

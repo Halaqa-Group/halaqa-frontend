@@ -10,6 +10,11 @@ defineProps<{
   juz: number | null
   /** Read-only sessions (parent, approved record) get a quieter header. */
   muted?: boolean
+  /**
+   * The session button. False on a desktop, where the rail beside the page shows
+   * everything it would have opened — a button onto an open panel is just noise.
+   */
+  showMenu?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -33,6 +38,7 @@ const emit = defineEmits<{
     </div>
 
     <button
+      v-if="showMenu"
       type="button"
       class="reader-bar__icon reader-bar__icon--center"
       aria-label="تفاصيل الجلسة"
@@ -40,6 +46,7 @@ const emit = defineEmits<{
     >
       <UIcon name="i-lucide-layout-grid" class="size-5" />
     </button>
+    <span v-else />
 
     <div class="reader-bar__group reader-bar__group--end">
       <span v-if="juz" class="reader-bar__badge" :class="{ 'reader-bar__badge--muted': muted }">

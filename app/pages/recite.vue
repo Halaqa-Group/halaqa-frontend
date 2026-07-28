@@ -1,16 +1,16 @@
 <script setup lang="ts">
+import { useMediaQuery } from '@vueuse/core'
 import { LazyCommonConfirmDialog } from '#components'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
 import { computePercentageScore } from '~/utils/score'
 import { makeRangePredicate } from '~/utils/mushaf'
-import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
+import type { AchievementTrack } from '~/utils/achievement'
 import type { AchievementTestPosition, ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto, PositionError, RecitationMethod } from '~/types'
 import type { Severity, VerseEdge, VerseLock, WordKey } from '~/types/recitation'
 import { toScoreCounts } from '~/types/recitation'
 
 const route = useRoute()
 const router = useRouter()
-const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 const api = useApi()
@@ -1073,12 +1073,39 @@ const missingArgs = computed(() => !halaqaId.value || !studentId.value)
 const showToolbar = computed(() => !isParentReadOnly.value && !!selectedItem.value)
 
 // ── Reader chrome ───────────────────────────────────────────────────────────
-// On a phone the page is the screen: a thin bar top and bottom, the mushaf filling
-// everything between. The session's identity (who, which lesson, what was already
-// recorded today) moves behind the header's middle button, and the committing
-// actions behind «إنهاء التسميع» — see MushafReaderBottomSheet.
+// The reader has two shapes, not one shape restyled — so the breakpoint is read
+// in JS rather than left to CSS. On a phone the page is the screen: a thin bar
+// top and bottom, the mushaf filling everything between, the session's identity
+// behind the header's middle button and the committing actions behind
+// «إنهاء التسميع». On a desktop there is room for all of it at once, so the
+// controls stand in a rail beside the page and neither drawer nor modal is built
+// at all — see MushafReaderControls.
+const isDesktop = useMediaQuery('(min-width: 1024px)')
 const sheetOpen = ref(false)
 const sessionPanelOpen = ref(false)
+
+// Header wording for the session, shared by the phone's modal and the rail's head.
+const sessionStatusLabel = computed(() => {
+  if (isParentReadOnly.value) return 'تلاوة اليوم — للعرض فقط'
+  return isApproved.value ? 'تلاوة في المصحف — معتمد (للعرض)' : 'تلاوة في المصحف'
+})
+const displayStudentName = computed(() =>
+  studentPending.value && !studentName.value
+    ? '…'
+    : (studentName.value ?? `طالب #${studentId.value}`)
+)
+
+// The day's records, pre-labelled: MushafPriorList renders the same rows in the
+// modal and in the rail, and the label helpers live here.
+const priorRows = computed(() => priorAchievements.value.map(a => ({
+  id: a.id,
+  track: a.track_type as AchievementTrack,
+  trackLabel: trackLabel(a.track_type),
+  range: rangeLabel(a),
+  mistakes: a.mistakes_count ?? 0,
+  warnings: a.warnings_count ?? 0,
+  harakat: a.harakat_errors_count ?? 0
+})))
 
 const currentPage = computed(() => viewerRef.value?.currentPage)
 const lessonPageCount = computed(() => viewerRef.value?.pages.length ?? 0)
@@ -1090,6 +1117,22 @@ const pagePosition = computed(() => {
 })
 
 const { surahName: currentSurahName, juz: currentJuz, hizb: currentHizb } = useMushafPageMeta(currentPage)
+
+// Paging by keyboard, desktop only — a phone has the swipe, and a desktop had
+// nothing but the two small buttons in the rail. Mirrored for RTL, like the swipe
+// and like the nav buttons' own chevrons: left turns to the next page.
+function onReaderKey(e: KeyboardEvent) {
+  if (!isDesktop.value || e.ctrlKey || e.metaKey || e.altKey) return
+  const el = e.target as HTMLElement | null
+  // Never steal the arrow keys from something being typed into or chosen from.
+  if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return
+  if (e.key === 'ArrowLeft') viewerRef.value?.next()
+  else if (e.key === 'ArrowRight') viewerRef.value?.prev()
+  else return
+  e.preventDefault()
+}
+onMounted(() => window.addEventListener('keydown', onReaderKey))
+onBeforeUnmount(() => window.removeEventListener('keydown', onReaderKey))
 
 // ── Clearing ────────────────────────────────────────────────────────────────
 // «مسح» wipes the page on screen, not the whole lesson: a long revision is marked
@@ -1135,7 +1178,8 @@ watch(selectedItem, () => {
   <!--
     The reader. On a phone it takes the whole viewport — over the dashboard navbar,
     not inside it — so the mushaf reads the way a printed page does. From `lg` it
-    drops back in flow inside the dashboard panel and the desktop layout is unchanged.
+    drops back in flow inside the dashboard panel as a workspace: the page on the
+    reading side, every control standing in the rail beside it.
   -->
   <div
     v-if="!missingArgs && selectedItem"
@@ -1145,224 +1189,272 @@ watch(selectedItem, () => {
       :surah-name="currentSurahName"
       :juz="currentJuz"
       :muted="markingLocked"
+      :show-menu="!isDesktop"
       @back="router.push('/achievements')"
       @menu="sessionPanelOpen = true"
     />
 
-    <div class="reader__body">
-      <MushafRangeViewer
-        ref="viewerRef"
-        :start-surah="selectedItem.start_surah"
-        :start-verse="selectedItem.start_verse"
-        :end-surah="selectedItem.end_surah"
-        :end-verse="selectedItem.end_verse"
-        :marks="marks"
-        :groups="groups"
-        :highlight-override="spotHighlight"
-        :pending-verse="isTest && captureMode === 'spot' ? pendingVerseKey : null"
-        :locked-at="lockedAt"
-        :spot-edge-at="spotEdgeAt"
-        :flash-at="flashAt"
-        :on-word-tap="markingLocked ? undefined : onWordTap"
-        :on-words-mark="(markingLocked || !canDragMark) ? undefined : onWordsMark"
-      />
+    <div class="reader__main">
+      <div class="reader__body">
+        <MushafRangeViewer
+          ref="viewerRef"
+          :start-surah="selectedItem.start_surah"
+          :start-verse="selectedItem.start_verse"
+          :end-surah="selectedItem.end_surah"
+          :end-verse="selectedItem.end_verse"
+          :marks="marks"
+          :groups="groups"
+          :highlight-override="spotHighlight"
+          :pending-verse="isTest && captureMode === 'spot' ? pendingVerseKey : null"
+          :locked-at="lockedAt"
+          :spot-edge-at="spotEdgeAt"
+          :flash-at="flashAt"
+          :on-word-tap="markingLocked ? undefined : onWordTap"
+          :on-words-mark="(markingLocked || !canDragMark) ? undefined : onWordsMark"
+        />
+
+        <!-- Turning the page with a mouse. The phone swipes and the rail has its
+             pager; a desktop reader reaches for the margin of the sheet, so the
+             margins are where the controls go. -->
+        <template v-if="isDesktop && lessonPageCount > 1">
+          <button
+            type="button"
+            class="reader__turn reader__turn--prev"
+            :disabled="!viewerRef?.canPrev"
+            aria-label="الصفحة السابقة"
+            @click="viewerRef?.prev()"
+          >
+            <UIcon name="i-lucide-chevron-right" class="size-5" />
+          </button>
+          <button
+            type="button"
+            class="reader__turn reader__turn--next"
+            :disabled="!viewerRef?.canNext"
+            aria-label="الصفحة التالية"
+            @click="viewerRef?.next()"
+          >
+            <UIcon name="i-lucide-chevron-left" class="size-5" />
+          </button>
+        </template>
+      </div>
+
+      <MushafReaderControls
+        v-model:expanded="sheetOpen"
+        :desktop="isDesktop"
+        :page="currentPage"
+        :hizb="currentHizb"
+        :score="showToolbar ? liveScore : undefined"
+        :sync-status="syncStatus"
+        :sync-label="syncLabel"
+        :sync-pending="isDirty && hasSomethingToSync"
+        :show-sync="canAutosync || syncStatus !== 'idle'"
+        :position="pagePosition"
+        :total-pages="lessonPageCount"
+        :can-prev="viewerRef?.canPrev"
+        :can-next="viewerRef?.canNext"
+        :show-finish="showToolbar"
+        @prev="viewerRef?.prev()"
+        @next="viewerRef?.next()"
+      >
+        <!-- The rail's head. On a phone the same three facts are the body of the
+             session modal, opened from the top bar. -->
+        <template v-if="isDesktop" #session>
+          <MushafSessionIdentity
+            :status-label="sessionStatusLabel"
+            :student-name="displayStudentName"
+            :date="dateStr"
+            :track="currentTrack"
+            :track-label="currentTrack ? trackLabel(currentTrack) : null"
+            :range="rangeLabel(selectedItem)"
+          />
+        </template>
+
+        <!--
+          اختبار capture steers the mushaf itself — which tap defines a موضع and which
+          marks an error — so it stays on screen with the sheet shut. Everything below
+          only matters once the teacher is done reciting.
+        -->
+        <template v-if="isTest && !isParentReadOnly && !markingLocked" #context>
+          <div dir="rtl" class="flex flex-col gap-2">
+            <div class="flex items-center gap-2">
+              <div class="inline-flex shrink-0 rounded-lg border border-default bg-default p-0.5">
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+                  :class="captureMode === 'spot' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
+                  @click="captureMode = 'spot'"
+                >
+                  تحديد موضع
+                </button>
+                <button
+                  type="button"
+                  class="rounded-md px-3 py-1.5 text-xs font-medium transition"
+                  :class="captureMode === 'mark' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
+                  @click="captureMode = 'mark'"
+                >
+                  تعليم أخطاء
+                </button>
+              </div>
+              <p class="min-w-0 flex-1 text-xs" :class="isSelecting ? 'text-primary font-medium' : 'text-muted'">
+                {{ captureHint }}
+              </p>
+              <!-- Picked the wrong start? Back out without defining a موضع. -->
+              <UButton
+                v-if="isSelecting"
+                size="xs"
+                variant="soft"
+                color="neutral"
+                class="shrink-0"
+                @click="cancelPending"
+              >
+                إلغاء
+              </UButton>
+            </div>
+          </div>
+        </template>
+
+        <!--
+          One section per decision, each a label at the start edge and its control at
+          the end, so the sheet scans as a settings list. The sheet draws the rules
+          between them; sections bring no spacing of their own.
+        -->
+
+        <!-- Recitation method: full recitation vs. partial test. The selector is
+             replaced by a locked reading when the method can't be changed (approved
+             view, or حفظ جديد which is always a full recitation). -->
+        <section
+          v-if="(showMethodSelector && !markingLocked) || (!isParentReadOnly && currentTrack === 'Hifz')"
+          dir="rtl"
+          class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
+        >
+          <span class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted">
+            <UIcon name="i-lucide-list-checks" class="size-3.5" />
+            نوع التسميع
+          </span>
+
+          <div
+            v-if="showMethodSelector && !markingLocked"
+            class="inline-flex rounded-lg border border-default bg-default p-0.5"
+          >
+            <button
+              type="button"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              :class="recitationMethod === 'full'
+                ? 'bg-primary text-inverted'
+                : 'text-muted hover:text-default'"
+              @click="selectMethod('full')"
+            >
+              تسميع كامل
+            </button>
+            <button
+              type="button"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+              :class="recitationMethod === 'test'
+                ? 'bg-primary text-inverted'
+                : 'text-muted hover:text-default'"
+              @click="selectMethod('test')"
+            >
+              اختبار
+            </button>
+          </div>
+          <span
+            v-else
+            class="inline-flex items-center gap-1.5 rounded-lg border border-default px-2.5 py-1.5 text-xs text-muted"
+          >
+            <UIcon name="i-lucide-lock" class="size-3.5" />
+            تسميع كامل — إلزامي للحفظ الجديد
+          </span>
+        </section>
+
+        <!-- The tested مواضع, each a jump target into the mushaf. -->
+        <section
+          v-if="isTest && !isParentReadOnly && (spots.length > 0 || !markingLocked)"
+          dir="rtl"
+          class="flex flex-col gap-2"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+              <UIcon name="i-lucide-map-pin" class="size-3.5" />
+              المواضع المختبرة
+            </span>
+            <span
+              v-if="spots.length"
+              class="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted"
+            >{{ spots.length }}</span>
+          </div>
+
+          <div v-if="spots.length" class="flex flex-wrap gap-1.5">
+            <span
+              v-for="(s, i) in spots"
+              :key="s.id"
+              class="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 ps-2 pe-1 py-1 text-xs"
+            >
+              <!-- Tapping the موضع takes the mushaf to it. Kept a sibling of
+                   the remove button — a button can't nest inside a button. -->
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-full transition hover:opacity-70"
+                :aria-label="`الذهاب إلى الموضع ${i + 1}`"
+                @click="focusSpot(s); sheetOpen = false"
+              >
+                <span class="font-bold text-primary">{{ i + 1 }}</span>
+                <span>{{ spotLabel(s) }}</span>
+              </button>
+              <button
+                v-if="!markingLocked"
+                type="button"
+                class="text-muted hover:text-error px-0.5"
+                :aria-label="'حذف الموضع'"
+                @click="removeSpot(s.id)"
+              >
+                <UIcon name="i-lucide-x" class="size-3.5" />
+              </button>
+            </span>
+          </div>
+          <p v-else class="text-xs text-muted">
+            لا مواضع بعد — حدّد موضعًا واحدًا على الأقل للاختبار.
+          </p>
+        </section>
+
+        <!-- The tally is a reading, so it stays with the other rows … -->
+        <MushafMarkSummary v-if="showToolbar" :counts="counts" />
+
+        <!-- The rail has no collapsed bar to carry the day's records, so they come
+             down here as one more section. On a phone they stay in the modal. -->
+        <MushafPriorList v-if="isDesktop" :items="priorRows" />
+
+        <!-- … and only the actions go to the footer, below the rule. -->
+        <template v-if="showToolbar" #actions>
+          <MushafMarkToolbar
+            :can-clear="pageMarkCount > 0"
+            :can-submit="canSubmit"
+            :submitting="submitting"
+            :saving="savingOnly"
+            :approved="isApproved"
+            :stacked="isDesktop"
+            @clear="clearCurrentPage"
+            @save="onToolbarSave"
+            @submit="onToolbarSubmit"
+          />
+        </template>
+      </MushafReaderControls>
     </div>
 
-    <MushafReaderBottomSheet
-      v-model:expanded="sheetOpen"
-      :page="currentPage"
-      :hizb="currentHizb"
-      :score="showToolbar ? liveScore : undefined"
-      :sync-status="syncStatus"
-      :sync-label="syncLabel"
-      :sync-pending="isDirty && hasSomethingToSync"
-      :show-sync="canAutosync || syncStatus !== 'idle'"
-      :position="pagePosition"
-      :total-pages="lessonPageCount"
-      :can-prev="viewerRef?.canPrev"
-      :can-next="viewerRef?.canNext"
-      :show-finish="showToolbar"
-      @prev="viewerRef?.prev()"
-      @next="viewerRef?.next()"
-    >
-      <!--
-        اختبار capture steers the mushaf itself — which tap defines a موضع and which
-        marks an error — so it stays on screen with the sheet shut. Everything below
-        only matters once the teacher is done reciting.
-      -->
-      <template v-if="isTest && !isParentReadOnly && !markingLocked" #context>
-        <div dir="rtl" class="flex flex-col gap-2">
-          <div class="flex items-center gap-2">
-            <div class="inline-flex shrink-0 rounded-lg border border-default bg-default p-0.5">
-              <button
-                type="button"
-                class="rounded-md px-3 py-1.5 text-xs font-medium transition"
-                :class="captureMode === 'spot' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
-                @click="captureMode = 'spot'"
-              >
-                تحديد موضع
-              </button>
-              <button
-                type="button"
-                class="rounded-md px-3 py-1.5 text-xs font-medium transition"
-                :class="captureMode === 'mark' ? 'bg-primary text-inverted' : 'text-muted hover:text-default'"
-                @click="captureMode = 'mark'"
-              >
-                تعليم أخطاء
-              </button>
-            </div>
-            <p class="min-w-0 flex-1 text-xs" :class="isSelecting ? 'text-primary font-medium' : 'text-muted'">
-              {{ captureHint }}
-            </p>
-            <!-- Picked the wrong start? Back out without defining a موضع. -->
-            <UButton
-              v-if="isSelecting"
-              size="xs"
-              variant="soft"
-              color="neutral"
-              class="shrink-0"
-              @click="cancelPending"
-            >
-              إلغاء
-            </UButton>
-          </div>
-        </div>
-      </template>
-
-      <!--
-        One section per decision, each a label at the start edge and its control at
-        the end, so the sheet scans as a settings list. The sheet draws the rules
-        between them; sections bring no spacing of their own.
-      -->
-
-      <!-- Recitation method: full recitation vs. partial test. The selector is
-           replaced by a locked reading when the method can't be changed (approved
-           view, or حفظ جديد which is always a full recitation). -->
-      <section
-        v-if="(showMethodSelector && !markingLocked) || (!isParentReadOnly && currentTrack === 'Hifz')"
-        dir="rtl"
-        class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
-      >
-        <span class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted">
-          <UIcon name="i-lucide-list-checks" class="size-3.5" />
-          نوع التسميع
-        </span>
-
-        <div
-          v-if="showMethodSelector && !markingLocked"
-          class="inline-flex rounded-lg border border-default bg-default p-0.5"
-        >
-          <button
-            type="button"
-            class="rounded-md px-3 py-1.5 text-sm font-medium transition"
-            :class="recitationMethod === 'full'
-              ? 'bg-primary text-inverted'
-              : 'text-muted hover:text-default'"
-            @click="selectMethod('full')"
-          >
-            تسميع كامل
-          </button>
-          <button
-            type="button"
-            class="rounded-md px-3 py-1.5 text-sm font-medium transition"
-            :class="recitationMethod === 'test'
-              ? 'bg-primary text-inverted'
-              : 'text-muted hover:text-default'"
-            @click="selectMethod('test')"
-          >
-            اختبار
-          </button>
-        </div>
-        <span
-          v-else
-          class="inline-flex items-center gap-1.5 rounded-lg border border-default px-2.5 py-1.5 text-xs text-muted"
-        >
-          <UIcon name="i-lucide-lock" class="size-3.5" />
-          تسميع كامل — إلزامي للحفظ الجديد
-        </span>
-      </section>
-
-      <!-- The tested مواضع, each a jump target into the mushaf. -->
-      <section
-        v-if="isTest && !isParentReadOnly && (spots.length > 0 || !markingLocked)"
-        dir="rtl"
-        class="flex flex-col gap-2"
-      >
-        <div class="flex items-center justify-between gap-2">
-          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
-            <UIcon name="i-lucide-map-pin" class="size-3.5" />
-            المواضع المختبرة
-          </span>
-          <span
-            v-if="spots.length"
-            class="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted"
-          >{{ spots.length }}</span>
-        </div>
-
-        <div v-if="spots.length" class="flex flex-wrap gap-1.5">
-          <span
-            v-for="(s, i) in spots"
-            :key="s.id"
-            class="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 ps-2 pe-1 py-1 text-xs"
-          >
-            <!-- Tapping the موضع takes the mushaf to it. Kept a sibling of
-                 the remove button — a button can't nest inside a button. -->
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 rounded-full transition hover:opacity-70"
-              :aria-label="`الذهاب إلى الموضع ${i + 1}`"
-              @click="focusSpot(s); sheetOpen = false"
-            >
-              <span class="font-bold text-primary">{{ i + 1 }}</span>
-              <span>{{ spotLabel(s) }}</span>
-            </button>
-            <button
-              v-if="!markingLocked"
-              type="button"
-              class="text-muted hover:text-error px-0.5"
-              :aria-label="'حذف الموضع'"
-              @click="removeSpot(s.id)"
-            >
-              <UIcon name="i-lucide-x" class="size-3.5" />
-            </button>
-          </span>
-        </div>
-        <p v-else class="text-xs text-muted">
-          لا مواضع بعد — حدّد موضعًا واحدًا على الأقل للاختبار.
-        </p>
-      </section>
-
-      <!-- The tally is a reading, so it stays with the other rows … -->
-      <MushafMarkSummary v-if="showToolbar" :counts="counts" />
-
-      <!-- … and only the actions go to the sheet's footer, below the rule. -->
-      <template v-if="showToolbar" #actions>
-        <MushafMarkToolbar
-          :can-clear="pageMarkCount > 0"
-          :can-submit="canSubmit"
-          :submitting="submitting"
-          :saving="savingOnly"
-          :approved="isApproved"
-          @clear="clearCurrentPage"
-          @save="onToolbarSave"
-          @submit="onToolbarSubmit"
-        />
-      </template>
-    </MushafReaderBottomSheet>
-
     <!-- Who, which lesson, and what has already been recorded today — everything
-         the old header bar carried, moved off the reading surface. -->
-    <UModal v-model:open="sessionPanelOpen" :ui="{ content: 'sm:max-w-md' }">
+         the old header bar carried, moved off the reading surface. Never built on
+         a desktop: the rail shows all of it without being asked. -->
+    <UModal v-if="!isDesktop" v-model:open="sessionPanelOpen" :ui="{ content: 'sm:max-w-md' }">
       <template #header>
         <div class="flex items-start justify-between gap-3 w-full" dir="rtl">
-          <div class="min-w-0">
-            <p class="text-[11px] font-bold tracking-wide text-primary">
-              {{ isParentReadOnly ? 'تلاوة اليوم — للعرض فقط' : (isApproved ? 'تلاوة في المصحف — معتمد (للعرض)' : 'تلاوة في المصحف') }}
-            </p>
-            <p class="text-base font-bold truncate">
-              {{ studentPending && !studentName ? '…' : (studentName ?? `طالب #${studentId}`) }}
-            </p>
-          </div>
+          <MushafSessionIdentity
+            class="min-w-0"
+            :status-label="sessionStatusLabel"
+            :student-name="displayStudentName"
+            :date="dateStr"
+            :track="currentTrack"
+            :track-label="currentTrack ? trackLabel(currentTrack) : null"
+            :range="rangeLabel(selectedItem)"
+          />
           <UButton
             icon="i-lucide-x"
             color="neutral"
@@ -1377,23 +1469,6 @@ watch(selectedItem, () => {
 
       <template #body>
         <div class="flex flex-col gap-3" dir="rtl">
-          <div class="flex flex-wrap items-center gap-2">
-            <UBadge color="neutral" variant="subtle" size="sm" class="tabular-nums">
-              {{ dateStr }}
-            </UBadge>
-            <UBadge
-              v-if="currentTrack"
-              :color="TRACK_BADGE_COLOR[currentTrack as AchievementTrack]"
-              variant="subtle"
-              size="sm"
-            >
-              {{ trackLabel(currentTrack) }}
-            </UBadge>
-            <UBadge color="neutral" variant="subtle" size="sm">
-              {{ rangeLabel(selectedItem) }}
-            </UBadge>
-          </div>
-
           <!-- Autosync state: the marks are written to the backend on their own, so
                say plainly whether the server currently has them. -->
           <div
@@ -1411,26 +1486,7 @@ watch(selectedItem, () => {
             {{ syncLabel }}
           </div>
 
-          <div v-if="priorAchievements.length" class="flex flex-col gap-2">
-            <p class="text-xs font-semibold text-muted">
-              تم تسجيله اليوم ({{ priorAchievements.length }})
-            </p>
-            <ul class="flex flex-col items-start gap-2 max-h-64 overflow-auto">
-              <li v-for="a in priorAchievements" :key="a.id" class="flex flex-col items-start gap-1">
-                <UBadge :color="TRACK_BADGE_COLOR[a.track_type as AchievementTrack]" variant="subtle" class="gap-1.5">
-                  <span class="font-bold">{{ trackLabel(a.track_type) }}</span>
-                  <span class="opacity-80">{{ rangeLabel(a) }}</span>
-                </UBadge>
-                <!-- Spelled out rather than the old «خ ت ج ح» initials, which
-                     were ambiguous against the legend right above. -->
-                <span class="text-[11px] tabular-nums text-muted">
-                  {{ t('pages.achievements.mistakes') }} {{ a.mistakes_count }}
-                  · {{ t('pages.achievements.warnings') }} {{ a.warnings_count }}
-                  · {{ t('pages.achievements.harakat') }} {{ a.harakat_errors_count ?? 0 }}
-                </span>
-              </li>
-            </ul>
-          </div>
+          <MushafPriorList :items="priorRows" />
         </div>
       </template>
     </UModal>
@@ -1518,6 +1574,15 @@ watch(selectedItem, () => {
   -webkit-user-select: text;
 }
 
+/* The two columns of the desktop workspace; on a phone simply the stack between
+   the two bars. */
+.reader__main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .reader__body {
   flex: 1 1 auto;
   min-height: 0;
@@ -1530,7 +1595,9 @@ watch(selectedItem, () => {
   /* Back in flow inside the dashboard panel, but claiming the panel's full height
      rather than growing to whatever 15 lines come to. The panel body is a flex
      column of definite height, so the reader can hand a real height down to the
-     mushaf and the page fits the screen the way it does on a phone. */
+     mushaf and the page fits the screen the way it does on a phone.
+     A framed surface rather than bare content: the top bar, the page and the rail
+     are one instrument, and the border is what says so. */
   .reader {
     position: static;
     z-index: auto;
@@ -1538,13 +1605,73 @@ watch(selectedItem, () => {
     flex: 1 1 auto;
     min-height: 0;
     width: 100%;
-    max-width: 640px;
-    margin: 0 auto;
-    background: transparent;
+    max-width: none;
+    margin: 0;
+    background: var(--color-mushaf-bg);
+    border: 1px solid var(--color-mushaf-border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  /* `direction: rtl` and not `row-reverse`: the reading side is the start side, so
+     the mushaf takes the right of the workspace and the rail the left — away from
+     the dashboard's own sidebar, which is on the right. Written as direction so
+     the rail's `border-inline-start` lands between the two columns. */
+  .reader__main {
+    flex-direction: row;
+    direction: rtl;
   }
 
   .reader__body {
+    /* The page is height-driven and fits whole, so nothing here scrolls. */
     overflow: hidden;
+    min-width: 0;
+    /* Room for the page's shadow and for the turn buttons to sit in the margin. */
+    padding: 1rem 3.25rem;
+    position: relative;
+  }
+
+  /* Page turns live in the margin either side of the sheet — the desktop
+     equivalent of the phone's swipe. Quiet until the pointer is near them. */
+  .reader__turn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    /* A gutter rather than a lone chevron: at the width of the margin it sits in,
+       and tall enough that the pointer finds it without aiming. */
+    height: min(45%, 20rem);
+    border-radius: 12px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--color-mushaf-muted);
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 0.12s, background-color 0.12s, border-color 0.12s;
+  }
+
+  .reader__turn:not(:disabled):hover {
+    opacity: 1;
+    background: var(--color-mushaf-chrome);
+    border-color: var(--color-mushaf-border);
+  }
+
+  .reader__turn:disabled {
+    opacity: 0.15;
+    cursor: not-allowed;
+  }
+
+  /* «prev» is the lower page number, which in a mushaf is the sheet to the right —
+     and the column is laid out RTL, so that is the inline start. */
+  .reader__turn--prev {
+    inset-inline-start: 0.5rem;
+  }
+
+  .reader__turn--next {
+    inset-inline-end: 0.5rem;
   }
 }
 </style>

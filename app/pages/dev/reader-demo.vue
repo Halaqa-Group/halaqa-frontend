@@ -75,7 +75,7 @@ const counts = computed(() => {
 
 <template>
   <div class="reader">
-    <MushafReaderTopBar :surah-name="surahName" :juz="juz" @back="() => {}" @menu="() => {}" />
+    <MushafReaderTopBar :surah-name="surahName" :juz="juz" show-menu @back="() => {}" @menu="() => {}" />
 
     <div class="reader__body">
       <MushafRangeViewer
@@ -91,7 +91,7 @@ const counts = computed(() => {
       />
     </div>
 
-    <MushafReaderBottomSheet
+    <MushafReaderControls
       v-model:expanded="sheetOpen"
       :page="currentPage"
       :hizb="hizb"
@@ -118,7 +118,7 @@ const counts = computed(() => {
           @submit="() => {}"
         />
       </template>
-    </MushafReaderBottomSheet>
+    </MushafReaderControls>
   </div>
 </template>
 

@@ -1,15 +1,21 @@
 <script setup lang="ts">
 import { mushafNumber } from '~/utils/mushaf'
 
-// The reader's bottom edge. Collapsed it says only where the reader is and how the
+// The reader's controls, in the two shapes the reader itself has.
+//
+// PHONE — the bottom edge. Collapsed it says only where the reader is and how the
 // recitation is scoring so far — the printed mushaf's footer, plus the one number
 // the teacher watches. The committing actions (مسح، اعتماد) stay behind
 // «إنهاء التسميع»: marking is continuous and should never be one mis-tap away from
-// wiping or approving the session.
+// wiping or approving the session. `#context` is the exception — it renders above
+// the bar and is always visible, for controls that steer marking itself (the
+// اختبار spot/mark mode); hiding those would make the mushaf unusable while the
+// sheet is shut.
 //
-// `#context` is the exception — it renders above the bar and is always visible, for
-// controls that steer marking itself (the اختبار spot/mark mode). Hiding those would
-// make the mushaf unusable while the sheet is shut.
+// DESKTOP — a standing rail beside the page. There is room for every control at
+// once, so nothing hides: a mis-tap is not a risk with a mouse the way it is with
+// a thumb resting on the screen, and hunting for the score behind a drawer is the
+// worse trade. Same slots, same order — only the surface changes.
 const props = defineProps<{
   page?: number
   hizb?: number | null
@@ -20,13 +26,15 @@ const props = defineProps<{
   /** Marks on screen that the backend has not confirmed yet. */
   syncPending?: boolean
   showSync?: boolean
-  /** Position within the lesson's pages, for the expanded nav row. */
+  /** Position within the lesson's pages, for the nav row. */
   position?: number
   totalPages?: number
   canPrev?: boolean
   canNext?: boolean
   /** False for parent / approved views: no way to open the action drawer. */
   showFinish?: boolean
+  /** Stand beside the page instead of under it. */
+  desktop?: boolean
 }>()
 
 const expanded = defineModel<boolean>('expanded', { default: false })
@@ -48,11 +56,101 @@ const syncIcon = computed(() => {
   return props.syncPending ? 'i-lucide-cloud' : 'i-lucide-cloud-check'
 })
 
+const syncClass = computed(() => [
+  props.syncStatus === 'saving' && 'reader-sheet__sync--spin',
+  props.syncStatus === 'error' && 'reader-sheet__sync--error',
+  props.syncStatus !== 'error' && !props.syncPending && 'reader-sheet__sync--ok'
+])
+
 const hasNav = computed(() => (props.totalPages ?? 0) > 1)
 </script>
 
 <template>
-  <div class="reader-sheet-root">
+  <!-- ── Desktop: the standing rail ──────────────────────────────────────────
+       Head, scrolling sections, pinned actions. The head holds the session's
+       identity so it stays readable however far the sections scroll, and the
+       actions are pinned so «اعتماد» is always one move away from the mushaf. -->
+  <aside v-if="desktop" class="reader-rail" dir="rtl">
+    <div v-if="$slots.session" class="reader-rail__head">
+      <slot name="session" />
+    </div>
+
+    <div class="reader-rail__scroll">
+      <!-- Where the reader is, and how it is scoring. The phone puts this in the
+           collapsed bar; here it gets room to say the sync state in words rather
+           than as an icon whose meaning lives in a tooltip. -->
+      <div class="reader-rail__status">
+        <div class="reader-rail__status-row">
+          <p class="reader-rail__where tabular-nums">
+            <span v-if="page">صفحة {{ mushafNumber(page) }}</span>
+            <span v-if="page && hizb" class="reader-sheet__dot">·</span>
+            <span v-if="hizb">الحزب {{ mushafNumber(hizb) }}</span>
+          </p>
+
+          <span
+            v-if="score != null"
+            class="reader-sheet__score"
+            :class="`reader-sheet__score--${scoreTone}`"
+          >{{ score }}%</span>
+        </div>
+
+        <div
+          v-if="showSync"
+          class="reader-rail__sync"
+          :class="{ 'reader-rail__sync--error': syncStatus === 'error' }"
+        >
+          <UIcon :name="syncIcon" class="size-3.5" :class="syncClass" />
+          <span>{{ syncLabel }}</span>
+        </div>
+      </div>
+
+      <!-- Above the settings, like on the phone's bar: this is the one block that
+           steers marking as it happens, and it is read while reciting rather than
+           before. -->
+      <div v-if="$slots.context">
+        <slot name="context" />
+      </div>
+
+      <div v-if="hasNav" class="reader-sheet__row reader-rail__nav">
+        <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+          <UIcon name="i-lucide-book-open" class="size-3.5" />
+          الصفحة
+        </span>
+        <div class="reader-sheet__pager">
+          <button
+            type="button"
+            class="reader-sheet__nav-btn"
+            :disabled="!canPrev"
+            aria-label="الصفحة السابقة"
+            @click="emit('prev')"
+          >
+            <UIcon name="i-lucide-chevron-right" class="size-4" />
+          </button>
+          <span class="reader-sheet__nav-pos tabular-nums">
+            {{ mushafNumber(position) }} من {{ mushafNumber(totalPages) }}
+          </span>
+          <button
+            type="button"
+            class="reader-sheet__nav-btn"
+            :disabled="!canNext"
+            aria-label="الصفحة التالية"
+            @click="emit('next')"
+          >
+            <UIcon name="i-lucide-chevron-left" class="size-4" />
+          </button>
+        </div>
+      </div>
+
+      <slot />
+    </div>
+
+    <div v-if="$slots.actions" class="reader-rail__actions">
+      <slot name="actions" />
+    </div>
+  </aside>
+
+  <!-- ── Phone: the bottom sheet ─────────────────────────────────────────── -->
+  <div v-else class="reader-sheet-root">
     <section class="reader-sheet" dir="rtl">
       <div v-if="$slots.context" class="reader-sheet__context">
         <slot name="context" />
@@ -70,11 +168,7 @@ const hasNav = computed(() => (props.totalPages ?? 0) > 1)
             v-if="showSync"
             :name="syncIcon"
             class="reader-sheet__sync size-4"
-            :class="[
-              syncStatus === 'saving' && 'reader-sheet__sync--spin',
-              syncStatus === 'error' && 'reader-sheet__sync--error',
-              syncStatus !== 'error' && !syncPending && 'reader-sheet__sync--ok'
-            ]"
+            :class="syncClass"
             :title="syncLabel"
           />
 
@@ -165,6 +259,106 @@ const hasNav = computed(() => (props.totalPages ?? 0) > 1)
 </template>
 
 <style scoped>
+/* ── The rail ─────────────────────────────────────────────────────────────── */
+.reader-rail {
+  flex: 0 0 21rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* The rail is chrome, the page is the document — so it takes the chrome tint and
+     a single rule separates the two. `inline-start` is the rail's right edge here:
+     the reader lays its two columns out RTL, so the rail sits on the left and the
+     mushaf on the right. */
+  background: var(--color-mushaf-chrome);
+  border-inline-start: 1px solid var(--color-mushaf-border);
+  color: var(--color-mushaf-fg);
+  font-family: 'Thmanyah Sans', serif;
+}
+
+@media (min-width: 1536px) {
+  .reader-rail {
+    flex-basis: 23rem;
+  }
+}
+
+.reader-rail__head {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--color-mushaf-border);
+  flex-shrink: 0;
+}
+
+.reader-rail__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-inline: 1rem;
+}
+
+/* One rhythm for every section, whoever supplies it: the rail's own rows and the
+   slotted blocks are spaced and separated by the same rule, so nothing has to
+   carry its own margins. Written twice because slot content is compiled in the
+   parent and carries the parent's scope id — `:slotted` is the only way to reach
+   it, and it can't be merged with the plain child selector. */
+.reader-rail__scroll > * {
+  padding-block: 0.75rem;
+}
+.reader-rail__scroll > :slotted(*) {
+  padding-block: 0.75rem;
+}
+.reader-rail__scroll > *:not(:first-child) {
+  border-top: 1px solid var(--color-mushaf-border);
+}
+.reader-rail__scroll > :slotted(*:not(:first-child)) {
+  border-top: 1px solid var(--color-mushaf-border);
+}
+
+.reader-rail__status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.reader-rail__status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.reader-rail__where {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-mushaf-muted);
+}
+
+.reader-rail__sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--color-mushaf-muted);
+}
+
+.reader-rail__sync--error {
+  color: var(--color-status-warning);
+}
+
+.reader-rail__nav {
+  padding-block: 0.75rem;
+}
+
+/* Pinned below the scrolling sections, on the chrome rather than in it, so the
+   ending of the session never scrolls out of reach. */
+.reader-rail__actions {
+  flex-shrink: 0;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-mushaf-border);
+}
+
+/* ── The bottom sheet ─────────────────────────────────────────────────────── */
 .reader-sheet {
   position: relative;
   z-index: 21;
@@ -335,6 +529,10 @@ const hasNav = computed(() => (props.totalPages ?? 0) > 1)
   background: transparent;
   color: var(--color-mushaf-fg);
   cursor: pointer;
+}
+
+.reader-sheet__nav-btn:not(:disabled):hover {
+  background: rgb(var(--mushaf-ink-rgb) / 0.06);
 }
 
 .reader-sheet__nav-btn:disabled {

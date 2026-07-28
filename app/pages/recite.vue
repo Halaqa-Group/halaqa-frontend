@@ -5,7 +5,7 @@ import { computePercentageScore } from '~/utils/score'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import type { AchievementTestPosition, ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto, PositionError, RecitationMethod } from '~/types'
-import type { Severity, VerseEdge, VerseLock } from '~/types/recitation'
+import type { Severity, VerseEdge, VerseLock, WordKey } from '~/types/recitation'
 import { toScoreCounts } from '~/types/recitation'
 
 const route = useRoute()
@@ -1091,6 +1091,39 @@ const pagePosition = computed(() => {
 
 const { surahName: currentSurahName, juz: currentJuz, hizb: currentHizb } = useMushafPageMeta(currentPage)
 
+// ── Clearing ────────────────────────────────────────────────────────────────
+// «مسح» wipes the page on screen, not the whole lesson: a long revision is marked
+// page by page, and a teacher correcting the page in front of them must not lose
+// the pages already recited. The page's own layout data says which words are on
+// it — the same source the mushaf renders from, so what the button clears is
+// exactly what is visible. It comes from the module-level page cache the reader
+// already filled, so this costs no extra request.
+const { page: currentPageData } = useMushafPage(() => currentPage.value ?? 0)
+
+const currentPageWordKeys = computed<WordKey[]>(() => {
+  const data = currentPageData.value
+  if (!data) return []
+  const keys: WordKey[] = []
+  for (const line of data.lines) {
+    // Ayah ornaments (`e`) are never marked — no point offering them for clearing.
+    for (const word of line.words) if (word.t !== 'e') keys.push(`${word.k}:${word.p}`)
+  }
+  return keys
+})
+
+const pageMarkCount = computed(() =>
+  currentPageWordKeys.value.reduce((n, key) => n + (marks.value[key] ? 1 : 0), 0)
+)
+
+function clearCurrentPage() {
+  const keys = currentPageWordKeys.value
+  if (!keys.length) return
+  // `setMarks(..., null)` is the same unmark the drag picker uses: it drops the
+  // words' block membership too, so a run that straddles two pages keeps working
+  // as a block on the page that still has it.
+  setMarks(keys, null)
+}
+
 // Marking must never be one mis-tap from a wipe or an approval, so the drawer that
 // holds them shuts again as soon as the teacher goes back to the mushaf.
 watch(selectedItem, () => {
@@ -1305,12 +1338,12 @@ watch(selectedItem, () => {
       <!-- … and only the actions go to the sheet's footer, below the rule. -->
       <template v-if="showToolbar" #actions>
         <MushafMarkToolbar
-          :counts="counts"
+          :can-clear="pageMarkCount > 0"
           :can-submit="canSubmit"
           :submitting="submitting"
           :saving="savingOnly"
           :approved="isApproved"
-          @clear="clearAll"
+          @clear="clearCurrentPage"
           @save="onToolbarSave"
           @submit="onToolbarSubmit"
         />

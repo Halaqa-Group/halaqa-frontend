@@ -255,6 +255,14 @@ function onWordLeave(word: MushafWord) {
      instead. Small text on a short window is honest; a page that spills is not. */
   --mushaf-word-size: min(36px, 5.5cqi, 3.4cqb);
   display: inline-block;
+  /* Never shrink. A justified line is a nowrap flex row, so the moment its words
+     add up to more than the measure — a rasterizer that sets the glyphs a hair
+     wider than the fit pass measured, iOS being the one seen doing it — the
+     default `flex-shrink: 1` squeezes the boxes into each other and an ayah
+     ornament lands on top of the word before it. Fixed boxes turn that failure
+     into a line that ends a hair past the margin, which is invisible, instead of
+     overlapping glyphs, which is not. */
+  flex: 0 0 auto;
   font-size: calc(var(--mushaf-word-size) * var(--line-fit, 1));
   color: inherit;
   padding: 0 1px;
@@ -262,8 +270,14 @@ function onWordLeave(word: MushafWord) {
   transition: background-color 0.12s ease;
 }
 
+/* The ornament keeps a little air of its own. The QCF advances already carry the
+   mushaf's spacing, but the ornament is the one glyph whose ink is a closed ring:
+   where anything eats into the gaps — a line set a hair too wide, a browser sizing
+   the text its own way — a ring landing on the word beside it is unmistakable in a
+   way two words touching is not. The fit counts these margins, so the cost is a
+   couple of percent on ornament-dense lines. */
 .mushaf-word--marker {
-  margin: 0 0.1em;
+  margin: 0 0.15em;
 }
 
 .mushaf-word--dim {

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import type { MarkCounts } from '~/types/recitation'
-
 // The session's actions, and nothing else: the error tally it acts on is a
 // separate row of the sheet (MushafMarkSummary), so a count can never be misread
 // as a button.
 const props = defineProps<{
-  // Only to know whether there is anything to clear.
-  counts: MarkCounts
+  // Whether the page on screen has anything to erase — «مسح» clears that page,
+  // not the whole lesson.
+  canClear?: boolean
   canSubmit?: boolean
   submitting?: boolean
   // An explicit «حفظ» is in flight — the session is being stored without being
@@ -18,6 +17,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  // Erase the marks on the page being read, and only those.
   clear: []
   // Store the session and leave it pending — the recitation is kept, not signed
   // off. Sits beside اعتماد so ending the session is never all-or-nothing.
@@ -50,12 +50,13 @@ const saveDisabled = computed(() => props.approved || !props.canSubmit || busy.v
     <button
       type="button"
       class="mark-toolbar__btn mark-toolbar__btn--ghost"
-      :disabled="counts.total === 0 || approved || busy"
-      :aria-label="'مسح'"
+      :disabled="!canClear || approved || busy"
+      aria-label="مسح أخطاء هذه الصفحة"
+      title="مسح أخطاء هذه الصفحة"
       @click="emit('clear')"
     >
       <UIcon name="i-lucide-eraser" class="size-4" />
-      <span class="mark-toolbar__btn-label">مسح</span>
+      <span class="mark-toolbar__btn-label">مسح الصفحة</span>
     </button>
 
     <!-- Save without approving: the record is kept for review, and the teacher
@@ -131,7 +132,11 @@ const saveDisabled = computed(() => props.approved || !props.canSubmit || busy.v
   cursor: not-allowed;
 }
 
+/* Content-width, not an equal third: «مسح الصفحة» is the longest label and the
+   least-wanted action — it takes what it needs and leaves the row to the two that
+   end the session. */
 .mark-toolbar__btn--ghost {
+  flex: 0 0 auto;
   color: var(--color-mushaf-muted);
   background: transparent;
   border-color: rgb(var(--mushaf-ink-rgb) / 0.14);
@@ -174,12 +179,10 @@ const saveDisabled = computed(() => props.approved || !props.canSubmit || busy.v
   to { transform: rotate(360deg); }
 }
 
-@media (max-width: 380px) {
-  /* No room for three labels on the narrowest phones: مسح keeps only its icon,
-     the two that end the session keep their words. */
-  .mark-toolbar__btn--ghost {
-    flex: 0 0 auto;
-  }
+@media (max-width: 420px) {
+  /* No room for three labels on a phone: the eraser keeps only its icon (its
+     title/aria still name the page), the two that end the session keep their
+     words. */
   .mark-toolbar__btn--ghost .mark-toolbar__btn-label {
     display: none;
   }

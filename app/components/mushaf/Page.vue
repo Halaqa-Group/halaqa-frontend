@@ -46,10 +46,18 @@ const renderedLines = computed(() => {
 // the lines come out even — and sizing each line to its own content instead made
 // dense lines visibly smaller than sparse ones on the same page.
 //
-// The factor is the smallest any line needs, so the tightest line ends exactly at
-// the margin and no line can overflow. Word widths scale linearly with font-size, so
-// one pass converges; the ratio is published as `--line-fit` on the page and
+// The factor is the smallest any line needs, so the tightest line ends at the margin
+// and no line can overflow. It is published as `--line-fit` on the page and
 // multiplies the base size in Line.vue.
+//
+// The fit is applied and then CHECKED, because "widths scale with font-size" is only
+// true where the browser sets the size it was asked for. iOS does not always: it
+// enforces a minimum font size and inflates text it judges too small, so a page
+// asked to shrink can come back the same width it was, and the line that was
+// measured as fitting is rendered overflowing. When the check says the text refused
+// to shrink, the page is scaled with a transform instead — the one thing no font
+// setting can override. Without that, the overflow lands as an ayah ornament drawn
+// on top of the word before it.
 const pageEl = ref<HTMLElement | null>(null)
 
 // A line marked non-centred that is nonetheless short (bad layout data) would be
@@ -59,6 +67,53 @@ const MAX_FIT = 1.3
 // the fit is the only thing standing between a short window and text running past
 // the margin, so it must always have room to shrink.
 const MIN_FIT = 0.6
+// One pass to size, then at most two to correct a browser that didn't obey.
+const FIT_PASSES = 3
+
+/**
+ * How far the worst justified line is past the measure, as a ratio: 1 is flush,
+ * above 1 overflows, below 1 leaves slack. 0 when there is nothing to measure.
+ */
+function worstLineRatio(root: HTMLElement): number {
+  let worst = 0
+  for (const line of root.querySelectorAll<HTMLElement>('.mushaf-line--justified')) {
+    const words = Array.from(line.children) as HTMLElement[]
+    if (words.length < 2) continue
+
+    // getBoundingClientRect reports *visual* pixels, so an ancestor transform (the
+    // PDF export scales the page to fit its sheet, and the fallback below scales it
+    // too) would otherwise skew the ratio against clientWidth's layout pixels.
+    // Normalise everything back to layout units.
+    const lineWidth = line.clientWidth
+    if (!lineWidth) continue
+    const scale = line.getBoundingClientRect().width / lineWidth || 1
+
+    // The ornaments' `margin: 0 0.1em` is part of the line's width but not of the
+    // border box getBoundingClientRect reports, so it has to be added by hand —
+    // leaving it out is what let an ornament-dense page (thirty short ayahs, three
+    // or four markers a line) land a fit that overflowed by a dozen pixels.
+    let content = 0
+    for (const w of words) {
+      const cs = getComputedStyle(w)
+      content += w.getBoundingClientRect().width / scale
+        + Number.parseFloat(cs.marginLeft) + Number.parseFloat(cs.marginRight)
+    }
+
+    // Slack, so the fit is never set to the exact edge of the measure: the glyphs
+    // are set again after the pass measures them — a font applied a frame later, a
+    // re-rasterisation at a different device scale — and a line pinned to the
+    // margin has nowhere to put even a fraction of a pixel. 1% of the measure is a
+    // tenth of a pixel per word gap, invisible in the justification.
+    const avail = lineWidth * 0.99 - 0.5
+    if (avail <= 0 || content <= 0) continue
+    worst = Math.max(worst, content / avail)
+  }
+  return worst
+}
+
+function clampFit(value: number): number {
+  return Math.min(MAX_FIT, Math.max(MIN_FIT, value))
+}
 
 function fitLines() {
   const root = pageEl.value
@@ -66,51 +121,81 @@ function fitLines() {
 
   // Measure unscaled, or each pass compounds the previous one.
   root.style.removeProperty('--line-fit')
+  root.style.setProperty('--page-scale', '1')
 
-  let fit = MAX_FIT
-  for (const line of root.querySelectorAll<HTMLElement>('.mushaf-line--justified')) {
-    const words = Array.from(line.children) as HTMLElement[]
-    if (words.length < 2) continue
+  let fit = 1
+  let ratio = worstLineRatio(root)
+  if (!ratio) return
+  const fontBefore = wordFontSize(root)
 
-    // getBoundingClientRect reports *visual* pixels, so an ancestor transform (the
-    // PDF export scales the page to fit its sheet) would otherwise skew the ratio
-    // against clientWidth's layout pixels. Normalise everything back to layout units.
-    const lineWidth = line.clientWidth
-    if (!lineWidth) continue
-    const scale = line.getBoundingClientRect().width / lineWidth || 1
+  for (let pass = 0; pass < FIT_PASSES; pass++) {
+    const next = clampFit(fit / ratio)
+    // Already flush, or the clamp won't let us move any further.
+    if (Math.abs(next - fit) < 0.002) break
+    fit = next
+    root.style.setProperty('--line-fit', String(fit))
 
-    // Split the line's content into what scales with font-size and what doesn't.
-    // Scalable: the glyphs, plus the ayah ornaments' `margin: 0 0.1em`. Fixed: the
-    // words' 1px horizontal padding. getBoundingClientRect covers the border box
-    // only, so the margins have to be added by hand — leaving them out is what let
-    // an ornament-dense page (thirty short ayahs, three or four markers a line)
-    // land a fit factor that overflowed the measure by a dozen pixels.
-    let scalable = 0
-    let fixed = 0
-    for (const w of words) {
-      const cs = getComputedStyle(w)
-      const pad = Number.parseFloat(cs.paddingLeft) + Number.parseFloat(cs.paddingRight)
-      const margin = Number.parseFloat(cs.marginLeft) + Number.parseFloat(cs.marginRight)
-      scalable += w.getBoundingClientRect().width / scale - pad + margin
-      fixed += pad
+    const applied = worstLineRatio(root)
+    // Fits now, or this pass bought nothing — the browser is setting the text at a
+    // size of its own choosing, so asking again is pointless.
+    if (applied <= 1 || applied > ratio - 0.002) {
+      ratio = applied
+      break
     }
-
-    // Half a pixel of slack: a line that lands fractionally over the measure
-    // overflows, and `space-between` gives it nowhere to go.
-    const avail = lineWidth - 0.5
-    if (scalable <= 0 || avail <= fixed) continue
-    fit = Math.min(fit, (avail - fixed) / scalable)
+    ratio = applied
   }
 
-  root.style.setProperty('--line-fit', String(Math.max(MIN_FIT, fit)))
+  // Whatever the text refused to give up, take from the page itself. Only ever a
+  // fraction of a percent on a browser that honoured the fit, so the page keeps its
+  // size everywhere this never bites.
+  root.style.setProperty('--page-scale', ratio > 1 ? String(1 / ratio) : '1')
+
+  if (debug.value) {
+    fitReport.value = [
+      `p${props.pageNumber} dpr${window.devicePixelRatio}`,
+      `measure ${root.querySelector('.mushaf-line')?.clientWidth ?? 0}`,
+      `fit ${fit.toFixed(3)}`,
+      `residual ${ratio.toFixed(3)}`,
+      `scale ${root.style.getPropertyValue('--page-scale')}`,
+      // The two together are the tell: a fit well under 1 that left the font-size
+      // where it started is a browser sizing the text its own way.
+      `font ${fontBefore.toFixed(2)}→${wordFontSize(root).toFixed(2)}`
+    ]
+  }
 }
+
+/** Rendered size of a body word, in px — 0 before the page has any. */
+function wordFontSize(root: HTMLElement): number {
+  const word = root.querySelector<HTMLElement>('.mushaf-word--body')
+  return word ? Number.parseFloat(getComputedStyle(word).fontSize) : 0
+}
+
+// ── Fit diagnostics ───────────────────────────────────────────────────────────
+// `?mushafdebug=1` prints what the fit actually achieved over the page. It exists
+// because the failure it chases only happens on other people's devices: a phone
+// can be sent the URL and send back a screenshot, instead of the layout being
+// argued about from a photo.
+const route = useRoute()
+const debug = computed(() => !!route.query.mushafdebug)
+const fitReport = ref<string[]>([])
 
 // The QCF face for this page is awaited before `page` is set, but the browser still
 // has to apply it — measuring before it does would size every line to the fallback.
+// `fonts.ready` alone is not enough on Safari: a face added in this same tick can
+// leave it already resolved, so the page's own family is asked for by name first,
+// and the measurement waits a frame after that for the glyphs to actually be set.
 function scheduleFit() {
-  void nextTick(() => {
-    if (document.fonts?.status === 'loaded') fitLines()
-    else void document.fonts?.ready.then(fitLines)
+  void nextTick(async () => {
+    const family = `p${props.pageNumber}-v1`
+    try {
+      await document.fonts?.load(`1em "${family}"`)
+    } catch { /* not loadable — measure with whatever is in use */ }
+    await document.fonts?.ready
+    // Measure now, and again on the next painted frame in case the glyphs were
+    // still being set. Never *only* on the frame: a page laid out while its tab is
+    // hidden never gets one, and would keep the fallback size for good.
+    fitLines()
+    requestAnimationFrame(fitLines)
   })
 }
 
@@ -207,6 +292,10 @@ onBeforeUnmount(clearSkeletonTimer)
         <div class="mushaf-page__placeholder" aria-hidden="true" />
       </template>
     </div>
+
+    <p v-if="debug && fitReport.length" class="mushaf-page__debug" dir="ltr">
+      <span v-for="row in fitReport" :key="row">{{ row }}</span>
+    </p>
   </div>
 </template>
 
@@ -245,6 +334,12 @@ onBeforeUnmount(clearSkeletonTimer)
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  /* iOS inflates text it judges too small for its block ("text autosizing"),
+     which sets the glyphs wider than the fit pass measured them and pushes a
+     justified line past the margin. The page sizes its own text off the measure;
+     it must be the only thing that does. */
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
 }
 
 /* Phone: the sheet meets the screen edge, so only the top and bottom rules survive
@@ -277,6 +372,32 @@ onBeforeUnmount(clearSkeletonTimer)
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /* Last resort of the page fit (see fitLines): a browser that won't set the text
+     as small as it was asked to still has to obey a transform. 1 everywhere the
+     fit worked, which is everywhere but iOS's clamped text sizes. */
+  transform: scale(var(--page-scale, 1));
+  transform-origin: top center;
+}
+
+/* `?mushafdebug=1` only. Fixed, so it needs nothing from the page's own
+   positioning — and above the reader's bars, so a screenshot always catches it. */
+.mushaf-page__debug {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 70;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.6rem;
+  padding: 0.25rem;
+  background: var(--color-mushaf-chrome);
+  border-top: 1px solid var(--color-mushaf-border);
+  font-family: monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--color-mushaf-muted);
+  pointer-events: none;
 }
 
 .mushaf-page__skeleton {

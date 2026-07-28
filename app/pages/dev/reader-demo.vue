@@ -111,7 +111,7 @@ const counts = computed(() => {
 
       <template #actions>
         <MushafMarkToolbar
-          :counts="counts"
+          :can-clear="counts.total > 0"
           :can-submit="true"
           @clear="marks = {}; groups = {}"
           @save="() => {}"

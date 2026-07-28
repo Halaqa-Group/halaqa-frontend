@@ -107,7 +107,17 @@ const counts = computed(() => {
       @prev="viewerRef?.prev()"
       @next="viewerRef?.next()"
     >
-      <MushafMarkToolbar :counts="counts" :can-submit="true" @clear="marks = {}; groups = {}" @submit="() => {}" />
+      <MushafMarkSummary :counts="counts" />
+
+      <template #actions>
+        <MushafMarkToolbar
+          :counts="counts"
+          :can-submit="true"
+          @clear="marks = {}; groups = {}"
+          @save="() => {}"
+          @submit="() => {}"
+        />
+      </template>
     </MushafReaderBottomSheet>
   </div>
 </template>

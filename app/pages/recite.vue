@@ -5,8 +5,8 @@ import { computePercentageScore } from '~/utils/score'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import type { AchievementTestPosition, ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto, PositionError, RecitationMethod } from '~/types'
-import type { MarkCounts, Severity, VerseEdge, VerseLock } from '~/types/recitation'
-import { SEVERITY_LEVELS, toScoreCounts } from '~/types/recitation'
+import type { Severity, VerseEdge, VerseLock } from '~/types/recitation'
+import { toScoreCounts } from '~/types/recitation'
 
 const route = useRoute()
 const router = useRouter()
@@ -471,22 +471,6 @@ const captureHint = computed(() => {
   return `٢. البداية ${verseLabel(p.surah, p.verse)} — اضغط الآية الأخيرة`
 })
 
-// One-line breakdown of the four severity levels, reused in the confirm dialog
-// and the success toasts. Reads its names off SEVERITY_LEVELS so it stays in
-// step with the toolbar legend and إعدادات التقييم.
-function countsSummary(c: MarkCounts): string {
-  return SEVERITY_LEVELS.map(lvl => `${t(lvl.labelKey)}: ${c[lvl.key]}`).join('، ')
-}
-
-// Confirm/success summary: tested-spot count for `test`, severity breakdown for `full`.
-function submitSummary(): string {
-  if (isTest.value) {
-    const n = spots.value.length
-    return `${n} ${n === 1 ? 'موضع مُختبَر' : 'مواضع مُختبَرة'}`
-  }
-  return counts.value.total === 0 ? 'تلاوة تامة بدون أخطاء ✓' : countsSummary(counts.value)
-}
-
 const submitting = ref(false)
 
 // An achievement already recorded today for this exact session (same track +
@@ -587,59 +571,78 @@ watch([selectedItem, priorAchievements], async () => {
   }
 }, { immediate: true })
 
-function onSubmitRequest() {
-  const item = selectedItem.value
-  if (!item || !studentId.value || !halaqaId.value) return
+// ── Finishing the session ───────────────────────────────────────────────────
+// The session has two endings, and the sheet offers both side by side: «حفظ»
+// stores the recitation and leaves it pending for review, «اعتماد» signs it off.
+// Both end the visit and return to the achievements list — they are endings, not
+// checkpoints; autosync is what keeps a session safe while it is still being
+// recited. Neither goes through a confirmation: the sheet already shows the
+// range, the method and the full error tally, so the tap is made on the facts,
+// and an approval can be undone from the same button.
+const savingOnly = ref(false)
+// Either explicit write. `submitting` stays the approve button's own state — the
+// two must not share a flag, or one tap spins both buttons.
+const writeInFlight = computed(() => submitting.value || savingOnly.value)
 
-  const existing = findExistingAchievement(item)
-  const verb = existing ? 'تحديث' : 'حفظ'
-  const kind = isTest.value ? 'اختبار' : 'إنجاز'
-  const modal = overlay.create(LazyCommonConfirmDialog, {
-    destroyOnClose: true,
-    props: {
-      'open': true,
-      'title': existing ? 'تأكيد تحديث الجلسة' : 'تأكيد حفظ الإنجاز',
-      'message':
-        `هل تريد ${verb} ${kind} ${trackLabel(item.track_type)} لـ${rangeLabel(item)}؟`
-        + `\n${submitSummary()}.`,
-      'confirmLabel': verb,
-      'cancelLabel': 'إلغاء',
-      'loading': false,
-      'onUpdate:open': (v: boolean) => { if (!v) modal.close() },
-      async onConfirm() {
-        try {
-          modal.patch({ loading: true })
-          await postAchievement(item, studentId.value!, halaqaId.value!)
-        } catch (e) {
-          modal.patch({ loading: false })
-          const err = e as { data?: { message?: string }, message?: string }
-          toast.add({
-            title: 'خطأ في حفظ الإنجاز',
-            description: apiError.format(err, err.message || 'حدث خطأ غير معروف'),
-            color: 'error',
-            icon: 'i-lucide-alert-circle'
-          })
-          return
-        }
-        // Saved + approved. Closing and redirecting live OUTSIDE the try above so a
-        // double-close (the dialog also self-closes on confirm) can't throw into the
-        // catch and swallow the redirect. Use the setup-captured router, not
-        // navigateTo — the Nuxt instance context is lost after the awaits.
-        try {
-          modal.close()
-        } catch { /* dialog already closed */ }
-        await router.push('/achievements')
-      }
-    }
+function reportFinishError(e: unknown, title: string) {
+  const err = e as { data?: { message?: string }, message?: string }
+  toast.add({
+    title,
+    description: apiError.format(err, err.message || 'حدث خطأ غير معروف'),
+    color: 'error',
+    icon: 'i-lucide-alert-circle'
   })
-  modal.open()
+}
+
+// «حفظ» — the recitation is stored (created or updated) and stays pending, then
+// the teacher is returned to the achievements list. Nothing is cleared: the
+// record keeps its marks and reopening the session hydrates them back.
+async function onToolbarSave() {
+  const item = selectedItem.value
+  if (!item || !studentId.value || !halaqaId.value || savingOnly.value || submitting.value) return
+  savingOnly.value = true
+  try {
+    await saveSessionOnly(item, studentId.value, halaqaId.value)
+  } catch (e) {
+    // Stay on the mushaf: the marks are still here and the next autosync tick
+    // will retry the write.
+    reportFinishError(e, 'خطأ في حفظ التلاوة')
+    return
+  } finally {
+    savingOnly.value = false
+  }
+  // Redirect lives outside the try so a failure there can't be reported as a
+  // failed save. The setup-captured router, not navigateTo — the Nuxt instance
+  // context is lost after the awaits.
+  await router.push('/achievements')
 }
 
 // Toolbar primary action: approve a fresh/pending recitation, or unapprove one
 // that's already approved.
 function onToolbarSubmit() {
-  if (isApproved.value) onUnapproveRequest()
-  else onSubmitRequest()
+  if (isApproved.value) {
+    // The unapprove confirmation is a modal, and the sheet is stacked above every
+    // other overlay (it has to clear the reader) — so it steps aside first.
+    sheetOpen.value = false
+    onUnapproveRequest()
+    return
+  }
+  void onApprove()
+}
+
+async function onApprove() {
+  const item = selectedItem.value
+  if (!item || !studentId.value || !halaqaId.value || savingOnly.value || submitting.value) return
+  try {
+    await postAchievement(item, studentId.value, halaqaId.value)
+  } catch (e) {
+    reportFinishError(e, 'خطأ في حفظ الإنجاز')
+    return
+  }
+  // Redirect lives outside the try so a failure there can't be reported as a
+  // failed save. The setup-captured router, not navigateTo — the Nuxt instance
+  // context is lost after the awaits.
+  await router.push('/achievements')
 }
 
 function onUnapproveRequest() {
@@ -941,9 +944,9 @@ async function runSync() {
 }
 
 function tickAutosync() {
-  // Never overlap: a tick still in flight, or the explicit submit running, owns
-  // the record until it's done.
-  if (syncInFlight || submitting.value) return
+  // Never overlap: a tick still in flight, or either explicit write (حفظ /
+  // اعتماد), owns the record until it's done.
+  if (syncInFlight || writeInFlight.value) return
   if (!canAutosync.value || !isDirty.value || !hasSomethingToSync.value) return
   syncInFlight = runSync().finally(() => {
     syncInFlight = null
@@ -959,7 +962,7 @@ onBeforeUnmount(() => {
   syncTimer = null
   // Leaving with unsaved marks: fire one last write on the way out. It can't be
   // awaited in an unmount hook, but the request outlives the component.
-  if (!syncInFlight && !submitting.value && canAutosync.value && isDirty.value && hasSomethingToSync.value) {
+  if (!syncInFlight && !writeInFlight.value && canAutosync.value && isDirty.value && hasSomethingToSync.value) {
     void runSync()
   }
 })
@@ -980,6 +983,39 @@ const syncLabel = computed(() => {
   if (syncStatus.value === 'saved') return `تم الحفظ ${lastSyncedAt.value}`
   return 'حفظ تلقائي'
 })
+
+// The explicit «حفظ»: the same write autosync makes, but on demand and without
+// the two conditions autosync imposes on itself (it only fires when the mushaf
+// has something on it). Nothing is approved and nothing is cleared, so the record
+// stays pending with the marks still on screen.
+// `submitting` is deliberately untouched — it is the approve button's own state,
+// and setting it here spun both buttons at once. `savingOnly`, set by the caller,
+// is what marks this write as in flight.
+async function saveSessionOnly(item: ApiWeeklyPlanItem, sid: number, hid: number) {
+  // Snapshot before the request: marks made while it is in flight belong to the
+  // next tick, and adopting the post-request state would swallow them.
+  const attempted = currentSignature.value
+  syncStatus.value = 'saving'
+  try {
+    // An autosync tick may be mid-flight on this very session — let it finish so
+    // its create can't race this one into a duplicate record.
+    await syncInFlight
+    const saved = await saveRecitation(item, sid, hid)
+    hydratedFor.value = String(saved.id)
+    lastSyncedSignature.value = attempted
+    lastSyncedAt.value = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+    syncStatus.value = 'saved'
+    toast.add({
+      description: 'تم حفظ التلاوة — الإنجاز قيد المراجعة ولم يُعتمد بعد.',
+      color: 'success'
+    })
+  } catch (e) {
+    // Left dirty on purpose: the next autosync tick retries what this failed to
+    // write, exactly as it would after a failed tick.
+    syncStatus.value = 'error'
+    throw e
+  }
+}
 
 async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number) {
   submitting.value = true
@@ -1160,18 +1196,29 @@ watch(selectedItem, () => {
         </div>
       </template>
 
-      <!-- Recitation method: full recitation vs. partial test. Hidden while
-           locked (approved view) — the method can't be changed. -->
-      <div
-        v-if="showMethodSelector && !markingLocked"
+      <!--
+        One section per decision, each a label at the start edge and its control at
+        the end, so the sheet scans as a settings list. The sheet draws the rules
+        between them; sections bring no spacing of their own.
+      -->
+
+      <!-- Recitation method: full recitation vs. partial test. The selector is
+           replaced by a locked reading when the method can't be changed (approved
+           view, or حفظ جديد which is always a full recitation). -->
+      <section
+        v-if="(showMethodSelector && !markingLocked) || (!isParentReadOnly && currentTrack === 'Hifz')"
         dir="rtl"
-        class="flex items-center gap-2"
+        class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
       >
-        <span class="inline-flex items-center gap-1 text-xs font-medium text-muted shrink-0">
-          <UIcon name="i-lucide-list-checks" class="w-3.5 h-3.5" />
+        <span class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted">
+          <UIcon name="i-lucide-list-checks" class="size-3.5" />
           نوع التسميع
         </span>
-        <div class="inline-flex rounded-lg border border-default bg-default p-0.5">
+
+        <div
+          v-if="showMethodSelector && !markingLocked"
+          class="inline-flex rounded-lg border border-default bg-default p-0.5"
+        >
           <button
             type="button"
             class="rounded-md px-3 py-1.5 text-sm font-medium transition"
@@ -1193,18 +1240,32 @@ watch(selectedItem, () => {
             اختبار
           </button>
         </div>
-      </div>
-      <div
-        v-else-if="!isParentReadOnly && currentTrack === 'Hifz'"
-        dir="rtl"
-        class="inline-flex items-center gap-1.5 text-xs text-muted"
-      >
-        <UIcon name="i-lucide-lock" class="w-3.5 h-3.5" />
-        تسميع كامل — إلزامي للحفظ الجديد
-      </div>
+        <span
+          v-else
+          class="inline-flex items-center gap-1.5 rounded-lg border border-default px-2.5 py-1.5 text-xs text-muted"
+        >
+          <UIcon name="i-lucide-lock" class="size-3.5" />
+          تسميع كامل — إلزامي للحفظ الجديد
+        </span>
+      </section>
 
       <!-- The tested مواضع, each a jump target into the mushaf. -->
-      <div v-if="isTest && !isParentReadOnly" dir="rtl" class="flex flex-col gap-2">
+      <section
+        v-if="isTest && !isParentReadOnly && (spots.length > 0 || !markingLocked)"
+        dir="rtl"
+        class="flex flex-col gap-2"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+            <UIcon name="i-lucide-map-pin" class="size-3.5" />
+            المواضع المختبرة
+          </span>
+          <span
+            v-if="spots.length"
+            class="rounded-full bg-elevated px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted"
+          >{{ spots.length }}</span>
+        </div>
+
         <div v-if="spots.length" class="flex flex-wrap gap-1.5">
           <span
             v-for="(s, i) in spots"
@@ -1229,24 +1290,31 @@ watch(selectedItem, () => {
               :aria-label="'حذف الموضع'"
               @click="removeSpot(s.id)"
             >
-              <UIcon name="i-lucide-x" class="w-3.5 h-3.5" />
+              <UIcon name="i-lucide-x" class="size-3.5" />
             </button>
           </span>
         </div>
-        <p v-else-if="!markingLocked" class="text-xs text-muted">
+        <p v-else class="text-xs text-muted">
           لا مواضع بعد — حدّد موضعًا واحدًا على الأقل للاختبار.
         </p>
-      </div>
+      </section>
 
-      <MushafMarkToolbar
-        v-if="showToolbar"
-        :counts="counts"
-        :can-submit="canSubmit"
-        :submitting="submitting"
-        :approved="isApproved"
-        @clear="clearAll"
-        @submit="onToolbarSubmit"
-      />
+      <!-- The tally is a reading, so it stays with the other rows … -->
+      <MushafMarkSummary v-if="showToolbar" :counts="counts" />
+
+      <!-- … and only the actions go to the sheet's footer, below the rule. -->
+      <template v-if="showToolbar" #actions>
+        <MushafMarkToolbar
+          :counts="counts"
+          :can-submit="canSubmit"
+          :submitting="submitting"
+          :saving="savingOnly"
+          :approved="isApproved"
+          @clear="clearAll"
+          @save="onToolbarSave"
+          @submit="onToolbarSubmit"
+        />
+      </template>
     </MushafReaderBottomSheet>
 
     <!-- Who, which lesson, and what has already been recorded today — everything

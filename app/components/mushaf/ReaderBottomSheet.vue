@@ -100,39 +100,64 @@ const hasNav = computed(() => (props.totalPages ?? 0) > 1)
 
     <!-- The actions live in a drawer rather than an in-bar panel: it dims the page
          behind it, so committing the session reads as a deliberate step away from
-         marking, and it can be dismissed by dragging it back down. -->
+         marking, and it can be dismissed by dragging it back down.
+         The wide top radius is deliberate: the sheet should read as a sheet lifting
+         off the mushaf, not as a panel butted against its edge. It overrides the
+         theme's `rounded-t-lg`, which lives in a compound variant and can only be
+         beaten from the instance's own `ui`. -->
     <UDrawer
       v-model:open="expanded"
-      :ui="{ overlay: 'z-[60]', content: 'z-[60]' }"
+      :ui="{ overlay: 'z-[60]', content: 'z-[60] rounded-t-3xl overflow-hidden', container: 'gap-3' }"
       title="إنهاء التسميع"
+      description="راجع الإعدادات والأخطاء قبل الاعتماد"
     >
       <template #body>
         <div class="reader-sheet__body" dir="rtl">
-          <div v-if="hasNav" class="reader-sheet__nav">
-            <button
-              type="button"
-              class="reader-sheet__nav-btn"
-              :disabled="!canPrev"
-              aria-label="الصفحة السابقة"
-              @click="emit('prev')"
-            >
-              <UIcon name="i-lucide-chevron-right" class="size-4" />
-            </button>
-            <span class="reader-sheet__nav-pos tabular-nums">
-              صفحة {{ mushafNumber(position) }} من {{ mushafNumber(totalPages) }}
+          <!-- Page nav sits first: it is the only row here that steers the mushaf,
+               and the teacher may want a last look before committing. Label at the
+               start edge, control at the end — the shape every row in the sheet
+               keeps, whether it comes from here or from the slot. -->
+          <div v-if="hasNav" class="reader-sheet__row">
+            <span class="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+              <UIcon name="i-lucide-book-open" class="size-3.5" />
+              الصفحة
             </span>
-            <button
-              type="button"
-              class="reader-sheet__nav-btn"
-              :disabled="!canNext"
-              aria-label="الصفحة التالية"
-              @click="emit('next')"
-            >
-              <UIcon name="i-lucide-chevron-left" class="size-4" />
-            </button>
+            <div class="reader-sheet__pager">
+              <button
+                type="button"
+                class="reader-sheet__nav-btn"
+                :disabled="!canPrev"
+                aria-label="الصفحة السابقة"
+                @click="emit('prev')"
+              >
+                <UIcon name="i-lucide-chevron-right" class="size-4" />
+              </button>
+              <span class="reader-sheet__nav-pos tabular-nums">
+                {{ mushafNumber(position) }} من {{ mushafNumber(totalPages) }}
+              </span>
+              <button
+                type="button"
+                class="reader-sheet__nav-btn"
+                :disabled="!canNext"
+                aria-label="الصفحة التالية"
+                @click="emit('next')"
+              >
+                <UIcon name="i-lucide-chevron-left" class="size-4" />
+              </button>
+            </div>
           </div>
 
+          <!-- Each slotted block is one section, hairline-separated, so the sheet
+               reads as a short list of decisions rather than a stack of controls. -->
           <slot />
+        </div>
+      </template>
+
+      <!-- The committing actions get the drawer's footer: pinned below the
+           sections, never mixed in with the settings they act on. -->
+      <template v-if="$slots.actions" #footer>
+        <div class="reader-sheet__actions" dir="rtl">
+          <slot name="actions" />
         </div>
       </template>
     </UDrawer>
@@ -257,26 +282,54 @@ const hasNav = computed(() => (props.totalPages ?? 0) > 1)
 .reader-sheet__body {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  font-family: 'Thmanyah Sans', serif;
+  color: var(--color-mushaf-fg);
+}
+
+/* One rhythm for every section, whoever supplies it: the sheet's own nav row and
+   the slotted blocks are spaced and separated by the same rule, so nothing has to
+   carry its own margins. `:slotted` is required — slot content is compiled in the
+   parent and would otherwise fall outside this component's scope. */
+.reader-sheet__body > :slotted(*) {
+  padding-block: 0.7rem;
+}
+
+.reader-sheet__body > :slotted(*:not(:first-child)) {
+  border-top: 1px solid var(--color-mushaf-border);
+}
+
+/* The sheet's own row, shaped like the slotted ones: label start, control end. */
+.reader-sheet__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-block: 0.2rem 0.7rem;
+}
+
+.reader-sheet__pager {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Full-bleed rule above the actions: the footer is a different kind of thing from
+   the sections, so it is separated more firmly than they are from each other. */
+.reader-sheet__actions {
+  border-top: 1px solid var(--color-mushaf-border);
+  margin-inline: -1rem;
+  padding: 0.75rem 1rem 0;
   font-family: 'Thmanyah Sans', serif;
   color: var(--color-mushaf-fg);
   padding-bottom: env(safe-area-inset-bottom);
-}
-
-.reader-sheet__nav {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  padding-top: 0.5rem;
 }
 
 .reader-sheet__nav-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
   border: 1px solid rgb(var(--mushaf-ink-rgb) / 0.14);
   background: transparent;
@@ -292,8 +345,9 @@ const hasNav = computed(() => (props.totalPages ?? 0) > 1)
 .reader-sheet__nav-pos {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--color-mushaf-muted);
-  min-width: 8rem;
+  color: var(--color-mushaf-fg);
+  /* Wide enough that stepping from ٩ to ١٠ doesn't shuffle the two buttons. */
+  min-width: 4.5rem;
   text-align: center;
 }
 </style>

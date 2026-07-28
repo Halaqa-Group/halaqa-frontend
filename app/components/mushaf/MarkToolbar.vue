@@ -1,235 +1,129 @@
 <script setup lang="ts">
-import type { MarkCounts, Severity } from '~/types/recitation'
-import { SEVERITY_LEVELS } from '~/types/recitation'
+import type { MarkCounts } from '~/types/recitation'
 
+// The session's actions, and nothing else: the error tally it acts on is a
+// separate row of the sheet (MushafMarkSummary), so a count can never be misread
+// as a button.
 const props = defineProps<{
+  // Only to know whether there is anything to clear.
   counts: MarkCounts
   canSubmit?: boolean
   submitting?: boolean
+  // An explicit «حفظ» is in flight — the session is being stored without being
+  // approved.
+  saving?: boolean
   // When the recitation's achievement is already approved, the primary action
   // toggles to "unapprove" instead of "approve".
   approved?: boolean
-  // Running mark for the current marks, already divided by the lesson's page
-  // span. Omit to hide the readout.
-  score?: number
 }>()
 
 const emit = defineEmits<{
   clear: []
+  // Store the session and leave it pending — the recitation is kept, not signed
+  // off. Sits beside اعتماد so ending the session is never all-or-nothing.
+  save: []
   submit: []
 }>()
-
-const { t } = useI18n()
 
 const submitLabel = computed(() => {
   if (props.submitting) return props.approved ? 'جارٍ الإلغاء…' : 'جارٍ الاعتماد…'
   return props.approved ? 'إلغاء الاعتماد' : 'اعتماد'
 })
+
+const busy = computed(() => !!props.submitting || !!props.saving)
+
 // An unapprove is always available; only the approve action needs marks/spots.
 const submitDisabled = computed(() =>
-  props.approved ? props.submitting : (!props.canSubmit || props.submitting)
+  props.approved ? busy.value : (!props.canSubmit || busy.value)
 )
 
-// Same bands as the achievement form's score preview.
-const scoreTone = computed(() => {
-  const v = props.score ?? 100
-  return v >= 90 ? 'good' : v >= 75 ? 'fair' : 'poor'
-})
-
-// Tap a word on the mushaf to cycle its severity down the spectrum
-// (red → yellow → green → clear). The toolbar is a live legend of
-// how many words sit at each level, not a mode selector.
-const levels = SEVERITY_LEVELS
-
-function countFor(key: Severity): number {
-  return props.counts[key]
-}
+// Saving keeps the record pending, so it is offered wherever an approve would
+// be — but never on an approved record, which rejects updates until it is
+// unapproved.
+const saveDisabled = computed(() => props.approved || !props.canSubmit || busy.value)
 </script>
 
 <template>
+  <!-- One row, full width, ordered by weight: clearing at the start edge, the
+       ending of the session at the end. -->
   <div class="mark-toolbar" dir="rtl">
-    <div class="mark-toolbar__legend">
-      <span
-        v-for="lvl in levels"
-        :key="lvl.key"
-        class="mark-toolbar__level"
-        :class="{ 'mark-toolbar__level--empty': countFor(lvl.key) === 0 }"
-        :style="{ '--level-rgb': lvl.rgb }"
-        :title="t(lvl.labelKey)"
-      >
-        <span class="mark-toolbar__level-label">{{ t(lvl.labelKey) }}</span>
-        <span v-if="countFor(lvl.key) > 0" class="mark-toolbar__level-count">{{ countFor(lvl.key) }}</span>
-      </span>
-    </div>
+    <button
+      type="button"
+      class="mark-toolbar__btn mark-toolbar__btn--ghost"
+      :disabled="counts.total === 0 || approved || busy"
+      :aria-label="'مسح'"
+      @click="emit('clear')"
+    >
+      <UIcon name="i-lucide-eraser" class="size-4" />
+      <span class="mark-toolbar__btn-label">مسح</span>
+    </button>
 
-    <!-- Score + actions travel together: when the bar wraps they drop as one
-         group instead of the score being flung to the opposite edge. -->
-    <div class="mark-toolbar__end">
-      <div
-        v-if="score != null"
-        class="mark-toolbar__score"
-        :class="`mark-toolbar__score--${scoreTone}`"
-        :title="t('pages.achievements.table.score')"
-      >
-        <span class="mark-toolbar__score-value">{{ score }}%</span>
-        <span class="mark-toolbar__score-label">{{ t('pages.achievements.table.score') }}</span>
-      </div>
+    <!-- Save without approving: the record is kept for review, and the teacher
+         stays on the mushaf. -->
+    <button
+      type="button"
+      class="mark-toolbar__btn mark-toolbar__btn--outline"
+      :disabled="saveDisabled"
+      :aria-label="saving ? 'جارٍ الحفظ…' : 'حفظ'"
+      @click="emit('save')"
+    >
+      <UIcon
+        :name="saving ? 'i-lucide-loader-2' : 'i-lucide-save'"
+        :class="['size-4', saving && 'mark-toolbar__spinner']"
+      />
+      <span class="mark-toolbar__btn-label">{{ saving ? 'جارٍ الحفظ…' : 'حفظ' }}</span>
+    </button>
 
-      <div class="mark-toolbar__actions">
-        <button
-          type="button"
-          class="mark-toolbar__btn mark-toolbar__btn--ghost"
-          :disabled="counts.total === 0 || approved"
-          :aria-label="'مسح'"
-          @click="emit('clear')"
-        >
-          <UIcon name="i-lucide-eraser" class="size-4" />
-          <span class="mark-toolbar__btn-label">مسح</span>
-        </button>
-
-        <button
-          type="button"
-          class="mark-toolbar__btn"
-          :class="approved ? 'mark-toolbar__btn--warning' : 'mark-toolbar__btn--primary'"
-          :disabled="submitDisabled"
-          :aria-label="submitLabel"
-          @click="emit('submit')"
-        >
-          <UIcon
-            :name="submitting ? 'i-lucide-loader-2' : (approved ? 'i-lucide-undo-2' : 'i-lucide-check')"
-            :class="['size-4', submitting && 'mark-toolbar__spinner']"
-          />
-          <span class="mark-toolbar__btn-label">{{ submitLabel }}</span>
-        </button>
-      </div>
-    </div>
+    <button
+      type="button"
+      class="mark-toolbar__btn mark-toolbar__btn--wide"
+      :class="approved ? 'mark-toolbar__btn--warning' : 'mark-toolbar__btn--primary'"
+      :disabled="submitDisabled"
+      :aria-label="submitLabel"
+      @click="emit('submit')"
+    >
+      <UIcon
+        :name="submitting ? 'i-lucide-loader-2' : (approved ? 'i-lucide-undo-2' : 'i-lucide-check')"
+        :class="['size-4', submitting && 'mark-toolbar__spinner']"
+      />
+      <span class="mark-toolbar__btn-label">{{ submitLabel }}</span>
+    </button>
   </div>
 </template>
 
 <style scoped>
 /* Sits flush inside the reader's bottom sheet — the sheet is the surface, so the
-   toolbar brings no card of its own. */
+   bar brings no card of its own. The three buttons share the row: مسح and حفظ at
+   equal width, اعتماد half again as wide, because it is the one being aimed at. */
 .mark-toolbar {
   display: flex;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-  width: 100%;
-  flex-wrap: wrap;
-  color: var(--color-mushaf-fg);
-}
-
-.mark-toolbar__legend {
-  display: flex;
-  gap: 0.3rem;
-  /* Soaks up the slack so the end group stays pinned to the trailing edge, but
-     yields the whole row to itself before the chips start clipping. */
-  flex: 1 1 auto;
-  min-width: 0;
-  flex-wrap: wrap;
-}
-
-.mark-toolbar__end {
-  display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 0.4rem;
-  flex: 0 0 auto;
-  margin-inline-start: auto;
-}
-
-.mark-toolbar__level {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.6rem;
-  border-radius: 8px;
-  border: 1.5px solid rgb(var(--level-rgb) / 0.45);
-  background: rgb(var(--level-rgb) / 0.1);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgb(var(--level-rgb));
-  font-family: 'Thmanyah Sans', serif;
-  min-height: 40px;
-  transition: opacity 0.12s;
-}
-
-.mark-toolbar__level--empty {
-  opacity: 0.5;
-}
-
-.mark-toolbar__level-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-  background: rgb(var(--level-rgb) / 0.22);
-  font-size: 0.7rem;
-  font-weight: 700;
-  tab-size: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.mark-toolbar__score {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.1;
-  padding: 0.35rem 0.7rem;
-  border-radius: 8px;
-  border: 1.5px solid currentColor;
-  font-family: 'Thmanyah Sans', serif;
-  min-height: 40px;
-  flex: 0 0 auto;
-}
-
-.mark-toolbar__score-value {
-  font-size: 1.05rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.mark-toolbar__score-label {
-  font-size: 0.65rem;
-  font-weight: 600;
-  opacity: 0.75;
-}
-
-.mark-toolbar__score--good {
-  color: #16a34a;
-  background: rgba(22, 163, 74, 0.1);
-}
-.mark-toolbar__score--fair {
-  color: #d97706;
-  background: rgba(217, 119, 6, 0.1);
-}
-.mark-toolbar__score--poor {
-  color: #dc2626;
-  background: rgba(220, 38, 38, 0.1);
-}
-
-.mark-toolbar__actions {
-  display: flex;
-  gap: 0.3rem;
-  flex: 0 0 auto;
+  width: 100%;
+  color: var(--color-mushaf-fg);
 }
 
 .mark-toolbar__btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.4rem;
-  padding: 0.5rem 0.7rem;
-  border-radius: 8px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  border-radius: 10px;
   border: 1.5px solid transparent;
   font-size: 0.85rem;
   font-weight: 500;
   font-family: 'Thmanyah Sans', serif;
   cursor: pointer;
   transition: background-color 0.12s, border-color 0.12s, color 0.12s, opacity 0.12s;
-  min-height: 40px;
+  min-height: 44px;
   white-space: nowrap;
+}
+
+.mark-toolbar__btn--wide {
+  flex: 1.6 1 0;
 }
 
 .mark-toolbar__btn:disabled {
@@ -243,6 +137,17 @@ function countFor(key: Severity): number {
   border-color: rgb(var(--mushaf-ink-rgb) / 0.14);
 }
 .mark-toolbar__btn--ghost:not(:disabled):hover {
+  background: rgb(var(--mushaf-ink-rgb) / 0.06);
+}
+
+/* Between مسح and اعتماد in weight: a real action, but not the one that ends
+   the session. */
+.mark-toolbar__btn--outline {
+  color: var(--color-mushaf-fg);
+  background: transparent;
+  border-color: rgb(var(--mushaf-ink-rgb) / 0.3);
+}
+.mark-toolbar__btn--outline:not(:disabled):hover {
   background: rgb(var(--mushaf-ink-rgb) / 0.06);
 }
 
@@ -269,27 +174,14 @@ function countFor(key: Severity): number {
   to { transform: rotate(360deg); }
 }
 
-@media (max-width: 560px) {
-  /* The label is the chip's only content now that the swatch is gone — it can't
-     be hidden here the way it used to be. Tighten the padding instead. */
-  .mark-toolbar__level {
-    padding: 0.45rem 0.5rem;
-    gap: 0.3rem;
+@media (max-width: 380px) {
+  /* No room for three labels on the narrowest phones: مسح keeps only its icon,
+     the two that end the session keep their words. */
+  .mark-toolbar__btn--ghost {
+    flex: 0 0 auto;
   }
-}
-
-@media (max-width: 480px) {
-  .mark-toolbar {
-    gap: 0.35rem;
-  }
-  /* The buttons keep their labels here — inside the sheet the bar owns the full
-     screen width and wraps, instead of competing with the mushaf for one row. */
-  .mark-toolbar__actions {
-    flex: 1 1 auto;
-  }
-  .mark-toolbar__btn {
-    flex: 1 1 auto;
-    justify-content: center;
+  .mark-toolbar__btn--ghost .mark-toolbar__btn-label {
+    display: none;
   }
 }
 </style>

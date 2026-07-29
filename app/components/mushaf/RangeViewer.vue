@@ -277,6 +277,15 @@ useSwipe(pageEl, {
   overflow-x: clip;
 }
 
+/* Desktop: the page is width-driven (see Page.vue), so it is taller than the
+   panel and this is where it scrolls. On a phone the page is fit whole to the
+   screen, so there is nothing to scroll and this stays out of the way. */
+@media (min-width: 1024px) {
+  .mushaf-range-viewer__page {
+    overflow-y: auto;
+  }
+}
+
 /* ── Page turn ────────────────────────────────────────────────────────────────
    The sheet follows the hand: forward (toward the higher page number) the current
    page leaves to the right and the next one follows it in from the left, mirroring

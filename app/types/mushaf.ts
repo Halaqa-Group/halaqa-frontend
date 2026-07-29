@@ -12,6 +12,12 @@ export interface MushafApiLine {
   lt?: 'ayah' | 'surah_name' | 'basmallah'
   /** Surah number for a surah_name line. */
   surah?: number
+  /**
+   * QUL's `is_centered`. A printed mushaf justifies its body lines edge to edge and
+   * centres only the short ones (a surah's last line, headers, basmala). Absent for
+   * legacy quran.com data, where every line falls back to centred.
+   */
+  centered?: boolean
 }
 
 export interface MushafPageData {
@@ -27,4 +33,4 @@ export type SynthesizedLine
 
 export type RenderedLine
   = | SynthesizedLine
-    | { kind: 'ayah', n: number, words: MushafWord[] }
+    | { kind: 'ayah', n: number, words: MushafWord[], centered?: boolean }

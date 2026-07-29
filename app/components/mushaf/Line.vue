@@ -49,6 +49,14 @@ const spotFlash = computed<boolean[]>(() => {
 
 const fontClass = computed(() => `p${props.pageNumber}-v1`)
 
+// QUL marks the basmala line but ships no words for it, and a page that opens a
+// surah carries no basmala glyphs in its own font — so the four words are borrowed
+// from 1:1, the one place the mushaf typesets them as an ayah. Same QCF cut as the
+// page text, which the spelled-out Unicode in any other Arabic face is not.
+const BASMALA_PAGE = 1
+const BASMALA_GLYPHS = 'ﭑﭒﭓﭔ'
+if (props.line.kind === 'basmala') void ensureMushafFont(BASMALA_PAGE)
+
 function wordKey(verseKey: string, position: number): WordKey {
   return `${verseKey}:${position}`
 }
@@ -121,12 +129,13 @@ function onWordLeave(word: MushafWord) {
     v-else-if="line.kind === 'basmala'"
     class="mushaf-line mushaf-line--basmala"
   >
-    <span class="mushaf-basmala">﷽</span>
+    <span class="mushaf-basmala" :class="`p${BASMALA_PAGE}-v1`">{{ BASMALA_GLYPHS }}</span>
   </div>
 
   <div
     v-else
     class="mushaf-line mushaf-line--ayah"
+    :class="{ 'mushaf-line--justified': line.centered === false }"
   >
     <span
       v-for="(word, i) in line.words"
@@ -166,18 +175,38 @@ function onWordLeave(word: MushafWord) {
   font-display: swap;
 }
 
+/* The 15 lines share out the page's height evenly (see Page.vue) rather than each
+   sizing to its own content — that is what makes a page fit the screen it is on.
+   `--mushaf-line-h` is only the fallback for a page laid out by its own content. */
 .mushaf-line {
   display: flex;
   align-items: center;
-  min-height: 2.4em;
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
   line-height: 1;
   justify-content: center;
 }
 
+/* A printed mushaf sets its body lines flush to both margins and centres only the
+   short ones — a surah's closing line, the header, the basmala. QUL ships that
+   distinction per line as `is_centered`; `space-between` reproduces it exactly,
+   because the QCF page font is cut so a full line fills the measure. Lines must
+   never wrap: a wrapped line would be justified into nonsense. */
+.mushaf-line--justified {
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+
 .mushaf-surah-header {
   font-family: 'surah-header';
-  /* Scale the banner to the page width like the printed mushaf. */
-  font-size: clamp(56px, 24cqi, 150px);
+  /* Full measure, like the printed mushaf. Every one of the 114 banner glyphs is
+     cut to exactly 3.302em, so 100cqi / 3.302 ≈ 30.25cqi sets any surah's frame
+     flush to both margins — no per-surah measuring. Rounded down, not up: at 30.3
+     the frame cleared the measure by a hair and clipped. No lower bound either — a
+     px floor stops tracking the measure the moment it bites, and the frame runs off
+     both sides of a small page. */
+  font-size: min(30.25cqi, 200px);
   line-height: 1;
 }
 
@@ -186,33 +215,89 @@ function onWordLeave(word: MushafWord) {
   justify-content: center;
 }
 
+/* The banner is cut to the full measure, which makes it taller than the fifteenth of
+   the page every line is handed — its frame ended up sitting on the basmala
+   underneath. Give it a larger share of the column so the two keep their air; the
+   body lines give up a couple of pixels each, which is how a printed mushaf spaces
+   an opening page anyway. */
+.mushaf-line--surah {
+  flex-grow: 1.8;
+}
+.mushaf-line--basmala {
+  flex-grow: 1.15;
+}
+
+/* No font-family here: the `p1-v1` class the loader injects into <head> supplies it,
+   the same way the body words take theirs from `p{N}-v1`. A scoped rule would
+   out-specify that class and silently drop the page font. */
 .mushaf-basmala {
-  font-family: 'Amiri Quran', 'Amiri', 'KFGQPC Uthmanic Script HAFS', serif;
-  font-size: clamp(18px, 4.5cqi, 28px);
+  /* Sized off the measure like the surah banner above it, not off a px range: a px
+     clamp bottomed out on the phone, leaving the basmala smaller than the body
+     words it sits between. The four glyphs run 4.52em, so 9.5cqi ≈ 43% of the
+     measure — set in from both margins, well clear of the banner above it. Same
+     reason as the banner for having no floor. */
+  font-size: min(9.5cqi, 52px);
+  line-height: 1;
 }
 
 .mushaf-word {
+  /*
+    The base size is width-driven; `--line-fit` (set per line by Page.vue) then
+    stretches or trims it so a justified line ends exactly at the margin instead of
+    leaving slack for `space-between` to dump into the word gaps. Centred lines —
+    the surah banner, the basmala, a surah's short last line — carry no fit and just
+    use the base.
+  */
+  /* Capped against the page's width AND its height: each of the 15 lines gets about
+     a fifteenth of the block size, and a word stands ~1.8× its font-size tall once
+     its padding counts — hence ~3.4% of the block. No lower floor: a floor that
+     bites cannot be undone by `--line-fit`, and the line overflows the margin
+     instead. Small text on a short window is honest; a page that spills is not. */
+  --mushaf-word-size: min(36px, 5.5cqi, 3.4cqb);
   display: inline-block;
-  font-size: clamp(15px, 5cqi, 32px);
+  /* Never shrink. A justified line is a nowrap flex row, so the moment its words
+     add up to more than the measure — a rasterizer that sets the glyphs a hair
+     wider than the fit pass measured, iOS being the one seen doing it — the
+     default `flex-shrink: 1` squeezes the boxes into each other and an ayah
+     ornament lands on top of the word before it. Fixed boxes turn that failure
+     into a line that ends a hair past the margin, which is invisible, instead of
+     overlapping glyphs, which is not. */
+  flex: 0 0 auto;
+  font-size: calc(var(--mushaf-word-size) * var(--line-fit, 1));
   color: inherit;
   padding: 0 1px;
   border-radius: 3px;
   transition: background-color 0.12s ease;
 }
 
+/* The ornament keeps a little air of its own. The QCF advances already carry the
+   mushaf's spacing, but the ornament is the one glyph whose ink is a closed ring:
+   where anything eats into the gaps — a line set a hair too wide, a browser sizing
+   the text its own way — a ring landing on the word beside it is unmistakable in a
+   way two words touching is not. The fit counts these margins, so the cost is a
+   couple of percent on ornament-dense lines. */
 .mushaf-word--marker {
-  margin: 0 0.1em;
+  margin: 0 0.15em;
 }
 
+/* Verses outside the recited range are shown for context, not read — a page opens
+   part-way down as often as not. At 0.25 the out-of-range block still read as a
+   slab of competing grey text above the lesson; dropping it lets those verses
+   settle into a quiet watermark so the eye lands on the range that's actually
+   being recited. */
 .mushaf-word--dim {
-  opacity: 0.25;
+  opacity: 0.14;
 }
 
 /* Word metrics live here, not on --tappable, so the page keeps identical line
    spacing whether or not marking is enabled. A read-only view (parent, or an
    approved achievement) must lay out exactly like the editable one. */
 .mushaf-word--body {
-  padding: 0.4em 3px;
+  /* Horizontal padding is a fixed pixel amount that does NOT scale with the font, so
+     every word of it is width the page fit cannot recover — and it lands unevenly,
+     since a word-dense line carries more of it than a sparse one. Trimmed to a hair:
+     the QCF advances already carry the mushaf's own inter-word spacing. */
+  padding: 0.4em 1px;
 }
 
 .mushaf-word--tappable {
@@ -226,24 +311,24 @@ function onWordLeave(word: MushafWord) {
 }
 
 .mushaf-word--tappable:hover {
-  background-color: rgba(0, 0, 0, 0.04);
+  background-color: rgb(var(--mushaf-ink-rgb) / 0.06);
 }
 
 .mushaf-word--tappable:active {
-  background-color: rgba(0, 0, 0, 0.08);
+  background-color: rgb(var(--mushaf-ink-rgb) / 0.1);
 }
 
 .mushaf-word--selecting,
 .mushaf-word--selecting:hover {
-  background-color: rgba(37, 99, 235, 0.22);
-  box-shadow: inset 0 0 0 1.5px rgba(37, 99, 235, 0.45);
+  background-color: rgb(var(--mushaf-spot-rgb) / 0.22);
+  box-shadow: inset 0 0 0 1.5px rgb(var(--mushaf-spot-rgb) / 0.45);
 }
 
 /* Armed start of a test-spot, waiting for the closing tap. */
 .mushaf-word--spot-pending,
 .mushaf-word--spot-pending:hover {
-  background-color: rgba(37, 99, 235, 0.16);
-  box-shadow: inset 0 0 0 1.5px rgba(37, 99, 235, 0.6);
+  background-color: rgb(var(--mushaf-spot-rgb) / 0.16);
+  box-shadow: inset 0 0 0 1.5px rgb(var(--mushaf-spot-rgb) / 0.6);
   border-radius: 4px;
 }
 
@@ -257,7 +342,7 @@ function onWordLeave(word: MushafWord) {
 /* The ayah ornaments bounding a tested موضع: the glyph is recoloured and nothing
    else changes, so the page keeps its own look and its exact metrics. */
 .mushaf-word--spot-edge {
-  color: #1d4ed8;
+  color: var(--color-mushaf-spot);
 }
 
 /* Pulsed for a moment after jumping to a موضع, so the eye lands on its two ends.
@@ -309,7 +394,7 @@ function onWordLeave(word: MushafWord) {
    looks continuous. Tapping any word cycles the whole block (see tap()).
    `--blk-ring` outlines the run; inner seams (mid words) carry only top/bottom. */
 .mushaf-word--block {
-  --blk-ring: rgba(28, 25, 23, 0.32);
+  --blk-ring: rgb(var(--mushaf-ink-rgb) / 0.32);
   border-radius: 0;
 }
 
@@ -348,4 +433,16 @@ function onWordLeave(word: MushafWord) {
 .mushaf-word--block-hover.mushaf-word--severe { background-color: rgba(220, 38, 38, 0.32); }
 .mushaf-word--block-hover.mushaf-word--light { background-color: rgba(234, 179, 8, 0.42); }
 .mushaf-word--block-hover.mushaf-word--minor { background-color: rgba(22, 163, 74, 0.32); }
+
+/* The severity alphas are tuned against cream. Over the dark page's near-black
+   ground the same values read as barely-there smudges, so they open up. */
+.dark .mushaf-word--severe { background-color: rgba(248, 113, 113, 0.3); }
+.dark .mushaf-word--severe:hover { background-color: rgba(248, 113, 113, 0.42); }
+.dark .mushaf-word--light { background-color: rgba(250, 204, 21, 0.34); }
+.dark .mushaf-word--light:hover { background-color: rgba(250, 204, 21, 0.46); }
+.dark .mushaf-word--minor { background-color: rgba(74, 222, 128, 0.28); }
+.dark .mushaf-word--minor:hover { background-color: rgba(74, 222, 128, 0.4); }
+.dark .mushaf-word--block-hover.mushaf-word--severe { background-color: rgba(248, 113, 113, 0.42); }
+.dark .mushaf-word--block-hover.mushaf-word--light { background-color: rgba(250, 204, 21, 0.46); }
+.dark .mushaf-word--block-hover.mushaf-word--minor { background-color: rgba(74, 222, 128, 0.4); }
 </style>

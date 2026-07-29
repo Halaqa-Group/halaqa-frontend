@@ -1,5 +1,15 @@
 import type { MushafPageData, RenderedLine } from '~/types/mushaf'
 
+/**
+ * Page, juz and hizb numbers for the reader's chrome. Western digits: the rest of
+ * the app writes numbers that way, and the chrome is UI, not the printed page —
+ * the Arabic-Indic ayah numbers inside the mushaf come from the QCF font itself.
+ */
+export function mushafNumber(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return ''
+  return String(Math.trunc(n))
+}
+
 export function verseKeyOrder(verseKey: string): number {
   const [s, v] = verseKey.split(':')
   return Number(s) * 1000 + Number(v)
@@ -25,7 +35,7 @@ export function synthesizeLines(page: MushafPageData): RenderedLine[] {
     for (const line of page.lines) {
       if (line.lt === 'surah_name') out.push({ kind: 'surah_name', n: line.n, surah: line.surah ?? 0 })
       else if (line.lt === 'basmallah') out.push({ kind: 'basmala', n: line.n })
-      else out.push({ kind: 'ayah', n: line.n, words: line.words })
+      else out.push({ kind: 'ayah', n: line.n, words: line.words, centered: line.centered })
     }
     return out
   }
@@ -65,7 +75,7 @@ export function synthesizeLines(page: MushafPageData): RenderedLine[] {
   for (let n = 1; n <= maxApiLine; n++) {
     const apiLine = apiByLine.get(n)
     if (apiLine) {
-      result.push({ kind: 'ayah', n, words: apiLine.words })
+      result.push({ kind: 'ayah', n, words: apiLine.words, centered: apiLine.centered })
       continue
     }
     const header = headersByLine.get(n)

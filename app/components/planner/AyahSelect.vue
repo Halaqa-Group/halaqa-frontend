@@ -44,6 +44,15 @@ watch(surah, () => {
 </script>
 
 <template>
+  <!--
+    Nuxt UI teleports every overlay to <body> and stacks them by DOM order, so its
+    modal/drawer/select defaults carry no z-index. That contract breaks inside the
+    recite reader's phone finish-sheet, which must force `z-[60]` on the drawer to
+    clear the `z-50` fixed reader beneath it — a default (z-auto) select popover
+    then renders *behind* that drawer and looks like it never opens. A dropdown
+    must always float above its container, so the popover is pinned above the
+    sheet. Harmless everywhere else (planner modals teleport at z-auto).
+  -->
   <div class="grid grid-cols-2 gap-2">
     <USelectMenu
       v-model="surah"
@@ -51,6 +60,7 @@ watch(surah, () => {
       value-key="value"
       searchable
       class="w-full"
+      :ui="{ content: 'z-[70]' }"
     />
     <USelectMenu
       v-model="verse"
@@ -58,6 +68,7 @@ watch(surah, () => {
       value-key="value"
       searchable
       class="w-full"
+      :ui="{ content: 'z-[70]' }"
     >
       <template #item-trailing="{ item }">
         <UBadge

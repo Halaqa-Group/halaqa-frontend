@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { SURAH_NAMES } from '~/data/constants'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { SEVERITY_LEVELS } from '~/types/recitation'
 import type { MarkGroups, RecitationMarks, Severity, VerseEdge, VerseLock, WordKey } from '~/types/recitation'
@@ -35,7 +34,7 @@ const props = defineProps<{
 const severityLevels = SEVERITY_LEVELS
 
 const { t } = useI18n()
-const { pageFor, loading: metaLoading, error: metaError } = useVerseToPage()
+const { pageFor } = useVerseToPage()
 
 const startPage = computed(() => pageFor(`${props.startSurah}:${props.startVerse}`))
 const endPage = computed(() => pageFor(`${props.endSurah}:${props.endVerse}`))
@@ -57,7 +56,6 @@ const highlight = computed(() =>
 // ── Page-by-page navigation ───────────────────────────────────────────────────
 const current = ref(0)
 const currentPage = computed<number | undefined>(() => pages.value[current.value])
-const hasMultiple = computed(() => pages.value.length > 1)
 const canPrev = computed(() => current.value > 0)
 const canNext = computed(() => current.value < pages.value.length - 1)
 function prev() {
@@ -66,6 +64,15 @@ function prev() {
 function next() {
   if (canNext.value) current.value++
 }
+
+// Which way the last move went, so the outgoing and incoming pages slide the way
+// the reader turned. Derived from `current` rather than set inside prev()/next(),
+// so a jump from goToVerse animates correctly too. `flush: 'pre'` matters: the name
+// has to be settled before the Transition renders.
+const slide = ref<'fwd' | 'back'>('fwd')
+watch(current, (next, prevIdx) => {
+  slide.value = next >= prevIdx ? 'fwd' : 'back'
+})
 
 // Only reset the position. The whole range used to be prefetched here — for a
 // long revision that is dozens of page JSONs + fonts on arrival. `useMushafPage`
@@ -93,8 +100,12 @@ function clearScrollTimer() {
 function scrollToVerse(verseKey: string, attempt = 0) {
   const root = pageEl.value
   if (!root) return
-  // First match is word 1 of that verse — the words render in reading order.
-  const el = root.querySelector<HTMLElement>(`[data-word-key="${verseKey}"]`)
+  // First match is word 1 of that verse — the words render in reading order. The
+  // page being turned away from is still in the DOM for the length of the
+  // animation, and it holds the same verse keys, so it is skipped: scrolling to
+  // the outgoing copy lands the reader nowhere.
+  const el = Array.from(root.querySelectorAll<HTMLElement>(`[data-word-key="${verseKey}"]`))
+    .find(w => !w.closest('.mushaf-page--leaving'))
   if (el) {
     el.scrollIntoView({ behavior: 'smooth', block: 'center' })
     return
@@ -123,7 +134,9 @@ function goToVerse(verseKey: string) {
 
 onBeforeUnmount(clearScrollTimer)
 
-defineExpose({ goToVerse })
+// The reader's own top and bottom bars draw the position and the prev/next
+// controls now, so the viewer publishes its paging state instead of rendering it.
+defineExpose({ goToVerse, currentPage, pages, canPrev, canNext, prev, next })
 
 // ── Drag-to-select word marking ───────────────────────────────────────────────
 // Press-and-drag across a run of words to mark them all at one severity. The
@@ -159,73 +172,35 @@ const { startedOnWord } = useWordDragSelect({
 useSwipe(pageEl, {
   threshold: 40,
   onSwipeEnd(_e, direction) {
-    // A horizontal gesture that began on a word is a range-selection, not a
-    // page swipe — don't navigate.
+    // The gesture was claimed by a press-and-drag range selection, so it is not a
+    // page turn. On touch that only happens after the finger has been held still —
+    // an ordinary swipe across the text still pages, which on a full page of words
+    // is the only way paging is reachable at all.
     if (startedOnWord.value) return
-    if (direction === 'left') next()
-    else if (direction === 'right') prev()
+    // Mirrored for RTL: a mushaf is flipped left-to-right, so dragging the sheet
+    // toward the right brings the next (higher-numbered) page in from the left.
+    // `direction` is the finger's travel, not the content's.
+    if (direction === 'right') next()
+    else if (direction === 'left') prev()
   }
-})
-
-const rangeLabel = computed(() => {
-  const startName = SURAH_NAMES[props.startSurah] ?? `سورة ${props.startSurah}`
-  if (props.startSurah === props.endSurah) {
-    return `${startName} ${props.startVerse}–${props.endVerse}`
-  }
-  const endName = SURAH_NAMES[props.endSurah] ?? `سورة ${props.endSurah}`
-  return `${startName} ${props.startVerse} ← ${endName} ${props.endVerse}`
 })
 </script>
 
 <template>
   <div class="mushaf-range-viewer">
-    <div v-if="metaLoading" class="mushaf-range-viewer__hint">
-      جارٍ تحميل بيانات الصفحات…
-    </div>
-
-    <div v-else-if="metaError" class="mushaf-range-viewer__error" dir="ltr">
-      Failed to load verse-to-page map: {{ metaError.message }}
-    </div>
-
-    <div v-else-if="!pages.length" class="mushaf-range-viewer__error">
+    <div v-if="!pages.length" class="mushaf-range-viewer__error">
       نطاق غير صالح — تأكد من السور والآيات.
     </div>
 
-    <template v-else>
-      <div class="mushaf-range-viewer__header" dir="rtl">
-        <span class="mushaf-range-viewer__range-label">{{ rangeLabel }}</span>
-
-        <!-- Multi-page: page-by-page nav. Single page: static label. -->
-        <div v-if="hasMultiple" class="mushaf-range-viewer__nav">
-          <UButton
-            icon="i-lucide-chevron-right"
-            size="sm"
-            color="neutral"
-            variant="soft"
-            square
-            :disabled="!canPrev"
-            :aria-label="'الصفحة السابقة'"
-            @click="prev"
-          />
-          <span class="mushaf-range-viewer__pos tabular-nums">صفحة {{ currentPage }} · {{ current + 1 }}/{{ pages.length }}</span>
-          <UButton
-            icon="i-lucide-chevron-left"
-            size="sm"
-            color="neutral"
-            variant="soft"
-            square
-            :disabled="!canNext"
-            :aria-label="'الصفحة التالية'"
-            @click="next"
-          />
-        </div>
-        <span v-else class="mushaf-range-viewer__pages-label">صفحة {{ pages[0] }}</span>
-      </div>
-
-      <!-- One page at a time; swipeable on touch devices -->
-      <div ref="pageEl" class="mushaf-range-viewer__page">
+    <!-- One page at a time; swipeable on touch devices -->
+    <div v-else ref="pageEl" class="mushaf-range-viewer__page">
+      <Transition
+        :name="`mushaf-slide-${slide}`"
+        :leave-active-class="`mushaf-slide-${slide}-leave-active mushaf-page--leaving`"
+      >
         <MushafPage
           v-if="currentPage"
+          :key="currentPage"
           :page-number="currentPage"
           :highlight="highlight"
           :marks="marks"
@@ -236,12 +211,8 @@ const rangeLabel = computed(() => {
           :flash-at="flashAt"
           :on-word-tap="onWordTap"
         />
-      </div>
-
-      <p v-if="hasMultiple" class="mushaf-range-viewer__swipe-hint sm:hidden">
-        اسحب يمينًا أو يسارًا للتنقل بين الصفحات
-      </p>
-    </template>
+      </Transition>
+    </div>
 
     <!-- Severity picker for a drag-selected run of words -->
     <Teleport to="body">
@@ -282,70 +253,98 @@ const rangeLabel = computed(() => {
 </template>
 
 <style scoped>
+/* A pass-through flex column: on a phone the reader gives this its leftover height
+   and the page underneath divides it into 15 lines. min-height:0 at every level or
+   the chain refuses to shrink and the page overflows the screen. */
 .mushaf-range-viewer {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-.mushaf-range-viewer__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  max-width: 640px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 0 0.5rem;
-  font-family: 'Thmanyah Sans', 'Amiri', serif;
-}
-
-.mushaf-range-viewer__range-label {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1c1917;
-  min-width: 0;
-}
-
-.mushaf-range-viewer__pages-label {
-  font-size: 0.8rem;
-  color: #78716c;
-  white-space: nowrap;
-}
-
-.mushaf-range-viewer__nav {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-shrink: 0;
-}
-
-.mushaf-range-viewer__pos {
-  font-size: 0.8rem;
-  color: #57534e;
-  white-space: nowrap;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .mushaf-range-viewer__page {
   touch-action: pan-y;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  /* Anchors the leaving page, which goes absolute for the duration of the turn.
+     `clip` rather than `hidden` on the one axis: the outgoing sheet must not spill
+     sideways, but the desktop page is taller than the viewport and scrolls, so the
+     vertical axis has to stay visible. */
+  position: relative;
+  overflow-x: clip;
 }
 
-.mushaf-range-viewer__swipe-hint {
-  text-align: center;
-  font-size: 0.75rem;
-  color: #a8a29e;
+/* Desktop: the page is width-driven (see Page.vue), so it is taller than the
+   panel and this is where it scrolls. On a phone the page is fit whole to the
+   screen, so there is nothing to scroll and this stays out of the way. */
+@media (min-width: 1024px) {
+  .mushaf-range-viewer__page {
+    overflow-y: auto;
+  }
 }
 
-.mushaf-range-viewer__hint,
+/* ── Page turn ────────────────────────────────────────────────────────────────
+   The sheet follows the hand: forward (toward the higher page number) the current
+   page leaves to the right and the next one follows it in from the left, mirroring
+   how a mushaf is flipped. Transform and opacity only — nothing here changes the
+   page's layout size, so the per-page font fit is never re-measured mid-turn. */
+.mushaf-slide-fwd-enter-active,
+.mushaf-slide-fwd-leave-active,
+.mushaf-slide-back-enter-active,
+.mushaf-slide-back-leave-active {
+  transition:
+    transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 200ms ease;
+}
+
+/* Out of flow while it leaves, so the incoming page takes its place immediately
+   instead of the two stacking and the reader jumping. */
+.mushaf-slide-fwd-leave-active,
+.mushaf-slide-back-leave-active {
+  position: absolute;
+  inset: 0;
+}
+
+.mushaf-slide-fwd-enter-from {
+  transform: translateX(-7%);
+  opacity: 0;
+}
+.mushaf-slide-fwd-leave-to {
+  transform: translateX(7%);
+  opacity: 0;
+}
+.mushaf-slide-back-enter-from {
+  transform: translateX(7%);
+  opacity: 0;
+}
+.mushaf-slide-back-leave-to {
+  transform: translateX(-7%);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mushaf-slide-fwd-enter-active,
+  .mushaf-slide-fwd-leave-active,
+  .mushaf-slide-back-enter-active,
+  .mushaf-slide-back-leave-active {
+    transition: opacity 120ms ease;
+  }
+  .mushaf-slide-fwd-enter-from,
+  .mushaf-slide-fwd-leave-to,
+  .mushaf-slide-back-enter-from,
+  .mushaf-slide-back-leave-to {
+    transform: none;
+  }
+}
+
 .mushaf-range-viewer__error {
   text-align: center;
   padding: 1rem;
-  color: #78716c;
   font-size: 0.9rem;
-}
-
-.mushaf-range-viewer__error {
-  color: #b91c1c;
+  color: var(--color-error);
 }
 
 /* ── Drag-select severity picker ─────────────────────────────────────────── */
@@ -363,8 +362,8 @@ const rangeLabel = computed(() => {
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.4rem;
-  background: white;
-  border: 1px solid #e7e5e4;
+  background: var(--color-surface-container-lowest);
+  border: 1px solid var(--color-card-border);
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
   font-family: 'Thmanyah Sans', serif;
@@ -373,7 +372,7 @@ const rangeLabel = computed(() => {
 .mushaf-picker__title {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #78716c;
+  color: var(--color-on-surface-variant);
   padding: 0.35rem 0.5rem 0.4rem;
   font-variant-numeric: tabular-nums;
 }
@@ -383,7 +382,7 @@ const rangeLabel = computed(() => {
   margin-top: 0.15rem;
   font-size: 0.7rem;
   font-weight: 600;
-  color: #a8a29e;
+  color: var(--color-outline);
 }
 
 .mushaf-picker__item {
@@ -399,7 +398,7 @@ const rangeLabel = computed(() => {
   font-size: 0.9rem;
   font-weight: 600;
   color: rgb(var(--level-rgb, 87 83 78));
-  text-align: right;
+  text-align: start;
   transition: background-color 0.12s;
 }
 
@@ -408,14 +407,14 @@ const rangeLabel = computed(() => {
 }
 
 .mushaf-picker__item--clear {
-  color: #57534e;
-  border-top: 1px solid #f5f5f4;
+  color: var(--color-on-surface-variant);
+  border-top: 1px solid var(--color-card-border);
   border-radius: 0 0 8px 8px;
   margin-top: 0.15rem;
 }
 
 .mushaf-picker__item--clear:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--color-surface-container);
 }
 
 .mushaf-picker__swatch {

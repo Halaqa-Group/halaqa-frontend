@@ -149,6 +149,20 @@
   --color-sidebar-border: #ececef;
   --color-sidebar-icon-bg: #f5f5f7;
 
+  /* Mushaf reader surfaces. The printed page is warm cream, not the app surface,
+     so it gets its own scale rather than borrowing --color-surface-*.
+     --mushaf-ink-rgb is the bare triplet, for the alpha washes the word states
+     paint on top of the page (hover, press, block outlines). */
+  --color-mushaf-bg: #fdfaf2;
+  --color-mushaf-fg: #1c1917;
+  --color-mushaf-border: #d6d3d1;
+  --color-mushaf-muted: #78716c;
+  --color-mushaf-chrome: #fbf6ea;
+  --color-mushaf-accent: #9a6b1f;
+  --mushaf-ink-rgb: 28 25 23;
+  --mushaf-spot-rgb: 37 99 235;
+  --color-mushaf-spot: #1d4ed8;
+
   --shadow-ambient: 0 4px 20px rgba(128, 76, 125, 0.05);
   --shadow-card: 0 1px 4px rgba(128, 76, 125, 0.08);
 }
@@ -207,6 +221,18 @@
   --color-sidebar-hover-bg: #252527;
   --color-sidebar-border: #2e2e30;
   --color-sidebar-icon-bg: #2a2a2c;
+
+  /* Mushaf reader surfaces — a warm near-black, never pure #000: the QCF glyphs
+     are hairline-thin and full contrast makes them shimmer. */
+  --color-mushaf-bg: #16130f;
+  --color-mushaf-fg: #e8e0d2;
+  --color-mushaf-border: #35302a;
+  --color-mushaf-muted: #a09585;
+  --color-mushaf-chrome: #100e0b;
+  --color-mushaf-accent: #d8b06a;
+  --mushaf-ink-rgb: 232 224 210;
+  --mushaf-spot-rgb: 147 180 255;
+  --color-mushaf-spot: #93b4ff;
 
   --shadow-ambient: 0 4px 20px rgba(0, 0, 0, 0.2);
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.15);

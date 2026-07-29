@@ -10,7 +10,11 @@ const props = withDefaults(defineProps<{
   // The student's memorization direction. Walking the mushaf backwards, a surah
   // picked as the session's end lands on its last ayah instead of its first.
   direction?: PlanDirection
-}>(), { direction: 'asc' })
+  // Force start-over-end even on wide viewports. The planner cell has room to sit
+  // them side by side; the recite reader's rail is only ~21rem wide, so side by
+  // side would cram four selects into one row and truncate the surah names.
+  stacked?: boolean
+}>(), { direction: 'asc', stacked: false })
 const emit = defineEmits<{ update: [VerseRange] }>()
 
 const { t } = useI18n()
@@ -40,7 +44,7 @@ watch(form, () => {
 
 <template>
   <div class="space-y-2">
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+    <div class="grid grid-cols-1 gap-2" :class="{ 'sm:grid-cols-2': !stacked }">
       <div class="space-y-1">
         <span class="text-[11px] font-medium text-muted">{{ t('pages.planner.cell.startLabel') }}</span>
         <PlannerAyahSelect v-model:surah="form.start_surah" v-model:verse="form.start_verse" />

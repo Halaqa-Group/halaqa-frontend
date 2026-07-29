@@ -4,6 +4,7 @@ import { LazyCommonConfirmDialog } from '#components'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
 import { computePercentageScore } from '~/utils/score'
 import { makeRangePredicate } from '~/utils/mushaf'
+import type { VerseRange } from '~/utils/quran-structure'
 import type { AchievementTrack } from '~/utils/achievement'
 import type { AchievementTestPosition, ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto, PositionError, RecitationMethod } from '~/types'
 import type { Severity, VerseEdge, VerseLock, WordKey } from '~/types/recitation'
@@ -164,6 +165,75 @@ const selectedItem = computed<ApiWeeklyPlanItem | null>(() =>
   ?? null
 )
 
+// ── Adjustable session range ────────────────────────────────────────────────
+// The lesson arrives with a planned range, but a live recitation can run long or
+// stop short of it: a strong student is pushed a few ayat further, a struggling
+// one is pulled back. `rangeOverride` is the teacher's in-session adjustment;
+// null means «as planned». Every range-driven surface — the mushaf bounds, the
+// markable predicate, the per-page score and the saved record — reads
+// `effectiveItem`, so extending or shortening here re-bounds the whole reader at
+// once. The session id is deliberately keyed off the plan item, not the range, so
+// an adjustment never restarts the marking session underneath it.
+const rangeOverride = ref<VerseRange | null>(null)
+const rangeEditorOpen = ref(false)
+
+function sameVerseRange(a: VerseRange, b: VerseRange): boolean {
+  return a.start_surah === b.start_surah && a.start_verse === b.start_verse
+    && a.end_surah === b.end_surah && a.end_verse === b.end_verse
+}
+
+const baseRange = computed<VerseRange | null>(() =>
+  selectedItem.value
+    ? {
+        start_surah: selectedItem.value.start_surah,
+        start_verse: selectedItem.value.start_verse,
+        end_surah: selectedItem.value.end_surah,
+        end_verse: selectedItem.value.end_verse
+      }
+    : null
+)
+
+// The lesson as it will actually be recited and recorded: the planned item with
+// the teacher's range adjustment folded in. Same object shape as `selectedItem`,
+// so scoring, saving and the mushaf all keep reading one value.
+const effectiveItem = computed<ApiWeeklyPlanItem | null>(() => {
+  const item = selectedItem.value
+  if (!item) return null
+  const o = rangeOverride.value
+  if (!o) return item
+  return {
+    ...item,
+    start_surah: o.start_surah,
+    start_verse: o.start_verse,
+    end_surah: o.end_surah,
+    end_verse: o.end_verse
+  }
+})
+
+// Fed to the range editor; mirrors `effectiveItem` as a bare VerseRange.
+const effectiveRange = computed<VerseRange>(() => ({
+  start_surah: effectiveItem.value?.start_surah ?? 1,
+  start_verse: effectiveItem.value?.start_verse ?? 1,
+  end_surah: effectiveItem.value?.end_surah ?? 1,
+  end_verse: effectiveItem.value?.end_verse ?? 1
+}))
+
+// True once either boundary has been moved off the plan.
+const rangeAdjusted = computed(() =>
+  !!rangeOverride.value && !!baseRange.value && !sameVerseRange(rangeOverride.value, baseRange.value)
+)
+
+// The editor emits only valid ranges (see PlannerSessionRangeFields). Fold the
+// edit in unless it's identical to the plan, in which case snapping back clears
+// the override entirely rather than storing a redundant copy.
+function applyRangeEdit(r: VerseRange) {
+  rangeOverride.value = (baseRange.value && sameVerseRange(r, baseRange.value)) ? null : { ...r }
+}
+
+function resetRange() {
+  rangeOverride.value = null
+}
+
 // ── Recitation method (step 1) ──────────────────────────────────────────────
 // Hifz (new memorization) is always a full recitation — no choice. Near/Far may
 // be tested at chosen positions; that capture UI lands later, so `test` is
@@ -263,12 +333,12 @@ watch(halaqaId, (hid) => {
 
 // ── Test-spot capture ───────────────────────────────────────────────────────
 const lessonRange = computed(() =>
-  selectedItem.value
+  effectiveItem.value
     ? {
-        startSurah: selectedItem.value.start_surah,
-        startVerse: selectedItem.value.start_verse,
-        endSurah: selectedItem.value.end_surah,
-        endVerse: selectedItem.value.end_verse
+        startSurah: effectiveItem.value.start_surah,
+        startVerse: effectiveItem.value.start_verse,
+        endSurah: effectiveItem.value.end_surah,
+        endVerse: effectiveItem.value.end_verse
       }
     : null
 )
@@ -350,7 +420,7 @@ const spotRanges = computed(() => spots.value.map(s => ({
 })))
 
 const lessonPages = computed(() => {
-  const item = selectedItem.value
+  const item = effectiveItem.value
   if (!item) return 1
   return pagesRecited(item, isTest.value ? spotRanges.value : null)
 })
@@ -378,6 +448,20 @@ const spotHighlight = computed<((verseKey: string) => boolean) | undefined>(() =
 watch([isTest, spots, lessonRange], () => {
   const stranded = Object.keys(marks.value).filter(k => !wordMarkable(k))
   if (stranded.length) setMarks(stranded, null)
+})
+
+// Shortening the range can leave a tested passage outside it — a موضع the mushaf
+// no longer shows can't be recited or corrected, and would still divide the score
+// by pages that are no longer on screen. So drop any spot that falls out of the
+// (possibly adjusted) lesson bounds; extending the range never strands one.
+watch(lessonRange, () => {
+  const r = lessonRange.value
+  if (!r || !spots.value.length) return
+  const within = makeRangePredicate(r.startSurah, r.startVerse, r.endSurah, r.endVerse)
+  const kept = spots.value.filter(s =>
+    within(`${s.startSurah}:${s.startVerse}`) && within(`${s.endSurah}:${s.endVerse}`)
+  )
+  if (kept.length !== spots.value.length) setSpots(kept)
 })
 
 // Route a word tap: define a spot boundary (spot-mode), or mark an error. Both
@@ -483,11 +567,36 @@ function findExistingAchievement(item: ApiWeeklyPlanItem): ApiAchievement | null
   ) ?? null
 }
 
+// The record this session writes to, tracked by id so a range edit — which changes
+// the very range `findExistingAchievement` matches on — can't strand it into a
+// duplicate. Seeded from the reopen entry point (achievement_id); adopted the
+// moment a record is matched by range or created by a save.
+const boundAchievementId = ref<number | null>(null)
+watch(achievementId, (id) => {
+  boundAchievementId.value = id
+}, { immediate: true })
+
+// Resolve the achievement backing this session: the bound id if we have one, else
+// a match on the PLANNED range (what the server still holds before the first save
+// under an adjusted range). `selectedItem`, not `effectiveItem`, on purpose.
+function resolveExisting(): ApiAchievement | null {
+  const bound = boundAchievementId.value
+  if (bound != null) {
+    const byId = priorAchievements.value.find(a => a.id === bound)
+    if (byId) return byId
+  }
+  return selectedItem.value ? findExistingAchievement(selectedItem.value) : null
+}
+
 // The achievement backing the current session, and whether it's approved — the
 // primary toolbar action turns into "unapprove" once it is.
-const existingAchievement = computed(() =>
-  selectedItem.value ? findExistingAchievement(selectedItem.value) : null
-)
+const existingAchievement = computed(() => resolveExisting())
+
+// Once a record resolves by range, pin it by id so subsequent range edits stay
+// bound to it rather than looking for a (now non-existent) planned-range match.
+watch(existingAchievement, (a) => {
+  if (a && boundAchievementId.value == null) boundAchievementId.value = a.id
+}, { immediate: true })
 const isApproved = computed(() => existingAchievement.value?.status === 'approved')
 
 // Marking is locked when there's nothing to edit: parents are always read-only,
@@ -598,7 +707,7 @@ function reportFinishError(e: unknown, title: string) {
 // the teacher is returned to the achievements list. Nothing is cleared: the
 // record keeps its marks and reopening the session hydrates them back.
 async function onToolbarSave() {
-  const item = selectedItem.value
+  const item = effectiveItem.value
   if (!item || !studentId.value || !halaqaId.value || savingOnly.value || submitting.value) return
   savingOnly.value = true
   try {
@@ -631,7 +740,7 @@ function onToolbarSubmit() {
 }
 
 async function onApprove() {
-  const item = selectedItem.value
+  const item = effectiveItem.value
   if (!item || !studentId.value || !halaqaId.value || savingOnly.value || submitting.value) return
   try {
     await postAchievement(item, studentId.value, halaqaId.value)
@@ -793,7 +902,7 @@ async function saveRecitation(
     sentErrors = errors
   }
 
-  const existing = findExistingAchievement(item)
+  const existing = resolveExisting()
 
   let saved: ApiAchievement
   if (existing) {
@@ -837,6 +946,10 @@ async function saveRecitation(
     priorAchievements.value = [saved, ...priorAchievements.value]
   }
 
+  // Anchor to this record by id: after a save under an adjusted range the stored
+  // range no longer matches the plan, so only the id can find it again.
+  boundAchievementId.value = saved.id
+
   // Nothing downstream treats the save as done until the backend confirms it
   // holds the errors: this throws otherwise, so the marks stay on screen (and
   // stay dirty for the next autosync tick) instead of being cleared.
@@ -868,6 +981,12 @@ let syncTimer: ReturnType<typeof setInterval> | null = null
 
 const currentSignature = computed(() => JSON.stringify({
   method: recitationMethod.value,
+  // The recited range is part of what's stored, so an extend/shorten is a change
+  // the backend must hear about even when no mark moved — otherwise a range-only
+  // adjustment on a session that already has marks would never sync.
+  range: effectiveItem.value
+    ? [effectiveItem.value.start_surah, effectiveItem.value.start_verse, effectiveItem.value.end_surah, effectiveItem.value.end_verse]
+    : null,
   // Sorted: the marks object is rebuilt on every edit, so insertion order alone
   // would flag unchanged state as dirty.
   marks: Object.entries(marks.value).sort(([a], [b]) => a.localeCompare(b)),
@@ -905,7 +1024,7 @@ const hasSomethingToSync = computed(() =>
 )
 
 async function runSync() {
-  const item = selectedItem.value
+  const item = effectiveItem.value
   const sid = studentId.value
   const hid = halaqaId.value
   if (!item || !sid || !hid) return
@@ -972,6 +1091,11 @@ watch(sessionId, () => {
   lastSyncedSignature.value = null
   syncStatus.value = 'idle'
   lastSyncedAt.value = null
+  // A range adjustment belongs to the session it was made in — start the next one
+  // on its own planned range, bound to its own record (the reopen id, if any).
+  rangeOverride.value = null
+  rangeEditorOpen.value = false
+  boundAchievementId.value = achievementId.value
 })
 
 // What the header chip shows. `saving`/`error` speak for themselves; `saved`
@@ -1198,10 +1322,10 @@ watch(selectedItem, () => {
       <div class="reader__body">
         <MushafRangeViewer
           ref="viewerRef"
-          :start-surah="selectedItem.start_surah"
-          :start-verse="selectedItem.start_verse"
-          :end-surah="selectedItem.end_surah"
-          :end-verse="selectedItem.end_verse"
+          :start-surah="effectiveItem!.start_surah"
+          :start-verse="effectiveItem!.start_verse"
+          :end-surah="effectiveItem!.end_surah"
+          :end-verse="effectiveItem!.end_verse"
           :marks="marks"
           :groups="groups"
           :highlight-override="spotHighlight"
@@ -1265,7 +1389,7 @@ watch(selectedItem, () => {
             :date="dateStr"
             :track="currentTrack"
             :track-label="currentTrack ? trackLabel(currentTrack) : null"
-            :range="rangeLabel(selectedItem)"
+            :range="rangeLabel(effectiveItem!)"
           />
         </template>
 
@@ -1366,6 +1490,63 @@ watch(selectedItem, () => {
           </span>
         </section>
 
+        <!-- Extend or shorten the session on the fly: the range came from the plan,
+             but the recitation itself decides where it ends. Editing here re-bounds
+             the mushaf, the score and the saved record together. Read-only for
+             parents and for an approved record (unapprove to adjust). -->
+        <section
+          v-if="!isParentReadOnly && effectiveItem"
+          dir="rtl"
+          class="flex flex-col gap-2"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted">
+              <UIcon name="i-lucide-move-horizontal" class="size-3.5" />
+              نطاق التسميع
+            </span>
+            <div class="flex min-w-0 items-center gap-1.5">
+              <UBadge color="neutral" variant="subtle" size="sm" class="truncate">
+                {{ rangeLabel(effectiveItem) }}
+              </UBadge>
+              <UButton
+                v-if="!markingLocked"
+                size="xs"
+                :variant="rangeEditorOpen ? 'solid' : 'soft'"
+                color="neutral"
+                class="shrink-0"
+                :icon="rangeEditorOpen ? 'i-lucide-check' : 'i-lucide-pencil'"
+                @click="rangeEditorOpen = !rangeEditorOpen"
+              >
+                {{ rangeEditorOpen ? 'تم' : 'تعديل' }}
+              </UButton>
+            </div>
+          </div>
+
+          <template v-if="rangeEditorOpen && !markingLocked">
+            <PlannerSessionRangeFields :range="effectiveRange" stacked @update="applyRangeEdit" />
+            <div class="flex items-center justify-between gap-2">
+              <p class="min-w-0 flex-1 text-[11px] text-muted">
+                مدّ النطاق ليسمّع الطالب أكثر، أو قصّره ليتوقف قبل نهاية المقرر.
+              </p>
+              <UButton
+                v-if="rangeAdjusted"
+                size="xs"
+                variant="ghost"
+                color="neutral"
+                class="shrink-0"
+                icon="i-lucide-rotate-ccw"
+                @click="resetRange"
+              >
+                استعادة المخطط
+              </UButton>
+            </div>
+          </template>
+          <p v-else-if="rangeAdjusted" class="inline-flex items-center gap-1.5 text-[11px] text-warning">
+            <UIcon name="i-lucide-pencil-line" class="size-3" />
+            نطاق معدّل عن الخطة الأصلية.
+          </p>
+        </section>
+
         <!-- The tested مواضع, each a jump target into the mushaf. -->
         <section
           v-if="isTest && !isParentReadOnly && (spots.length > 0 || !markingLocked)"
@@ -1453,7 +1634,7 @@ watch(selectedItem, () => {
             :date="dateStr"
             :track="currentTrack"
             :track-label="currentTrack ? trackLabel(currentTrack) : null"
-            :range="rangeLabel(selectedItem)"
+            :range="rangeLabel(effectiveItem!)"
           />
           <UButton
             icon="i-lucide-x"

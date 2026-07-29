@@ -280,8 +280,13 @@ function onWordLeave(word: MushafWord) {
   margin: 0 0.15em;
 }
 
+/* Verses outside the recited range are shown for context, not read — a page opens
+   part-way down as often as not. At 0.25 the out-of-range block still read as a
+   slab of competing grey text above the lesson; dropping it lets those verses
+   settle into a quiet watermark so the eye lands on the range that's actually
+   being recited. */
 .mushaf-word--dim {
-  opacity: 0.25;
+  opacity: 0.14;
 }
 
 /* Word metrics live here, not on --tappable, so the page keeps identical line

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useOnline } from '@vueuse/core'
 import { SURAH_NAMES } from '~/data/constants'
 import { formatVerseRange, totalVersesInRange } from '~/utils/quran'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
@@ -22,6 +23,7 @@ const open = defineModel<boolean>('open', { required: true })
 const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
+const online = useOnline()
 const { canRecordAchievement: canRecord } = usePermissions()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const { openRecordForPlanItem } = useAchievements()
@@ -102,8 +104,9 @@ async function recordForSession(index: number) {
     // A session added or edited in this sitting has no server id yet. Persisting
     // the draft first lets the achievement link to a real plan item instead of
     // degrading to a range-only prefill — and keeps the edit from being lost when
-    // we navigate away.
-    if (props.editable && matrixDirty.value) await saveDraft()
+    // we navigate away. It's a network write, so offline we skip it and record
+    // against the range only (the achievement still drafts locally).
+    if (props.editable && matrixDirty.value && online.value) await saveDraft()
   } catch (e: any) {
     toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
     recordingIndex.value = null

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
+import { useOnline } from '@vueuse/core'
 import type { TableColumn } from '@nuxt/ui'
 import type { StaffRow } from '~/composables/useTeacherAttendance'
 import type { AttendanceStatus } from '~/types'
 
 const { t, locale } = useI18n()
+const online = useOnline()
 const toast = useToast()
 const apiError = useApiError()
 
@@ -212,6 +214,8 @@ function handleMarkAllPresent() {
       <div v-if="isLoading && staffRows.length === 0" class="flex justify-center py-16">
         <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
       </div>
+
+      <CommonOfflineEmptyState v-else-if="loadError && !online" />
 
       <div v-else-if="loadError" class="p-6 text-sm text-error text-center">
         {{ loadError }}

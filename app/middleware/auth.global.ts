@@ -16,6 +16,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const token = useAuthToken()
   const isPublic = PUBLIC_ROUTES.has(to.path)
   const { user, activeRole, fetchMe } = useAuth()
+  // When offline we cannot refresh the token or re-fetch the profile; lean on the
+  // cached identity instead of ejecting the user to a login page they can't use.
+  const online = !import.meta.client || navigator.onLine
 
   // Deliberately no fetchMe() here: a stale cookie would 401, and the API layer
   // answers a failed refresh by bouncing to /auth/login — which would throw away
@@ -29,7 +32,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // without this, a cleared access cookie logs out someone who ticked
   // "remember me". Only on guarded routes, so the login page doesn't fire a
   // doomed refresh on every visit.
-  if (!token.value && !isPublic) {
+  if (!token.value && !isPublic && online) {
     await useApi().refresh()
   }
 
@@ -44,6 +47,10 @@ export default defineNuxtRouteMiddleware(async (to) => {
   if (!token.value) return
 
   if (!user.value) {
+    // Offline with no cached profile: let the page render read-only rather than
+    // firing a doomed /auth/me. Role redirects below are skipped until we know
+    // the roles.
+    if (!online) return
     await fetchMe()
   }
 

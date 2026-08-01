@@ -30,5 +30,6 @@ useHead({
         <NuxtPage />
       </NuxtLayout>
     </UMain>
+    <CommonPwaPrompt />
   </UApp>
 </template>

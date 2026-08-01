@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/i18n', '@vueuse/nuxt'],
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxtjs/i18n', '@vueuse/nuxt', '@vite-pwa/nuxt'],
 
   $development: {
     nitro: {
@@ -17,8 +17,17 @@ export default defineNuxtConfig({
 
   app: {
     head: {
+      meta: [
+        { name: 'theme-color', content: '#a06a1b' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'apple-mobile-web-app-title', content: 'مدرسة الإتقان' }
+      ],
       link: [
+        { rel: 'manifest', href: '/manifest.webmanifest' },
         { rel: 'icon', type: 'image/svg+xml', href: '/images/logo/favicon.svg' },
+        { rel: 'icon', type: 'image/png', sizes: '64x64', href: '/icons/pwa-64x64.png' },
+        { rel: 'apple-touch-icon', sizes: '180x180', href: '/icons/apple-touch-icon-180x180.png' },
         {
           rel: 'preload',
           as: 'font',
@@ -49,6 +58,15 @@ export default defineNuxtConfig({
   devServer: {
     host: '127.0.0.1',
     port: 3000
+  },
+
+  // Allow reaching the dev server through an ngrok tunnel (for testing PWA
+  // install / offline on a real device over HTTPS). Dev-only; `nuxt preview`
+  // has no host check. Wildcards cover ngrok's rotating free subdomains.
+  vite: {
+    server: {
+      allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app', '.ngrok.io']
+    }
   },
 
   compatibilityDate: '2025-01-15',
@@ -92,6 +110,54 @@ export default defineNuxtConfig({
     fallbackToApi: false,
     clientBundle: {
       scan: true
+    }
+  },
+
+  pwa: {
+    registerType: 'prompt',
+    strategies: 'injectManifest',
+    srcDir: 'service-worker',
+    filename: 'sw.ts',
+    manifest: {
+      id: '/',
+      name: 'مدرسة الإتقان لتحفيظ القرآن',
+      short_name: 'مدرسة الإتقان',
+      description: 'منصة إدارة حلقات تحفيظ القرآن: الحضور، الإنجازات، الخطط، والمصحف — تعمل دون اتصال.',
+      lang: 'ar',
+      dir: 'rtl',
+      start_url: '/',
+      scope: '/',
+      display: 'standalone',
+      orientation: 'portrait',
+      background_color: '#ffffff',
+      theme_color: '#a06a1b',
+      icons: [
+        { src: '/icons/pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+        { src: '/icons/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/icons/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/icons/pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/icons/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+      ]
+    },
+    injectManifest: {
+      // Precache the built shell + fonts/icons. The 46MB /quran corpus is cached
+      // on demand at runtime (or via the bulk downloader), never precached.
+      globPatterns: ['**/*.{js,css,html,woff2,png,svg,ico}'],
+      globIgnores: ['**/quran/**'],
+      maximumFileSizeToCacheInBytes: 3 * 1024 * 1024
+    },
+    client: {
+      // Enables $pwa.showInstallPrompt / install() for a custom A2HS button.
+      installPrompt: true
+    },
+    // Enabled in dev so the PWA (install + offline) can be exercised on
+    // `nuxt dev`. injectManifest requires `type: 'module'`. If HMR ever behaves
+    // oddly, unregister the SW (DevTools ▸ Application ▸ Clear site data) — a
+    // stale worker is the usual culprit, not the app.
+    devOptions: {
+      enabled: true,
+      type: 'module',
+      suppressWarnings: true
     }
   }
 })

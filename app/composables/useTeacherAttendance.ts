@@ -28,12 +28,6 @@ interface RowSnapshot {
   notes: string
 }
 
-interface StaffUser {
-  id: number
-  name: string
-  photo_url?: string | null
-}
-
 const search = ref('')
 const staffRows = ref<StaffRow[]>([])
 const existingRecords = ref<Map<string, ExistingStaffRecord>>(new Map())
@@ -78,41 +72,25 @@ export function useTeacherAttendance() {
     isLoading.value = true
     loadError.value = null
     try {
-      const [rosterRaw, existingData] = await Promise.all([
-        api<{ items: StaffUser[] } | StaffUser[]>('/users?role=teacher&limit=100'),
-        fetchAttendanceByDate(date)
-      ])
-      const roster = unwrapList<StaffUser>(rosterRaw)
+      // The attendance list carries the staff member's name + photo for every
+      // role (principal, VP, supervisor, teacher) via the seeded "present by
+      // default" rows, so it is the single source for the roster. This also
+      // works for non-admin viewers, who cannot call the admin-only GET /users.
+      const existingData = await fetchAttendanceByDate(date)
+      existingRecords.value = indexByUser(existingData)
 
-      const recMap = indexByUser(existingData)
-      existingRecords.value = recMap
-
-      // Start from the roster, then append any seeded/recorded staff not in it
-      // (e.g. admins) so every attendance row on the day is visible and editable.
-      const byId = new Map<string, StaffRow>()
-      roster.forEach((u) => {
-        const ex = recMap.get(String(u.id))
-        byId.set(String(u.id), {
-          userId: String(u.id),
-          name: u.name,
-          avatar: u.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(u.name)}`,
-          status: ex ? ex.status : 'present' as AttendanceStatus,
-          notes: ex?.notes || ''
+      staffRows.value = existingData
+        .map((a): StaffRow => {
+          const name = a.user_name?.trim() || `#${a.user_id}`
+          return {
+            userId: String(a.user_id),
+            name,
+            avatar: a.user_photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(name)}`,
+            status: a.status,
+            notes: a.excuse_note || ''
+          }
         })
-      })
-      existingData.forEach((a) => {
-        const key = String(a.user_id)
-        if (byId.has(key)) return
-        byId.set(key, {
-          userId: key,
-          name: `#${a.user_id}`,
-          avatar: `https://api.dicebear.com/9.x/notionists/svg?seed=${key}`,
-          status: a.status,
-          notes: a.excuse_note || ''
-        })
-      })
-
-      staffRows.value = Array.from(byId.values())
+        .sort((a, b) => a.name.localeCompare(b.name, 'ar'))
       snapshotCurrentRows()
     } catch (e: any) {
       loadError.value = apiError.format(e, 'حدث خطأ أثناء تحميل حضور الطاقم')

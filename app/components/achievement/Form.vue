@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
+import { useOnline } from '@vueuse/core'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { LazyCommonConfirmDialog } from '#components'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
@@ -17,6 +18,7 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 const overlay = useOverlay()
+const online = useOnline()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
   students, editing, duplicateFrom, prefillStudentId, prefillPlanItem, selectedDate, currentEvaluationSettings,
@@ -533,38 +535,43 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
     if (isEdit.value && editing.value) {
       await updateAchievement(editing.value.id, dto)
       toast.add({ title: t('pages.achievements.updatedToast'), color: 'success' })
-    } else {
-      const created = await addAchievement(dto)
+    } else if (continueToRecite.value) {
       // "Save & recite": continue into the mushaf so the teacher can mark the
-      // recitation. The record stays pending — approving before the errors are
-      // marked would be premature.
-      if (continueToRecite.value) {
-        continueToRecite.value = false
-        // Carry the chosen session so the mushaf opens on that exact lesson (the
-        // recite page hides its session switcher and relies on this). The track +
-        // range are passed explicitly, not just item_id: the session may sit on a
-        // different week/weekday than the record date (a future-dated planned
-        // lesson recorded today), so the recite page can't look it up in that
-        // day's plan.
-        const query: Record<string, string | number> = {
-          student_id: studentId,
-          halaqa_id: halaqaId,
-          date: state.date,
-          track: state.track_type,
-          start_surah: state.start_surah,
-          start_verse: state.start_verse,
-          end_surah: state.end_surah,
-          end_verse: state.end_verse
-        }
-        if (selectedPlanItemId.value != null) query.item_id = selectedPlanItemId.value
-        await navigateTo({ path: '/recite', query })
-        return
+      // recitation. The reader owns the session — and offline drafting — so we
+      // don't create here when offline (that would double-draft the session).
+      continueToRecite.value = false
+      if (online.value) await addAchievement(dto)
+      // Carry the chosen session so the mushaf opens on that exact lesson (the
+      // recite page hides its session switcher and relies on this). The track +
+      // range are passed explicitly, not just item_id: the session may sit on a
+      // different week/weekday than the record date (a future-dated planned
+      // lesson recorded today), so the recite page can't look it up in that
+      // day's plan.
+      const query: Record<string, string | number> = {
+        student_id: studentId,
+        halaqa_id: halaqaId,
+        date: state.date,
+        track: state.track_type,
+        start_surah: state.start_surah,
+        start_verse: state.start_verse,
+        end_surah: state.end_surah,
+        end_verse: state.end_verse
       }
-      // Plain record button approves the achievement on the spot. Recording and
-      // approving are the same halaqa-scope check, so if the create succeeded
-      // this cannot 403.
-      await approveAchievement(created.id)
-      toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
+      if (selectedPlanItemId.value != null) query.item_id = selectedPlanItemId.value
+      await navigateTo({ path: '/recite', query })
+      return
+    } else {
+      // Plain record button: approve on the spot online; offline it's saved as a
+      // draft (approve intent carried on the draft, applied on sync).
+      const created = await addAchievement(dto, true)
+      if (created) {
+        // Recording and approving are the same halaqa-scope check, so if the
+        // create succeeded this cannot 403.
+        await approveAchievement(created.id)
+        toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
+      } else {
+        toast.add({ title: t('pages.achievements.savedOfflineToast'), color: 'success', icon: 'i-lucide-cloud-off' })
+      }
     }
     emit('saved')
   } catch (e: any) {

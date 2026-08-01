@@ -347,10 +347,25 @@ export function useAchievements() {
       ?? `https://api.dicebear.com/9.x/notionists/svg?seed=${id}`
   }
 
+  // Achievements queued for deletion offline are hidden optimistically until the
+  // outbox flushes — the cached list still contains them otherwise.
+  const { entries: outboxEntries } = useOfflineOutbox()
+  const pendingDeleteIds = computed(() => {
+    const ids = new Set<number>()
+    for (const e of outboxEntries.value) {
+      if (e.kind !== 'achievement-delete') continue
+      const m = /\/achievements\/(\d+)/.exec(e.url)
+      if (m) ids.add(Number(m[1]))
+    }
+    return ids
+  })
+
   const filteredAchievements = computed(() => {
+    const pend = pendingDeleteIds.value
+    const base = pend.size ? achievements.value.filter(a => !pend.has(a.id)) : achievements.value
     const q = filters.search.trim().toLowerCase()
-    if (!q) return achievements.value
-    return achievements.value.filter(a => studentDisplayName(a).toLowerCase().includes(q))
+    if (!q) return base
+    return base.filter(a => studentDisplayName(a).toLowerCase().includes(q))
   })
 
   const hasActiveFilters = computed(() =>
@@ -415,14 +430,23 @@ export function useAchievements() {
     return body
   }
 
-  async function addAchievement(data: CreateAchievementDto) {
+  // `approveIfOffline` is only consulted on the offline draft path: a plain
+  // "record & approve" wants the synced record approved too, "save & recite"
+  // leaves it pending.
+  async function addAchievement(data: CreateAchievementDto, approveIfOffline = false) {
     isSaving.value = true
     try {
       const full = await withComputedScore(data)
-      const created = await api<ApiAchievement>('/achievements', {
-        method: 'POST',
-        body: withPositionsPayload(full)
-      })
+      const body = withPositionsPayload(full)
+      // Offline: POST /achievements is NOT idempotent, so store an exactly-once
+      // draft (keyed by student+date+range so re-saves overwrite) and sync it on
+      // reconnect instead of firing a doomed request.
+      if (import.meta.client && !navigator.onLine) {
+        const key = `${full.student_id}:${full.date}:${full.track_type}:${full.start_surah}-${full.start_verse}-${full.end_surah}-${full.end_verse}`
+        await useAchievementDrafts().saveDraft(key, body, approveIfOffline)
+        return null
+      }
+      const created = await api<ApiAchievement>('/achievements', { method: 'POST', body })
       await loadAchievements()
       return created
     } finally {
@@ -465,7 +489,14 @@ export function useAchievements() {
 
   async function deleteAchievement(id: number) {
     await api(`/achievements/${id}`, { method: 'DELETE' })
-    await loadAchievements()
+    // Offline the DELETE is queued (see writeOutboxKind) and the cached list
+    // still holds the row — drop it locally so it disappears now; a real reload
+    // only makes sense online. Online, reload to reflect server truth.
+    if (import.meta.client && navigator.onLine) {
+      await loadAchievements()
+    } else {
+      achievements.value = achievements.value.filter(a => a.id !== id)
+    }
   }
 
   async function approveAchievement(id: number) {

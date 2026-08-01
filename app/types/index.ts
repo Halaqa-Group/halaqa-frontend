@@ -415,6 +415,8 @@ export interface TeacherAttendanceCorrectionPayload {
 export interface ApiTeacherAttendance {
   id: number
   user_id: number
+  user_name?: string | null
+  user_photo_url?: string | null
   date: string
   status: AttendanceStatus
   excuse_note: string | null

@@ -2,7 +2,8 @@
 definePageMeta({
   breadcrumb: [
     { label: 'home', to: '/' },
-    { label: 'pages.attendance.title' }
+    // Header shows the concise nav label ("الحضور"), not the verbose page title.
+    { label: 'nav.attendance' }
   ]
 })
 
@@ -113,17 +114,6 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col gap-6 pb-24">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div class="space-y-1">
-        <div class="flex items-center gap-2">
-          <h1 class="text-2xl font-bold">
-            {{ t('pages.attendance.title') }}
-          </h1>
-          <CommonPendingSyncBadge kind="attendance" />
-        </div>
-      </div>
-    </div>
-
     <UTabs
       v-if="canSeeStaffTab"
       v-model="tab"

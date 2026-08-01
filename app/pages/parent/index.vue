@@ -44,15 +44,6 @@ onMounted(fetchChildren)
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="space-y-1">
-      <h1 class="text-2xl font-bold">
-        {{ t('pages.parent.title') }}
-      </h1>
-      <p class="text-sm text-muted">
-        {{ t('pages.parent.subtitle') }}
-      </p>
-    </div>
-
     <div v-if="isLoading" class="flex justify-center py-10">
       <UIcon name="i-lucide-loader-circle" class="h-8 w-8 animate-spin text-primary" />
     </div>

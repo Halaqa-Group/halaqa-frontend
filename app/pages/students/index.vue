@@ -1,4 +1,11 @@
 <script setup lang="ts">
+definePageMeta({
+  breadcrumb: [
+    { label: 'home', to: '/' },
+    { label: 'pages.students.title' }
+  ]
+})
+
 const { students, fetchStudents, fetchSummarySnapshot, searchQuery } = useStudents()
 const { sortedStudents, filterStatus } = useStudentsView()
 const { selectedHalaqaId } = useGlobalHalaqa()

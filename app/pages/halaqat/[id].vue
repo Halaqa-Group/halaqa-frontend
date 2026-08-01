@@ -37,6 +37,9 @@ const halaqaId = computed(() => Number(route.params.id))
 const halaqa = ref<ApiHalaqaDetail | null>(null)
 const loading = ref(false)
 
+// The header shows the halaqa's own name rather than the generic breadcrumb crumb.
+useSetPageTitle(() => halaqa.value?.name)
+
 // Lifecycle and every roster mutation are principal/vice_principal.
 const canManage = canManageHalaqaMembership
 
@@ -177,9 +180,6 @@ function formatDate(iso: string) {
               <UIcon :name="HALAQA_TYPE_ICON[halaqa.type]" class="text-primary size-5" />
             </div>
             <div class="space-y-1.5 min-w-0">
-              <h1 class="text-xl sm:text-2xl font-bold truncate">
-                {{ halaqa.name }}
-              </h1>
               <div class="flex items-center gap-1.5 flex-wrap">
                 <UBadge variant="subtle" color="neutral" size="sm">
                   {{ t(`pages.halaqat.types.${halaqa.type}`) }}

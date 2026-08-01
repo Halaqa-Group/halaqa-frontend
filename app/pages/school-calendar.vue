@@ -180,15 +180,6 @@ async function confirmHolidayDelete() {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="space-y-1">
-      <h1 class="text-2xl font-bold">
-        {{ t('pages.schoolCalendar.title') }}
-      </h1>
-      <p class="text-sm text-muted">
-        {{ t('pages.schoolCalendar.subtitle') }}
-      </p>
-    </div>
-
     <!-- Operating days -->
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
       <template #header>

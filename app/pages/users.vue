@@ -178,15 +178,7 @@ function statusColor(s: UserStatus) {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col items-center gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div class="space-y-1">
-        <h1 class="text-2xl font-bold">
-          {{ t('pages.users.title') }}
-        </h1>
-        <p class="text-sm text-muted">
-          {{ t('pages.users.subtitle') }}
-        </p>
-      </div>
+    <div class="flex justify-end">
       <UButton icon="i-lucide-plus" class="shrink-0" @click="openAdd">
         {{ t('pages.users.addButton') }}
       </UButton>

@@ -178,15 +178,6 @@ async function onRecalculate(reason: string) {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col gap-1">
-      <h1 class="text-2xl font-bold">
-        {{ t('pages.dailyReport.title') }}
-      </h1>
-      <p class="text-sm text-muted">
-        {{ t('pages.dailyReport.subtitle') }}
-      </p>
-    </div>
-
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
       <template #header>
         <div class="flex flex-col gap-3">

@@ -14,6 +14,9 @@ const { editing, hasStudents, loadStudents } = useAchievements()
 
 const isEdit = computed(() => editing.value != null)
 
+// Header title reflects create vs edit (the static breadcrumb only knows "record").
+useSetPageTitle(() => t(isEdit.value ? 'pages.achievements.editTitle' : 'pages.achievements.recordTitle'))
+
 const formRef = useTemplateRef<{ saving: Ref<boolean>, setContinueToRecite: (v: boolean) => void } | null>('formRef')
 const formSaving = computed(() => formRef.value?.saving.value ?? false)
 
@@ -61,14 +64,6 @@ onMounted(async () => {
         :aria-label="t('common.back')"
         @click="goBack"
       />
-      <div class="space-y-1 min-w-0">
-        <h1 class="text-2xl font-bold truncate">
-          {{ isEdit ? t('pages.achievements.editTitle') : t('pages.achievements.recordTitle') }}
-        </h1>
-        <p class="text-sm text-muted">
-          {{ t('pages.achievements.subtitle') }}
-        </p>
-      </div>
     </div>
 
     <!-- No halaqa: unscoped roles choose one here, scoped roles were redirected -->

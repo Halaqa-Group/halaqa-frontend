@@ -7,6 +7,7 @@ const { isParent, canViewHalaqat, canManageUsers, canViewCalendar } = usePermiss
 const { initializeHalaqa, isHalaqaScoped } = useGlobalHalaqa()
 const route = useRoute()
 const localePath = useLocalePath()
+const { title: pageTitle } = usePageTitle()
 
 const open = ref(false)
 const isCollapsed = ref(false)
@@ -159,6 +160,9 @@ onMounted(async () => {
                 class="max-lg:hidden"
                 :icon="isCollapsed ? 'i-lucide-panel-left-close' : 'i-lucide-panel-left-open'"
               />
+              <h1 v-if="pageTitle" class="text-base sm:text-lg font-bold truncate">
+                {{ pageTitle }}
+              </h1>
               <HalaqaMenu v-if="isHalaqaScoped" class="min-w-0 flex-1 sm:flex-none sm:w-56" />
             </div>
           </template>

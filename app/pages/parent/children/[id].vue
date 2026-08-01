@@ -14,6 +14,9 @@ const { t, locale } = useI18n()
 const childId = computed(() => String(route.params.id))
 const { child, achievements, weeklyPlans, attendance, isLoading, error, fetchAll } = useChildProgress(childId)
 
+// Header shows the child's name in place of the generic breadcrumb crumb.
+useSetPageTitle(() => child.value?.name)
+
 const dateFormatter = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
 )

@@ -225,14 +225,8 @@ onMounted(() => loadList(1))
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div class="space-y-1">
-        <h1 class="text-2xl font-bold">
-          {{ t('pages.halaqat.title') }}
-        </h1>
-      </div>
+    <div v-if="canCreateHalaqa" class="flex justify-end">
       <UButton
-        v-if="canCreateHalaqa"
         icon="i-lucide-plus"
         class="shrink-0"
         @click="openAdd"

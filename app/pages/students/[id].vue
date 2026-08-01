@@ -22,6 +22,9 @@ const loadedStudent = ref<Student | null>(null)
 
 const student = computed(() => students.value.find(s => s.id === studentId.value) ?? loadedStudent.value)
 
+// Header shows the student's name in place of the generic breadcrumb crumb.
+useSetPageTitle(() => student.value?.name)
+
 const tabs = computed<TabsItem[]>(() => [
   { value: 'overview', label: t('pages.students.viewModal.tabs.overview'), icon: 'i-lucide-layout-dashboard' },
   { value: 'guardians', label: t('pages.students.viewModal.tabs.guardians'), icon: 'i-lucide-users' },

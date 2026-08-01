@@ -164,17 +164,7 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div class="space-y-1">
-        <h1 class="text-2xl font-bold">
-          {{ t('pages.planner.title') }}
-        </h1>
-        <p class="text-sm text-muted">
-          {{ t('pages.planner.subtitle') }}
-        </p>
-      </div>
-
-      <div v-if="selectedHalaqaId && selectedStudentId" class="flex items-center gap-2 flex-wrap">
+    <div v-if="selectedHalaqaId && selectedStudentId" class="flex items-center justify-end gap-2 flex-wrap">
         <UBadge v-if="plan" variant="subtle" :color="statusBadgeColor" size="lg">
           {{ statusLabel }}
         </UBadge>
@@ -234,7 +224,6 @@ onMounted(async () => {
           <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
         </UDropdownMenu>
       </div>
-    </div>
 
     <!-- Weekly plans are written per halaqa, so a halaqa is mandatory here even for
          roles that browse the rest of the app unscoped. -->

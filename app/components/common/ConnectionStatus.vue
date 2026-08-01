@@ -15,11 +15,12 @@ const panelOpen = ref(false)
 
 watch(online, (isOnline, was) => {
   if (was === undefined || isOnline === was) return
+  // No toast when going offline — the persistent offline badge already covers it.
+  if (!isOnline) return
   toast.add({
-    title: isOnline ? t('pwa.online') : t('pwa.offline'),
-    description: isOnline ? undefined : t('pwa.offlineReadOnly'),
-    icon: isOnline ? 'i-lucide-wifi' : 'i-lucide-wifi-off',
-    color: isOnline ? 'success' : 'warning'
+    title: t('pwa.online'),
+    icon: 'i-lucide-wifi',
+    color: 'success'
   })
 })
 

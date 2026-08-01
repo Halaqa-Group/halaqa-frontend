@@ -59,6 +59,13 @@ const saveError = ref<string | null>(null)
 const statusFilter = ref<StatusFilter>('all')
 const viewMode = ref<ViewMode>('table')
 
+// Dedup guard for loadSession. On entry the attendance page can fire several
+// identical loads in the same tick — page onMounted, the halaqa-resolve watcher,
+// the date watcher, and tab (re)activation. We fetch a given (halaqa, date) once
+// and let repeat triggers reuse the in-flight or already-loaded result.
+let loadedSessionKey: string | null = null
+let inFlightSession: { key: string, promise: Promise<void> } | null = null
+
 function pad2(n: number): string {
   return String(n).padStart(2, '0')
 }
@@ -100,10 +107,36 @@ export function useAttendance() {
     return map
   }
 
+  // Forget the "already loaded" marker so the next loadSession fetches fresh.
+  // Called when the attendance page unmounts so revisiting it reloads once,
+  // while the dedup still collapses the burst of triggers within a single visit.
+  function resetSessionCache() {
+    loadedSessionKey = null
+    inFlightSession = null
+  }
+
   // halaqaId null loads every student the caller may see — the school-wide roster
   // for a principal. Attendance itself is stored per (student, date), so the
   // sync payload never carries a halaqa.
-  async function loadSession(halaqaId: number | null, date: string) {
+  async function loadSession(halaqaId: number | null, date: string, opts: { force?: boolean } = {}) {
+    const key = `${halaqaId ?? 'all'}:${date}`
+    // Same scope already loaded (or being loaded) → reuse it instead of firing a
+    // duplicate roster + attendance round-trip. `force` re-fetches on demand.
+    if (!opts.force) {
+      if (inFlightSession && inFlightSession.key === key) return inFlightSession.promise
+      if (key === loadedSessionKey) return
+    }
+
+    const run = performLoad(halaqaId, date, key)
+    inFlightSession = { key, promise: run }
+    try {
+      await run
+    } finally {
+      if (inFlightSession?.key === key) inFlightSession = null
+    }
+  }
+
+  async function performLoad(halaqaId: number | null, date: string, key: string) {
     selectedHalaqaId.value = halaqaId
     selectedDate.value = date
     isLoading.value = true
@@ -141,8 +174,10 @@ export function useAttendance() {
         }
       })
       snapshotCurrentRows()
+      loadedSessionKey = key
     } catch (e: any) {
       loadError.value = apiError.format(e, 'حدث خطأ أثناء تحميل الحضور')
+      loadedSessionKey = null
     } finally {
       isLoading.value = false
     }
@@ -411,6 +446,7 @@ export function useAttendance() {
     viewMode,
     isDirty,
     loadSession,
+    resetSessionCache,
     submitSession,
     correct,
     hasSavedRecord,

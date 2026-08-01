@@ -13,7 +13,7 @@ const { canMarkStudentAttendance, canViewStaffAttendance, canManageStaffAttendan
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const {
   attendanceRows, selectedDate, isSaving, isDirty,
-  loadSession, submitSession, markAllPresent, applyUndoSnapshot, discardChanges
+  loadSession, resetSessionCache, submitSession, markAllPresent, applyUndoSnapshot, discardChanges
 } = useAttendance()
 
 // Staff attendance dirty state, so the unsaved-changes guards cover both tabs.
@@ -34,7 +34,12 @@ const tabItems = computed(() => [
 
 const anyDirty = computed(() => isDirty.value || staffIsDirty.value)
 
+// The student roster loads only while its tab is on screen (StaffPanel owns the
+// staff roster). When there is no staff tab the students view is always active.
+const studentTabActive = computed(() => !canSeeStaffTab.value || tab.value === 'students')
+
 async function reload() {
+  if (!studentTabActive.value) return
   // A null halaqa is the unscoped roster, not a missing selection.
   if (hasHalaqa.value && selectedDate.value) {
     await loadSession(selectedHalaqaId.value, selectedDate.value)
@@ -43,6 +48,10 @@ async function reload() {
 
 watch(selectedHalaqaId, reload)
 watch(selectedDate, reload)
+// Load the first time the students tab becomes active (e.g. switched to from staff).
+watch(studentTabActive, (active) => {
+  if (active) reload()
+})
 
 async function handleSaveAttendance() {
   try {
@@ -97,6 +106,8 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (typeof window !== 'undefined') window.removeEventListener('beforeunload', handleBeforeUnload)
+  // Drop the dedup marker so a later return to the page reloads the roster once.
+  resetSessionCache()
 })
 </script>
 

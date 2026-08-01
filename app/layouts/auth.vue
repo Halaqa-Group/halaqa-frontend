@@ -25,7 +25,7 @@ const localePath = useLocalePath()
       <div class="relative z-10 flex flex-col items-center justify-center w-full h-full">
         <img src="/images/logo/halaqa_logo.png" alt="Halaqa Logo" class="w-52 h-auto mb-6">
         <div class="text-2xl font-semibold text-primary-800 text-center max-w-md px-6 mb-2">
-          مرحبًا بكم في منصة حلقة<br>
+          مرحبًا بكم في مدرسة الإتقان لتحفيظ القرآن<br>
           <span class="text-primary-600">تعلم، أنجز، وارتقِ مع مجتمعك</span>
         </div>
       </div>

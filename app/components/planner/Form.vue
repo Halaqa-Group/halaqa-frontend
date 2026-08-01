@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { SURAH_NAMES } from '~/data/constants'
-import { isValidVerseRange, totalVersesInRange, VERSE_COUNTS } from '~/utils/quran'
+import { isValidVerseRange, totalVersesInRange } from '~/utils/quran'
 import type { CreatePlanItemDto } from '~/composables/useWeeklyPlan'
 import { defaultSessionRange } from '~/utils/plan'
 
@@ -60,10 +59,6 @@ const dayItems = computed(() =>
   })
 )
 const trackItems = computed(() => (['Hifz', 'Near', 'Far'] as TrackKey[]).map(v => ({ label: t(`pages.achievements.tracks.${v}`), value: v })))
-const surahItems = computed(() => Object.entries(SURAH_NAMES).map(([num, name]) => ({ value: Number(num), label: name })))
-
-const maxStartVerse = computed(() => VERSE_COUNTS[state.start_surah] || 1)
-const maxEndVerse = computed(() => VERSE_COUNTS[state.end_surah] || 1)
 
 const rangeValid = computed(() => isValidVerseRange(state.start_surah, state.start_verse, state.end_surah, state.end_verse))
 const rangeSummary = computed(() => {
@@ -119,11 +114,19 @@ defineExpose({ saving: isSaving })
     </div>
 
     <UFormField :label="t('pages.planner.table.range')" name="end_verse">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <USelectMenu v-model="state.start_surah" :items="surahItems" value-key="value" searchable class="w-full" />
-        <UInput v-model.number="state.start_verse" type="number" :min="1" :max="maxStartVerse" class="w-full" />
-        <USelectMenu v-model="state.end_surah" :items="surahItems" value-key="value" searchable class="w-full" />
-        <UInput v-model.number="state.end_verse" type="number" :min="1" :max="maxEndVerse" class="w-full" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="space-y-1">
+          <span class="text-xs font-medium text-muted">{{ t('pages.planner.cell.startLabel') }}</span>
+          <PlannerAyahSelect v-model:surah="state.start_surah" v-model:verse="state.start_verse" />
+        </div>
+        <div class="space-y-1">
+          <span class="text-xs font-medium text-muted">{{ t('pages.planner.cell.endLabel') }}</span>
+          <PlannerAyahSelect
+            v-model:surah="state.end_surah"
+            v-model:verse="state.end_verse"
+            :snap-to="selectedStudentDirection === 'desc' ? 'last' : 'first'"
+          />
+        </div>
       </div>
       <p v-if="rangeSummary" class="mt-1.5 text-xs text-muted">
         {{ rangeSummary }}

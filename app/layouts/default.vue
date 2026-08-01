@@ -171,7 +171,6 @@ onMounted(async () => {
       </template>
 
       <template #body>
-        <CommonOfflineBanner />
         <slot />
       </template>
     </UDashboardPanel>

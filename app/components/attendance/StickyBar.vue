@@ -19,7 +19,7 @@ defineEmits<{
   >
     <div
       v-if="isDirty"
-      class="fixed bottom-0 inset-x-0 z-40 px-3 sm:px-4 pb-3 sm:pb-4 pointer-events-none"
+      class="fixed bottom-0 inset-x-0 z-50 px-3 sm:px-4 pt-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-4 pointer-events-none"
     >
       <div
         class="mx-auto max-w-5xl rounded-2xl bg-default border border-default shadow-2xl px-3 sm:px-5 py-3 flex items-center justify-between gap-2 sm:gap-4 pointer-events-auto"

@@ -2,7 +2,7 @@
 import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { t } = useI18n()
-const { user, activeRole } = useAuth()
+const { activeRole } = useAuth()
 const { isParent, canViewHalaqat, canManageUsers, canViewCalendar } = usePermissions()
 const { initializeHalaqa, isHalaqaScoped } = useGlobalHalaqa()
 const route = useRoute()
@@ -58,13 +58,6 @@ const links = computed<NavigationMenuItem[][]>(() => {
 
   return [mainLinks]
 })
-
-const roleOptions = computed(() => user.value?.roles?.map(role => ({
-  label: t(`roles.${role}`),
-  value: role
-})))
-
-const hasMultipleRoles = computed(() => user.value?.roles?.length > 1)
 
 watch(activeRole, async (role) => {
   if (!role) return
@@ -157,32 +150,32 @@ onMounted(async () => {
       </template>
     </UDashboardSidebar>
 
-    <UDashboardPanel id="main">
+    <UDashboardPanel id="main" :ui="{ body: 'max-lg:pb-24' }">
       <template #header>
-        <UDashboardNavbar :ui="{ right: 'gap-3' }">
+        <UDashboardNavbar :toggle="false" :ui="{ right: 'gap-3' }">
           <template #left>
-            <div class="flex items-center gap-3">
-              <UDashboardSidebarCollapse :icon="isCollapsed ? 'i-lucide-panel-left-close' : 'i-lucide-panel-left-open'" />
-              <HalaqaMenu v-if="isHalaqaScoped" class="w-56" />
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <UDashboardSidebarCollapse
+                class="max-lg:hidden"
+                :icon="isCollapsed ? 'i-lucide-panel-left-close' : 'i-lucide-panel-left-open'"
+              />
+              <HalaqaMenu v-if="isHalaqaScoped" class="min-w-0 flex-1 sm:flex-none sm:w-56" />
             </div>
           </template>
 
           <template #right>
-            <USelect
-              v-if="hasMultipleRoles"
-              v-model="activeRole"
-              :items="roleOptions"
-              value-key="value"
-              class="w-40"
-              size="sm"
-            />
+            <CommonConnectionStatus />
+            <CommonOfflineManager />
           </template>
         </UDashboardNavbar>
       </template>
 
       <template #body>
+        <CommonOfflineBanner />
         <slot />
       </template>
     </UDashboardPanel>
+
+    <MobileBottomNav :links="links[0] ?? []" />
   </UDashboardGroup>
 </template>

@@ -14,8 +14,9 @@ const localePath = useLocalePath()
         <div class="flex-1 flex flex-col justify-center">
           <slot />
         </div>
-        <div class="shrink-0">
+        <div class="shrink-0 flex items-center justify-between gap-3">
           <CommonLanguageToggle />
+          <CommonConnectionStatus />
         </div>
       </div>
     </div>

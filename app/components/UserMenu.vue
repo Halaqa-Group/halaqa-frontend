@@ -7,7 +7,10 @@ defineProps<{
 
 const { t, locale, setLocale } = useI18n()
 const colorMode = useColorMode()
-const { user, logout } = useAuth()
+const { user, activeRole, logout } = useAuth()
+const { $pwa } = useNuxtApp()
+
+const hasMultipleRoles = computed(() => (user.value?.roles?.length ?? 0) > 1)
 
 const userAvatar = computed(() => ({
   src: user.value?.photoUrl ?? undefined,
@@ -20,46 +23,74 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
   type: 'label',
   label: user.value?.name ?? '',
   avatar: userAvatar.value
-}], [{
-  label: t('nav.profile'),
-  icon: 'i-lucide-user',
-  to: '/profile'
-}, {
-  label: locale.value === 'ar' ? 'English' : 'العربية',
-  icon: 'i-lucide-languages',
-  onSelect: (e: Event) => {
-    e.preventDefault()
-    setLocale(locale.value === 'ar' ? 'en' : 'ar')
-  }
-}, {
-  label: 'Appearance',
-  icon: 'i-lucide-sun-moon',
-  children: [{
-    label: 'Light',
-    icon: 'i-lucide-sun',
-    type: 'checkbox',
-    checked: colorMode.value === 'light',
-    onSelect(e: Event) {
+}], [
+  ...(hasMultipleRoles.value
+    ? [{
+        label: t(`roles.${activeRole.value}`),
+        icon: 'i-lucide-user-cog',
+        children: (user.value?.roles ?? []).map(role => ({
+          label: t(`roles.${role}`),
+          type: 'checkbox' as const,
+          checked: activeRole.value === role,
+          onSelect(e: Event) {
+            e.preventDefault()
+            activeRole.value = role
+          }
+        }))
+      }]
+    : []),
+  {
+    label: t('nav.profile'),
+    icon: 'i-lucide-user',
+    to: '/profile'
+  }, {
+    label: locale.value === 'ar' ? 'English' : 'العربية',
+    icon: 'i-lucide-languages',
+    onSelect: (e: Event) => {
       e.preventDefault()
-      colorMode.preference = 'light'
+      setLocale(locale.value === 'ar' ? 'en' : 'ar')
     }
   }, {
-    label: 'Dark',
-    icon: 'i-lucide-moon',
-    type: 'checkbox',
-    checked: colorMode.value === 'dark',
-    onSelect(e: Event) {
-      e.preventDefault()
-      colorMode.preference = 'dark'
+    label: 'Appearance',
+    icon: 'i-lucide-sun-moon',
+    children: [{
+      label: 'Light',
+      icon: 'i-lucide-sun',
+      type: 'checkbox',
+      checked: colorMode.value === 'light',
+      onSelect(e: Event) {
+        e.preventDefault()
+        colorMode.preference = 'light'
+      }
+    }, {
+      label: 'Dark',
+      icon: 'i-lucide-moon',
+      type: 'checkbox',
+      checked: colorMode.value === 'dark',
+      onSelect(e: Event) {
+        e.preventDefault()
+        colorMode.preference = 'dark'
+      }
+    }]
+  }], [
+  ...($pwa?.showInstallPrompt && !$pwa?.isPWAInstalled
+    ? [{
+        label: t('pwa.install'),
+        icon: 'i-lucide-download',
+        onSelect: (e: Event) => {
+          e.preventDefault()
+          $pwa?.install()
+        }
+      }]
+    : []),
+  {
+    label: t('auth.logout'),
+    icon: 'i-lucide-log-out',
+    onSelect: () => {
+      logout()
     }
-  }]
-}], [{
-  label: t('auth.logout'),
-  icon: 'i-lucide-log-out',
-  onSelect: () => {
-    logout()
   }
-}]]))
+]]))
 </script>
 
 <template>

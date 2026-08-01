@@ -50,10 +50,54 @@ interface LoginResponse {
   user: Pick<AuthUser, 'id' | 'name' | 'email' | 'roles'>
 }
 
+import { STORE_READCACHE, STORE_OUTBOX, STORE_DRAFTS, idbClear } from '~/utils/idb'
+
+// Cached profile so an offline reload keeps the user's identity instead of
+// bouncing them to the login screen (the 30-day access cookie is still valid).
+const USER_STORAGE_KEY = 'auth_user_profile'
+
+// Wipe every offline trace of the account on logout — read-cache, write outbox,
+// and the persisted profile — so a shared device doesn't leak the last user's data.
+async function clearOfflineData(): Promise<void> {
+  if (!import.meta.client) return
+  try {
+    localStorage.removeItem(USER_STORAGE_KEY)
+    await Promise.all([idbClear(STORE_READCACHE), idbClear(STORE_OUTBOX), idbClear(STORE_DRAFTS)])
+  } catch {
+    // Best-effort — never block logout on storage errors.
+  }
+}
+
+function readCachedUser(): AuthUser | null {
+  if (!import.meta.client) return null
+  try {
+    const raw = localStorage.getItem(USER_STORAGE_KEY)
+    return raw ? JSON.parse(raw) as AuthUser : null
+  } catch {
+    return null
+  }
+}
+
+let userPersistBound = false
+
 export function useAuth() {
   const api = useApi()
   const token = useAuthToken()
-  const user = useState<AuthUser | null>('auth_user', () => null)
+  const user = useState<AuthUser | null>('auth_user', () => readCachedUser())
+
+  // Mirror the profile into localStorage so it survives an offline reload. Bound
+  // once at module scope to avoid stacking a watcher per useAuth() call.
+  if (import.meta.client && !userPersistBound) {
+    userPersistBound = true
+    watch(user, (u) => {
+      try {
+        if (u) localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(u))
+        else localStorage.removeItem(USER_STORAGE_KEY)
+      } catch {
+        // Storage full / disabled — non-fatal, we just lose offline identity.
+      }
+    })
+  }
   const activeRole = useState<string | null>('auth_active_role', () => null)
   const isLoggedIn = computed(() => !!token.value)
   const isEmailVerified = computed(() => !!user.value?.emailVerifiedAt)
@@ -114,6 +158,11 @@ export function useAuth() {
       user.value = await api<AuthUser>('/auth/me')
       return true
     } catch {
+      // Offline: keep the cached identity and token — we simply can't reach
+      // /auth/me right now; clearing them would log the user out mid-session.
+      if (import.meta.client && !navigator.onLine) {
+        return !!user.value
+      }
       token.value = null
       user.value = null
       return false
@@ -124,10 +173,12 @@ export function useAuth() {
     try {
       await api('/auth/logout', { method: 'POST' })
     } catch {
+      // Revoke locally even if the server call fails (e.g. offline).
     }
     token.value = null
     user.value = null
     activeRole.value = null
+    await clearOfflineData()
     return navigateTo('/auth/login')
   }
 
@@ -194,9 +245,11 @@ export function useAuth() {
     try {
       await api('/auth/logout-all', { method: 'POST' })
     } catch {
+      // Revoke locally even if the server call fails (e.g. offline).
     }
     token.value = null
     user.value = null
+    await clearOfflineData()
     return navigateTo('/auth/login')
   }
 

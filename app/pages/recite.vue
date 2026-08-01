@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useMediaQuery } from '@vueuse/core'
+import { useMediaQuery, useOnline } from '@vueuse/core'
 import { LazyCommonConfirmDialog } from '#components'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
 import { computePercentageScore } from '~/utils/score'
@@ -18,6 +18,10 @@ const api = useApi()
 const overlay = useOverlay()
 const { isParent: isParentReadOnly } = usePermissions()
 const { loadEvaluationSettings, currentEvaluationSettings } = useAchievements()
+// Offline recitation drafts: when disconnected the session is saved locally and
+// synced once on reconnect (see useAchievementDrafts) instead of hitting the API.
+const online = useOnline()
+const { saveDraft: saveRecitationDraft } = useAchievementDrafts()
 // Warm the QUL word-id / juz / hizb lookup so building errors[] on submit is instant.
 useQuranWords()
 // Marks and spots are no longer cached client-side; clear what older builds left
@@ -826,9 +830,11 @@ async function verifyErrorsPersisted(
   if (expectedTotal === 0 && sentPositions === 0) return
 
   // The write response doesn't always embed the positions; re-read the record
-  // once when it doesn't rather than assuming the write took.
+  // once when it doesn't rather than assuming the write took. Offline there's no
+  // way to read it back — trust the optimistic write instead of failing.
   let record = saved
   if (!record.recitation_positions) {
+    if (import.meta.client && !navigator.onLine) return
     record = await api<ApiAchievement>(`/achievements/${saved.id}`)
   }
   const positions = record.recitation_positions
@@ -866,18 +872,16 @@ async function verifyErrorsPersisted(
 // return once the stored breakdown has been verified against what was sent.
 // Shared by the 5-second autosync and the explicit submit, so both write exactly
 // the same record from exactly the same state.
-async function saveRecitation(
+// Build the create DTO + score for the chosen method, shared by the online
+// save and the offline draft. `test` sends one position per tested spot (each
+// with its own errors); `full` sends the whole-range errors.
+async function buildRecitationWrite(
   item: ApiWeeklyPlanItem, sid: number, hid: number
-): Promise<ApiAchievement> {
+): Promise<{ dto: CreateAchievementDto, sentErrors: PositionError[], sentPositions: number }> {
   const settings = await loadEvaluationSettings(hid)
 
-  // Build the recitation payload + score for the chosen method. `test` sends
-  // one position per tested spot (each with its own errors); `full` sends the
-  // whole-range errors. Score is derived from the errors that actually count.
   let payload: { errors?: PositionError[], test_positions?: AchievementTestPosition[] }
   let score: number
-  // Kept for the post-save verification below — what we sent, to compare
-  // against what the backend actually stored.
   let sentErrors: PositionError[]
   let sentPositions = 0
   // Weights are per mushaf page — a longer lesson divides each deduction by
@@ -901,6 +905,48 @@ async function saveRecitation(
     payload = { errors }
     sentErrors = errors
   }
+
+  const dto: CreateAchievementDto = {
+    student_id: sid,
+    halaqa_id: hid,
+    date: dateStr.value,
+    track_type: item.track_type,
+    completion_method: 'mushaf',
+    recitation_method: recitationMethod.value,
+    start_surah: item.start_surah,
+    start_verse: item.start_verse,
+    end_surah: item.end_surah,
+    end_verse: item.end_verse,
+    ...payload,
+    percentage_score: score,
+    total_pages: totalPages
+  }
+  return { dto, sentErrors, sentPositions }
+}
+
+// Offline: persist the session as a single local draft (create-only). Blocks
+// when a real server record already backs the session — editing it offline
+// can't be reconciled and a blind create would duplicate it. Returns whether a
+// draft was written.
+async function saveRecitationOffline(
+  item: ApiWeeklyPlanItem, sid: number, hid: number, approve: boolean
+): Promise<'drafted' | 'blocked'> {
+  if (resolveExisting()) return 'blocked'
+  const { dto } = await buildRecitationWrite(item, sid, hid)
+  await saveRecitationDraft(sessionId.value, dto, approve)
+  return 'drafted'
+}
+
+async function saveRecitation(
+  item: ApiWeeklyPlanItem, sid: number, hid: number
+): Promise<ApiAchievement> {
+  const { dto, sentErrors, sentPositions } = await buildRecitationWrite(item, sid, hid)
+  // Reuse the create DTO's payload for the update path.
+  const payload = dto.test_positions
+    ? { test_positions: dto.test_positions }
+    : { errors: dto.errors }
+  const score = dto.percentage_score
+  const totalPages = dto.total_pages
 
   const existing = resolveExisting()
 
@@ -927,21 +973,6 @@ async function saveRecitation(
     })
     priorAchievements.value = priorAchievements.value.map(a => a.id === existing.id ? saved : a)
   } else {
-    const dto: CreateAchievementDto = {
-      student_id: sid,
-      halaqa_id: hid,
-      date: dateStr.value,
-      track_type: item.track_type,
-      completion_method: 'mushaf',
-      recitation_method: recitationMethod.value,
-      start_surah: item.start_surah,
-      start_verse: item.start_verse,
-      end_surah: item.end_surah,
-      end_verse: item.end_verse,
-      ...payload,
-      percentage_score: score,
-      total_pages: totalPages
-    }
     saved = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
     priorAchievements.value = [saved, ...priorAchievements.value]
   }
@@ -968,7 +999,7 @@ async function saveRecitation(
 // tick only counts as synced once the errors are provably on the server.
 const AUTOSYNC_MS = 5000
 
-type SyncStatus = 'idle' | 'saving' | 'saved' | 'error'
+type SyncStatus = 'idle' | 'saving' | 'saved' | 'error' | 'offline'
 const syncStatus = ref<SyncStatus>('idle')
 const lastSyncedAt = ref<string | null>(null)
 // Signature of the state the backend last confirmed. Everything that ends up in
@@ -1035,6 +1066,25 @@ async function runSync() {
   // Read before the state changes: it decides whether this failure is the start
   // of a streak (and so worth a toast) or another tick of one already reported.
   const wasFailing = syncStatus.value === 'error'
+
+  // Offline: keep the recitation as a local draft (overwritten each tick, so no
+  // duplicate creates) and sync it once on reconnect. A session already backed
+  // by a server record can't be drafted safely — leave it dirty to retry online.
+  if (!online.value) {
+    try {
+      const res = await saveRecitationOffline(item, sid, hid, false)
+      if (res === 'drafted') {
+        lastSyncedSignature.value = attempted
+        syncStatus.value = 'offline'
+      } else {
+        syncStatus.value = 'error'
+      }
+    } catch {
+      syncStatus.value = 'error'
+    }
+    return
+  }
+
   syncStatus.value = 'saving'
   try {
     const saved = await saveRecitation(item, sid, hid)
@@ -1102,6 +1152,7 @@ watch(sessionId, () => {
 // carries the time so a teacher can tell at a glance how current it is.
 const syncLabel = computed(() => {
   if (syncStatus.value === 'saving') return 'جارٍ الحفظ…'
+  if (syncStatus.value === 'offline') return 'محفوظ محليًا — يُزامَن عند عودة الاتصال'
   if (syncStatus.value === 'error') return 'تعذّر الحفظ — إعادة المحاولة'
   if (isDirty.value && hasSomethingToSync.value) return 'تغييرات غير محفوظة'
   if (syncStatus.value === 'saved') return `تم الحفظ ${lastSyncedAt.value}`
@@ -1119,6 +1170,23 @@ async function saveSessionOnly(item: ApiWeeklyPlanItem, sid: number, hid: number
   // Snapshot before the request: marks made while it is in flight belong to the
   // next tick, and adopting the post-request state would swallow them.
   const attempted = currentSignature.value
+
+  // Offline: save the recitation locally; it syncs on reconnect.
+  if (!online.value) {
+    await syncInFlight
+    const res = await saveRecitationOffline(item, sid, hid, false)
+    if (res === 'blocked') {
+      throw new Error('لا يمكن تعديل إنجاز محفوظ مسبقًا دون اتصال بالإنترنت.')
+    }
+    lastSyncedSignature.value = attempted
+    syncStatus.value = 'offline'
+    toast.add({
+      description: 'أنت غير متصل — سيُحفظ التلاوة تلقائيًا عند عودة الاتصال.',
+      color: 'info'
+    })
+    return
+  }
+
   syncStatus.value = 'saving'
   try {
     // An autosync tick may be mid-flight on this very session — let it finish so
@@ -1147,6 +1215,25 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
     // An autosync tick may be mid-flight on this very session — let it finish so
     // its create can't race this one into a duplicate record.
     await syncInFlight
+
+    // Offline: draft the recitation with the approve intent. On reconnect it is
+    // created and then approved in one pass (see useAchievementDrafts.flush).
+    if (!online.value) {
+      const res = await saveRecitationOffline(item, sid, hid, true)
+      if (res === 'blocked') {
+        throw new Error('لا يمكن اعتماد إنجاز محفوظ مسبقًا دون اتصال بالإنترنت.')
+      }
+      clearAll()
+      if (isTest.value) clearSpots()
+      markSynced()
+      syncStatus.value = 'offline'
+      toast.add({
+        description: 'أنت غير متصل — سيُحفظ الإنجاز ويُعتمد تلقائيًا عند عودة الاتصال.',
+        color: 'info'
+      })
+      return
+    }
+
     const saved = await saveRecitation(item, sid, hid)
 
     // The recitation is done — the errors were just marked word-by-word on the

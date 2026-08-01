@@ -16,4 +16,8 @@ export default createConfigForNuxt({
   '@typescript-eslint/ban-types': 'off',
   '@typescript-eslint/no-empty-object-type': 'off',
   '@typescript-eslint/no-explicit-any': 'off'
+}).append({
+  // The service worker is bundled separately by vite-plugin-pwa and targets the
+  // WebWorker lib, not the DOM/Node env Nuxt's flat config assumes.
+  ignores: ['app/service-worker/**', 'pwa-assets.config.ts']
 })

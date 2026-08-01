@@ -7,6 +7,9 @@ export type ApiClient = {
   // Spends the HttpOnly refresh cookie for a fresh access token. Resolves
   // false instead of throwing when there is no live session to restore.
   refresh: () => Promise<boolean>
+  // Like the plain GET, but pins the response in the read-cache so the
+  // eviction cap never drops it — used by the "make available offline" prefetch.
+  warm: <T = unknown>(url: string, opts?: FetchOptions) => Promise<T>
 }
 
 export interface LessonItem {

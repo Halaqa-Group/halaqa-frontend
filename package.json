@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "cp .env.prod .env && nuxt build",
+    "build": "nuxt build",
     "build:app": "cp .env.prod .env && nuxt build && pnpm verify:quran",
     "dev": "nuxt dev --host",
     "preview": "nuxt preview",
@@ -32,9 +32,18 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
     "@nuxt/eslint-config": "^1.15.2",
+    "@vite-pwa/assets-generator": "^1.0.2",
+    "@vite-pwa/nuxt": "^1.1.1",
     "eslint": "^10.2.0",
     "typescript": "^6.0.2",
-    "vue-tsc": "^3.2.6"
+    "vue-tsc": "^3.2.6",
+    "workbox-background-sync": "^7.4.1",
+    "workbox-cacheable-response": "^7.4.1",
+    "workbox-core": "^7.4.1",
+    "workbox-expiration": "^7.4.1",
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1",
+    "workbox-strategies": "^7.4.1"
   },
   "packageManager": "pnpm@10.33.0",
   "engines": {

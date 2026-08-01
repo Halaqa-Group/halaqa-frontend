@@ -1,8 +1,65 @@
 import type { FetchOptions } from 'ofetch'
 import type { Ref } from 'vue'
 import type { ApiClient } from '~/types'
+import { STORE_READCACHE, idbGet, idbPut, idbEnforceCap } from '~/utils/idb'
+
+// Upper bound on cached GET responses so the read-cache can't grow without
+// limit on a device used for months. Oldest-first eviction, checked every few
+// writes to keep the common path cheap.
+const READCACHE_MAX = 600
+let readCacheWrites = 0
 
 const SKIP_REFRESH_FOR = new Set(['/auth/login', '/auth/refresh'])
+
+interface ReadCacheRecord<T> { data: T, cachedAt: number, pinned?: boolean }
+
+// Namespaced per user + active role so a role switch (which re-scopes what the
+// backend returns) never serves another view's cached data.
+function readCacheKey(url: string, opts: FetchOptions): string | null {
+  if (!import.meta.client) return null
+  const userId = useState<{ id?: number } | null>('auth_user').value?.id ?? 'anon'
+  const role = useState<string | null>('auth_active_role').value ?? '-'
+  const query = opts.query ? JSON.stringify(sortedEntries(opts.query as Record<string, unknown>)) : ''
+  return `${userId}|${role}|${url}|${query}`
+}
+
+function sortedEntries(obj: Record<string, unknown>): [string, unknown][] {
+  return Object.entries(obj).filter(([, v]) => v !== undefined).sort(([a], [b]) => a.localeCompare(b))
+}
+
+// Allowlist of writes that may be queued and replayed when offline. Deliberately
+// narrow: only the idempotent batch attendance syncs, whose callers re-pull the
+// day afterwards (served from the read-cache offline). Achievements are NOT here
+// — their recite save chains several requests on the server-assigned id, which a
+// blind queue can't satisfy; they stay online-required.
+function writeOutboxKind(url: string, method: string): string | null {
+  if (method === 'POST') {
+    if (url === '/attendance/students/sync') return 'attendance-students-sync'
+    if (url === '/attendance/teachers/sync') return 'attendance-teachers-sync'
+    return null
+  }
+  // Deleting a recitation is idempotent enough to replay (a re-delete 404s,
+  // which the flush treats as success), so it's safe to queue offline.
+  if (method === 'DELETE' && /^\/achievements\/\d+$/.test(url)) return 'achievement-delete'
+  return null
+}
+
+async function readFromCache<T>(key: string): Promise<T | undefined> {
+  try {
+    const rec = await idbGet<ReadCacheRecord<T>>(STORE_READCACHE, key)
+    return rec?.data
+  } catch {
+    return undefined
+  }
+}
+
+function writeToCache<T>(key: string, data: T, pinned = false): void {
+  // Fire-and-forget; a failed write just means no offline copy this time.
+  void idbPut(STORE_READCACHE, { data, cachedAt: Date.now(), pinned } satisfies ReadCacheRecord<T>, key).catch(() => {})
+  if (++readCacheWrites % 20 === 0) {
+    void idbEnforceCap(STORE_READCACHE, READCACHE_MAX, 'cachedAt').catch(() => {})
+  }
+}
 
 let client: ApiClient | null = null
 
@@ -58,11 +115,50 @@ function createClient(): ApiClient {
   }
 
   async function api<T = unknown>(url: string, opts: FetchOptions = {}): Promise<T> {
+    const method = ((opts.method as string) || 'GET').toUpperCase()
+    // `pin` (set by warm()) keeps the cached copy out of the eviction cap. Read
+    // then strip it so it never reaches the network layer.
+    const pin = (opts as { pin?: boolean }).pin === true
+    if (pin) delete (opts as { pin?: boolean }).pin
+    const cacheKey = method === 'GET' ? readCacheKey(url, opts) : null
+    const outboxKind = writeOutboxKind(url, method)
+
+    // Offline write to an allowlisted endpoint → queue it and return optimistically.
+    // The caller re-pulls afterwards, which the read-cache serves from disk.
+    if (outboxKind && import.meta.client && !navigator.onLine) {
+      await useOfflineOutbox().enqueue({ kind: outboxKind, url, method, body: opts.body, label: url })
+      return undefined as T
+    }
+
+    // Offline GET → serve straight from IndexedDB instead of a doomed network
+    // round-trip. Only fall through to the network when there's no cached copy
+    // (so a never-cached request still surfaces its real offline error).
+    if (cacheKey && import.meta.client && !navigator.onLine) {
+      const cached = await readFromCache<T>(cacheKey)
+      if (cached !== undefined) return cached
+    }
+
     try {
-      return unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
+      const data = unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
+      if (cacheKey) writeToCache(cacheKey, data, pin)
+      return data
     } catch (e: unknown) {
       const status = (e as { response?: { status?: number }, status?: number } | null)?.response?.status
         ?? (e as { status?: number } | null)?.status
+
+      // Network failure (no HTTP status): fall back to a cached read, or queue a
+      // queueable write, before treating it as a hard error.
+      if (status == null) {
+        if (cacheKey) {
+          const cached = await readFromCache<T>(cacheKey)
+          if (cached !== undefined) return cached
+        }
+        if (outboxKind && import.meta.client) {
+          await useOfflineOutbox().enqueue({ kind: outboxKind, url, method, body: opts.body, label: url })
+          return undefined as T
+        }
+      }
+
       if (status !== 401 || SKIP_REFRESH_FOR.has(url)) throw e
 
       const ok = await attemptRefresh()
@@ -81,11 +177,19 @@ function createClient(): ApiClient {
         }
         throw e
       }
-      return unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
+      const retried = unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
+      if (cacheKey) writeToCache(cacheKey, retried, pin)
+      return retried
     }
   }
 
-  return Object.assign(api, { lastWarnings, refresh: attemptRefresh }) as ApiClient
+  // Prefetch helper: fetch through the normal path but pin the cached copy so
+  // the eviction cap can't drop deliberately-offlined data.
+  async function warm<T = unknown>(url: string, opts: FetchOptions = {}): Promise<T> {
+    return api<T>(url, { ...opts, pin: true } as FetchOptions)
+  }
+
+  return Object.assign(api, { lastWarnings, refresh: attemptRefresh, warm }) as ApiClient
 }
 
 /**

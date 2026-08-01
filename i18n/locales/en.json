@@ -1386,6 +1386,7 @@
         "popoverTitle": "Edit cell",
         "popoverTitleNew": "Add session",
         "surahLabel": "Surah",
+        "verseLabel": "Ayah",
         "fromAyahLabel": "From ayah",
         "toAyahLabel": "To ayah",
         "errorOrder": "End ayah must be at or after start ayah",

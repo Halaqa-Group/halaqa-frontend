@@ -1386,6 +1386,7 @@
         "popoverTitle": "تعديل الخلية",
         "popoverTitleNew": "إضافة جلسة جديدة",
         "surahLabel": "السورة",
+        "verseLabel": "الآية",
         "fromAyahLabel": "من الآية",
         "toAyahLabel": "إلى الآية",
         "errorOrder": "آية النهاية يجب أن تكون بعد آية البداية",

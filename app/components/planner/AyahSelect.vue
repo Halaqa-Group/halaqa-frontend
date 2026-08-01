@@ -12,6 +12,7 @@ const props = withDefaults(defineProps<{
 const surah = defineModel<number>('surah', { required: true })
 const verse = defineModel<number>('verse', { required: true })
 
+const { t } = useI18n()
 const { pageFor } = useVerseToPage()
 
 const surahItems = computed(() =>
@@ -29,9 +30,14 @@ function isPageStart(s: number, v: number): boolean {
 
 const verseItems = computed(() => {
   const count = VERSE_COUNTS[surah.value] || 1
-  const out: { value: number, label: string, page?: number, pageStart: boolean }[] = []
+  const out: { value: number, label: string, badge?: string }[] = []
   for (let v = 1; v <= count; v++) {
-    out.push({ value: v, label: String(v), page: pageFor(`${surah.value}:${v}`), pageStart: isPageStart(surah.value, v) })
+    // Badge a verse with the mushaf page it opens, but only where a page begins —
+    // the same cue the old dropdown showed, carried onto the wheel row.
+    const badge = isPageStart(surah.value, v)
+      ? t('pages.planner.pageBadge', { page: pageFor(`${surah.value}:${v}`) })
+      : undefined
+    out.push({ value: v, label: String(v), badge })
   }
   return out
 })
@@ -45,42 +51,21 @@ watch(surah, () => {
 
 <template>
   <!--
-    Nuxt UI teleports every overlay to <body> and stacks them by DOM order, so its
-    modal/drawer/select defaults carry no z-index. That contract breaks inside the
-    recite reader's phone finish-sheet, which must force `z-[60]` on the drawer to
-    clear the `z-50` fixed reader beneath it — a default (z-auto) select popover
-    then renders *behind* that drawer and looks like it never opens. A dropdown
-    must always float above its container, so the popover is pinned above the
-    sheet. Harmless everywhere else (planner modals teleport at z-auto).
+    An inline wheel per column: the surah on the left, its ayah on the right. No
+    popover or teleport, so the old z-index dance around the recite reader's
+    finish-sheet is gone — the wheels live in the normal flow of whatever card
+    they sit in.
   -->
   <div class="grid grid-cols-2 gap-2">
-    <USelectMenu
+    <CommonWheelPicker
       v-model="surah"
       :items="surahItems"
-      value-key="value"
-      searchable
-      class="w-full"
-      :ui="{ content: 'z-[70]' }"
+      :aria-label="t('pages.planner.cell.surahLabel')"
     />
-    <USelectMenu
+    <CommonWheelPicker
       v-model="verse"
       :items="verseItems"
-      value-key="value"
-      searchable
-      class="w-full"
-      :ui="{ content: 'z-[70]' }"
-    >
-      <template #item-trailing="{ item }">
-        <UBadge
-          v-if="(item as any).pageStart"
-          size="sm"
-          variant="subtle"
-          color="primary"
-          class="tabular-nums"
-        >
-          {{ $t('pages.planner.pageBadge', { page: (item as any).page }) }}
-        </UBadge>
-      </template>
-    </USelectMenu>
+      :aria-label="t('pages.planner.cell.verseLabel')"
+    />
   </div>
 </template>

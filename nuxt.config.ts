@@ -21,7 +21,7 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#a06a1b' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-        { name: 'apple-mobile-web-app-title', content: 'حلقة' }
+        { name: 'apple-mobile-web-app-title', content: 'مدرسة الإتقان' }
       ],
       link: [
         { rel: 'manifest', href: '/manifest.webmanifest' },
@@ -120,8 +120,8 @@ export default defineNuxtConfig({
     filename: 'sw.ts',
     manifest: {
       id: '/',
-      name: 'حلقة — إدارة حلقات التحفيظ',
-      short_name: 'حلقة',
+      name: 'مدرسة الإتقان لتحفيظ القرآن',
+      short_name: 'مدرسة الإتقان',
       description: 'منصة إدارة حلقات تحفيظ القرآن: الحضور، الإنجازات، الخطط، والمصحف — تعمل دون اتصال.',
       lang: 'ar',
       dir: 'rtl',

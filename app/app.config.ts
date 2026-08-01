@@ -129,6 +129,20 @@ export default defineAppConfig({
       }
     },
 
+    // Smaller, simpler toasts across all screen sizes. Width shrinks to fit the
+    // content (centered) instead of filling the full toaster width, and caps at
+    // the viewport width so long messages still wrap instead of overflowing.
+    toast: {
+      slots: {
+        root: 'p-2.5 gap-2 w-max max-w-full mx-auto',
+        wrapper: 'w-auto flex-initial min-w-0',
+        title: 'text-xs',
+        description: 'text-xs',
+        icon: 'size-4',
+        close: 'p-0'
+      }
+    },
+
     // Same dim as the modal overlay below, so drawers and modals read as one system.
     drawer: {
       slots: {

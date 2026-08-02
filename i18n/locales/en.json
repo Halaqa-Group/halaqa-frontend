@@ -145,6 +145,8 @@
       "addButton": "Add user",
       "searchPlaceholder": "Search by name or email...",
       "filters": {
+        "label": "Filters",
+        "clear": "Clear filters",
         "allRoles": "All roles",
         "allStatuses": "All statuses"
       },
@@ -325,6 +327,7 @@
         "completed": "Completed"
       },
       "filters": {
+        "label": "Filters",
         "type": "Type",
         "status": "Status",
         "search": "Search",

@@ -145,6 +145,8 @@
       "addButton": "إضافة مستخدم",
       "searchPlaceholder": "ابحث بالاسم أو البريد...",
       "filters": {
+        "label": "الفلاتر",
+        "clear": "مسح الفلاتر",
         "allRoles": "كل الأدوار",
         "allStatuses": "كل الحالات"
       },
@@ -325,6 +327,7 @@
         "completed": "منتهية"
       },
       "filters": {
+        "label": "الفلاتر",
         "type": "النوع",
         "status": "الحالة",
         "search": "بحث",

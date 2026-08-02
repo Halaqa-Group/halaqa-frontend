@@ -54,6 +54,13 @@ const statusItems = computed(() => ([
   { label: t('pages.users.status.suspended'), value: 'suspended' as const }
 ]))
 
+const filtersOpen = ref(false)
+const activeFilterCount = computed(() => (role.value ? 1 : 0) + (status.value ? 1 : 0))
+function clearFilters() {
+  role.value = null
+  status.value = null
+}
+
 const showingText = computed(() => {
   if (total.value === 0) return ''
   const from = (page.value - 1) * limit.value + 1
@@ -186,19 +193,40 @@ function statusColor(s: UserStatus) {
         :placeholder="t('pages.users.searchPlaceholder')"
       />
 
-      <USelectMenu
-        v-model="role"
-        :items="roleItems"
-        value-key="value"
-        class="w-[calc(50%-0.25rem)] sm:w-48"
-      />
-
-      <USelectMenu
-        v-model="status"
-        :items="statusItems"
-        value-key="value"
-        class="w-[calc(50%-0.25rem)] sm:w-48"
-      />
+      <UPopover v-model:open="filtersOpen">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-list-filter"
+          :aria-label="t('pages.users.filters.label')"
+        >
+          <span class="hidden sm:inline">{{ t('pages.users.filters.label') }}</span>
+          <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
+            {{ activeFilterCount }}
+          </UBadge>
+        </UButton>
+        <template #content>
+          <div class="p-3 w-64 space-y-3">
+            <UFormField :label="t('pages.users.columns.roles')">
+              <USelectMenu v-model="role" :items="roleItems" value-key="value" class="w-full" />
+            </UFormField>
+            <UFormField :label="t('pages.users.columns.status')">
+              <USelectMenu v-model="status" :items="statusItems" value-key="value" class="w-full" />
+            </UFormField>
+            <UButton
+              v-if="activeFilterCount"
+              block
+              variant="soft"
+              color="neutral"
+              icon="i-lucide-x"
+              size="sm"
+              @click="clearFilters"
+            >
+              {{ t('pages.users.filters.clear') }}
+            </UButton>
+          </div>
+        </template>
+      </UPopover>
 
       <template #actions>
         <span class="hidden text-xs text-muted lg:inline">{{ showingText }}</span>

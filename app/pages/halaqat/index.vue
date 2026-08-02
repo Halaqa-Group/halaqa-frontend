@@ -91,6 +91,11 @@ const hasActiveFilters = computed(() =>
   || filters.search.trim() !== ''
 )
 
+const filtersOpen = ref(false)
+const activeFilterCount = computed(() =>
+  (filters.type !== null ? 1 : 0) + (filters.status !== 'active' ? 1 : 0)
+)
+
 const formOpen = ref(false)
 const editing = ref<ApiHalaqaListItem | null>(null)
 const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
@@ -232,29 +237,40 @@ onMounted(() => loadList(1))
         :placeholder="t('pages.halaqat.filters.searchPlaceholder')"
         class="w-full sm:flex-1 sm:max-w-xs"
       />
-      <USelect
-        v-model="filters.type"
-        :items="typeFilterItems"
-        value-key="value"
-        class="w-[calc(50%-0.25rem)] sm:w-40"
-      />
-      <USelect
-        v-model="filters.status"
-        :items="statusFilterItems"
-        value-key="value"
-        class="w-[calc(50%-0.25rem)] sm:w-40"
-      />
-      <UButton
-        v-if="hasActiveFilters"
-        variant="link"
-        color="neutral"
-        icon="i-lucide-x"
-        size="sm"
-        class="px-0"
-        @click="clearFilters"
-      >
-        {{ t('pages.halaqat.filters.clear') }}
-      </UButton>
+      <UPopover v-model:open="filtersOpen">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-list-filter"
+          :aria-label="t('pages.halaqat.filters.label')"
+        >
+          <span class="hidden sm:inline">{{ t('pages.halaqat.filters.label') }}</span>
+          <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
+            {{ activeFilterCount }}
+          </UBadge>
+        </UButton>
+        <template #content>
+          <div class="p-3 w-64 space-y-3">
+            <UFormField :label="t('pages.halaqat.filters.type')">
+              <USelect v-model="filters.type" :items="typeFilterItems" value-key="value" class="w-full" />
+            </UFormField>
+            <UFormField :label="t('pages.halaqat.filters.status')">
+              <USelect v-model="filters.status" :items="statusFilterItems" value-key="value" class="w-full" />
+            </UFormField>
+            <UButton
+              v-if="hasActiveFilters"
+              block
+              variant="soft"
+              color="neutral"
+              icon="i-lucide-x"
+              size="sm"
+              @click="clearFilters"
+            >
+              {{ t('pages.halaqat.filters.clear') }}
+            </UButton>
+          </div>
+        </template>
+      </UPopover>
 
       <template v-if="canCreateHalaqa" #actions>
         <UButton icon="i-lucide-plus" class="shrink-0" @click="openAdd">

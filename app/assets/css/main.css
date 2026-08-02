@@ -238,6 +238,16 @@
   --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
+/* Kill iOS Safari's double-tap-to-zoom. Rapidly tapping to add things (e.g.
+   mistake counters in the planner) reads as a double-tap and zooms the page in.
+   `manipulation` drops the double-tap gesture (and the legacy 300ms click delay)
+   while still allowing panning and pinch-to-zoom, so accessibility zoom is kept.
+   Set on the root so the constraint combines down through the whole subtree;
+   elements that need a stricter value (e.g. touch-action: none for drag) still win. */
+html {
+  touch-action: manipulation;
+}
+
 /* Horizontal scrollers (mainly the wide tables wrapped in .overflow-x-auto):
    keep the sideways swipe inside the element instead of chaining to the
    browser's back/forward navigation gesture at the scroll boundary. That

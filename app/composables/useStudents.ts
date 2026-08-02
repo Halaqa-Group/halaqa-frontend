@@ -114,6 +114,8 @@ export function useStudents() {
         graduated: mapped.filter(s => s.status === 'graduated').length
       }
     } catch {
+      // Best-effort snapshot (including a superseded/aborted fetch): on failure the
+      // summary just falls back to the live student counts — nothing to surface.
     } finally {
       requests.end('summary', signal)
     }

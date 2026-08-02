@@ -33,6 +33,7 @@ function apiToStudent(s: ApiStudent): Student {
 export function useChildProgress(childId: MaybeRefOrGetter<number | string>) {
   const api = useApi()
   const apiError = useApiError()
+  const requests = useAbortController()
 
   const child = ref<Student | null>(null)
   const achievements = ref<ApiAchievement[]>([])
@@ -46,48 +47,53 @@ export function useChildProgress(childId: MaybeRefOrGetter<number | string>) {
     return apiError.format(e, fallback)
   }
 
-  async function fetchChild() {
+  async function fetchChild(signal?: AbortSignal) {
     const id = toValue(childId)
-    child.value = apiToStudent(await api<ApiStudent>(`/me/children/${id}`))
+    child.value = apiToStudent(await api<ApiStudent>(`/me/children/${id}`, { signal }))
   }
 
-  async function fetchAchievements() {
+  async function fetchAchievements(signal?: AbortSignal) {
     const id = toValue(childId)
-    const raw = await api<unknown>(`/achievements?student_id=${id}&limit=100`)
+    const raw = await api<unknown>(`/achievements?student_id=${id}&limit=100`, { signal })
     achievements.value = unwrapList<ApiAchievement>(raw)
   }
 
-  async function fetchWeeklyPlans() {
+  async function fetchWeeklyPlans(signal?: AbortSignal) {
     const id = toValue(childId)
-    const raw = await api<unknown>(`/weekly-plans?student_id=${id}&limit=100`)
+    const raw = await api<unknown>(`/weekly-plans?student_id=${id}&limit=100`, { signal })
     weeklyPlans.value = unwrapList<ApiWeeklyPlan>(raw)
   }
 
-  async function fetchAttendance() {
+  async function fetchAttendance(signal?: AbortSignal) {
     const id = toValue(childId)
-    const raw = await api<unknown>(`/attendance/students?student_id=${id}&limit=100`)
+    const raw = await api<unknown>(`/attendance/students?student_id=${id}&limit=100`, { signal })
     attendance.value = unwrapList<ApiAttendance>(raw)
   }
 
   async function fetchAll() {
+    const signal = requests.begin('fetchAll')
     isLoading.value = true
     error.value = null
     try {
       // The child fetch gates access: a 404 here means "not your child" and we
       // surface it without firing the domain requests.
-      await fetchChild()
+      await fetchChild(signal)
       await Promise.all([
-        fetchAchievements().catch(() => { achievements.value = [] }),
-        fetchWeeklyPlans().catch(() => { weeklyPlans.value = [] }),
-        fetchAttendance().catch(() => { attendance.value = [] })
+        // A superseded (aborted) sub-fetch must not empty the list a newer load
+        // may have already filled — only real failures fall back to empty.
+        fetchAchievements(signal).catch((e) => { if (!(signal.aborted || isAbortError(e))) achievements.value = [] }),
+        fetchWeeklyPlans(signal).catch((e) => { if (!(signal.aborted || isAbortError(e))) weeklyPlans.value = [] }),
+        fetchAttendance(signal).catch((e) => { if (!(signal.aborted || isAbortError(e))) attendance.value = [] })
       ])
     } catch (e: any) {
+      if (signal.aborted || isAbortError(e)) return // superseded — newer load owns state
       const status = e?.response?.status ?? e?.status
       error.value = status === 404
         ? readError(e, 'لم يتم العثور على هذا الابن ضمن حسابك.')
         : readError(e, 'حدث خطأ أثناء تحميل بيانات الابن')
     } finally {
-      isLoading.value = false
+      if (!signal.aborted) isLoading.value = false
+      requests.end('fetchAll', signal)
     }
   }
 

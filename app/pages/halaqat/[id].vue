@@ -184,7 +184,7 @@ function formatDate(iso: string) {
         </UDropdownMenu>
       </div>
 
-      <UTabs v-model="tab" :items="tabs" variant="link" class="w-full">
+      <CommonPageTabs v-model="tab" :items="tabs" variant="link" class="w-full">
         <template #content="{ item }">
           <div v-if="item.value === 'overview'" class="grid gap-4 md:grid-cols-3 mt-4">
             <UCard>
@@ -267,7 +267,7 @@ function formatDate(iso: string) {
             <HalaqaActivityTimeline :halaqa-id="halaqa.id" />
           </div>
         </template>
-      </UTabs>
+      </CommonPageTabs>
     </template>
 
     <ConfirmDialog

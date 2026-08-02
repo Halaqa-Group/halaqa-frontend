@@ -29,6 +29,8 @@ watch(
       icon: 'i-lucide-refresh-cw',
       color: 'primary',
       duration: 0,
+      // Place the reload button beside the title, not under it.
+      orientation: 'horizontal',
       actions: [
         {
           label: t('pwa.reload'),

@@ -72,17 +72,26 @@ const wizardOpen = ref(false)
 
 export function useWeeklyPlan() {
   const api = useApi()
+  const requests = useAbortController()
   const { selectedHalaqaId } = useGlobalHalaqa()
 
   async function loadStudents(halaqaId: number) {
-    const raw = await api<ApiStudentListResult | ApiStudent[]>(`/students?halaqa_id=${halaqaId}&limit=100`)
-    students.value = unwrapList<ApiStudent>(raw).map(s => ({
-      id: s.id,
-      name: s.name,
-      avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
-      attendanceStatus: null,
-      memorizationDirection: s.memorization_direction
-    }))
+    const signal = requests.begin('students')
+    try {
+      const raw = await api<ApiStudentListResult | ApiStudent[]>(`/students?halaqa_id=${halaqaId}&limit=100`, { signal })
+      students.value = unwrapList<ApiStudent>(raw).map(s => ({
+        id: s.id,
+        name: s.name,
+        avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
+        attendanceStatus: null,
+        memorizationDirection: s.memorization_direction
+      }))
+    } catch (e) {
+      if (signal.aborted || isAbortError(e)) return
+      throw e
+    } finally {
+      requests.end('students', signal)
+    }
   }
 
   async function loadPlan() {
@@ -92,15 +101,21 @@ export function useWeeklyPlan() {
       plan.value = null
       return
     }
+    const signal = requests.begin('plan')
     isLoading.value = true
     try {
       const raw = await api<unknown>(
-        `/weekly-plans?student_id=${studentId}&halaqa_id=${halaqaId}&week_start_date=${selectedWeekStart.value}`
+        `/weekly-plans?student_id=${studentId}&halaqa_id=${halaqaId}&week_start_date=${selectedWeekStart.value}`,
+        { signal }
       )
       plan.value = unwrapList<ApiWeeklyPlan>(raw)[0] ?? null
       hydrateDraft()
+    } catch (e) {
+      if (signal.aborted || isAbortError(e)) return
+      throw e
     } finally {
-      isLoading.value = false
+      if (!signal.aborted) isLoading.value = false
+      requests.end('plan', signal)
     }
   }
 

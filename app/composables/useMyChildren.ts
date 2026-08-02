@@ -38,18 +38,22 @@ function apiToStudent(s: ApiStudent): Student {
 export function useMyChildren() {
   const api = useApi()
   const apiError = useApiError()
+  const requests = useAbortController()
 
   async function fetchChildren() {
+    const signal = requests.begin('fetchChildren')
     isLoading.value = true
     error.value = null
     try {
-      const data = await api<{ items: ApiStudent[] } | ApiStudent[]>('/me/children')
+      const data = await api<{ items: ApiStudent[] } | ApiStudent[]>('/me/children', { signal })
       const items = Array.isArray(data) ? data : data.items
       children.value = items.map(apiToStudent)
     } catch (e: any) {
+      if (signal.aborted || isAbortError(e)) return // superseded — newer load owns state
       error.value = apiError.format(e, 'حدث خطأ أثناء تحميل الأبناء')
     } finally {
-      isLoading.value = false
+      if (!signal.aborted) isLoading.value = false
+      requests.end('fetchChildren', signal)
     }
   }
 

@@ -55,6 +55,7 @@ function apiToStudent(s: ApiStudent): Student {
 
 export function useStudents() {
   const api = useApi()
+  const requests = useAbortController()
   const toast = useToast()
   const { t } = useI18n()
   const apiError = useApiError()
@@ -79,26 +80,30 @@ export function useStudents() {
   }
 
   async function fetchStudents(filters: ListFilters = {}) {
+    const signal = requests.begin('list')
     isLoading.value = true
     error.value = null
     currentPage.value = 1
     try {
-      const data = await api<ApiStudentListResult | ApiStudent[]>(buildListUrl(1, filters))
+      const data = await api<ApiStudentListResult | ApiStudent[]>(buildListUrl(1, filters), { signal })
       const items = Array.isArray(data) ? data : data.items
       const mapped = items.map(apiToStudent)
       students.value = mapped
       totalStudents.value = Array.isArray(data) ? items.length : data.total
     } catch (e: any) {
+      if (signal.aborted || isAbortError(e)) return
       error.value = apiError.format(e, 'حدث خطأ أثناء تحميل الطلاب')
     } finally {
-      isLoading.value = false
+      if (!signal.aborted) isLoading.value = false
+      requests.end('list', signal)
     }
   }
 
   async function fetchSummarySnapshot() {
     if (summarySnapshot.value) return
+    const signal = requests.begin('summary')
     try {
-      const data = await api<ApiStudentListResult | ApiStudent[]>(buildListUrl(1, {}))
+      const data = await api<ApiStudentListResult | ApiStudent[]>(buildListUrl(1, {}), { signal })
       const items = Array.isArray(data) ? data : data.items
       const mapped = items.map(apiToStudent)
       const total = Array.isArray(data) ? items.length : data.total
@@ -109,6 +114,8 @@ export function useStudents() {
         graduated: mapped.filter(s => s.status === 'graduated').length
       }
     } catch {
+    } finally {
+      requests.end('summary', signal)
     }
   }
 
@@ -164,9 +171,9 @@ export function useStudents() {
     try {
       const data = await api<ApiStudent>(`/students/${student.id}`)
       modal.patch({ student: data, loading: false })
-    } catch {
+    } catch (e) {
       modal.close()
-      toast.add({ title: t('pages.students.addModal.loadFailed'), color: 'error' })
+      toast.add({ title: apiError.format(e, t('pages.students.addModal.loadFailed')), color: 'error' })
     }
   }
 

@@ -49,21 +49,26 @@ const actionItems = computed(() => [
 
 async function load(p = 1) {
   loading.value = true
+  let result: ApiActivityLogResult | undefined
   try {
-    const result: ApiActivityLogResult = await listActivity(props.halaqaId, {
+    result = await listActivity(props.halaqaId, {
       page: p,
       limit: limit.value,
       action: filters.action ?? undefined,
       from_date: filters.from_date || undefined,
       to_date: filters.to_date || undefined
     })
-    items.value = result.items
-    total.value = result.total
-    page.value = result.page
-    limit.value = result.limit
-  } finally {
+  } catch (e) {
     loading.value = false
+    throw e
   }
+  // Superseded by a newer load (filter/date changed mid-flight) — it owns loading + state.
+  if (result === undefined) return
+  items.value = result.items
+  total.value = result.total
+  page.value = result.page
+  limit.value = result.limit
+  loading.value = false
 }
 
 watch(() => filters.action, () => load(1))

@@ -1,0 +1,101 @@
+<script setup lang="ts">
+import type { TabsItem, TabsProps } from '@nuxt/ui'
+
+// Full-page tabs: the tab bar bleeds to the dashboard panel edges (cancelling the
+// panel body's `p-4 sm:p-6`) and, on mobile, the content responds to horizontal
+// swipes by moving to the next/previous tab. Card-nested tabs keep the plain UTabs.
+const props = defineProps<{
+  items: TabsItem[]
+  ui?: TabsProps['ui']
+}>()
+
+// Mirrors UTabs' v-model so the parent keeps owning the active value.
+const model = defineModel<string | number | undefined>()
+
+defineOptions({ inheritAttrs: false })
+
+const rootEl = ref<HTMLElement>()
+
+// Pull the tab bar out to the panel edges, then pad the triggers back so they
+// line up with the page content. Widths compensate for the negative margins so
+// the bar is exactly panel-wide (edge to edge) regardless of flex alignment, and
+// it scrolls horizontally when the triggers overflow a narrow phone.
+const listClass = [
+  '-mx-4 w-[calc(100%+2rem)] px-4',
+  'sm:-mx-6 sm:w-[calc(100%+3rem)] sm:px-6',
+  'overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
+].join(' ')
+
+const mergedUi = computed(() => {
+  const passed = props.ui ?? {}
+  const list = [passed.list, listClass].filter(Boolean).join(' ')
+  return { ...passed, list }
+})
+
+const currentIndex = computed(() =>
+  Math.max(0, props.items.findIndex(i => String(i.value) === String(model.value)))
+)
+
+function goTo(index: number) {
+  const clamped = Math.min(Math.max(index, 0), props.items.length - 1)
+  const value = props.items[clamped]?.value
+  if (value !== undefined) model.value = value
+}
+
+// Swipe-to-switch. We measure on touchend rather than preventing default so
+// vertical page scrolling still works; a gesture only counts when it is clearly
+// horizontal and clears the threshold.
+let startX = 0
+let startY = 0
+let tracking = false
+
+function onTouchStart(e: TouchEvent) {
+  const touch = e.touches[0]
+  if (!touch) return
+  // Gestures that begin on the tab bar belong to it (scrolling an overflowing bar).
+  if ((e.target as HTMLElement | null)?.closest('[role="tablist"]')) {
+    tracking = false
+    return
+  }
+  startX = touch.clientX
+  startY = touch.clientY
+  tracking = true
+}
+
+function onTouchEnd(e: TouchEvent) {
+  if (!tracking) return
+  tracking = false
+  const touch = e.changedTouches[0]
+  if (!touch) return
+
+  const dx = touch.clientX - startX
+  const dy = touch.clientY - startY
+  const THRESHOLD = 50
+  if (Math.abs(dx) < THRESHOLD || Math.abs(dx) <= Math.abs(dy)) return
+
+  // Read-direction aware: in RTL the next tab sits to the left, so a rightward
+  // swipe advances. Reading the computed direction keeps this in sync with layout.
+  const rtl = rootEl.value ? getComputedStyle(rootEl.value).direction === 'rtl' : false
+  const advance = rtl ? dx > 0 : dx < 0
+  goTo(currentIndex.value + (advance ? 1 : -1))
+}
+</script>
+
+<template>
+  <div
+    ref="rootEl"
+    @touchstart.passive="onTouchStart"
+    @touchend.passive="onTouchEnd"
+  >
+    <UTabs
+      v-model="model"
+      :items="items"
+      :ui="mergedUi"
+      v-bind="$attrs"
+    >
+      <template v-for="(_, name) in $slots" #[name]="slotProps">
+        <slot :name="name" v-bind="slotProps ?? {}" />
+      </template>
+    </UTabs>
+  </div>
+</template>

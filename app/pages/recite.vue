@@ -14,6 +14,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const api = useApi()
+const apiError = useApiError()
 const overlay = useOverlay()
 const { isParent: isParentReadOnly } = usePermissions()
 const { loadEvaluationSettings, currentEvaluationSettings } = useAchievements()
@@ -744,9 +745,10 @@ const savingOnly = ref(false)
 // two must not share a flag, or one tap spins both buttons.
 const writeInFlight = computed(() => submitting.value || savingOnly.value)
 
-function reportFinishError(_e: unknown, title: string) {
+function reportFinishError(e: unknown, title: string) {
   toast.add({
-    title,
+    // Prefer the server's error message; the passed title is only the fallback.
+    title: apiError.format(e, title),
     color: 'error',
     icon: 'i-lucide-alert-circle'
   })
@@ -820,10 +822,10 @@ function onUnapproveRequest() {
         try {
           modal.patch({ loading: true })
           await unapproveExisting(existing.id)
-        } catch {
+        } catch (e) {
           modal.patch({ loading: false })
           toast.add({
-            title: 'خطأ في إلغاء الاعتماد',
+            title: apiError.format(e, 'خطأ في إلغاء الاعتماد'),
             color: 'error',
             icon: 'i-lucide-alert-circle'
           })
@@ -1137,7 +1139,7 @@ async function runSync() {
     lastSyncedSignature.value = attempted
     lastSyncedAt.value = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
     syncStatus.value = 'saved'
-  } catch {
+  } catch (e) {
     // Leave the signature dirty so the next tick retries. The marks are never
     // touched here, so nothing is lost while the backend is unreachable.
     syncStatus.value = 'error'
@@ -1145,7 +1147,7 @@ async function runSync() {
       // Announce the first failure of a streak only — a toast every 5 seconds
       // would bury the mushaf.
       toast.add({
-        title: 'تعذّر الحفظ التلقائي',
+        title: apiError.format(e, 'تعذّر الحفظ التلقائي'),
         color: 'warning',
         icon: 'i-lucide-cloud-off'
       })

@@ -6,17 +6,24 @@ import type {
 
 export function useReverseHalaqaLookup() {
   const api = useApi()
+  const requests = useAbortController()
 
-  async function teacherHalaqat(userId: number) {
-    return api<ApiTeacherHalaqaItem[]>(`/users/${userId}/halaqat`)
+  // Each lookup is re-triggered when its id argument changes; aborting the prior
+  // in-flight request stops a stale response from resolving out of order. A
+  // superseded call resolves to `undefined` — callers treat that as "ignore".
+  function teacherHalaqat(userId: number) {
+    return requests.run('teacherHalaqat', signal =>
+      api<ApiTeacherHalaqaItem[]>(`/users/${userId}/halaqat`, { signal }))
   }
 
-  async function supervisorHalaqat(userId: number) {
-    return api<ApiSupervisorHalaqaItem[]>(`/users/${userId}/supervised-halaqat`)
+  function supervisorHalaqat(userId: number) {
+    return requests.run('supervisorHalaqat', signal =>
+      api<ApiSupervisorHalaqaItem[]>(`/users/${userId}/supervised-halaqat`, { signal }))
   }
 
-  async function studentHalaqat(studentId: number) {
-    return api<ApiStudentHalaqaItem[]>(`/students/${studentId}/halaqat`)
+  function studentHalaqat(studentId: number) {
+    return requests.run('studentHalaqat', signal =>
+      api<ApiStudentHalaqaItem[]>(`/students/${studentId}/halaqat`, { signal }))
   }
 
   return { teacherHalaqat, supervisorHalaqat, studentHalaqat }

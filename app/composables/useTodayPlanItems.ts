@@ -12,6 +12,7 @@ export function useTodayPlanItems(
   const loading = ref(false)
   const error = ref<Error | null>(null)
   const api = useApi()
+  const requests = useAbortController()
 
   async function load() {
     const sid = toValue(studentId)
@@ -24,6 +25,7 @@ export function useTodayPlanItems(
       return
     }
 
+    const signal = requests.begin('load')
     loading.value = true
     error.value = null
 
@@ -33,18 +35,21 @@ export function useTodayPlanItems(
       const dow = backendDayOfWeek(target)
 
       const raw = await api<unknown>(
-        `/weekly-plans?student_id=${sid}&halaqa_id=${hid}&week_start_date=${weekStart}`
+        `/weekly-plans?student_id=${sid}&halaqa_id=${hid}&week_start_date=${weekStart}`,
+        { signal }
       )
       const plans = unwrapList<ApiWeeklyPlan>(raw)
       const wp = plans[0] ?? null
       plan.value = wp
       items.value = wp ? wp.items.filter(i => i.day_of_week === dow) : []
     } catch (e) {
+      if (signal.aborted || isAbortError(e)) return
       error.value = e as Error
       items.value = []
       plan.value = null
     } finally {
-      loading.value = false
+      if (!signal.aborted) loading.value = false
+      requests.end('load', signal)
     }
   }
 

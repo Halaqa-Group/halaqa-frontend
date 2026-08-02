@@ -36,6 +36,10 @@ export function useDashboardStats() {
   const apiError = useApiError()
   const { t } = useI18n()
   const { canViewTeacherCommitment } = usePermissions()
+  // Each section (and loadAll itself) gets its own abort key, so re-running the
+  // dashboard on a window change cancels the superseded section fetches instead of
+  // letting a slow earlier response resolve on top of the newer one.
+  const requests = useAbortController()
 
   const overview = ref<ApiDashboardOverview | null>(null)
   const topStudents = ref<ApiTopStudents | null>(null)
@@ -80,16 +84,23 @@ export function useDashboardStats() {
     error: Ref<string | null>,
     fallbackKey: string
   ): Promise<T | null> {
+    // `fallbackKey` is unique per section, so it doubles as the abort key.
+    const signal = requests.begin(fallbackKey)
     error.value = null
     try {
-      const data = await api<T>(url)
+      const data = await api<T>(url, { signal })
       target.value = data
       return data
     } catch (e: unknown) {
+      // Superseded by a newer load of this section — keep the stale payload and
+      // don't surface an error for a request we deliberately cancelled.
+      if (signal.aborted || isAbortError(e)) return null
       // Keep the stale payload on screen — a transient failure should not wipe
       // the section the user was already reading.
       error.value = apiError.format(e, t(fallbackKey))
       return null
+    } finally {
+      requests.end(fallbackKey, signal)
     }
   }
 
@@ -166,6 +177,8 @@ export function useDashboardStats() {
       to: query.to
     }
 
+    // A re-run on a window change supersedes this one; only the latest owns isLoading.
+    const signal = requests.begin('loadAll')
     isLoading.value = true
     try {
       await Promise.allSettled([
@@ -178,7 +191,8 @@ export function useDashboardStats() {
         fetchAlerts({ ...range, stalled_days: query.stalledDays })
       ])
     } finally {
-      isLoading.value = false
+      if (!signal.aborted) isLoading.value = false
+      requests.end('loadAll', signal)
     }
   }
 

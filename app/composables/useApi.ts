@@ -114,6 +114,11 @@ function createClient(): ApiClient {
     return refreshPromise
   }
 
+  // Identical GETs in flight at once (page mount + a burst of reactive watchers
+  // firing in the same tick) share a single round-trip instead of racing. Keyed
+  // by the same cache key that scopes the read-cache, so it's already per user+role.
+  const inFlightGets = new Map<string, Promise<unknown>>()
+
   async function api<T = unknown>(url: string, opts: FetchOptions = {}): Promise<T> {
     const method = ((opts.method as string) || 'GET').toUpperCase()
     // `pin` (set by warm()) keeps the cached copy out of the eviction cap. Read
@@ -138,11 +143,41 @@ function createClient(): ApiClient {
       if (cached !== undefined) return cached
     }
 
+    // Dedup concurrent identical GETs by sharing the in-flight promise. Skipped
+    // when the caller passes its own signal: it wants independent cancellation,
+    // and one caller aborting a shared promise would break the others.
+    if (cacheKey && !opts.signal) {
+      const existing = inFlightGets.get(cacheKey)
+      if (existing) return existing as Promise<T>
+      const pending = execute<T>(url, opts, cacheKey, pin, outboxKind)
+      inFlightGets.set(cacheKey, pending)
+      try {
+        return await pending
+      } finally {
+        inFlightGets.delete(cacheKey)
+      }
+    }
+
+    return execute<T>(url, opts, cacheKey, pin, outboxKind)
+  }
+
+  async function execute<T>(
+    url: string,
+    opts: FetchOptions,
+    cacheKey: string | null,
+    pin: boolean,
+    outboxKind: string | null
+  ): Promise<T> {
+    const method = ((opts.method as string) || 'GET').toUpperCase()
     try {
       const data = unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
       if (cacheKey) writeToCache(cacheKey, data, pin)
       return data
     } catch (e: unknown) {
+      // A superseded/cancelled request must not resolve to stale cache or be
+      // queued to the outbox — propagate the abort so the caller can drop it.
+      if ((opts.signal as AbortSignal | undefined)?.aborted || isAbortError(e)) throw e
+
       const status = (e as { response?: { status?: number }, status?: number } | null)?.response?.status
         ?? (e as { status?: number } | null)?.status
 

@@ -65,6 +65,10 @@ const viewMode = ref<ViewMode>('table')
 // and let repeat triggers reuse the in-flight or already-loaded result.
 let loadedSessionKey: string | null = null
 let inFlightSession: { key: string, promise: Promise<void> } | null = null
+// Aborts a superseded session load (different halaqa/date, or a forced reload) so
+// its slower roster+attendance response can't resolve after — and overwrite — the
+// rows the newer load put on screen. Module-scoped to match the shared state above.
+const sessionRequests = useAbortController()
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0')
@@ -86,9 +90,10 @@ export function useAttendance() {
   const api = useApi()
   const apiError = useApiError()
 
-  async function fetchAttendanceByDate(date: string): Promise<ApiAttendance[]> {
+  async function fetchAttendanceByDate(date: string, signal?: AbortSignal): Promise<ApiAttendance[]> {
     const raw = await api<ApiAttendanceListResult | ApiAttendance[]>(
-      `/attendance/students?date=${date}&limit=100`
+      `/attendance/students?date=${date}&limit=100`,
+      { signal }
     )
     return unwrapList<ApiAttendance>(raw)
   }
@@ -127,16 +132,19 @@ export function useAttendance() {
       if (key === loadedSessionKey) return
     }
 
-    const run = performLoad(halaqaId, date, key)
+    // A different scope or a forced reload supersedes the previous load.
+    const signal = sessionRequests.begin('session')
+    const run = performLoad(halaqaId, date, key, signal)
     inFlightSession = { key, promise: run }
     try {
       await run
     } finally {
       if (inFlightSession?.key === key) inFlightSession = null
+      sessionRequests.end('session', signal)
     }
   }
 
-  async function performLoad(halaqaId: number | null, date: string, key: string) {
+  async function performLoad(halaqaId: number | null, date: string, key: string, signal: AbortSignal) {
     selectedHalaqaId.value = halaqaId
     selectedDate.value = date
     isLoading.value = true
@@ -147,9 +155,9 @@ export function useAttendance() {
 
       const studentsQuery = halaqaId !== null ? `?halaqa_id=${halaqaId}&limit=100` : '?limit=100'
       const [studentsRaw, existingData, yesterdayData] = await Promise.all([
-        api<ApiStudentListResult | ApiStudent[]>(`/students${studentsQuery}`),
-        fetchAttendanceByDate(date),
-        fetchAttendanceByDate(isoOf(yesterday))
+        api<ApiStudentListResult | ApiStudent[]>(`/students${studentsQuery}`, { signal }),
+        fetchAttendanceByDate(date, signal),
+        fetchAttendanceByDate(isoOf(yesterday), signal)
       ])
       const studentsData = unwrapList<ApiStudent>(studentsRaw)
 
@@ -176,10 +184,12 @@ export function useAttendance() {
       snapshotCurrentRows()
       loadedSessionKey = key
     } catch (e: any) {
+      // Superseded by a newer load — leave its rows/loading flag untouched.
+      if (signal.aborted || isAbortError(e)) return
       loadError.value = apiError.format(e, 'حدث خطأ أثناء تحميل الحضور')
       loadedSessionKey = null
     } finally {
-      isLoading.value = false
+      if (!signal.aborted) isLoading.value = false
     }
   }
 

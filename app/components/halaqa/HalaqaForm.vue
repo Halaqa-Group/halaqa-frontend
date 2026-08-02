@@ -80,6 +80,10 @@ const teacherItems = computed(() => [
 ])
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
+  // Block a duplicate submit while one is already in flight (a double-tap before
+  // the button's :disabled binding paints) — a write must not be aborted, only
+  // deduplicated, so a plain re-entrancy guard is the right tool here.
+  if (saving.value) return
   saving.value = true
   try {
     if (isEdit.value && props.editing) {

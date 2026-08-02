@@ -10,6 +10,7 @@ export interface ListActivityQuery {
 
 export function useHalaqaActivity() {
   const api = useApi()
+  const requests = useAbortController()
 
   async function listActivity(halaqaId: number, query: ListActivityQuery = {}) {
     const params = new URLSearchParams()
@@ -19,7 +20,11 @@ export function useHalaqaActivity() {
     if (query.from_date) params.set('from_date', query.from_date)
     if (query.to_date) params.set('to_date', query.to_date)
     const qs = params.toString()
-    return api<ApiActivityLogResult>(`/halaqat/${halaqaId}/activity${qs ? `?${qs}` : ''}`)
+    // A page/filter/date change re-triggers this read; abort the previous one so a
+    // slow earlier response can't resolve after (and overwrite) the newer one. A
+    // superseded call resolves to `undefined` — the caller treats that as "ignore".
+    return requests.run('listActivity', signal =>
+      api<ApiActivityLogResult>(`/halaqat/${halaqaId}/activity${qs ? `?${qs}` : ''}`, { signal }))
   }
 
   return { listActivity }

@@ -94,6 +94,8 @@ function handleMarkAllPresent() {
     icon: 'i-lucide-check-circle',
     color: 'primary',
     duration: 4000,
+    // Place the undo button beside the title, not under it.
+    orientation: 'horizontal',
     actions: [{
       label: t('pages.attendance.undo'),
       color: 'neutral',

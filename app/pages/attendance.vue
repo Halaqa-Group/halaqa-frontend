@@ -76,6 +76,8 @@ function handleMarkAllPresent() {
     icon: 'i-lucide-check-circle',
     color: 'primary',
     duration: 4000,
+    // Place the undo button beside the title, not under it.
+    orientation: 'horizontal',
     actions: [{
       label: t('pages.attendance.undo'),
       color: 'neutral',
@@ -114,7 +116,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="flex flex-col gap-6 pb-24">
-    <UTabs
+    <CommonPageTabs
       v-if="canSeeStaffTab"
       v-model="tab"
       :items="tabItems"
@@ -132,7 +134,7 @@ onBeforeUnmount(() => {
       <template #staff>
         <AttendanceStaffPanel />
       </template>
-    </UTabs>
+    </CommonPageTabs>
 
     <AttendanceStudentsSection
       v-else

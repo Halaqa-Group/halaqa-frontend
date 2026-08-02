@@ -2,11 +2,14 @@
 import type { TabsItem, TabsProps } from '@nuxt/ui'
 
 // Full-page tabs: the tab bar bleeds to the dashboard panel edges (cancelling the
-// panel body's `p-4 sm:p-6`) and, on mobile, the content responds to horizontal
-// swipes by moving to the next/previous tab. Card-nested tabs keep the plain UTabs.
+// panel body's `p-4 sm:p-6`) and, on mobile, a horizontal swipe anywhere in the
+// panel body moves to the next/previous tab. Card-nested tabs keep the plain UTabs.
 const props = defineProps<{
   items: TabsItem[]
   ui?: TabsProps['ui']
+  // Pull the bar up to sit flush under the page header (removes the panel's top
+  // padding). Use on pages where the tabs are the first thing in the body.
+  flushTop?: boolean
 }>()
 
 // Mirrors UTabs' v-model so the parent keeps owning the active value.
@@ -32,6 +35,8 @@ const mergedUi = computed(() => {
   return { ...passed, list }
 })
 
+const wrapperClass = computed(() => (props.flushTop ? '-mt-4 sm:-mt-6' : undefined))
+
 const currentIndex = computed(() =>
   Math.max(0, props.items.findIndex(i => String(i.value) === String(model.value)))
 )
@@ -42,9 +47,10 @@ function goTo(index: number) {
   if (value !== undefined) model.value = value
 }
 
-// Swipe-to-switch. We measure on touchend rather than preventing default so
-// vertical page scrolling still works; a gesture only counts when it is clearly
-// horizontal and clears the threshold.
+// Swipe-to-switch. We listen on the scrollable panel body so a swipe anywhere on
+// the page changes tabs — not just over the tab content. We measure on touchend
+// rather than preventing default so vertical scrolling still works; a gesture
+// only counts when it is clearly horizontal and clears the threshold.
 let startX = 0
 let startY = 0
 let tracking = false
@@ -79,14 +85,36 @@ function onTouchEnd(e: TouchEvent) {
   const advance = rtl ? dx > 0 : dx < 0
   goTo(currentIndex.value + (advance ? 1 : -1))
 }
+
+// Walk up to the nearest scrolling ancestor (the dashboard panel body) so the
+// swipe covers the whole page, falling back to our own element.
+function findScrollParent(el: HTMLElement | undefined): HTMLElement | null {
+  let node = el?.parentElement ?? null
+  while (node) {
+    const overflowY = getComputedStyle(node).overflowY
+    if (overflowY === 'auto' || overflowY === 'scroll') return node
+    node = node.parentElement
+  }
+  return null
+}
+
+let swipeTarget: HTMLElement | null = null
+
+onMounted(() => {
+  swipeTarget = findScrollParent(rootEl.value) ?? rootEl.value ?? null
+  swipeTarget?.addEventListener('touchstart', onTouchStart, { passive: true })
+  swipeTarget?.addEventListener('touchend', onTouchEnd, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  swipeTarget?.removeEventListener('touchstart', onTouchStart)
+  swipeTarget?.removeEventListener('touchend', onTouchEnd)
+  swipeTarget = null
+})
 </script>
 
 <template>
-  <div
-    ref="rootEl"
-    @touchstart.passive="onTouchStart"
-    @touchend.passive="onTouchEnd"
-  >
+  <div ref="rootEl" :class="wrapperClass">
     <UTabs
       v-model="model"
       :items="items"

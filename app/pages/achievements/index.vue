@@ -11,12 +11,11 @@ definePageMeta({
 const { t } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-const { canRecordAchievement: canRecord } = usePermissions()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const {
   selectedDate, filters, page, total, limit, totalPages, isLoading,
   deleteOpen, deleteTarget,
-  loadAll, loadAchievements, openRecord, deleteAchievement
+  loadAll, loadAchievements, deleteAchievement
 } = useAchievements()
 
 async function onDeleteConfirm() {
@@ -61,15 +60,7 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div v-if="canRecord && hasHalaqa" class="flex justify-end">
-      <UButton
-        icon="i-lucide-plus"
-        class="shrink-0"
-        @click="openRecord"
-      >
-        {{ t('pages.achievements.recordButton') }}
-      </UButton>
-    </div>
+    <AchievementFilterBar />
 
     <div
       v-if="!hasHalaqa"
@@ -82,10 +73,6 @@ onMounted(() => {
     </div>
 
     <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <AchievementFilterBar />
-      </template>
-
       <AchievementResults />
 
       <template v-if="totalPages > 1" #footer>

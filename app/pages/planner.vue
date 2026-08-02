@@ -245,12 +245,12 @@ onMounted(async () => {
       <HalaqaFilter required />
     </div>
 
-    <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <PlannerFilterBar />
-      </template>
-      <PlannerResults />
-    </UCard>
+    <template v-else>
+      <PlannerFilterBar />
+      <UCard :ui="{ body: 'p-0 sm:p-0' }">
+        <PlannerResults />
+      </UCard>
+    </template>
 
     <div
       v-if="selectedHalaqaId && selectedStudentId && viewMode === 'matrix'"

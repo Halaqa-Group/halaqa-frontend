@@ -58,7 +58,7 @@ function onCalendarPick(value: unknown) {
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-2">
+  <CommonToolbar>
     <HalaqaFilter required class="sm:!w-44" />
 
     <USelectMenu
@@ -103,7 +103,7 @@ function onCalendarPick(value: unknown) {
       />
     </div>
 
-    <div class="ms-auto flex items-center gap-2">
+    <template #actions>
       <UPopover v-if="viewMode !== 'matrix'" v-model:open="filtersOpen">
         <UButton
           variant="outline"
@@ -172,6 +172,6 @@ function onCalendarPick(value: unknown) {
           @click="viewMode = 'grid'"
         />
       </div>
-    </div>
-  </div>
+    </template>
+  </CommonToolbar>
 </template>

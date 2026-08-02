@@ -178,99 +178,96 @@ async function onRecalculate(reason: string) {
 
 <template>
   <div class="flex flex-col gap-6">
-    <UCard :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <div class="flex flex-col gap-3">
-          <!-- Controls -->
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-            <USelectMenu
-              v-model="halaqaId"
-              :items="halaqaItems"
-              value-key="value"
-              :placeholder="t('common.selectHalaqa')"
-              icon="i-lucide-building-2"
-              class="w-full sm:w-64"
-            />
+    <div class="flex flex-col gap-3">
+      <CommonToolbar>
+        <USelectMenu
+          v-model="halaqaId"
+          :items="halaqaItems"
+          value-key="value"
+          :placeholder="t('common.selectHalaqa')"
+          icon="i-lucide-building-2"
+          class="w-full sm:flex-1 sm:max-w-xs"
+        />
 
-            <div class="flex items-center gap-1">
-              <UButton
-                variant="outline"
-                color="neutral"
-                icon="i-lucide-chevron-right"
-                square
-                :aria-label="t('pages.dailyReport.prevDay')"
-                @click="shiftDate(-1)"
-              />
-              <UPopover v-model:open="calendarOpen">
-                <UButton
-                  variant="outline"
-                  color="neutral"
-                  icon="i-lucide-calendar-days"
-                  trailing-icon="i-lucide-chevron-down"
-                  class="w-full justify-between sm:w-auto"
-                >
-                  {{ formattedDate }}
-                </UButton>
-                <template #content>
-                  <UCalendar
-                    :model-value="calendarValue"
-                    :max-value="maxCalendarValue"
-                    color="primary"
-                    class="p-2"
-                    @update:model-value="onCalendarPick"
-                  />
-                </template>
-              </UPopover>
-              <UButton
-                variant="outline"
-                color="neutral"
-                icon="i-lucide-chevron-left"
-                square
-                :disabled="isToday"
-                :aria-label="t('pages.dailyReport.nextDay')"
-                @click="shiftDate(1)"
-              />
-            </div>
-
-            <div class="flex items-center gap-2 sm:ms-auto">
-              <UBadge
-                v-if="report"
-                :color="report.source === 'live' ? 'success' : 'neutral'"
-                variant="subtle"
-                :icon="report.source === 'live' ? 'i-lucide-radio' : 'i-lucide-history'"
-                :label="t(`pages.dailyReport.source.${report.source}`)"
-              />
-              <UBadge
-                v-if="reportStatusMeta"
-                :color="reportStatusMeta.color"
-                variant="subtle"
-                :label="t(reportStatusMeta.key)"
-              />
-              <UButton
-                v-if="report && canManageHalaqaLifecycle"
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-refresh-cw"
-                :label="t('pages.dailyReport.recalculate.button')"
-                @click="recalcOpen = true"
-              />
-            </div>
-          </div>
-
-          <!-- Weights summary -->
-          <div v-if="report && !isNonWorkingDay" class="flex flex-wrap items-center gap-2">
-            <span class="text-xs text-muted">{{ t('pages.dailyReport.weights') }}:</span>
-            <UBadge
-              v-for="w in weightItems"
-              :key="w.labelKey"
+        <div class="flex items-center gap-1">
+          <UButton
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-chevron-right"
+            square
+            :aria-label="t('pages.dailyReport.prevDay')"
+            @click="shiftDate(-1)"
+          />
+          <UPopover v-model:open="calendarOpen">
+            <UButton
+              variant="outline"
               color="neutral"
-              variant="soft"
-              :label="`${t(w.labelKey)} ${formatScore(w.value)}`"
-            />
-          </div>
+              icon="i-lucide-calendar-days"
+              trailing-icon="i-lucide-chevron-down"
+              class="min-w-36 justify-between"
+            >
+              {{ formattedDate }}
+            </UButton>
+            <template #content>
+              <UCalendar
+                :model-value="calendarValue"
+                :max-value="maxCalendarValue"
+                color="primary"
+                class="p-2"
+                @update:model-value="onCalendarPick"
+              />
+            </template>
+          </UPopover>
+          <UButton
+            variant="outline"
+            color="neutral"
+            icon="i-lucide-chevron-left"
+            square
+            :disabled="isToday"
+            :aria-label="t('pages.dailyReport.nextDay')"
+            @click="shiftDate(1)"
+          />
         </div>
-      </template>
 
+        <template #actions>
+          <UBadge
+            v-if="report"
+            :color="report.source === 'live' ? 'success' : 'neutral'"
+            variant="subtle"
+            :icon="report.source === 'live' ? 'i-lucide-radio' : 'i-lucide-history'"
+            :label="t(`pages.dailyReport.source.${report.source}`)"
+          />
+          <UBadge
+            v-if="reportStatusMeta"
+            :color="reportStatusMeta.color"
+            variant="subtle"
+            :label="t(reportStatusMeta.key)"
+          />
+          <UButton
+            v-if="report && canManageHalaqaLifecycle"
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-refresh-cw"
+            :label="t('pages.dailyReport.recalculate.button')"
+            @click="recalcOpen = true"
+          />
+        </template>
+      </CommonToolbar>
+
+      <!-- Weights summary -->
+      <div v-if="report && !isNonWorkingDay" class="flex flex-wrap items-center gap-2">
+        <span class="text-xs text-muted">{{ t('pages.dailyReport.weights') }}:</span>
+        <UBadge
+          v-for="w in weightItems"
+          :key="w.labelKey"
+          color="neutral"
+          variant="soft"
+          :label="`${t(w.labelKey)} ${formatScore(w.value)}`"
+        />
+      </div>
+    </div>
+
+    <UCard :ui="{ body: 'p-0 sm:p-0' }">
       <!-- States -->
       <div v-if="isLoading" class="flex items-center justify-center py-16">
         <UIcon name="i-lucide-loader-circle" class="size-8 animate-spin text-primary" />

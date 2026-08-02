@@ -390,17 +390,11 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
     if (failed > 0) {
       toast.add({
         title: t('pages.students.addModal.addedTitle'),
-        description: failed === total
-          ? t('pages.students.addModal.enrollAllFailed')
-          : t('pages.students.addModal.enrollPartialFailed', { failed, total }),
         color: 'warning'
       })
     } else {
       toast.add({
         title: t('pages.students.addModal.successTitle'),
-        description: total > 0
-          ? (total === 1 ? t('pages.students.addModal.enrolledInOne') : t('pages.students.addModal.enrolledInMany', { count: total }))
-          : undefined,
         color: 'success'
       })
     }

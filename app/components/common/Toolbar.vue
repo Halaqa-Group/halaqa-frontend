@@ -16,7 +16,7 @@
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-2">
+  <div class="flex flex-wrap items-center gap-2 border-b border-default pb-4">
     <slot />
     <div v-if="$slots.actions" class="ms-auto flex flex-wrap items-center gap-2">
       <slot name="actions" />

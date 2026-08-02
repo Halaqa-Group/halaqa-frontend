@@ -119,13 +119,19 @@ function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
   }
 
   const primary: DropdownMenuItem[] = []
-  // Only a mushaf recitation can be reopened on the mushaf. A form-entered record
-  // has no per-word data — its errors are synthesized at the range's first word —
-  // so the page would render a blank mushaf with nothing highlighted.
-  if (sourceOf(a) === 'mushaf') {
+  const isMushaf = sourceOf(a) === 'mushaf'
+  const canEdit = isStaff.value && !isApproved(a)
+
+  // Edit follows the source: a mushaf recitation is edited in the reader (re-mark
+  // word by word), a form-entered record in the form (it has no per-word data —
+  // its errors are synthesized at the range's first word, so the mushaf would
+  // render blank). For a mushaf row the reader action doubles as the editor:
+  // staff who can edit see it as "edit", everyone else (parents) as read-only
+  // "recite".
+  if (isMushaf) {
     primary.push({
-      label: t('pages.achievements.actions.recite'),
-      icon: 'i-lucide-book-open',
+      label: canEdit ? t('pages.achievements.actions.edit') : t('pages.achievements.actions.recite'),
+      icon: canEdit ? 'i-lucide-pencil' : 'i-lucide-book-open',
       onSelect: () => navigateTo(reciteLink(a))
     })
   }
@@ -137,7 +143,9 @@ function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
   }
   if (!isStaff.value) return compact([primary])
 
-  if (!isApproved(a)) {
+  // Only form-entered records edit in the form; mushaf ones edit via the reader
+  // action above.
+  if (canEdit && !isMushaf) {
     primary.push({ label: t('pages.achievements.actions.edit'), icon: 'i-lucide-pencil', onSelect: () => openEdit(a) })
   }
   primary.push({ label: t('pages.achievements.actions.duplicate'), icon: 'i-lucide-copy', onSelect: () => openDuplicate(a) })

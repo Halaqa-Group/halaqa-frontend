@@ -25,9 +25,9 @@ async function onDeleteConfirm() {
   deleteTarget.value = null
   try {
     await deleteAchievement(target.id)
-    toast.add({ description: t('pages.achievements.deletedToast'), color: 'success' })
+    toast.add({ title: t('pages.achievements.deletedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ description: apiError.format(e, t('pages.achievements.deleteErrorTitle')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.achievements.deleteErrorTitle')), color: 'error' })
   }
 }
 

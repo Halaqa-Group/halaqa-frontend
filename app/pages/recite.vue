@@ -1243,7 +1243,7 @@ async function saveSessionOnly(item: ApiWeeklyPlanItem, sid: number, hid: number
     lastSyncedAt.value = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
     syncStatus.value = 'saved'
     toast.add({
-      description: 'تم حفظ التلاوة — الإنجاز قيد المراجعة ولم يُعتمد بعد.',
+      title: 'تم حفظ التلاوة — الإنجاز قيد المراجعة ولم يُعتمد بعد.',
       color: 'success'
     })
   } catch (e) {
@@ -1273,7 +1273,7 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
       markSynced()
       syncStatus.value = 'offline'
       toast.add({
-        description: 'أنت غير متصل — سيُحفظ الإنجاز ويُعتمد تلقائيًا عند عودة الاتصال.',
+        title: 'أنت غير متصل — سيُحفظ الإنجاز ويُعتمد تلقائيًا عند عودة الاتصال.',
         color: 'info'
       })
       return
@@ -1302,7 +1302,7 @@ async function postAchievement(item: ApiWeeklyPlanItem, sid: number, hid: number
     // A general message: the per-error summary can't be shown here — the marks were
     // just cleared above — and the approve response carries no message to relay.
     toast.add({
-      description: 'تم حفظ التلاوة واعتماد الإنجاز بنجاح.',
+      title: 'تم حفظ التلاوة واعتماد الإنجاز بنجاح.',
       color: 'success'
     })
   } finally {

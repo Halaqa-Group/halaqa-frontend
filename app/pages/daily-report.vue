@@ -168,10 +168,10 @@ async function onRecalculate(reason: string) {
   try {
     await recalculate(halaqaId.value, selectedDate.value, reason)
     recalcOpen.value = false
-    toast.add({ description: t('pages.dailyReport.recalculate.doneToast'), color: 'success' })
+    toast.add({ title: t('pages.dailyReport.recalculate.doneToast'), color: 'success' })
     await reload()
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.dailyReport.recalculate.errorToast')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.dailyReport.recalculate.errorToast')), color: 'error' })
   }
 }
 </script>

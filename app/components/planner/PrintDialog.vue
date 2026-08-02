@@ -55,7 +55,7 @@ async function prepareExports() {
     // case where the buttons genuinely cannot work, and the console detail is
     // what makes a device-specific failure debuggable.
     console.error('[PrintDialog] could not prepare the plan exports', err)
-    toast.add({ title: t('pages.planner.print.error'), color: 'error' })
+    toast.add({ description: t('pages.planner.print.error'), color: 'error' })
   } finally {
     isPreparing.value = false
   }
@@ -98,7 +98,7 @@ function shareWhatsApp() {
   // Checked synchronously so the fallback download still runs inside the click.
   if (!canShareBlob(blob, name)) {
     saveBlob(blob, name)
-    toast.add({ title: t('pages.planner.print.shareFallback'), color: 'info' })
+    toast.add({ description: t('pages.planner.print.shareFallback'), color: 'info' })
     return
   }
 
@@ -110,7 +110,7 @@ function shareWhatsApp() {
   })
     .catch((err) => {
       console.error('[PrintDialog] share failed', err)
-      toast.add({ title: t('pages.planner.print.shareError'), color: 'error' })
+      toast.add({ description: t('pages.planner.print.shareError'), color: 'error' })
     })
     .finally(() => {
       isSharing.value = false

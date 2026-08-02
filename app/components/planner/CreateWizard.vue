@@ -196,13 +196,13 @@ function buildItems(): CreatePlanItemDto[] {
 
 async function submit() {
   if (!anyEnabled.value) {
-    toast.add({ title: t('pages.planner.wizard.noTrack'), color: 'warning' })
+    toast.add({ description: t('pages.planner.wizard.noTrack'), color: 'warning' })
     return
   }
 
   if (!isMulti.value) {
     if (!selectedStudentId.value) {
-      toast.add({ title: t('pages.planner.selectStudent'), color: 'warning' })
+      toast.add({ description: t('pages.planner.selectStudent'), color: 'warning' })
       return
     }
     let generatedAny = false
@@ -219,26 +219,26 @@ async function submit() {
     }
     if (!generatedAny) {
       toast.add({
-        title: incomplete ? t('pages.planner.wizard.assetsIncomplete') : t('pages.planner.wizard.noData'),
+        description: incomplete ? t('pages.planner.wizard.assetsIncomplete') : t('pages.planner.wizard.noData'),
         color: 'warning'
       })
       return
     }
     wizardOpen.value = false
-    toast.add({ title: t('pages.planner.wizard.generatedToast'), color: 'success' })
+    toast.add({ description: t('pages.planner.wizard.generatedToast'), color: 'success' })
     return
   }
 
   const ids = resolvedStudentIds.value
   if (ids.length === 0) {
-    toast.add({ title: t('pages.planner.wizard.noStudents'), color: 'warning' })
+    toast.add({ description: t('pages.planner.wizard.noStudents'), color: 'warning' })
     return
   }
   const items = buildItems()
   if (items.length === 0) {
     const incomplete = (PLAN_TRACKS as TrackType[]).some(tk => config[tk].enabled && !boundariesReady(config[tk].unit))
     toast.add({
-      title: incomplete ? t('pages.planner.wizard.assetsIncomplete') : t('pages.planner.wizard.noData'),
+      description: incomplete ? t('pages.planner.wizard.assetsIncomplete') : t('pages.planner.wizard.noData'),
       color: 'warning'
     })
     return
@@ -247,7 +247,7 @@ async function submit() {
     const res = await applyPlanToStudents(items, ids, policy.value)
     wizardOpen.value = false
     toast.add({
-      title: t('pages.planner.wizard.applyResult', {
+      description: t('pages.planner.wizard.applyResult', {
         created: res.created, skipped: res.skipped, replaced: res.replaced, failed: res.failed
       }),
       color: res.failed > 0 ? 'warning' : 'success'

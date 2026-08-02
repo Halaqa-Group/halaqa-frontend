@@ -126,7 +126,7 @@ export function useStudents() {
       totalStudents.value = Array.isArray(data) ? students.value.length : data.total
       currentPage.value = nextPage
     } catch (e: any) {
-      toast.add({ title: apiError.format(e, 'حدث خطأ أثناء تحميل المزيد'), color: 'error' })
+      toast.add({ description: apiError.format(e, 'حدث خطأ أثناء تحميل المزيد'), color: 'error' })
     } finally {
       isLoadingMore.value = false
     }
@@ -166,7 +166,7 @@ export function useStudents() {
       modal.patch({ student: data, loading: false })
     } catch {
       modal.close()
-      toast.add({ title: t('pages.students.addModal.loadFailed'), color: 'error' })
+      toast.add({ description: t('pages.students.addModal.loadFailed'), color: 'error' })
     }
   }
 
@@ -224,9 +224,9 @@ export function useStudents() {
   async function requestRestore(student: Student) {
     try {
       await restoreStudent(student.id)
-      toast.add({ title: t('pages.students.actions.restoreSuccess'), color: 'success' })
+      toast.add({ description: t('pages.students.actions.restoreSuccess'), color: 'success' })
     } catch (e: any) {
-      toast.add({ title: apiError.format(e, t('pages.students.actions.restoreError')), color: 'error' })
+      toast.add({ description: apiError.format(e, t('pages.students.actions.restoreError')), color: 'error' })
     }
   }
 
@@ -247,12 +247,12 @@ export function useStudents() {
           try {
             modal.patch({ loading: true })
             await deleteStudent(student.id)
-            toast.add({ title: t('pages.students.actions.deleteSuccess'), color: 'success' })
+            toast.add({ description: t('pages.students.actions.deleteSuccess'), color: 'success' })
             modal.patch({ open: false })
             modal.close()
           } catch (e: any) {
             modal.patch({ loading: false })
-            toast.add({ title: apiError.format(e, t('pages.students.actions.deleteError')), color: 'error' })
+            toast.add({ description: apiError.format(e, t('pages.students.actions.deleteError')), color: 'error' })
           }
         }
       }
@@ -277,12 +277,12 @@ export function useStudents() {
           try {
             modal.patch({ loading: true })
             await graduateStudent(student.id)
-            toast.add({ title: t('pages.students.actions.graduateSuccess'), color: 'success' })
+            toast.add({ description: t('pages.students.actions.graduateSuccess'), color: 'success' })
             modal.patch({ open: false })
             modal.close()
           } catch (e: any) {
             modal.patch({ loading: false })
-            toast.add({ title: apiError.format(e, t('pages.students.actions.graduateError')), color: 'error' })
+            toast.add({ description: apiError.format(e, t('pages.students.actions.graduateError')), color: 'error' })
           }
         }
       }

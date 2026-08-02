@@ -36,10 +36,10 @@ async function commit() {
   saving.value = true
   try {
     await saveDailyNote(props.studentId, local.value.trim())
-    toast.add({ title: t('pages.attendance.dailyNote.savedToast'), color: 'success' })
+    toast.add({ description: t('pages.attendance.dailyNote.savedToast'), color: 'success' })
     open.value = false
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.attendance.dailyNote.errorToast')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.attendance.dailyNote.errorToast')), color: 'error' })
   } finally {
     saving.value = false
   }

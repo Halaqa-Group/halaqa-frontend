@@ -213,11 +213,11 @@ async function onSubmit() {
         status: state.status,
         roles: selectedRoles.value
       })
-      toast.add({ title: t('pages.users.addModal.savedToast'), color: 'success' })
+      toast.add({ description: t('pages.users.addModal.savedToast'), color: 'success' })
       // The backend stores an id_number with a bad checksum but returns a
       // warning in the response envelope — surface it without blocking.
       for (const w of api.lastWarnings.value) {
-        toast.add({ title: w, color: 'warning' })
+        toast.add({ description: w, color: 'warning' })
       }
     } else if (props.user) {
       await usersApi.update(props.user.id, {
@@ -252,7 +252,7 @@ async function onSubmit() {
         throw e
       }
       originalRoles.value = [...selectedRoles.value]
-      toast.add({ title: t('pages.users.editModal.savedToast'), color: 'success' })
+      toast.add({ description: t('pages.users.editModal.savedToast'), color: 'success' })
     }
     emit('saved')
   } catch (e: unknown) {

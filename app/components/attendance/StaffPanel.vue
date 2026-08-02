@@ -75,10 +75,10 @@ onMounted(() => {
 async function handleSave() {
   try {
     await submitSession()
-    toast.add({ title: t('pages.attendance.savedToastTitle'), icon: 'i-lucide-check-circle', color: 'success' })
+    toast.add({ description: t('pages.attendance.savedToastTitle'), icon: 'i-lucide-check-circle', color: 'success' })
   } catch (error: any) {
     toast.add({
-      title: apiError.format(error, t('pages.attendance.saveErrorTitle')),
+      description: apiError.format(error, t('pages.attendance.saveErrorTitle')),
       icon: 'i-lucide-alert-circle',
       color: 'error'
     })
@@ -90,7 +90,7 @@ function handleMarkAllPresent() {
   const id = `mark-all-staff-${selectedDate.value}`
   toast.add({
     id,
-    title: t('pages.attendance.markedAllPresent'),
+    description: t('pages.attendance.markedAllPresent'),
     icon: 'i-lucide-check-circle',
     color: 'primary',
     duration: 4000,

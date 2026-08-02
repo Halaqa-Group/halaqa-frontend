@@ -59,7 +59,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   isLoading.value = true
   try {
     await resetPassword(token.value, event.data.password, event.data.password_confirmation)
-    toast.add({ title: t('pages.resetPassword.successToast'), color: 'success' })
+    toast.add({ description: t('pages.resetPassword.successToast'), color: 'success' })
     await navigateTo('/auth/login')
   } catch (e: unknown) {
     error.value = apiError.format(e, t('auth.genericError'))

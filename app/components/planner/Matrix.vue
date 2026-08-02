@@ -138,7 +138,7 @@ function onCellPointerUp(e: PointerEvent) {
   cleanupPointerDrag()
   if (src && target) {
     moveCell(src.day, src.track, target.day, target.track)
-    toast.add({ title: t('pages.planner.cell.cellMovedToast'), color: 'success' })
+    toast.add({ description: t('pages.planner.cell.cellMovedToast'), color: 'success' })
   }
 }
 
@@ -199,7 +199,7 @@ function openCell(day: number, track: TrackType) {
 
 function onPaste(day: number, track: TrackType) {
   pasteCell(day, track)
-  toast.add({ title: t('pages.planner.cellPastedToast'), color: 'success' })
+  toast.add({ description: t('pages.planner.cellPastedToast'), color: 'success' })
 }
 
 function rowMenu(day: number): DropdownMenuItem[][] {
@@ -214,7 +214,7 @@ function rowMenu(day: number): DropdownMenuItem[][] {
       icon: 'i-lucide-copy',
       onSelect: () => {
         copyRowToAllDays(day)
-        toast.add({ title: t('pages.planner.row.copiedToast'), color: 'success' })
+        toast.add({ description: t('pages.planner.row.copiedToast'), color: 'success' })
       }
     }
   ]]
@@ -227,7 +227,7 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
       onSelect: () => {
         const ok = applyColumnToAllDays(track)
         toast.add({
-          title: ok ? t('pages.planner.columns.appliedToast') : t('pages.planner.columns.noFilledCell'),
+          description: ok ? t('pages.planner.columns.appliedToast') : t('pages.planner.columns.noFilledCell'),
           color: ok ? 'success' : 'warning'
         })
       }

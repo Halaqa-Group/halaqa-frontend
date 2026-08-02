@@ -37,7 +37,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     await navigateTo('/')
   } catch (e: unknown) {
     toast.add({
-      title: apiError.format(e, t('auth.invalidCredentials')),
+      description: apiError.format(e, t('auth.invalidCredentials')),
       color: 'error'
     })
   } finally {

@@ -35,10 +35,10 @@ export function useEmailVerification() {
     sending.value = true
     try {
       await requestEmailVerification()
-      toast.add({ title: t('pages.verifyEmail.resentToast'), color: 'success' })
+      toast.add({ description: t('pages.verifyEmail.resentToast'), color: 'success' })
       startCooldown()
     } catch (e: unknown) {
-      toast.add({ title: apiError.format(e, t('auth.genericError')), color: 'error' })
+      toast.add({ description: apiError.format(e, t('auth.genericError')), color: 'error' })
     } finally {
       sending.value = false
     }

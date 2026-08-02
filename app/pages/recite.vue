@@ -748,7 +748,6 @@ const writeInFlight = computed(() => submitting.value || savingOnly.value)
 function reportFinishError(e: unknown, title: string) {
   const err = e as { data?: { message?: string }, message?: string }
   toast.add({
-    title,
     description: apiError.format(err, err.message || 'حدث خطأ غير معروف'),
     color: 'error',
     icon: 'i-lucide-alert-circle'
@@ -827,7 +826,6 @@ function onUnapproveRequest() {
           modal.patch({ loading: false })
           const err = e as { data?: { message?: string }, message?: string }
           toast.add({
-            title: 'خطأ في إلغاء الاعتماد',
             description: apiError.format(err, err.message || 'حدث خطأ غير معروف'),
             color: 'error',
             icon: 'i-lucide-alert-circle'
@@ -853,7 +851,7 @@ async function unapproveExisting(id: number) {
     const updated = await api<ApiAchievement>(`/achievements/${id}/unapprove`, { method: 'POST' })
     priorAchievements.value = priorAchievements.value.map(a => a.id === id ? { ...a, ...updated } : a)
     toast.add({
-      title: 'تم إلغاء الاعتماد ✓',
+      description: 'تم إلغاء الاعتماد ✓',
       color: 'success',
       icon: 'i-lucide-undo-2'
     })
@@ -1151,7 +1149,6 @@ async function runSync() {
       // would bury the mushaf.
       const err = e as { data?: { message?: string }, message?: string }
       toast.add({
-        title: 'تعذّر الحفظ التلقائي',
         description: apiError.format(err, err.message || 'سيُعاد المحاولة تلقائيًا — لا تغلق الصفحة.'),
         color: 'warning',
         icon: 'i-lucide-cloud-off'

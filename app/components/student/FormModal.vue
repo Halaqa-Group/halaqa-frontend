@@ -247,7 +247,6 @@ function flashWarnings() {
     return localized === i18nKey ? key : localized
   })
   toast.add({
-    title: t('pages.students.warnings.title'),
     description: translated.join('، '),
     color: 'warning',
     icon: 'i-lucide-alert-triangle'
@@ -360,7 +359,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
 
       await updateStudent(props.student.id, patch)
       flashWarnings()
-      toast.add({ title: t('pages.students.addModal.editSuccess'), color: 'success' })
+      toast.add({ description: t('pages.students.addModal.editSuccess'), color: 'success' })
       emit('close', false)
       return
     }
@@ -390,7 +389,6 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
     const { failed, total } = await enrollIntoHalaqat(newStudent.id)
     if (failed > 0) {
       toast.add({
-        title: t('pages.students.addModal.addedTitle'),
         description: failed === total
           ? t('pages.students.addModal.enrollAllFailed')
           : t('pages.students.addModal.enrollPartialFailed', { failed, total }),
@@ -398,7 +396,6 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       })
     } else {
       toast.add({
-        title: t('pages.students.addModal.successTitle'),
         description: total > 0
           ? (total === 1 ? t('pages.students.addModal.enrolledInOne') : t('pages.students.addModal.enrolledInMany', { count: total }))
           : undefined,
@@ -411,7 +408,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
     const fallback = isEditMode.value
       ? t('pages.students.addModal.editError')
       : t('pages.students.addModal.saveError')
-    toast.add({ title: apiError.format(e, fallback), color: 'error' })
+    toast.add({ description: apiError.format(e, fallback), color: 'error' })
   } finally {
     submitting.value = false
   }

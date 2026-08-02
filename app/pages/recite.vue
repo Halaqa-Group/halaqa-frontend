@@ -13,7 +13,6 @@ import { toScoreCounts } from '~/types/recitation'
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-const apiError = useApiError()
 const api = useApi()
 const overlay = useOverlay()
 const { isParent: isParentReadOnly } = usePermissions()
@@ -745,8 +744,7 @@ const savingOnly = ref(false)
 // two must not share a flag, or one tap spins both buttons.
 const writeInFlight = computed(() => submitting.value || savingOnly.value)
 
-function reportFinishError(e: unknown, title: string) {
-  const err = e as { data?: { message?: string }, message?: string }
+function reportFinishError(_e: unknown, title: string) {
   toast.add({
     title,
     color: 'error',
@@ -822,9 +820,8 @@ function onUnapproveRequest() {
         try {
           modal.patch({ loading: true })
           await unapproveExisting(existing.id)
-        } catch (e) {
+        } catch {
           modal.patch({ loading: false })
-          const err = e as { data?: { message?: string }, message?: string }
           toast.add({
             title: 'خطأ في إلغاء الاعتماد',
             color: 'error',
@@ -1140,14 +1137,13 @@ async function runSync() {
     lastSyncedSignature.value = attempted
     lastSyncedAt.value = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
     syncStatus.value = 'saved'
-  } catch (e) {
+  } catch {
     // Leave the signature dirty so the next tick retries. The marks are never
     // touched here, so nothing is lost while the backend is unreachable.
     syncStatus.value = 'error'
     if (!wasFailing) {
       // Announce the first failure of a streak only — a toast every 5 seconds
       // would bury the mushaf.
-      const err = e as { data?: { message?: string }, message?: string }
       toast.add({
         title: 'تعذّر الحفظ التلقائي',
         color: 'warning',

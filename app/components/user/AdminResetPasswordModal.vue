@@ -45,7 +45,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   isLoading.value = true
   try {
     await usersApi.adminResetPassword(props.user.id, event.data)
-    toast.add({ description: t('pages.users.adminReset.savedToast'), color: 'success' })
+    toast.add({ title: t('pages.users.adminReset.savedToast'), color: 'success' })
     emit('reset')
   } catch (e: unknown) {
     error.value = apiError.format(e, t('auth.genericError'))

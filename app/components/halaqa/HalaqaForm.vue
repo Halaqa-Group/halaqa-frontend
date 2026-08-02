@@ -87,19 +87,19 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         name: event.data.name,
         type: HALAQA_TYPE
       })
-      toast.add({ description: t('pages.halaqat.toastUpdated'), color: 'success' })
+      toast.add({ title: t('pages.halaqat.toastUpdated'), color: 'success' })
     } else {
       await createHalaqa({
         name: event.data.name,
         type: HALAQA_TYPE,
         primary_teacher_user_id: state.primary_teacher_user_id ?? undefined
       })
-      toast.add({ description: t('pages.halaqat.toastCreated'), color: 'success' })
+      toast.add({ title: t('pages.halaqat.toastCreated'), color: 'success' })
     }
     emit('saved')
   } catch (e: unknown) {
     toast.add({
-      description: apiError.format(e, t('pages.halaqat.toastError')),
+      title: apiError.format(e, t('pages.halaqat.toastError')),
       color: 'error'
     })
   } finally {

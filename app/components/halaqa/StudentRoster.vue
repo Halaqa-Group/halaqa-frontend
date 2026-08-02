@@ -133,12 +133,12 @@ async function submitEnroll(event: FormSubmitEvent<EnrollSchema>) {
       student_id: event.data.student_id,
       enrollment_date: event.data.enrollment_date
     })
-    toast.add({ description: t('pages.halaqat.students.toastEnrolled'), color: 'success' })
+    toast.add({ title: t('pages.halaqat.students.toastEnrolled'), color: 'success' })
     enrollOpen.value = false
     await load()
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     enrollSaving.value = false
   }
@@ -182,13 +182,13 @@ async function submitRemove(event: FormSubmitEvent<RemoveSchema>) {
       outcome: event.data.outcome,
       notes: event.data.notes || undefined
     })
-    toast.add({ description: t('pages.halaqat.students.toastRemoved'), color: 'success' })
+    toast.add({ title: t('pages.halaqat.students.toastRemoved'), color: 'success' })
     removeOpen.value = false
     removeTarget.value = null
     await load()
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     removeSaving.value = false
   }
@@ -246,13 +246,13 @@ async function submitTransfer(event: FormSubmitEvent<TransferSchema>) {
       reason: event.data.reason,
       transfer_date: event.data.transfer_date
     })
-    toast.add({ description: t('pages.halaqat.students.toastTransferred'), color: 'success' })
+    toast.add({ title: t('pages.halaqat.students.toastTransferred'), color: 'success' })
     transferOpen.value = false
     transferTarget.value = null
     await load()
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     transferSaving.value = false
   }

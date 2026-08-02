@@ -50,8 +50,8 @@ function formatDate(iso: string | null) {
 }
 
 onMounted(() => {
-  fetchSchedules().catch(e => toast.add({ description: apiError.format(e, t('pages.schoolCalendar.loadError')), color: 'error' }))
-  fetchHolidays().catch(e => toast.add({ description: apiError.format(e, t('pages.schoolCalendar.loadError')), color: 'error' }))
+  fetchSchedules().catch(e => toast.add({ title: apiError.format(e, t('pages.schoolCalendar.loadError')), color: 'error' }))
+  fetchHolidays().catch(e => toast.add({ title: apiError.format(e, t('pages.schoolCalendar.loadError')), color: 'error' }))
 })
 
 // ─── Schedule add ─────────────────────────────────────────────────────────────
@@ -95,10 +95,10 @@ async function submitSchedule() {
       effective_to: scheduleForm.value.effective_to || undefined,
       notes: scheduleForm.value.notes.trim() || undefined
     })
-    toast.add({ description: t('pages.schoolCalendar.schedule.addedToast'), color: 'success' })
+    toast.add({ title: t('pages.schoolCalendar.schedule.addedToast'), color: 'success' })
     scheduleOpen.value = false
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.schoolCalendar.schedule.addError')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.schoolCalendar.schedule.addError')), color: 'error' })
   } finally {
     scheduleSaving.value = false
   }
@@ -116,9 +116,9 @@ async function confirmScheduleDelete() {
   if (!target) return
   try {
     await deleteSchedule(target.id)
-    toast.add({ description: t('pages.schoolCalendar.schedule.deletedToast'), color: 'success' })
+    toast.add({ title: t('pages.schoolCalendar.schedule.deletedToast'), color: 'success' })
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.schoolCalendar.schedule.deleteError')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.schoolCalendar.schedule.deleteError')), color: 'error' })
   }
 }
 
@@ -150,10 +150,10 @@ async function submitHoliday() {
       holiday_date: holidayForm.value.holiday_date,
       description: holidayForm.value.description.trim()
     })
-    toast.add({ description: t('pages.schoolCalendar.holiday.addedToast'), color: 'success' })
+    toast.add({ title: t('pages.schoolCalendar.holiday.addedToast'), color: 'success' })
     holidayOpen.value = false
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.schoolCalendar.holiday.addError')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.schoolCalendar.holiday.addError')), color: 'error' })
   } finally {
     holidaySaving.value = false
   }
@@ -171,9 +171,9 @@ async function confirmHolidayDelete() {
   if (!target) return
   try {
     await deleteHoliday(target.id)
-    toast.add({ description: t('pages.schoolCalendar.holiday.deletedToast'), color: 'success' })
+    toast.add({ title: t('pages.schoolCalendar.holiday.deletedToast'), color: 'success' })
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.schoolCalendar.holiday.deleteError')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.schoolCalendar.holiday.deleteError')), color: 'error' })
   }
 }
 </script>

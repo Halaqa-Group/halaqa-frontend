@@ -68,9 +68,9 @@ async function onSaveDraft() {
   savingDraft.value = true
   try {
     await saveDraft()
-    toast.add({ description: t('pages.planner.savedDraftToast'), color: 'success' })
+    toast.add({ title: t('pages.planner.savedDraftToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ description: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   } finally {
     savingDraft.value = false
   }
@@ -81,9 +81,9 @@ async function onApprove() {
   try {
     if (viewMode.value === 'matrix' && matrixDirty.value) await saveDraft()
     await approvePlan()
-    toast.add({ description: t('pages.planner.approvedToast'), color: 'success' })
+    toast.add({ title: t('pages.planner.approvedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ description: apiError.format(e, t('pages.planner.approveErrorTitle')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.approveErrorTitle')), color: 'error' })
   } finally {
     approving.value = false
   }
@@ -92,9 +92,9 @@ async function onApprove() {
 async function onUnapprove() {
   try {
     await unapprovePlan()
-    toast.add({ description: t('pages.planner.unapprovedToast'), color: 'success' })
+    toast.add({ title: t('pages.planner.unapprovedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ description: apiError.format(e, t('pages.planner.approveErrorTitle')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.approveErrorTitle')), color: 'error' })
   }
 }
 
@@ -104,18 +104,18 @@ async function onDeleteItem() {
   deleteTarget.value = null
   try {
     await deleteItem(target.id)
-    toast.add({ description: t('pages.planner.itemDeletedToast'), color: 'success' })
+    toast.add({ title: t('pages.planner.itemDeletedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ description: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   }
 }
 
 async function onDeletePlan() {
   try {
     await deletePlan()
-    toast.add({ description: t('pages.planner.planDeletedToast'), color: 'success' })
+    toast.add({ title: t('pages.planner.planDeletedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ description: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   }
 }
 

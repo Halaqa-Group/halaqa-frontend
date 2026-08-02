@@ -18,7 +18,7 @@ watch(online, (isOnline, was) => {
   // No toast when going offline — the persistent offline badge already covers it.
   if (!isOnline) return
   toast.add({
-    description: t('pwa.online'),
+    title: t('pwa.online'),
     icon: 'i-lucide-wifi',
     color: 'success'
   })
@@ -28,15 +28,15 @@ watch(online, (isOnline, was) => {
 // a setup context is available).
 watch(flushedAt, () => {
   if (failed.value.length) {
-    toast.add({ description: t('pwa.syncFailed'), icon: 'i-lucide-alert-triangle', color: 'error' })
+    toast.add({ title: t('pwa.syncFailed'), icon: 'i-lucide-alert-triangle', color: 'error' })
   } else if (outboxPending.value === 0) {
-    toast.add({ description: t('pwa.syncSuccess'), icon: 'i-lucide-check', color: 'success' })
+    toast.add({ title: t('pwa.syncSuccess'), icon: 'i-lucide-check', color: 'success' })
   }
 })
 
 watch(draftsFlushedAt, () => {
   toast.add({
-    description: draftFails.value > 0 ? t('pwa.syncFailed') : t('pwa.syncSuccess'),
+    title: draftFails.value > 0 ? t('pwa.syncFailed') : t('pwa.syncSuccess'),
     icon: draftFails.value > 0 ? 'i-lucide-alert-triangle' : 'i-lucide-check',
     color: draftFails.value > 0 ? 'error' : 'success'
   })

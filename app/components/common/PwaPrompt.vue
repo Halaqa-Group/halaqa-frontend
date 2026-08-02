@@ -12,7 +12,7 @@ watch(
   (ready) => {
     if (!ready) return
     toast.add({
-      description: t('pwa.offlineReady'),
+      title: t('pwa.offlineReady'),
       icon: 'i-lucide-wifi-off',
       color: 'success'
     })
@@ -25,6 +25,7 @@ watch(
   (needs) => {
     if (!needs) return
     toast.add({
+      title: t('pwa.updateAvailable'),
       description: t('pwa.updateDescription'),
       icon: 'i-lucide-refresh-cw',
       color: 'primary',

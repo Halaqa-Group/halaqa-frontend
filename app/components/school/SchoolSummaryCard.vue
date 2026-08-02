@@ -41,7 +41,7 @@ function openEdit() {
 }
 
 function toastApiError(e: unknown) {
-  toast.add({ description: apiError.format(e, t('pages.home.schoolCard.toastError')), color: 'error' })
+  toast.add({ title: apiError.format(e, t('pages.home.schoolCard.toastError')), color: 'error' })
 }
 
 function validate(): string | null {
@@ -52,7 +52,7 @@ function validate(): string | null {
 async function submitForm() {
   const err = validate()
   if (err) {
-    toast.add({ description: err, color: 'warning' })
+    toast.add({ title: err, color: 'warning' })
     return
   }
   saving.value = true
@@ -66,7 +66,7 @@ async function submitForm() {
       status: form.status
     }
     await updateSchool(payload)
-    toast.add({ description: t('pages.home.schoolCard.toastSaved'), color: 'success' })
+    toast.add({ title: t('pages.home.schoolCard.toastSaved'), color: 'success' })
     editOpen.value = false
   } catch (e) {
     toastApiError(e)

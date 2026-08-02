@@ -33,11 +33,11 @@ async function onRevokeConfirmed() {
   revokeTarget.value = null
   try {
     await revokeSession(target.id)
-    toast.add({ description: t('pages.profile.sessions.revokedToast'), color: 'success' })
+    toast.add({ title: t('pages.profile.sessions.revokedToast'), color: 'success' })
     await load()
   } catch (e: unknown) {
     toast.add({
-      description: apiError.format(e, t('pages.profile.sessions.revokeError')),
+      title: apiError.format(e, t('pages.profile.sessions.revokeError')),
       color: 'error'
     })
   }

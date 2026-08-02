@@ -100,10 +100,10 @@ async function save() {
     apply(normalized)
     // Achievements score against a per-session cache of these weights.
     invalidateEvaluationSettings(props.halaqaId, updated.evaluation_settings)
-    toast.add({ description: t('pages.halaqat.toastUpdated'), color: 'success' })
+    toast.add({ title: t('pages.halaqat.toastUpdated'), color: 'success' })
     emit('saved', updated.evaluation_settings)
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     saving.value = false
   }

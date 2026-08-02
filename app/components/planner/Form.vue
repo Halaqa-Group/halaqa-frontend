@@ -88,14 +88,14 @@ async function onSubmit(_e: FormSubmitEvent<Schema>) {
   try {
     if (isEdit.value && editing.value) {
       await updateItem(editing.value.id, dto)
-      toast.add({ description: t('pages.planner.itemUpdatedToast'), color: 'success' })
+      toast.add({ title: t('pages.planner.itemUpdatedToast'), color: 'success' })
     } else {
       await addItem(dto)
-      toast.add({ description: t('pages.planner.itemAddedToast'), color: 'success' })
+      toast.add({ title: t('pages.planner.itemAddedToast'), color: 'success' })
     }
     emit('saved')
   } catch (e: any) {
-    toast.add({ description: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   }
 }
 

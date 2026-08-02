@@ -50,10 +50,10 @@ async function submit() {
   const body = mode.value === 'set' ? { set: [range] } : { clear: [range] }
   const ok = await edit(body)
   if (ok) {
-    toast.add({ description: t('pages.students.viewModal.memorization.saved'), color: 'success' })
+    toast.add({ title: t('pages.students.viewModal.memorization.saved'), color: 'success' })
     previewRange.value = null
   } else {
-    toast.add({ description: error.value ?? t('pages.students.viewModal.memorization.saveFailed'), color: 'error' })
+    toast.add({ title: error.value ?? t('pages.students.viewModal.memorization.saveFailed'), color: 'error' })
   }
 }
 </script>

@@ -169,7 +169,7 @@ function createClient(): ApiClient {
           if (hadToken) {
             const { t } = useI18n()
             useToast().add({
-              description: t('auth.sessionExpired'),
+              title: t('auth.sessionExpired'),
               color: 'warning'
             })
           }

@@ -57,10 +57,10 @@ watch(studentTabActive, (active) => {
 async function handleSaveAttendance() {
   try {
     await submitSession()
-    toast.add({ description: t('pages.attendance.savedToastTitle'), icon: 'i-lucide-check-circle', color: 'success' })
+    toast.add({ title: t('pages.attendance.savedToastTitle'), icon: 'i-lucide-check-circle', color: 'success' })
   } catch (error: any) {
     toast.add({
-      description: apiError.format(error, t('pages.attendance.saveErrorTitle')),
+      title: apiError.format(error, t('pages.attendance.saveErrorTitle')),
       icon: 'i-lucide-alert-circle',
       color: 'error'
     })
@@ -72,7 +72,7 @@ function handleMarkAllPresent() {
   const id = `mark-all-${Date.now()}`
   toast.add({
     id,
-    description: t('pages.attendance.markedAllPresent'),
+    title: t('pages.attendance.markedAllPresent'),
     icon: 'i-lucide-check-circle',
     color: 'primary',
     duration: 4000,

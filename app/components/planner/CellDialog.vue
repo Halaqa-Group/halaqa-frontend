@@ -81,7 +81,7 @@ function addBlankSession() {
 
 function onCopy() {
   copyCell(props.day, props.track)
-  toast.add({ description: t('pages.planner.cellCopiedToast'), color: 'success' })
+  toast.add({ title: t('pages.planner.cellCopiedToast'), color: 'success' })
 }
 function onClear() {
   clearCell(props.day, props.track)
@@ -108,7 +108,7 @@ async function recordForSession(index: number) {
     // against the range only (the achievement still drafts locally).
     if (props.editable && matrixDirty.value && online.value) await saveDraft()
   } catch (e: any) {
-    toast.add({ description: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
     recordingIndex.value = null
     return
   }

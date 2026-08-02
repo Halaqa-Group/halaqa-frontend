@@ -160,12 +160,12 @@ async function onLifecycleConfirm() {
     if (lifecycleAction.value === 'archive') await archiveHalaqa(target.id)
     else if (lifecycleAction.value === 'complete') await completeHalaqa(target.id)
     else if (lifecycleAction.value === 'restore') await restoreHalaqa(target.id)
-    toast.add({ description: lifecycleCopy.value.toast, color: 'success' })
+    toast.add({ title: lifecycleCopy.value.toast, color: 'success' })
     lifecycleTarget.value = null
     await loadList(page.value)
     await initializeHalaqa()
   } catch (e: unknown) {
-    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 

@@ -59,7 +59,7 @@ function onCalendarPick(value: unknown) {
 
 <template>
   <CommonToolbar>
-    <HalaqaFilter required class="sm:!w-44" />
+    <HalaqaFilter required class="flex-1 min-w-36 sm:flex-none sm:!w-44" />
 
     <USelectMenu
       v-model="selectedStudentId"

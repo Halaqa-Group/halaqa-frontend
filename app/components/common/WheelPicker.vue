@@ -118,23 +118,22 @@ function onKey(e: KeyboardEvent) {
   selectIndex(Math.max(0, Math.min(last, step(activeIndex.value, last))))
 }
 
-// A wheel mounted while hidden (a collapsed mobile picker, a closed drawer) has
-// no height, so scrollTo is a no-op and the column would open scrolled to the top
-// with the selected row rendered far below the viewport — looking empty until you
-// nudge it. Re-anchor the moment it gains height so it opens already centred.
-let resizeObs: ResizeObserver | undefined
-onMounted(() => {
-  scrollToValue('auto')
+onMounted(() => scrollToValue('auto'))
+
+// A wheel mounted while hidden (a collapsed mobile picker, a closed drawer) has no
+// height, so its onMounted scroll is a no-op — it would open scrolled to the top
+// with the selected row rendered far below the viewport, looking empty until you
+// nudge it. The parent that reveals it calls this the moment it's visible; setting
+// scrollTop directly on the now-laid-out element sticks with no timing guesswork.
+function reanchor() {
   const el = scroller.value
-  if (!el || typeof ResizeObserver === 'undefined') return
-  let lastHeight = el.clientHeight
-  resizeObs = new ResizeObserver(() => {
-    const h = el.clientHeight
-    if (h > 0 && lastHeight === 0) scrollToValue('auto')
-    lastHeight = h
-  })
-  resizeObs.observe(el)
-})
+  if (!el) return
+  const idx = props.items.findIndex(i => i.value === model.value)
+  if (idx < 0) return
+  offset.value = idx
+  el.scrollTop = idx * props.itemHeight
+}
+defineExpose({ reanchor })
 
 // Follow outside changes (a paste, a surah change resetting the verse) without
 // fighting our own commits — the guard skips when we're already parked there.
@@ -148,7 +147,6 @@ watch(() => props.items.length, () => nextTick(() => scrollToValue('auto')))
 onBeforeUnmount(() => {
   if (raf) cancelAnimationFrame(raf)
   if (settleTimer) clearTimeout(settleTimer)
-  resizeObs?.disconnect()
 })
 </script>
 

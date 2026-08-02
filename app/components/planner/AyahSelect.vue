@@ -24,6 +24,20 @@ const { pageFor } = useVerseToPage()
 const open = ref(false)
 const summary = computed(() => `${SURAH_NAMES[surah.value] ?? surah.value} · ${verse.value}`)
 
+// The wheels mount while collapsed (display:none), where they can't scroll to the
+// selected row. Once we reveal them, wait for Vue to drop the `hidden` class
+// (nextTick) then re-anchor both so they open already centred on the current
+// surah/ayah — reanchor sets scrollTop, which forces the layout it needs.
+const surahWheel = useTemplateRef<{ reanchor: () => void }>('surahWheel')
+const verseWheel = useTemplateRef<{ reanchor: () => void }>('verseWheel')
+watch(open, (isOpen) => {
+  if (!isOpen) return
+  nextTick(() => {
+    surahWheel.value?.reanchor()
+    verseWheel.value?.reanchor()
+  })
+})
+
 const surahItems = computed(() =>
   Object.entries(SURAH_NAMES).map(([n, name]) => ({ value: Number(n), label: name }))
 )
@@ -83,11 +97,13 @@ watch(surah, () => {
     </button>
     <div class="grid grid-cols-2 gap-2" :class="{ 'hidden sm:grid': collapsible && !open }">
       <CommonWheelPicker
+        ref="surahWheel"
         v-model="surah"
         :items="surahItems"
         :aria-label="t('pages.planner.cell.surahLabel')"
       />
       <CommonWheelPicker
+        ref="verseWheel"
         v-model="verse"
         :items="verseItems"
         :aria-label="t('pages.planner.cell.verseLabel')"

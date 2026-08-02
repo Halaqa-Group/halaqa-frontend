@@ -25,9 +25,9 @@ async function onDeleteConfirm() {
   deleteTarget.value = null
   try {
     await deleteAchievement(target.id)
-    toast.add({ title: t('pages.achievements.deletedToast'), color: 'success' })
+    toast.add({ description: t('pages.achievements.deletedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: apiError.format(e, t('pages.achievements.deleteErrorTitle')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.achievements.deleteErrorTitle')), color: 'error' })
   }
 }
 
@@ -43,6 +43,15 @@ watch(selectedHalaqaId, () => {
 watch([selectedDate, () => filters.trackType, () => filters.status], () => {
   page.value = 1
   loadAchievements()
+})
+
+// When offline work finishes syncing (draft recitations uploaded, queued deletes
+// applied), the local draft rows are removed but the server list is still stale —
+// reload it so the freshly-synced records appear without a manual refresh.
+const { flushedAt: draftsFlushedAt } = useAchievementDrafts()
+const { flushedAt: outboxFlushedAt } = useOfflineOutbox()
+watch([draftsFlushedAt, outboxFlushedAt], () => {
+  if (import.meta.client && navigator.onLine) loadAchievements()
 })
 
 onMounted(() => {

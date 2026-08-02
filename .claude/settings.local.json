@@ -40,7 +40,8 @@
       "Bash(python -c ' *)",
       "PowerShell(npx nuxi typecheck 2>&1 | Select-Object -Last 60)",
       "Bash(echo \"fix exit: $?\")",
-      "Bash(echo \"final exit: $?\")"
+      "Bash(echo \"final exit: $?\")",
+      "Bash(git rm *)"
     ]
   }
 }

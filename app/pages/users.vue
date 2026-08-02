@@ -178,43 +178,37 @@ function statusColor(s: UserStatus) {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div class="flex justify-end">
-      <UButton icon="i-lucide-plus" class="shrink-0" @click="openAdd">
-        {{ t('pages.users.addButton') }}
-      </UButton>
-    </div>
+    <CommonToolbar>
+      <UInput
+        v-model="search"
+        icon="i-lucide-search"
+        class="w-full sm:flex-1 sm:max-w-sm"
+        :placeholder="t('pages.users.searchPlaceholder')"
+      />
+
+      <USelectMenu
+        v-model="role"
+        :items="roleItems"
+        value-key="value"
+        class="w-[calc(50%-0.25rem)] sm:w-48"
+      />
+
+      <USelectMenu
+        v-model="status"
+        :items="statusItems"
+        value-key="value"
+        class="w-[calc(50%-0.25rem)] sm:w-48"
+      />
+
+      <template #actions>
+        <span class="hidden text-xs text-muted lg:inline">{{ showingText }}</span>
+        <UButton icon="i-lucide-plus" class="shrink-0" @click="openAdd">
+          {{ t('pages.users.addButton') }}
+        </UButton>
+      </template>
+    </CommonToolbar>
 
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>  
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div class="flex flex-col sm:flex-row gap-3 sm:items-center flex-1">
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            class="w-full sm:max-w-sm"
-            :placeholder="t('pages.users.searchPlaceholder')"
-          />
-
-          <USelectMenu
-            v-model="role"
-            :items="roleItems"
-            value-key="value"
-            class="w-full sm:w-56"
-          />
-
-          <USelectMenu
-            v-model="status"
-            :items="statusItems"
-            value-key="value"
-            class="w-full sm:w-56"
-          />
-        </div>
-
-        <div class="text-xs text-muted sm:text-end">
-          {{ showingText }}
-        </div>
-      </div>
-    </template>
       <div>
         <UAlert
           v-if="loadError"

@@ -225,51 +225,45 @@ onMounted(() => loadList(1))
 
 <template>
   <div class="flex flex-col gap-6">
-    <div v-if="canCreateHalaqa" class="flex justify-end">
+    <CommonToolbar>
+      <UInput
+        v-model="filters.search"
+        icon="i-lucide-search"
+        :placeholder="t('pages.halaqat.filters.searchPlaceholder')"
+        class="w-full sm:flex-1 sm:max-w-xs"
+      />
+      <USelect
+        v-model="filters.type"
+        :items="typeFilterItems"
+        value-key="value"
+        class="w-[calc(50%-0.25rem)] sm:w-40"
+      />
+      <USelect
+        v-model="filters.status"
+        :items="statusFilterItems"
+        value-key="value"
+        class="w-[calc(50%-0.25rem)] sm:w-40"
+      />
       <UButton
-        icon="i-lucide-plus"
-        class="shrink-0"
-        @click="openAdd"
+        v-if="hasActiveFilters"
+        variant="link"
+        color="neutral"
+        icon="i-lucide-x"
+        size="sm"
+        class="px-0"
+        @click="clearFilters"
       >
-        {{ t('pages.halaqat.add') }}
+        {{ t('pages.halaqat.filters.clear') }}
       </UButton>
-    </div>
+
+      <template v-if="canCreateHalaqa" #actions>
+        <UButton icon="i-lucide-plus" class="shrink-0" @click="openAdd">
+          {{ t('pages.halaqat.add') }}
+        </UButton>
+      </template>
+    </CommonToolbar>
 
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <UInput
-            v-model="filters.search"
-            icon="i-lucide-search"
-            :placeholder="t('pages.halaqat.filters.searchPlaceholder')"
-            class="w-full sm:w-64"
-          />
-          <USelect
-            v-model="filters.type"
-            :items="typeFilterItems"
-            value-key="value"
-            class="w-full sm:w-40"
-          />
-          <USelect
-            v-model="filters.status"
-            :items="statusFilterItems"
-            value-key="value"
-            class="w-full sm:w-40"
-          />
-          <UButton
-            v-if="hasActiveFilters"
-            variant="link"
-            color="neutral"
-            icon="i-lucide-x"
-            size="sm"
-            class="sm:ms-auto px-0"
-            @click="clearFilters"
-          >
-            {{ t('pages.halaqat.filters.clear') }}
-          </UButton>
-        </div>
-      </template>
-
       <div class="overflow-x-auto">
         <UTable
           :data="halaqat"

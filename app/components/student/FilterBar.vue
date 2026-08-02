@@ -5,8 +5,8 @@ import type { Student } from '~/types'
 type StatusFilter = Student['status'] | 'deleted' | null
 
 const { t } = useI18n()
-const { canRestoreStudent: canManageDeleted } = usePermissions()
-const { searchQuery } = useStudents()
+const { canRestoreStudent: canManageDeleted, canCreateStudent } = usePermissions()
+const { searchQuery, openAdd } = useStudents()
 const { filterStatus, sortKey, viewMode } = useStudentsView()
 
 const statusFilters = computed<{ label: string, value: StatusFilter }[]>(() => {
@@ -44,19 +44,19 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+  <CommonToolbar>
     <UInput
       v-model="searchQuery"
       icon="i-lucide-search"
       :placeholder="t('pages.students.searchByName')"
-      class="w-full sm:w-64"
+      class="w-full sm:flex-1 sm:max-w-xs"
     />
-    <HalaqaFilter />
+    <HalaqaFilter class="w-[calc(50%-0.25rem)] sm:w-48" />
     <USelect
       v-model="filterStatus"
       :items="statusFilters"
       value-key="value"
-      class="w-full sm:w-40"
+      class="w-[calc(50%-0.25rem)] sm:w-40"
     />
     <UDropdownMenu
       :items="sortItems"
@@ -68,31 +68,40 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
         trailing-icon="i-lucide-chevron-down"
         icon="i-lucide-arrow-up-down"
         size="sm"
-        class="w-full sm:w-auto"
       >
         {{ t('pages.students.sort.label') }}: {{ sortLabel }}
       </UButton>
     </UDropdownMenu>
 
-    <div class="sm:ms-auto flex items-center gap-1 rounded-md border border-default p-0.5">
+    <template #actions>
+      <div class="flex items-center gap-1 rounded-md border border-default p-0.5">
+        <UButton
+          :variant="viewMode === 'table' ? 'soft' : 'ghost'"
+          color="primary"
+          icon="i-lucide-table-2"
+          size="sm"
+          square
+          :aria-label="t('pages.students.view.table')"
+          @click="viewMode = 'table'"
+        />
+        <UButton
+          :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
+          color="primary"
+          icon="i-lucide-layout-grid"
+          size="sm"
+          square
+          :aria-label="t('pages.students.view.grid')"
+          @click="viewMode = 'grid'"
+        />
+      </div>
       <UButton
-        :variant="viewMode === 'table' ? 'soft' : 'ghost'"
-        color="primary"
-        icon="i-lucide-table-2"
-        size="sm"
-        square
-        :aria-label="t('pages.students.view.table')"
-        @click="viewMode = 'table'"
-      />
-      <UButton
-        :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
-        color="primary"
-        icon="i-lucide-layout-grid"
-        size="sm"
-        square
-        :aria-label="t('pages.students.view.grid')"
-        @click="viewMode = 'grid'"
-      />
-    </div>
-  </div>
+        v-if="canCreateStudent"
+        icon="i-lucide-plus"
+        class="shrink-0"
+        @click="openAdd"
+      >
+        {{ t('pages.students.addNew') }}
+      </UButton>
+    </template>
+  </CommonToolbar>
 </template>

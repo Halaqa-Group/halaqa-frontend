@@ -42,12 +42,9 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <StudentPageHeader />
+    <StudentFilterBar />
 
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <StudentFilterBar />
-      </template>
       <StudentResults />
       <template v-if="showProgress" #footer>
         <StudentProgressFooter />

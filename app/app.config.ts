@@ -109,10 +109,16 @@ export default defineAppConfig({
       }
     },
 
+    // Cleaner, lighter tables: a quiet tinted header (no vertical grid lines),
+    // horizontal row dividers only, and a hover highlight on every row. No
+    // letter-spacing/uppercase — those break Arabic's connected script.
     table: {
       slots: {
-        th: 'font-medium border-x border-x-default first-of-type:border-s-0 last-of-type:border-e-0 bg-default',
-        td: 'px-4 py-3.5 border-x border-x-default first-of-type:border-s-0 last-of-type:border-e-0 bg-default'
+        root: 'relative overflow-x-auto',
+        thead: 'bg-elevated/40',
+        th: 'px-4 py-3 text-xs font-semibold text-muted',
+        td: 'px-4 py-3.5 text-sm text-muted',
+        tr: 'hover:bg-elevated/30 transition-colors'
       }
     },
 

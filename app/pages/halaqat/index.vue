@@ -235,7 +235,7 @@ onMounted(() => loadList(1))
         v-model="filters.search"
         icon="i-lucide-search"
         :placeholder="t('pages.halaqat.filters.searchPlaceholder')"
-        class="w-full sm:flex-1 sm:max-w-xs"
+        class="flex-1 min-w-40 sm:max-w-xs"
       />
       <UPopover v-model:open="filtersOpen">
         <UButton

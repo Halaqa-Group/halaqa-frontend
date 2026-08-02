@@ -189,7 +189,7 @@ function statusColor(s: UserStatus) {
       <UInput
         v-model="search"
         icon="i-lucide-search"
-        class="w-full sm:flex-1 sm:max-w-sm"
+        class="flex-1 min-w-40 sm:max-w-sm"
         :placeholder="t('pages.users.searchPlaceholder')"
       />
 

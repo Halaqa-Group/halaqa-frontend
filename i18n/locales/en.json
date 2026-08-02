@@ -85,6 +85,7 @@
     "tasks": "Tasks",
     "profile": "Profile",
     "schoolCalendar": "School Calendar",
+    "school": "School",
     "more": "More",
     "menu": "Menu"
   },
@@ -1490,6 +1491,13 @@
         "applyToN": "Apply to {count} students",
         "applyResult": "Created {created} · skipped {skipped} · replaced {replaced} · failed {failed}",
         "noStudents": "No target students"
+      }
+    },
+    "school": {
+      "title": "School",
+      "tabs": {
+        "details": "School Details",
+        "calendar": "Calendar"
       }
     },
     "schoolCalendar": {

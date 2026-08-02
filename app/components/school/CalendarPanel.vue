@@ -3,13 +3,6 @@ import type { TableColumn } from '@nuxt/ui'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import type { ApiHoliday, ApiSchoolSchedule } from '~/types'
 
-definePageMeta({
-  breadcrumb: [
-    { label: 'home', to: '/' },
-    { label: 'pages.schoolCalendar.title' }
-  ]
-})
-
 const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()

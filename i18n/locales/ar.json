@@ -85,6 +85,7 @@
     "tasks": "المهام",
     "profile": "الملف الشخصي",
     "schoolCalendar": "تقويم المدرسة",
+    "school": "المدرسة",
     "more": "المزيد",
     "menu": "القائمة"
   },
@@ -1490,6 +1491,13 @@
         "applyToN": "تطبيق على {count} طالب",
         "applyResult": "أُنشئت {created} · تُخطّيت {skipped} · استُبدلت {replaced} · فشل {failed}",
         "noStudents": "لا يوجد طلاب مستهدفون"
+      }
+    },
+    "school": {
+      "title": "المدرسة",
+      "tabs": {
+        "details": "بيانات المدرسة",
+        "calendar": "تقويم المدرسة"
       }
     },
     "schoolCalendar": {

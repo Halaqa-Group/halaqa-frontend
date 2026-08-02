@@ -176,8 +176,6 @@ const quickActions = computed(() => [
       </div>
     </div>
 
-    <SchoolSummaryCard />
-
     <!-- Reporting window -->
     <DashboardPeriodFilter
       v-model="selection"

@@ -58,7 +58,7 @@ const links = computed<NavigationMenuItem[][]>(() => {
   // GET /schedules and /holidays are open to all staff; writes are admin-only
   // and the page gates them.
   if (canViewCalendar.value) {
-    mainLinks.push({ label: t('nav.schoolCalendar'), icon: 'i-lucide-calendar-days', to: '/school-calendar' })
+    mainLinks.push({ label: t('nav.school'), icon: 'i-lucide-school', to: '/school' })
   }
 
   return [mainLinks]

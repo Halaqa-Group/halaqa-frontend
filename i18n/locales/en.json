@@ -1627,6 +1627,7 @@
     "logDelete": "Delete recitation #{id}",
     "logRecitation": "Recitation · {date} · {range}",
     "offlineManager": "Offline downloads",
-    "offlineManagerDesc": "Download the Mushaf and halaqa data to use without an internet connection."
+    "offlineManagerDesc": "Download the Mushaf and halaqa data to use without an internet connection.",
+    "notSynced": "Not synced"
   }
 }

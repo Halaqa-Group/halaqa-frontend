@@ -21,7 +21,7 @@ const { loadEvaluationSettings, currentEvaluationSettings } = useAchievements()
 // Offline recitation drafts: when disconnected the session is saved locally and
 // synced once on reconnect (see useAchievementDrafts) instead of hitting the API.
 const online = useOnline()
-const { saveDraft: saveRecitationDraft } = useAchievementDrafts()
+const { saveDraft: saveRecitationDraft, drafts: offlineDrafts } = useAchievementDrafts()
 // Warm the QUL word-id / juz / hizb lookup so building errors[] on submit is instant.
 useQuranWords()
 // Marks and spots are no longer cached client-side; clear what older builds left
@@ -682,6 +682,54 @@ watch([selectedItem, priorAchievements], async () => {
     // Couldn't read it back — leave the mushaf as-is; autosync only ever writes
     // state that has marks in it, so nothing is silently emptied.
   }
+}, { immediate: true })
+
+// Reopening an offline draft from the achievements table: no server record backs
+// it, so seed the mushaf from the draft's own errors/positions. Builds a minimal
+// achievement-shaped object and reuses hydrateFromAchievement. Guarded so it
+// never paints over marks made this visit (hydrateFromAchievement bails when
+// marks exist) and never fights the server-record path above.
+const draftForSession = computed(() =>
+  offlineDrafts.value.find(d => d.id === sessionId.value) ?? null
+)
+
+function draftToDetail(draft: { id: string, dto: CreateAchievementDto }): ApiAchievement {
+  const dto = draft.dto
+  const positions = dto.recitation_method === 'test'
+    ? (dto.test_positions ?? []).map(p => ({
+        start_surah: p.start_surah,
+        start_verse: p.start_verse,
+        end_surah: p.end_surah,
+        end_verse: p.end_verse,
+        errors: p.errors ?? []
+      }))
+    : [{
+        start_surah: dto.start_surah,
+        start_verse: dto.start_verse,
+        end_surah: dto.end_surah,
+        end_verse: dto.end_verse,
+        errors: dto.errors ?? []
+      }]
+  return {
+    id: `draft:${draft.id}`,
+    completion_method: 'mushaf',
+    recitation_method: dto.recitation_method ?? 'full',
+    track_type: dto.track_type,
+    start_surah: dto.start_surah,
+    start_verse: dto.start_verse,
+    end_surah: dto.end_surah,
+    end_verse: dto.end_verse,
+    recitation_positions: positions
+  } as unknown as ApiAchievement
+}
+
+watch([selectedItem, draftForSession], () => {
+  if (achievementId.value != null) return
+  const draft = draftForSession.value
+  if (!draft || !selectedItem.value) return
+  // A synced server record for this session always wins over a stale draft.
+  if (existingAchievement.value) return
+  void hydrateFromAchievement(draftToDetail(draft))
 }, { immediate: true })
 
 // ── Finishing the session ───────────────────────────────────────────────────

@@ -16,7 +16,6 @@ const {
   canDeleteAchievement
 } = usePermissions()
 const {
-  achievements,
   filteredAchievements,
   isLoading,
   viewMode,
@@ -29,7 +28,11 @@ const {
   openDuplicate,
   requestDelete,
   approveAchievement,
-  unapproveAchievement
+  unapproveAchievement,
+  isDraftRow,
+  draftReciteLink,
+  deleteDraftRow,
+  setDraftApprovalRow
 } = useAchievements()
 
 function isApproved(a: ApiAchievement) {
@@ -96,6 +99,25 @@ function compact(groups: DropdownMenuItem[][]): DropdownMenuItem[][] {
 }
 
 function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
+  // Unsynced offline draft: edit reopens the reader on the same draft; approve
+  // toggles its local flag; delete drops the local draft. No server-only actions.
+  if (isDraftRow(a)) {
+    const acts: DropdownMenuItem[] = [
+      { label: t('pages.achievements.actions.edit'), icon: 'i-lucide-pencil', onSelect: () => navigateTo(draftReciteLink(a)) }
+    ]
+    if (canApproveAchievement.value && !isApproved(a)) {
+      acts.push({ label: t('pages.achievements.approve'), icon: 'i-lucide-check-check', onSelect: () => setDraftApprovalRow(a, true) })
+    }
+    if (canUnapproveAchievement.value && isApproved(a)) {
+      acts.push({ label: t('pages.achievements.unapprove'), icon: 'i-lucide-undo-2', onSelect: () => setDraftApprovalRow(a, false) })
+    }
+    const groups: DropdownMenuItem[][] = [acts]
+    if (canDeleteAchievement.value) {
+      groups.push([{ label: t('pages.achievements.actions.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => deleteDraftRow(a) }])
+    }
+    return compact(groups)
+  }
+
   const primary: DropdownMenuItem[] = []
   // Only a mushaf recitation can be reopened on the mushaf. A form-entered record
   // has no per-word data — its errors are synthesized at the range's first word —
@@ -144,11 +166,11 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
 </script>
 
 <template>
-  <div v-if="isLoading && achievements.length === 0" class="flex justify-center py-16">
+  <div v-if="isLoading && filteredAchievements.length === 0" class="flex justify-center py-16">
     <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
   </div>
 
-  <div v-else-if="achievements.length === 0" class="flex flex-col items-center justify-center gap-3 py-14">
+  <div v-else-if="filteredAchievements.length === 0 && !hasActiveFilters" class="flex flex-col items-center justify-center gap-3 py-14">
     <UIcon name="i-lucide-award" class="w-10 h-10 text-muted" />
     <p class="text-sm text-muted">
       {{ t('pages.achievements.noResults') }}
@@ -229,9 +251,20 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
         </template>
 
         <template #status-cell="{ row }">
-          <UBadge variant="subtle" :color="achievementStatusColor(row.original.status)">
-            {{ row.original.status === 'approved' ? t('pages.achievements.statusApproved') : t('pages.achievements.statusPending') }}
-          </UBadge>
+          <div class="flex items-center gap-1.5">
+            <UBadge
+              v-if="isDraftRow(row.original)"
+              color="warning"
+              variant="soft"
+              size="sm"
+              icon="i-lucide-cloud-off"
+            >
+              {{ t('pwa.notSynced') }}
+            </UBadge>
+            <UBadge variant="subtle" :color="achievementStatusColor(row.original.status)">
+              {{ row.original.status === 'approved' ? t('pages.achievements.statusApproved') : t('pages.achievements.statusPending') }}
+            </UBadge>
+          </div>
         </template>
 
         <template #actions-cell="{ row }">

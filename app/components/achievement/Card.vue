@@ -19,6 +19,8 @@ const range = computed(() => formatVerseRange(
   props.achievement.end_surah, props.achievement.end_verse, SURAH_NAMES
 ))
 const isApproved = computed(() => props.achievement.status === 'approved')
+// Draft rows (recorded offline, not yet synced) carry a string id.
+const isDraft = computed(() => typeof props.achievement.id === 'string')
 const totalErrors = computed(() =>
   (props.achievement.mistakes_count ?? 0)
   + (props.achievement.warnings_count ?? 0)
@@ -74,6 +76,14 @@ function spotErrorLabel(p: RecitationPosition): string {
         icon="i-lucide-list-checks"
       >
         {{ t('pages.achievements.methodTest') }}
+      </UBadge>
+      <UBadge
+        v-if="isDraft"
+        color="warning"
+        variant="soft"
+        icon="i-lucide-cloud-off"
+      >
+        {{ t('pwa.notSynced') }}
       </UBadge>
       <UBadge variant="subtle" :color="achievementStatusColor(achievement.status)">
         {{ isApproved ? t('pages.achievements.statusApproved') : t('pages.achievements.statusPending') }}

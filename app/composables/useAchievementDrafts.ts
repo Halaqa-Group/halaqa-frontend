@@ -57,6 +57,15 @@ export function useAchievementDrafts() {
     await refresh()
   }
 
+  // Directly set the approve flag (unlike saveDraft, this is NOT sticky, so the
+  // achievements table can toggle an offline draft approved/unapproved).
+  async function setApproval(sessionKey: string, approve: boolean) {
+    const existing = drafts.value.find(d => d.id === sessionKey)
+    if (!existing) return
+    await idbPut(STORE_DRAFTS, { ...existing, approve, updatedAt: Date.now() })
+    await refresh()
+  }
+
   // Send each draft exactly once, in order: create → (approve if flagged) →
   // remove. Runs online, so it uses the normal API client. Guarded so two
   // triggers (online watcher + startup) can't double-send.
@@ -102,5 +111,5 @@ export function useAchievementDrafts() {
     }
   }
 
-  return { drafts, draftCount, flushedAt, failedCount, saveDraft, deleteDraft, flush, refresh }
+  return { drafts, draftCount, flushedAt, failedCount, saveDraft, deleteDraft, setApproval, flush, refresh }
 }

@@ -7,6 +7,7 @@ import type {
 import type { MarkGroups, RecitationMarks, Severity, WordKey } from '~/types/recitation'
 import { SEVERITY_LEVELS } from '~/types/recitation'
 import type { TestSpot } from '~/composables/useTestSpots'
+import type { AchievementDraft } from '~/composables/useAchievementDrafts'
 import { pageCoverage, pagesRecited } from '~/composables/useVerseToPage'
 import { unwrapList } from '~/utils/api/list'
 import { makeRangePredicate } from '~/utils/mushaf'
@@ -360,12 +361,90 @@ export function useAchievements() {
     return ids
   })
 
+  // ── Offline draft rows ──────────────────────────────────────────────────────
+  // Recitations recorded offline live as local drafts until they upload. Surface
+  // them in the table (marked "not synced") so the teacher can edit (reopen the
+  // reader), approve, or delete them before they sync. Draft rows carry a string
+  // id (`draft:<sessionKey>`) so they're trivially distinguished from server rows.
+  const DRAFT_ID_PREFIX = 'draft:'
+  const { drafts: offlineDrafts, deleteDraft: removeOfflineDraft, setApproval: setDraftApproval } = useAchievementDrafts()
+
+  function isDraftRow(a: { id: unknown }): boolean {
+    return typeof a.id === 'string' && (a.id as string).startsWith(DRAFT_ID_PREFIX)
+  }
+  function draftSessionKey(a: { id: unknown }): string {
+    return String(a.id).slice(DRAFT_ID_PREFIX.length)
+  }
+  function draftErrorCounts(dto: CreateAchievementDto) {
+    const errs: PositionError[] = dto.recitation_method === 'test'
+      ? (dto.test_positions ?? []).flatMap((p: AchievementTestPosition) => p.errors ?? [])
+      : (dto.errors ?? [])
+    let mistakes = 0, warnings = 0, harakat = 0
+    for (const e of errs) {
+      if (e.error_type === 'mistake') mistakes++
+      else if (e.error_type === 'warning') warnings++
+      else if (e.error_type === 'harakat') harakat++
+    }
+    return { mistakes, warnings, harakat }
+  }
+  function draftToRow(draft: AchievementDraft): ApiAchievement {
+    const dto = draft.dto
+    const c = draftErrorCounts(dto)
+    return {
+      id: `${DRAFT_ID_PREFIX}${draft.id}`,
+      student_id: dto.student_id,
+      student_name: studentName(dto.student_id),
+      halaqa_id: dto.halaqa_id,
+      date: dto.date,
+      track_type: dto.track_type,
+      completion_method: dto.completion_method ?? 'mushaf',
+      recitation_method: dto.recitation_method ?? 'full',
+      start_surah: dto.start_surah,
+      start_verse: dto.start_verse,
+      end_surah: dto.end_surah,
+      end_verse: dto.end_verse,
+      percentage_score: dto.percentage_score ?? 0,
+      mistakes_count: c.mistakes,
+      warnings_count: c.warnings,
+      harakat_errors_count: c.harakat,
+      status: draft.approve ? 'approved' : 'pending'
+    } as unknown as ApiAchievement
+  }
+  const draftRows = computed(() => offlineDrafts.value.map(draftToRow))
+
+  // Reopen the reader on a draft: no achievement_id (so recite takes the fresh
+  // path), but the exact session (item_id + track + range) so its session key
+  // matches the draft and the reader rehydrates + overwrites it on save.
+  function draftReciteLink(a: ApiAchievement) {
+    const itemId = Number(draftSessionKey(a).split(':')[2])
+    const query: Record<string, string | number> = {
+      student_id: a.student_id,
+      halaqa_id: a.halaqa_id,
+      date: a.date,
+      track: a.track_type,
+      start_surah: a.start_surah,
+      start_verse: a.start_verse,
+      end_surah: a.end_surah,
+      end_verse: a.end_verse
+    }
+    if (Number.isFinite(itemId) && itemId > 0) query.item_id = itemId
+    return { path: '/recite', query }
+  }
+  async function deleteDraftRow(a: ApiAchievement) {
+    await removeOfflineDraft(draftSessionKey(a))
+  }
+  async function setDraftApprovalRow(a: ApiAchievement, approve: boolean) {
+    await setDraftApproval(draftSessionKey(a), approve)
+  }
+
   const filteredAchievements = computed(() => {
     const pend = pendingDeleteIds.value
-    const base = pend.size ? achievements.value.filter(a => !pend.has(a.id)) : achievements.value
+    const server = pend.size ? achievements.value.filter(a => !pend.has(a.id)) : achievements.value
+    // Drafts first so unsynced work is always visible at the top.
+    const combined = [...draftRows.value, ...server]
     const q = filters.search.trim().toLowerCase()
-    if (!q) return base
-    return base.filter(a => studentDisplayName(a).toLowerCase().includes(q))
+    if (!q) return combined
+    return combined.filter(a => studentDisplayName(a).toLowerCase().includes(q))
   })
 
   const hasActiveFilters = computed(() =>
@@ -590,6 +669,12 @@ export function useAchievements() {
     openRecordForPlanItem,
     openEdit,
     openDuplicate,
-    requestDelete
+    requestDelete,
+
+    // Offline draft rows (unsynced achievements shown in the table).
+    isDraftRow,
+    draftReciteLink,
+    deleteDraftRow,
+    setDraftApprovalRow
   }
 }

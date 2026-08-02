@@ -18,9 +18,18 @@ export default defineNuxtConfig({
   app: {
     head: {
       meta: [
+        // viewport-fit=cover is what makes env(safe-area-inset-*) resolve to the
+        // real notch / status-bar / home-indicator sizes on iOS. Without it those
+        // insets are all 0 and the safe-area padding below (and in the bottom nav)
+        // is a silent no-op.
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
         { name: 'theme-color', content: '#a06a1b' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
-        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        // iOS ignores the manifest theme_color for the status bar (that is what
+        // brands it brown on Android). black-translucent lets the web view run
+        // edge-to-edge with white status-bar text, so the brown safe-area strip we
+        // paint in the layout shows through — matching the Android look.
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
         { name: 'apple-mobile-web-app-title', content: 'مدرسة الإتقان' }
       ],
       link: [

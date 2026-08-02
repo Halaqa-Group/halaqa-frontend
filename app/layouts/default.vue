@@ -94,6 +94,13 @@ onMounted(async () => {
 
 <template>
   <UDashboardGroup unit="rem">
+    <!-- iOS standalone runs edge-to-edge (black-translucent status bar), so the
+         area behind the notch/status bar is transparent. Paint it with the brand
+         brown (the manifest theme_color) so it matches the Android status bar.
+         env(safe-area-inset-top) is 0 on Android/desktop, collapsing this to
+         nothing there. -->
+    <div class="ios-safe-top-bar" aria-hidden="true" />
+
     <UDashboardSidebar
       id="default"
       v-model:open="open"
@@ -101,7 +108,7 @@ onMounted(async () => {
       collapsible
       resizable
       :ui="{
-        root: 'bg-sidebar-bg min-w-18',
+        root: 'bg-sidebar-bg min-w-18 pt-[env(safe-area-inset-top)]',
         header: 'px-3',
         body: 'px-3 py-4',
         footer: 'px-3 py-3'
@@ -153,7 +160,7 @@ onMounted(async () => {
 
     <UDashboardPanel id="main" :ui="{ body: 'max-lg:pb-24' }">
       <template #header>
-        <UDashboardNavbar :toggle="false" :ui="{ right: 'gap-3' }">
+        <UDashboardNavbar :toggle="false" :ui="{ root: 'h-auto min-h-(--ui-header-height) pt-[env(safe-area-inset-top)]', right: 'gap-3' }">
           <template #left>
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <UDashboardSidebarCollapse

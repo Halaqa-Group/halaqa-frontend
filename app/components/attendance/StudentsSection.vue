@@ -14,22 +14,12 @@ const { t } = useI18n()
 
 <template>
   <div class="flex flex-col gap-4">
-    <!-- Halaqa scope sits with the roster-wide action, not among the row filters:
-         both answer "which students am I about to mark?". Renders nothing for
-         teachers, who are already scoped to one halaqa from the navbar. -->
-    <div class="flex flex-wrap items-center justify-end gap-3">
-      <HalaqaFilter />
-      <UButton
-        v-if="canMark && hasHalaqa && hasRows"
-        icon="i-lucide-check-check"
-        color="primary"
-        variant="soft"
-        class="shrink-0"
-        @click="$emit('mark-all')"
-      >
-        {{ t('pages.attendance.markAllPresent') }}
-      </UButton>
-    </div>
+    <AttendanceFilterBar
+      :can-mark="canMark"
+      :has-halaqa="hasHalaqa"
+      :has-rows="hasRows"
+      @mark-all="$emit('mark-all')"
+    />
 
     <div
       v-if="!hasHalaqa"
@@ -42,9 +32,6 @@ const { t } = useI18n()
     </div>
 
     <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <AttendanceFilterBar />
-      </template>
       <AttendanceResults />
     </UCard>
   </div>

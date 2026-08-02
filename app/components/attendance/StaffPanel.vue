@@ -111,108 +111,103 @@ function handleMarkAllPresent() {
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex justify-end">
+    <CommonToolbar>
+      <UInput
+        v-model="search"
+        icon="i-lucide-search"
+        :placeholder="t('pages.attendance.searchStaffPlaceholder')"
+        class="flex-1 min-w-40 sm:flex-none sm:w-56"
+      />
+
+      <UPopover v-model:open="calendarOpen">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-lucide-calendar-days"
+          trailing-icon="i-lucide-chevron-down"
+          class="min-w-36 justify-between"
+        >
+          {{ formattedDate }}
+        </UButton>
+        <template #content>
+          <UCalendar
+            :model-value="calendarValue"
+            :max-value="maxCalendarValue"
+            color="primary"
+            class="p-2"
+            @update:model-value="onCalendarPick"
+          />
+        </template>
+      </UPopover>
+
+      <USelect
+        v-model="statusFilter"
+        :items="statusItems"
+        value-key="value"
+        class="flex-1 min-w-32 sm:flex-none sm:w-40"
+      />
+
       <UButton
-        v-if="canEdit && staffRows.length > 0"
-        icon="i-lucide-check-check"
-        color="primary"
-        variant="soft"
-        class="shrink-0"
-        @click="handleMarkAllPresent"
+        v-if="hasActiveFilters"
+        variant="link"
+        color="neutral"
+        icon="i-lucide-x"
+        size="sm"
+        class="px-0"
+        @click="clearFilters"
       >
-        {{ t('pages.attendance.markAllPresent') }}
+        {{ t('pages.attendance.filters.clear') }}
       </UButton>
-    </div>
+
+      <template #actions>
+        <div class="flex items-center gap-1.5 text-xs flex-wrap">
+          <UBadge color="success" variant="subtle">
+            {{ presentCount }} {{ t('pages.attendance.filters.present') }}
+          </UBadge>
+          <UBadge color="warning" variant="subtle">
+            {{ lateCount }} {{ t('pages.attendance.filters.late') }}
+          </UBadge>
+          <UBadge color="error" variant="subtle">
+            {{ absentCount }} {{ t('pages.attendance.filters.absent') }}
+          </UBadge>
+          <UBadge color="info" variant="subtle">
+            {{ excusedCount }} {{ t('pages.attendance.filters.excused') }}
+          </UBadge>
+        </div>
+        <div class="hidden md:flex items-center gap-1 rounded-md border border-default p-0.5">
+          <UButton
+            :variant="viewMode === 'table' ? 'soft' : 'ghost'"
+            color="primary"
+            icon="i-lucide-table-2"
+            size="sm"
+            square
+            :aria-label="t('pages.attendance.view.table')"
+            @click="viewMode = 'table'"
+          />
+          <UButton
+            :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
+            color="primary"
+            icon="i-lucide-layout-grid"
+            size="sm"
+            square
+            :aria-label="t('pages.attendance.gridView')"
+            @click="viewMode = 'grid'"
+          />
+        </div>
+        <UButton
+          v-if="canEdit && staffRows.length > 0"
+          icon="i-lucide-check-check"
+          color="primary"
+          variant="soft"
+          class="shrink-0"
+          @click="handleMarkAllPresent"
+        >
+          {{ t('pages.attendance.markAllPresent') }}
+        </UButton>
+      </template>
+    </CommonToolbar>
 
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
-      <template #header>
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            :placeholder="t('pages.attendance.searchStaffPlaceholder')"
-            class="w-full sm:w-56"
-          />
-
-          <UPopover v-model:open="calendarOpen">
-            <UButton
-              variant="outline"
-              color="neutral"
-              icon="i-lucide-calendar-days"
-              trailing-icon="i-lucide-chevron-down"
-              class="w-full sm:w-auto justify-between"
-            >
-              {{ formattedDate }}
-            </UButton>
-            <template #content>
-              <UCalendar
-                :model-value="calendarValue"
-                :max-value="maxCalendarValue"
-                color="primary"
-                class="p-2"
-                @update:model-value="onCalendarPick"
-              />
-            </template>
-          </UPopover>
-
-          <USelect
-            v-model="statusFilter"
-            :items="statusItems"
-            value-key="value"
-            class="w-full sm:w-40"
-          />
-
-          <UButton
-            v-if="hasActiveFilters"
-            variant="link"
-            color="neutral"
-            icon="i-lucide-x"
-            size="sm"
-            class="px-0"
-            @click="clearFilters"
-          >
-            {{ t('pages.attendance.filters.clear') }}
-          </UButton>
-
-          <div class="lg:ms-auto flex items-center gap-2 flex-wrap">
-            <div class="flex items-center gap-1.5 text-xs flex-wrap">
-              <UBadge color="success" variant="subtle">
-                {{ presentCount }} {{ t('pages.attendance.filters.present') }}
-              </UBadge>
-              <UBadge color="warning" variant="subtle">
-                {{ lateCount }} {{ t('pages.attendance.filters.late') }}
-              </UBadge>
-              <UBadge color="error" variant="subtle">
-                {{ absentCount }} {{ t('pages.attendance.filters.absent') }}
-              </UBadge>
-              <UBadge color="info" variant="subtle">
-                {{ excusedCount }} {{ t('pages.attendance.filters.excused') }}
-              </UBadge>
-            </div>
-            <div class="hidden md:flex items-center gap-1 rounded-md border border-default p-0.5">
-              <UButton
-                :variant="viewMode === 'table' ? 'soft' : 'ghost'"
-                color="primary"
-                icon="i-lucide-table-2"
-                size="sm"
-                square
-                :aria-label="t('pages.attendance.view.table')"
-                @click="viewMode = 'table'"
-              />
-              <UButton
-                :variant="viewMode === 'grid' ? 'soft' : 'ghost'"
-                color="primary"
-                icon="i-lucide-layout-grid"
-                size="sm"
-                square
-                :aria-label="t('pages.attendance.gridView')"
-                @click="viewMode = 'grid'"
-              />
-            </div>
-          </div>
-        </div>
-      </template>
-
       <div v-if="isLoading && staffRows.length === 0" class="flex justify-center py-16">
         <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
       </div>

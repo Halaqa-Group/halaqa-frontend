@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 
+// The halaqa scope and the roster-wide "mark all present" action now share the
+// single toolbar row with the filters, so every attendance control sits on one
+// line under the tabs.
+defineProps<{
+  canMark: boolean
+  hasHalaqa: boolean
+  hasRows: boolean
+}>()
+
+defineEmits<{
+  'mark-all': []
+}>()
+
 const { t, locale } = useI18n()
 const {
   search, selectedDate, statusFilter, viewMode,
@@ -44,12 +57,14 @@ function onCalendarPick(value: unknown) {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+  <CommonToolbar>
+    <HalaqaFilter class="flex-1 min-w-40 sm:flex-none sm:w-48" />
+
     <UInput
       v-model="search"
       icon="i-lucide-search"
       :placeholder="t('pages.attendance.searchPlaceholder')"
-      class="w-full sm:w-56"
+      class="flex-1 min-w-40 sm:flex-none sm:w-56"
     />
 
     <UPopover v-model:open="calendarOpen">
@@ -58,7 +73,7 @@ function onCalendarPick(value: unknown) {
         color="neutral"
         icon="i-lucide-calendar-days"
         trailing-icon="i-lucide-chevron-down"
-        class="w-full sm:w-auto justify-between"
+        class="min-w-36 justify-between"
       >
         {{ formattedDate }}
       </UButton>
@@ -77,7 +92,7 @@ function onCalendarPick(value: unknown) {
       v-model="statusFilter"
       :items="statusItems"
       value-key="value"
-      class="w-full sm:w-40"
+      class="flex-1 min-w-32 sm:flex-none sm:w-40"
     />
 
     <UButton
@@ -92,7 +107,7 @@ function onCalendarPick(value: unknown) {
       {{ t('pages.attendance.filters.clear') }}
     </UButton>
 
-    <div class="lg:ms-auto flex items-center gap-2 flex-wrap">
+    <template #actions>
       <div class="flex items-center gap-1.5 text-xs flex-wrap">
         <UBadge color="success" variant="subtle">
           {{ presentCount }} {{ t('pages.attendance.filters.present') }}
@@ -127,6 +142,17 @@ function onCalendarPick(value: unknown) {
           @click="viewMode = 'grid'"
         />
       </div>
-    </div>
-  </div>
+
+      <UButton
+        v-if="canMark && hasHalaqa && hasRows"
+        icon="i-lucide-check-check"
+        color="primary"
+        variant="soft"
+        class="shrink-0"
+        @click="$emit('mark-all')"
+      >
+        {{ t('pages.attendance.markAllPresent') }}
+      </UButton>
+    </template>
+  </CommonToolbar>
 </template>

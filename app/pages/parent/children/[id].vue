@@ -16,6 +16,8 @@ const { child, achievements, weeklyPlans, attendance, isLoading, error, fetchAll
 
 // Header shows the child's name in place of the generic breadcrumb crumb.
 useSetPageTitle(() => child.value?.name)
+// Back button lives in the header, before the title.
+useSetPageBack('/parent')
 
 const dateFormatter = computed(() =>
   new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
@@ -53,27 +55,12 @@ const tabs = computed<TabsItem[]>(() => [
 
 const activeTab = ref<'overview' | 'achievements' | 'weeklyPlan' | 'attendance' | 'guardians'>('overview')
 
-const backIcon = computed(() =>
-  locale.value === 'ar' ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left'
-)
-
 onMounted(fetchAll)
 watch(childId, fetchAll)
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
-    <UButton
-      to="/parent"
-      variant="ghost"
-      color="neutral"
-      size="sm"
-      :icon="backIcon"
-      class="self-start"
-    >
-      {{ t('pages.parent.child.backToChildren') }}
-    </UButton>
-
     <div v-if="isLoading && !child" class="flex justify-center py-16">
       <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
     </div>

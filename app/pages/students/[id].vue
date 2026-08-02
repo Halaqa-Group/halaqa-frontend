@@ -10,7 +10,7 @@ definePageMeta({
 })
 
 const route = useRoute()
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const apiError = useApiError()
 const { activeRole } = useAuth()
 const { students, fetchStudent } = useStudents()
@@ -24,6 +24,8 @@ const student = computed(() => students.value.find(s => s.id === studentId.value
 
 // Header shows the student's name in place of the generic breadcrumb crumb.
 useSetPageTitle(() => student.value?.name)
+// Back button lives in the header, before the title. Parents came from /parent.
+useSetPageBack(() => (activeRole.value === 'parent' ? '/parent' : '/students'))
 
 const tabs = computed<TabsItem[]>(() => [
   { value: 'overview', label: t('pages.students.viewModal.tabs.overview'), icon: 'i-lucide-layout-dashboard' },
@@ -32,14 +34,6 @@ const tabs = computed<TabsItem[]>(() => [
 ])
 
 const activeTab = ref<'overview' | 'guardians' | 'insights'>('overview')
-
-const backIcon = computed(() =>
-  locale.value === 'ar' ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left'
-)
-
-const backTo = computed(() =>
-  activeRole.value === 'parent' ? '/parent' : '/students'
-)
 
 async function loadStudent() {
   loading.value = true
@@ -72,15 +66,6 @@ watch(studentId, () => {
       <p class="text-status-conflict">
         {{ error }}
       </p>
-      <UButton
-        :to="backTo"
-        variant="soft"
-        color="neutral"
-        :icon="backIcon"
-        class="mt-4"
-      >
-        {{ t('common.back') }}
-      </UButton>
     </div>
 
     <template v-else-if="student">

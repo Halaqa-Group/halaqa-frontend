@@ -7,6 +7,10 @@ interface Crumb { label?: string }
 // previously-mounted page is never shown while the new one is settling in.
 const override = ref<{ path: string, title: string } | null>(null)
 
+// A page-set back target, keyed the same way. When present the header shows a
+// back button before the title instead of the page owning its own in-body one.
+const backTarget = ref<{ path: string, to: string } | null>(null)
+
 /**
  * The current page's title for the app header. Prefers a dynamic override set by
  * the page (entity names, create/edit forms) and otherwise falls back to the
@@ -40,5 +44,32 @@ export function useSetPageTitle(source: MaybeRefOrGetter<string | null | undefin
   })
   onBeforeUnmount(() => {
     if (override.value?.path === route.path) override.value = null
+  })
+}
+
+/**
+ * The back destination the current page registered, or null. The header renders
+ * a back button before the title when this is set.
+ */
+export function usePageBack() {
+  const route = useRoute()
+  const backTo = computed(() =>
+    backTarget.value && backTarget.value.path === route.path ? backTarget.value.to : null
+  )
+  return { backTo }
+}
+
+/**
+ * Register a back destination for the header's back button (detail/edit pages).
+ * Scoped to the current route and dropped on unmount, mirroring useSetPageTitle.
+ */
+export function useSetPageBack(source: MaybeRefOrGetter<string | null | undefined>) {
+  const route = useRoute()
+  watchEffect(() => {
+    const value = toValue(source)
+    backTarget.value = value ? { path: route.path, to: value } : null
+  })
+  onBeforeUnmount(() => {
+    if (backTarget.value?.path === route.path) backTarget.value = null
   })
 }

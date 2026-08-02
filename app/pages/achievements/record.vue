@@ -7,7 +7,7 @@ definePageMeta({
   ]
 })
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { canRecordAchievement: canRecord } = usePermissions()
 const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 const { editing, hasStudents, loadStudents } = useAchievements()
@@ -16,11 +16,11 @@ const isEdit = computed(() => editing.value != null)
 
 // Header title reflects create vs edit (the static breadcrumb only knows "record").
 useSetPageTitle(() => t(isEdit.value ? 'pages.achievements.editTitle' : 'pages.achievements.recordTitle'))
+// Back button lives in the header, before the title.
+useSetPageBack('/achievements')
 
 const formRef = useTemplateRef<{ saving: Ref<boolean>, setContinueToRecite: (v: boolean) => void } | null>('formRef')
 const formSaving = computed(() => formRef.value?.saving.value ?? false)
-
-const backIcon = computed(() => locale.value === 'ar' ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left')
 
 function goBack() {
   navigateTo('/achievements')
@@ -54,18 +54,6 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6 max-w-2xl mx-auto w-full">
-    <!-- Header -->
-    <div class="flex items-center gap-3">
-      <UButton
-        :icon="backIcon"
-        variant="ghost"
-        color="neutral"
-        square
-        :aria-label="t('common.back')"
-        @click="goBack"
-      />
-    </div>
-
     <!-- No halaqa: unscoped roles choose one here, scoped roles were redirected -->
     <div
       v-if="!selectedHalaqaId"

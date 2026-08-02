@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import type { NavigationMenuItem } from '@nuxt/ui'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { activeRole } = useAuth()
 const { isParent, canViewHalaqat, canManageUsers, canViewCalendar } = usePermissions()
 const { initializeHalaqa, isHalaqaScoped } = useGlobalHalaqa()
 const route = useRoute()
 const localePath = useLocalePath()
 const { title: pageTitle } = usePageTitle()
+const { backTo: pageBackTo } = usePageBack()
+
+// Points "back" the reading direction: right in RTL (Arabic), left in LTR.
+const backIcon = computed(() => (locale.value === 'ar' ? 'i-lucide-arrow-right' : 'i-lucide-arrow-left'))
 
 const open = ref(false)
 const isCollapsed = ref(false)
@@ -166,6 +170,16 @@ onMounted(async () => {
               <UDashboardSidebarCollapse
                 class="max-lg:hidden"
                 :icon="isCollapsed ? 'i-lucide-panel-left-close' : 'i-lucide-panel-left-open'"
+              />
+              <UButton
+                v-if="pageBackTo"
+                :to="pageBackTo"
+                :icon="backIcon"
+                variant="ghost"
+                color="neutral"
+                square
+                :aria-label="t('common.back')"
+                class="shrink-0 -ms-1"
               />
               <h1 v-if="pageTitle" class="text-base sm:text-lg font-bold truncate">
                 {{ pageTitle }}

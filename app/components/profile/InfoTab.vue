@@ -97,6 +97,26 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     </template>
 
     <UForm :schema="schema" :state="state" class="space-y-5" @submit="onSubmit">
+      <UAlert
+        v-if="user?.email && !isEmailVerified"
+        color="warning"
+        variant="soft"
+        icon="i-lucide-badge-alert"
+        :title="$t('pages.profile.email.unverifiedTitle')"
+        :description="$t('pages.profile.email.unverifiedDescription')"
+      >
+        <template #actions>
+          <UButton
+            color="warning"
+            size="sm"
+            :label="resendLabel"
+            :loading="sending"
+            :disabled="cooldown > 0"
+            @click="resend"
+          />
+        </template>
+      </UAlert>
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <UFormField
           v-for="field in NAME_PART_FIELDS"
@@ -118,26 +138,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
           </span>
         </template>
       </UFormField>
-
-      <UAlert
-        v-if="user?.email && !isEmailVerified"
-        color="warning"
-        variant="soft"
-        icon="i-lucide-badge-alert"
-        :title="$t('pages.profile.email.unverifiedTitle')"
-        :description="$t('pages.profile.email.unverifiedDescription')"
-      >
-        <template #actions>
-          <UButton
-            color="warning"
-            size="sm"
-            :label="resendLabel"
-            :loading="sending"
-            :disabled="cooldown > 0"
-            @click="resend"
-          />
-        </template>
-      </UAlert>
 
       <UFormField :label="$t('label.phone')" name="phone">
         <UInput v-model="state.phone" dir="ltr" placeholder="+970599123456" />

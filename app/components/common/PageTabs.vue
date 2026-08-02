@@ -32,7 +32,11 @@ const listClass = [
 const mergedUi = computed(() => {
   const passed = props.ui ?? {}
   const list = [passed.list, listClass].filter(Boolean).join(' ')
-  return { ...passed, list }
+  // Keep each tab at its natural width and let the bar scroll horizontally
+  // instead of squeezing/truncating labels when they don't all fit.
+  const trigger = [passed.trigger, 'shrink-0'].filter(Boolean).join(' ')
+  const label = [passed.label, 'whitespace-nowrap'].filter(Boolean).join(' ')
+  return { ...passed, list, trigger, label }
 })
 
 const wrapperClass = computed(() => (props.flushTop ? '-mt-4 sm:-mt-6' : undefined))

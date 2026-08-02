@@ -41,6 +41,12 @@ const sortItems = computed<DropdownMenuItem[][]>(() => [[
 ]])
 
 const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
+
+const filtersOpen = ref(false)
+const activeFilterCount = computed(() => (filterStatus.value !== null ? 1 : 0))
+function clearFilters() {
+  filterStatus.value = null
+}
 </script>
 
 <template>
@@ -49,15 +55,40 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
       v-model="searchQuery"
       icon="i-lucide-search"
       :placeholder="t('pages.students.searchByName')"
-      class="w-full sm:flex-1 sm:max-w-xs"
+      class="flex-1 min-w-40 sm:max-w-xs"
     />
-    <HalaqaFilter class="w-[calc(50%-0.25rem)] sm:w-48" />
-    <USelect
-      v-model="filterStatus"
-      :items="statusFilters"
-      value-key="value"
-      class="w-[calc(50%-0.25rem)] sm:w-40"
-    />
+    <UPopover v-model:open="filtersOpen">
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-list-filter"
+        :aria-label="t('common.filters')"
+      >
+        <span class="hidden sm:inline">{{ t('common.filters') }}</span>
+        <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
+          {{ activeFilterCount }}
+        </UBadge>
+      </UButton>
+      <template #content>
+        <div class="p-3 w-64 space-y-3">
+          <UFormField :label="t('common.status')">
+            <USelect v-model="filterStatus" :items="statusFilters" value-key="value" class="w-full" />
+          </UFormField>
+          <UButton
+            v-if="activeFilterCount"
+            block
+            variant="soft"
+            color="neutral"
+            icon="i-lucide-x"
+            size="sm"
+            @click="clearFilters"
+          >
+            {{ t('common.clearFilters') }}
+          </UButton>
+        </div>
+      </template>
+    </UPopover>
+    <HalaqaFilter class="w-full sm:w-48" />
     <UDropdownMenu
       :items="sortItems"
       :content="{ align: 'end', collisionPadding: 12 }"

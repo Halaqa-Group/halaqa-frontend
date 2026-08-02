@@ -56,11 +56,9 @@ const roleLabels = computed(() => (user.value?.roles ?? []).map(r => t(`roles.${
 
     <CommonPageTabs v-model="tab" :items="tabs" variant="link" class="w-full">
       <template #content="{ item }">
-        <div class="mt-4">
-          <ProfileInfoTab v-if="item.value === 'profile'" />
-          <ProfilePasswordTab v-else-if="item.value === 'security'" />
-          <ProfileSessionsTab v-else-if="item.value === 'sessions'" />
-        </div>
+        <ProfileInfoTab v-if="item.value === 'profile'" />
+        <ProfilePasswordTab v-else-if="item.value === 'security'" />
+        <ProfileSessionsTab v-else-if="item.value === 'sessions'" />
       </template>
     </CommonPageTabs>
   </div>

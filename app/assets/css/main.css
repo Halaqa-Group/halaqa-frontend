@@ -248,6 +248,18 @@
   overscroll-behavior-x: contain;
 }
 
+/* A horizontal swipe that lands on an <img> (e.g. the avatar column in the
+   achievements table) can start an image drag or a long-press callout instead
+   of scrolling — that's the intermittent freeze on the wider tables. The
+   halaqat table never hits it because it has no imagery. Keep pictures inside
+   the scrollers inert to drag/callout so the swipe always reaches the scroller. */
+.overflow-x-auto img,
+.overflow-x-scroll img {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
 /* Hide scrollbar while keeping scroll functionality */
 * {
   scrollbar-width: none;

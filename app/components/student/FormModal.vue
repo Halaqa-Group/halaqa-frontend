@@ -241,11 +241,6 @@ function setPrimary(idx: number) {
 function flashWarnings() {
   const w = api.lastWarnings.value
   if (!w.length) return
-  const translated = w.map((key) => {
-    const i18nKey = `pages.students.warnings.${key}`
-    const localized = t(i18nKey)
-    return localized === i18nKey ? key : localized
-  })
   toast.add({
     title: t('pages.students.warnings.title'),
     color: 'warning',
@@ -386,7 +381,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
     flashWarnings()
 
     const newStudent = created.data
-    const { failed, total } = await enrollIntoHalaqat(newStudent.id)
+    const { failed } = await enrollIntoHalaqat(newStudent.id)
     if (failed > 0) {
       toast.add({
         title: t('pages.students.addModal.addedTitle'),

@@ -118,7 +118,23 @@ function onKey(e: KeyboardEvent) {
   selectIndex(Math.max(0, Math.min(last, step(activeIndex.value, last))))
 }
 
-onMounted(() => scrollToValue('auto'))
+// A wheel mounted while hidden (a collapsed mobile picker, a closed drawer) has
+// no height, so scrollTo is a no-op and the column would open scrolled to the top
+// with the selected row rendered far below the viewport — looking empty until you
+// nudge it. Re-anchor the moment it gains height so it opens already centred.
+let resizeObs: ResizeObserver | undefined
+onMounted(() => {
+  scrollToValue('auto')
+  const el = scroller.value
+  if (!el || typeof ResizeObserver === 'undefined') return
+  let lastHeight = el.clientHeight
+  resizeObs = new ResizeObserver(() => {
+    const h = el.clientHeight
+    if (h > 0 && lastHeight === 0) scrollToValue('auto')
+    lastHeight = h
+  })
+  resizeObs.observe(el)
+})
 
 // Follow outside changes (a paste, a surah change resetting the verse) without
 // fighting our own commits — the guard skips when we're already parked there.
@@ -132,6 +148,7 @@ watch(() => props.items.length, () => nextTick(() => scrollToValue('auto')))
 onBeforeUnmount(() => {
   if (raf) cancelAnimationFrame(raf)
   if (settleTimer) clearTimeout(settleTimer)
+  resizeObs?.disconnect()
 })
 </script>
 

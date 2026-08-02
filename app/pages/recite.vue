@@ -1150,7 +1150,6 @@ async function runSync() {
       const err = e as { data?: { message?: string }, message?: string }
       toast.add({
         title: 'تعذّر الحفظ التلقائي',
-        description: apiError.format(err, err.message || 'سيُعاد المحاولة تلقائيًا — لا تغلق الصفحة.'),
         color: 'warning',
         icon: 'i-lucide-cloud-off'
       })
@@ -1227,7 +1226,7 @@ async function saveSessionOnly(item: ApiWeeklyPlanItem, sid: number, hid: number
     lastSyncedSignature.value = attempted
     syncStatus.value = 'offline'
     toast.add({
-      description: 'أنت غير متصل — سيُحفظ التلاوة تلقائيًا عند عودة الاتصال.',
+      title: 'أنت غير متصل — سيُحفظ التلاوة تلقائيًا عند عودة الاتصال.',
       color: 'info'
     })
     return

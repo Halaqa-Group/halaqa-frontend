@@ -2,7 +2,9 @@
 import { CalendarDate } from '@internationalized/date'
 
 const { t, locale } = useI18n()
-const { selectedDate, filters, viewMode, hasActiveFilters, clearFilters } = useAchievements()
+const { canRecordAchievement: canRecord } = usePermissions()
+const { hasHalaqa } = useGlobalHalaqa()
+const { selectedDate, filters, viewMode, hasActiveFilters, clearFilters, openRecord } = useAchievements()
 
 const calendarOpen = ref(false)
 const filtersOpen = ref(false)
@@ -58,7 +60,7 @@ function shiftDay(delta: number) {
 </script>
 
 <template>
-  <div class="flex flex-wrap items-center gap-2">
+  <CommonToolbar>
     <!-- Search (primary) -->
     <UInput
       v-model="filters.search"
@@ -107,8 +109,8 @@ function shiftDay(delta: number) {
       />
     </div>
 
-    <!-- Right cluster: filters popover + view toggle -->
-    <div class="ms-auto flex items-center gap-2">
+    <!-- Right cluster: filters popover + view toggle + record -->
+    <template #actions>
       <UPopover v-model:open="filtersOpen">
         <UButton
           variant="outline"

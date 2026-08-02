@@ -139,7 +139,9 @@ export default defineAppConfig({
         title: 'text-xs',
         description: 'text-xs',
         icon: 'size-4',
-        close: 'p-0'
+        // Hide the dismiss (X) on phones — toasts auto-dismiss and the X crowds the
+        // compact mobile layout; it stays available from the sm breakpoint up.
+        close: 'p-0 max-sm:hidden'
       }
     },
 

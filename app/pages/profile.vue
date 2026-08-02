@@ -25,7 +25,7 @@ const roleLabels = computed(() => (user.value?.roles ?? []).map(r => t(`roles.${
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto w-full px-4 py-6 space-y-6">
+  <div class="flex flex-col gap-6">
     <div class="flex items-center gap-4 p-4 rounded-2xl bg-elevated">
       <UAvatar v-bind="avatar" size="xl" />
       <div>
@@ -54,12 +54,14 @@ const roleLabels = computed(() => (user.value?.roles ?? []).map(r => t(`roles.${
       </div>
     </div>
 
-    <UTabs v-model="tab" :items="tabs" variant="link" class="w-full">
+    <CommonPageTabs v-model="tab" :items="tabs" variant="link" class="w-full">
       <template #content="{ item }">
-        <ProfileInfoTab v-if="item.value === 'profile'" />
-        <ProfilePasswordTab v-else-if="item.value === 'security'" />
-        <ProfileSessionsTab v-else-if="item.value === 'sessions'" />
+        <div class="mt-4">
+          <ProfileInfoTab v-if="item.value === 'profile'" />
+          <ProfilePasswordTab v-else-if="item.value === 'security'" />
+          <ProfileSessionsTab v-else-if="item.value === 'sessions'" />
+        </div>
       </template>
-    </UTabs>
+    </CommonPageTabs>
   </div>
 </template>

@@ -109,11 +109,11 @@ async function submitSub(event: FormSubmitEvent<SubSchema>) {
       acting_ends_at: event.data.acting_ends_at,
       notes: event.data.notes || undefined
     })
-    toast.add({ title: t('pages.halaqat.acting.toastSubstituted'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.acting.toastSubstituted'), color: 'success' })
     subOpen.value = false
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     subSaving.value = false
   }
@@ -139,11 +139,11 @@ async function submitExt(event: FormSubmitEvent<ExtSchema>) {
   extSaving.value = true
   try {
     await extend(props.halaqaId, { acting_ends_at: event.data.acting_ends_at })
-    toast.add({ title: t('pages.halaqat.acting.toastExtended'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.acting.toastExtended'), color: 'success' })
     extOpen.value = false
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     extSaving.value = false
   }
@@ -152,10 +152,10 @@ async function submitExt(event: FormSubmitEvent<ExtSchema>) {
 async function endNow() {
   try {
     await endActing(props.halaqaId)
-    toast.add({ title: t('pages.halaqat.acting.toastEnded'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.acting.toastEnded'), color: 'success' })
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 </script>

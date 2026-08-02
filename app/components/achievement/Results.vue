@@ -57,17 +57,17 @@ function totalErrors(a: ApiAchievement) {
 async function onApprove(a: ApiAchievement) {
   try {
     await approveAchievement(a.id)
-    toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
+    toast.add({ description: t('pages.achievements.approvedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: apiError.format(e, t('pages.achievements.approveErrorTitle')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.achievements.approveErrorTitle')), color: 'error' })
   }
 }
 async function onUnapprove(a: ApiAchievement) {
   try {
     await unapproveAchievement(a.id)
-    toast.add({ title: t('pages.achievements.unapprovedToast'), color: 'success' })
+    toast.add({ description: t('pages.achievements.unapprovedToast'), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: apiError.format(e, t('pages.achievements.unapproveErrorTitle')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.achievements.unapproveErrorTitle')), color: 'error' })
   }
 }
 

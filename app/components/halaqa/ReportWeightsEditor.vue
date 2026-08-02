@@ -83,10 +83,10 @@ async function save() {
     const saved = updated.report_weights ?? payload
     baseline.value = { ...saved }
     apply(saved)
-    toast.add({ title: t('pages.halaqat.toastUpdated'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.toastUpdated'), color: 'success' })
     emit('saved', saved)
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     saving.value = false
   }

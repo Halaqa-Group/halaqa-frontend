@@ -58,10 +58,10 @@ async function approve(a: ApiAchievement) {
   approvingId.value = a.id
   try {
     await api<ApiAchievement>(`/achievements/${a.id}/approve`, { method: 'POST' })
-    toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
+    toast.add({ description: t('pages.achievements.approvedToast'), color: 'success' })
     await load()
   } catch (e: any) {
-    toast.add({ title: apiError.format(e, t('pages.achievements.approveErrorTitle')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.achievements.approveErrorTitle')), color: 'error' })
   } finally {
     approvingId.value = null
   }

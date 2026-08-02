@@ -62,11 +62,11 @@ async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
   assignSaving.value = true
   try {
     await assignSupervisor(props.halaqaId, { supervisor_user_id: event.data.supervisor_user_id })
-    toast.add({ title: t('pages.halaqat.supervisors.toastAssigned'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.supervisors.toastAssigned'), color: 'success' })
     assignOpen.value = false
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     assignSaving.value = false
   }
@@ -75,10 +75,10 @@ async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
 async function remove(s: ApiSupervisorSummary) {
   try {
     await unassignSupervisor(props.halaqaId, s.user_id)
-    toast.add({ title: t('pages.halaqat.supervisors.toastRemoved'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.supervisors.toastRemoved'), color: 'success' })
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 </script>

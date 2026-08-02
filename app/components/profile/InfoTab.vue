@@ -74,7 +74,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       phone: event.data.phone || null,
       photo_url: event.data.photo_url || null
     })
-    toast.add({ title: t('pages.profile.profileCard.savedToast'), color: 'success' })
+    toast.add({ description: t('pages.profile.profileCard.savedToast'), color: 'success' })
   } catch (e: unknown) {
     error.value = apiError.format(e, t('auth.genericError'))
   } finally {

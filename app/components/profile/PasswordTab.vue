@@ -33,7 +33,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   isLoading.value = true
   try {
     await changePassword(event.data)
-    toast.add({ title: t('pages.profile.securityCard.savedToast'), color: 'success' })
+    toast.add({ description: t('pages.profile.securityCard.savedToast'), color: 'success' })
     state.currentPassword = ''
     state.password = ''
     state.password_confirmation = ''

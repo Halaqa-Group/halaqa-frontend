@@ -53,7 +53,7 @@ async function loadDetail() {
   try {
     halaqa.value = await getHalaqa(halaqaId.value)
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
     halaqa.value = null
   } finally {
     loading.value = false
@@ -116,10 +116,10 @@ async function onLifecycleConfirm() {
     if (lifecycleAction.value === 'archive') await archiveHalaqa(halaqa.value.id)
     else if (lifecycleAction.value === 'complete') await completeHalaqa(halaqa.value.id)
     else if (lifecycleAction.value === 'restore') await restoreHalaqa(halaqa.value.id)
-    toast.add({ title: lifecycleCopy.value.toast, color: 'success' })
+    toast.add({ description: lifecycleCopy.value.toast, color: 'success' })
     await loadDetail()
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 

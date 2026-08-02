@@ -116,11 +116,11 @@ async function submitAssign(event: FormSubmitEvent<AssignSchema>) {
       start_date: event.data.start_date,
       notes: event.data.notes || undefined
     })
-    toast.add({ title: t('pages.halaqat.teachers.toastAssigned'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.teachers.toastAssigned'), color: 'success' })
     assignOpen.value = false
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     assignSaving.value = false
   }
@@ -174,12 +174,12 @@ async function submitEnd(event: FormSubmitEvent<EndSchema>) {
       end_reason: event.data.end_reason,
       notes: event.data.notes || undefined
     })
-    toast.add({ title: t('pages.halaqat.teachers.toastEnded'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.teachers.toastEnded'), color: 'success' })
     endOpen.value = false
     endTarget.value = null
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     endSaving.value = false
   }
@@ -230,12 +230,12 @@ async function submitActing(event: FormSubmitEvent<ActingSchema>) {
       acting_ends_at: event.data.acting_ends_at,
       notes: event.data.notes || undefined
     })
-    toast.add({ title: t('pages.halaqat.teachers.toastActingSet'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.teachers.toastActingSet'), color: 'success' })
     actingOpen.value = false
     actingTarget.value = null
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   } finally {
     actingSaving.value = false
   }
@@ -244,10 +244,10 @@ async function submitActing(event: FormSubmitEvent<ActingSchema>) {
 async function changeRole(assignment: ApiTeacherAssignment, role: 'main' | 'assistant') {
   try {
     await updateAssignment(props.halaqaId, assignment.id, { role })
-    toast.add({ title: t('pages.halaqat.teachers.toastUpdated'), color: 'success' })
+    toast.add({ description: t('pages.halaqat.teachers.toastUpdated'), color: 'success' })
     emit('changed')
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
   }
 }
 

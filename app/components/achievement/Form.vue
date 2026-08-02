@@ -534,7 +534,7 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
   try {
     if (isEdit.value && editing.value) {
       await updateAchievement(editing.value.id, dto)
-      toast.add({ title: t('pages.achievements.updatedToast'), color: 'success' })
+      toast.add({ description: t('pages.achievements.updatedToast'), color: 'success' })
     } else if (continueToRecite.value) {
       // "Save & recite": continue into the mushaf so the teacher can mark the
       // recitation. The reader owns the session — and offline drafting — so we
@@ -568,16 +568,16 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
         // Recording and approving are the same halaqa-scope check, so if the
         // create succeeded this cannot 403.
         await approveAchievement(created.id)
-        toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
+        toast.add({ description: t('pages.achievements.approvedToast'), color: 'success' })
       } else {
-        toast.add({ title: t('pages.achievements.savedOfflineToast'), color: 'success', icon: 'i-lucide-cloud-off' })
+        toast.add({ description: t('pages.achievements.savedOfflineToast'), color: 'success', icon: 'i-lucide-cloud-off' })
       }
     }
     emit('saved')
   } catch (e: any) {
     continueToRecite.value = false
     toast.add({
-      title: apiError.format(e, isEdit.value ? t('pages.achievements.updateErrorTitle') : t('pages.achievements.saveErrorTitle')),
+      description: apiError.format(e, isEdit.value ? t('pages.achievements.updateErrorTitle') : t('pages.achievements.saveErrorTitle')),
       color: 'error'
     })
   }

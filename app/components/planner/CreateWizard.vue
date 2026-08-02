@@ -253,7 +253,7 @@ async function submit() {
       color: res.failed > 0 ? 'warning' : 'success'
     })
   } catch (e: any) {
-    toast.add({ title: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.planner.saveErrorTitle')), color: 'error' })
   }
 }
 </script>

@@ -133,10 +133,10 @@ async function submitLink(_event: FormSubmitEvent<LinkSchema>) {
     await reloadGuardians()
     refetchStudent(props.student.id).catch(() => { })
     linkOpen.value = false
-    toast.add({ title: t('pages.students.guardians.toasts.linked'), color: 'success' })
+    toast.add({ description: t('pages.students.guardians.toasts.linked'), color: 'success' })
   } catch (e: any) {
     const message = e?.message && !e?.response ? e.message : mapLinkError(e)
-    toast.add({ title: message, color: 'error' })
+    toast.add({ description: message, color: 'error' })
   } finally {
     linkSaving.value = false
   }
@@ -147,9 +147,9 @@ async function patchGuardian(g: ApiGuardian, body: Record<string, any>, successK
     await updateGuardian(props.student.id, g.user.id, body)
     await reloadGuardians()
     refetchStudent(props.student.id).catch(() => { })
-    toast.add({ title: t(successKey), color: 'success' })
+    toast.add({ description: t(successKey), color: 'success' })
   } catch (e: any) {
-    toast.add({ title: apiError.format(e, t('pages.students.guardians.errors.updateFailed')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.students.guardians.errors.updateFailed')), color: 'error' })
   }
 }
 
@@ -202,11 +202,11 @@ async function confirmUnlink() {
     await unlinkGuardian(props.student.id, g.user.id)
     await reloadGuardians()
     refetchStudent(props.student.id).catch(() => { })
-    toast.add({ title: t('pages.students.guardians.toasts.unlinked'), color: 'success' })
+    toast.add({ description: t('pages.students.guardians.toasts.unlinked'), color: 'success' })
     unlinkOpen.value = false
     pendingUnlink.value = null
   } catch (e: any) {
-    toast.add({ title: apiError.format(e, t('pages.students.guardians.errors.unlinkFailed')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('pages.students.guardians.errors.unlinkFailed')), color: 'error' })
   } finally {
     unlinkSaving.value = false
   }

@@ -131,10 +131,10 @@ async function onDeleteConfirm() {
   deleteTarget.value = null
   try {
     await usersApi.softDelete(target.id)
-    toast.add({ title: t('pages.users.deleteConfirm.deletedToast'), color: 'success' })
+    toast.add({ description: t('pages.users.deleteConfirm.deletedToast'), color: 'success' })
     await load()
   } catch (e: unknown) {
-    toast.add({ title: apiError.format(e, t('auth.genericError')), color: 'error' })
+    toast.add({ description: apiError.format(e, t('auth.genericError')), color: 'error' })
   }
 }
 

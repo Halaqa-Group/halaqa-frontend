@@ -166,6 +166,15 @@ function shiftDay(delta: number) {
           @click="viewMode = 'grid'"
         />
       </div>
-    </div>
-  </div>
+
+      <UButton
+        v-if="canRecord && hasHalaqa"
+        icon="i-lucide-plus"
+        class="shrink-0"
+        @click="openRecord"
+      >
+        {{ t('pages.achievements.recordButton') }}
+      </UButton>
+    </template>
+  </CommonToolbar>
 </template>

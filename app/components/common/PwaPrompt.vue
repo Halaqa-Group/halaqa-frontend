@@ -26,7 +26,6 @@ watch(
     if (!needs) return
     toast.add({
       title: t('pwa.updateAvailable'),
-      description: t('pwa.updateDescription'),
       icon: 'i-lucide-refresh-cw',
       color: 'primary',
       duration: 0,

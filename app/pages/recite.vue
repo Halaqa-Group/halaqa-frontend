@@ -749,7 +749,6 @@ function reportFinishError(e: unknown, title: string) {
   const err = e as { data?: { message?: string }, message?: string }
   toast.add({
     title,
-    description: apiError.format(err, err.message || 'حدث خطأ غير معروف'),
     color: 'error',
     icon: 'i-lucide-alert-circle'
   })
@@ -828,7 +827,6 @@ function onUnapproveRequest() {
           const err = e as { data?: { message?: string }, message?: string }
           toast.add({
             title: 'خطأ في إلغاء الاعتماد',
-            description: apiError.format(err, err.message || 'حدث خطأ غير معروف'),
             color: 'error',
             icon: 'i-lucide-alert-circle'
           })

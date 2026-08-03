@@ -21,13 +21,12 @@ export default defineNuxtPlugin(() => {
   navigator.serviceWorker.ready
     .then((reg) => {
       registration = reg
-      // The big win on iOS: re-check every time the app comes back to the
-      // foreground (the "reopen from the home screen" case).
+      // Only re-check on a genuine return to the app (backgrounded → foreground)
+      // and on a slow timer. Deliberately NOT on initial load / window focus: a
+      // check right after a reload can re-detect a (wrongly) "new" SW and feed an
+      // update loop if the deployment serves an inconsistent sw.js.
       document.addEventListener('visibilitychange', check)
-      window.addEventListener('focus', check)
-      // And periodically while it stays open.
       setInterval(check, 30 * 60 * 1000)
-      check()
     })
     .catch(() => {})
 })

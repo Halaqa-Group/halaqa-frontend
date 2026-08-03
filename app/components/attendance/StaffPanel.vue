@@ -113,7 +113,7 @@ function handleMarkAllPresent() {
 <template>
   <div class="flex flex-col gap-4">
     <CommonToolbar>
-      <div class="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div class="flex items-center gap-1.5 overflow-x-auto -mx-4 w-[calc(100%+2rem)] px-4 sm:mx-0 sm:w-auto sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <UButton
           v-for="chip in statusChips"
           :key="chip.value"

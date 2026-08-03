@@ -102,8 +102,8 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
       />
     </div>
 
-    <div v-else class="overflow-x-auto">
-      <UTable :data="filteredItems" :columns="columns" :loading="isLoading" class="min-w-[700px]">
+    <div v-else>
+      <UTable :data="filteredItems" :columns="columns" :loading="isLoading" :ui="{ base: 'w-full min-w-[700px]' }">
         <template #day-cell="{ row }">
           <span class="font-medium">{{ dayLabel(row.original) }}</span>
         </template>

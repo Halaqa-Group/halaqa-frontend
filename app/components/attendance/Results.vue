@@ -88,8 +88,8 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
         />
       </div>
 
-      <div v-else class="overflow-x-auto">
-        <UTable :data="filteredRows" :columns="columns" :loading="isLoading" class="min-w-[640px]">
+      <div v-else>
+        <UTable :data="filteredRows" :columns="columns" :loading="isLoading" :ui="{ base: 'w-full min-w-[640px]' }">
           <template #name-cell="{ row }">
             <div class="flex items-center gap-3 min-w-0">
               <img

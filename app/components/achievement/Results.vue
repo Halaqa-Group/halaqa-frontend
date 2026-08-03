@@ -217,8 +217,8 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
       />
     </div>
 
-    <div v-else class="overflow-x-auto">
-      <UTable :data="filteredAchievements" :columns="columns" :loading="isLoading" class="min-w-[880px]">
+    <div v-else>
+      <UTable :data="filteredAchievements" :columns="columns" :loading="isLoading" :ui="{ base: 'w-full min-w-[880px]' }">
         <template #student_id-cell="{ row }">
           <div class="flex items-center gap-3 min-w-0">
             <img

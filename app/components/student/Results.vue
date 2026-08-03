@@ -144,12 +144,12 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
       <StudentCard v-for="student in sortedStudents" :key="student.id" :student="student" />
     </div>
 
-    <div v-else class="overflow-x-auto">
+    <div v-else>
       <UTable
         :data="sortedStudents"
         :columns="columns"
         :loading="isLoading"
-        class="min-w-[800px]"
+        :ui="{ base: 'w-full min-w-[800px]' }"
       >
         <template #name-cell="{ row }">
           <button

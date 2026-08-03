@@ -280,13 +280,13 @@ onMounted(() => loadList(1))
     </CommonToolbar>
 
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
-      <div class="overflow-x-auto">
+      <div>
         <UTable
           :data="halaqat"
           :columns="columns"
           :loading="isLoading"
           :empty-state="{ icon: 'i-lucide-circle-slash-2', label: t('pages.halaqat.noResults') }"
-          class="min-w-[800px]"
+          :ui="{ base: 'w-full min-w-[800px]' }"
         >
           <template #name-cell="{ row }">
             <NuxtLink

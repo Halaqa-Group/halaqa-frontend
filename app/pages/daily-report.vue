@@ -301,14 +301,13 @@ async function onRecalculate(reason: string) {
       </div>
 
       <!-- Report table -->
-      <div v-else-if="report" class="overflow-x-auto">
+      <div v-else-if="report">
         <UTable
           :data="report.students"
           :columns="columns"
           :loading="isLoading"
           :on-select="onRowSelect"
-          class="min-w-[800px]"
-          :ui="{ tr: 'cursor-pointer' }"
+          :ui="{ base: 'w-full min-w-[800px]', tr: 'cursor-pointer' }"
         >
         <template #student_name-cell="{ row }">
           <div class="flex items-center gap-2 min-w-0">

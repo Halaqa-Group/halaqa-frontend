@@ -264,8 +264,8 @@ function handleMarkAllPresent() {
           </div>
         </div>
 
-        <div v-if="viewMode === 'table'" class="hidden md:block overflow-x-auto">
-          <UTable :data="filteredRows" :columns="columns" :loading="isLoading" class="min-w-[640px]">
+        <div v-if="viewMode === 'table'" class="hidden md:block">
+          <UTable :data="filteredRows" :columns="columns" :loading="isLoading" :ui="{ base: 'w-full min-w-[640px]' }">
             <template #name-cell="{ row }">
               <div class="flex items-center gap-3 min-w-0">
                 <img

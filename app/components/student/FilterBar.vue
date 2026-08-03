@@ -48,14 +48,14 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
 
 <template>
   <CommonToolbar>
-    <div class="flex items-center gap-1.5 flex-wrap w-full sm:w-auto">
+    <div class="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <UButton
         v-for="chip in statusChips"
         :key="String(chip.value)"
         size="sm"
         :color="chip.color"
         :variant="filterStatus === chip.value ? 'solid' : 'soft'"
-        class="rounded-full"
+        class="rounded-full shrink-0"
         @click="filterStatus = chip.value"
       >
         {{ chip.label }}

@@ -113,14 +113,14 @@ function handleMarkAllPresent() {
 <template>
   <div class="flex flex-col gap-4">
     <CommonToolbar>
-      <div class="flex items-center gap-1.5 flex-wrap w-full sm:w-auto">
+      <div class="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <UButton
           v-for="chip in statusChips"
           :key="chip.value"
           size="sm"
           :color="chip.color"
           :variant="statusFilter === chip.value ? 'solid' : 'soft'"
-          class="rounded-full"
+          class="rounded-full shrink-0"
           @click="statusFilter = chip.value"
         >
           {{ chip.label }}

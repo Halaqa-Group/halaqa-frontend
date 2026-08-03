@@ -191,7 +191,7 @@ async function confirmHolidayDelete() {
         </div>
       </template>
 
-      <UTable :data="schedules" :columns="scheduleColumns" :loading="isLoadingSchedules">
+      <UTable :data="schedules" :columns="scheduleColumns" :loading="isLoadingSchedules" :ui="{ base: 'w-full min-w-[640px]' }">
         <template #day_of_week-cell="{ row }">
           <UBadge variant="soft" color="primary">
             {{ dayLabel(row.original.day_of_week) }}
@@ -244,7 +244,7 @@ async function confirmHolidayDelete() {
         </div>
       </template>
 
-      <UTable :data="holidays" :columns="holidayColumns" :loading="isLoadingHolidays">
+      <UTable :data="holidays" :columns="holidayColumns" :loading="isLoadingHolidays" :ui="{ base: 'w-full min-w-[480px]' }">
         <template #holiday_date-cell="{ row }">
           <UBadge variant="soft" color="error">
             {{ formatDate(row.original.holiday_date) }}

@@ -250,6 +250,7 @@ function statusColor(s: UserStatus) {
           :data="data"
           :columns="columns"
           :loading="isLoading"
+          :ui="{ base: 'w-full min-w-[720px]' }"
         >
           <template #name-cell="{ row }">
             <div class="min-w-0">

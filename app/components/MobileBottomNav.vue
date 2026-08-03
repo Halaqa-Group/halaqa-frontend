@@ -37,7 +37,7 @@ watch(() => route.fullPath, () => {
   >
     <div
       class="pointer-events-auto mx-3 rounded-2xl border border-sidebar-border bg-sidebar-bg/95 shadow-lg backdrop-blur-md"
-      style="margin-bottom: max(0.75rem, env(safe-area-inset-bottom))"
+      style="margin-bottom: max(0.75rem, calc(env(safe-area-inset-bottom) - 1.25rem))"
     >
       <ul class="grid grid-flow-col auto-cols-fr">
         <li

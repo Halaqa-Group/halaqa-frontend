@@ -19,8 +19,11 @@ const range = computed(() => formatVerseRange(
   props.achievement.end_surah, props.achievement.end_verse, SURAH_NAMES
 ))
 const isApproved = computed(() => props.achievement.status === 'approved')
-// Draft rows (recorded offline, not yet synced) carry a string id.
-const isDraft = computed(() => typeof props.achievement.id === 'string')
+// Draft rows (recorded offline, not yet synced) carry a `draft:`-prefixed id.
+// (Server ids are also serialized as strings, so the prefix is what matters.)
+const isDraft = computed(() =>
+  typeof props.achievement.id === 'string' && props.achievement.id.startsWith('draft:')
+)
 const totalErrors = computed(() =>
   (props.achievement.mistakes_count ?? 0)
   + (props.achievement.warnings_count ?? 0)

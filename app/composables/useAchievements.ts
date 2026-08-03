@@ -439,7 +439,8 @@ export function useAchievements() {
 
   const filteredAchievements = computed(() => {
     const pend = pendingDeleteIds.value
-    const server = pend.size ? achievements.value.filter(a => !pend.has(a.id)) : achievements.value
+    // Server ids arrive as strings ("47"); the pending-delete set holds numbers.
+    const server = pend.size ? achievements.value.filter(a => !pend.has(Number(a.id))) : achievements.value
     // Drafts first so unsynced work is always visible at the top.
     const combined = [...draftRows.value, ...server]
     const q = filters.search.trim().toLowerCase()

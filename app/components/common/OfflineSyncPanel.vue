@@ -51,7 +51,7 @@ async function syncNow() {
 </script>
 
 <template>
-  <USlideover v-model:open="open" :title="t('pwa.logTitle')" :description="t('pwa.logSubtitle')" :ui="{ content: 'pt-[env(safe-area-inset-top)]' }">
+  <USlideover v-model:open="open" :title="t('pwa.logTitle')" :description="t('pwa.logSubtitle')" :ui="{ content: 'pt-[env(safe-area-inset-top)]', close: 'top-[calc(env(safe-area-inset-top)+1rem)]' }">
     <template #body>
       <div v-if="!hasItems" class="flex flex-col items-center justify-center gap-3 py-16 text-center">
         <UIcon name="i-lucide-check-circle" class="size-8 text-success" />

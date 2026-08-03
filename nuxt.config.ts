@@ -23,13 +23,11 @@ export default defineNuxtConfig({
         // insets are all 0 and the safe-area padding below (and in the bottom nav)
         // is a silent no-op.
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'theme-color', content: '#a06a1b' },
+        { name: 'theme-color', content: '#ffffff' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
-        // iOS ignores the manifest theme_color for the status bar (that is what
-        // brands it brown on Android). black-translucent lets the web view run
-        // edge-to-edge with white status-bar text, so the brown safe-area strip we
-        // paint in the layout shows through — matching the Android look.
-        { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+        // `default` gives a white status bar with dark text (readable on the white
+        // header). The safe-area strip in the layout is painted white to match.
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
         { name: 'apple-mobile-web-app-title', content: 'مدرسة الإتقان' }
       ],
       link: [
@@ -139,7 +137,7 @@ export default defineNuxtConfig({
       display: 'standalone',
       orientation: 'portrait',
       background_color: '#ffffff',
-      theme_color: '#a06a1b',
+      theme_color: '#ffffff',
       icons: [
         { src: '/icons/pwa-64x64.png', sizes: '64x64', type: 'image/png' },
         { src: '/icons/pwa-192x192.png', sizes: '192x192', type: 'image/png' },

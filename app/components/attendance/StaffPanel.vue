@@ -24,15 +24,14 @@ const {
 } = useTeacherAttendance()
 
 const calendarOpen = ref(false)
-const filtersOpen = ref(false)
-const filterCount = computed(() => (statusFilter.value && statusFilter.value !== 'all' ? 1 : 0))
 
-const statusItems = computed(() => [
-  { label: t('pages.attendance.filters.allStaff'), value: 'all' },
-  { label: t('pages.attendance.filters.present'), value: 'present' },
-  { label: t('pages.attendance.filters.late'), value: 'late' },
-  { label: t('pages.attendance.filters.absent'), value: 'absent' },
-  { label: t('pages.attendance.filters.excused'), value: 'excused' }
+// Clickable status counts double as the filter (see AttendanceFilterBar).
+const statusChips = computed(() => [
+  { value: 'all', label: t('pages.attendance.filters.allStaff'), count: staffRows.value.length, color: 'neutral' as const },
+  { value: 'present', label: t('pages.attendance.filters.present'), count: presentCount.value, color: 'success' as const },
+  { value: 'late', label: t('pages.attendance.filters.late'), count: lateCount.value, color: 'warning' as const },
+  { value: 'absent', label: t('pages.attendance.filters.absent'), count: absentCount.value, color: 'error' as const },
+  { value: 'excused', label: t('pages.attendance.filters.excused'), count: excusedCount.value, color: 'info' as const }
 ])
 
 const calendarValue = computed(() => {
@@ -114,44 +113,27 @@ function handleMarkAllPresent() {
 <template>
   <div class="flex flex-col gap-4">
     <CommonToolbar>
+      <div class="flex items-center gap-1.5 flex-wrap w-full sm:w-auto">
+        <UButton
+          v-for="chip in statusChips"
+          :key="chip.value"
+          size="sm"
+          :color="chip.color"
+          :variant="statusFilter === chip.value ? 'solid' : 'soft'"
+          class="rounded-full"
+          @click="statusFilter = chip.value"
+        >
+          {{ chip.label }}
+          <span class="tabular-nums font-semibold ms-1">{{ chip.count }}</span>
+        </UButton>
+      </div>
+
       <UInput
         v-model="search"
         icon="i-lucide-search"
         :placeholder="t('pages.attendance.searchStaffPlaceholder')"
         class="flex-1 min-w-40 sm:flex-none sm:w-56"
       />
-
-      <UPopover v-model:open="filtersOpen">
-        <UButton
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-list-filter"
-          :aria-label="t('common.filters')"
-        >
-          <span class="hidden sm:inline">{{ t('common.filters') }}</span>
-          <UBadge v-if="filterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
-            {{ filterCount }}
-          </UBadge>
-        </UButton>
-        <template #content>
-          <div class="p-3 w-64 space-y-3">
-            <UFormField :label="t('common.status')">
-              <USelect v-model="statusFilter" :items="statusItems" value-key="value" class="w-full" />
-            </UFormField>
-            <UButton
-              v-if="hasActiveFilters"
-              block
-              variant="soft"
-              color="neutral"
-              icon="i-lucide-x"
-              size="sm"
-              @click="clearFilters"
-            >
-              {{ t('pages.attendance.filters.clear') }}
-            </UButton>
-          </div>
-        </template>
-      </UPopover>
 
       <UPopover v-model:open="calendarOpen">
         <UButton
@@ -175,20 +157,6 @@ function handleMarkAllPresent() {
       </UPopover>
 
       <template #actions>
-        <div class="flex items-center gap-1.5 text-xs flex-wrap">
-          <UBadge color="success" variant="subtle">
-            {{ presentCount }} {{ t('pages.attendance.filters.present') }}
-          </UBadge>
-          <UBadge color="warning" variant="subtle">
-            {{ lateCount }} {{ t('pages.attendance.filters.late') }}
-          </UBadge>
-          <UBadge color="error" variant="subtle">
-            {{ absentCount }} {{ t('pages.attendance.filters.absent') }}
-          </UBadge>
-          <UBadge color="info" variant="subtle">
-            {{ excusedCount }} {{ t('pages.attendance.filters.excused') }}
-          </UBadge>
-        </div>
         <div class="hidden md:flex items-center gap-1 rounded-md border border-default p-0.5">
           <UButton
             :variant="viewMode === 'table' ? 'soft' : 'ghost'"

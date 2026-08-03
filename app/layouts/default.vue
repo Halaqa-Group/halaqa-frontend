@@ -164,7 +164,7 @@ onMounted(async () => {
 
     <UDashboardPanel id="main" :ui="{ body: 'max-lg:pb-24' }">
       <template #header>
-        <UDashboardNavbar :toggle="false" :ui="{ root: 'h-auto min-h-(--ui-header-height) pt-[env(safe-area-inset-top)]', right: 'gap-3' }">
+        <UDashboardNavbar :toggle="false" :ui="{ root: 'h-auto min-h-[calc(var(--ui-header-height)_+_env(safe-area-inset-top))] pt-[env(safe-area-inset-top)]', right: 'gap-3' }">
           <template #left>
             <div class="flex items-center gap-3 min-w-0 flex-1">
               <UDashboardSidebarCollapse

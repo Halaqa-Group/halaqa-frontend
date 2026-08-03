@@ -69,6 +69,42 @@ function shiftDay(delta: number) {
       class="flex-1 min-w-40 sm:flex-none sm:w-56"
     />
 
+    <!-- Filters (track + status) sit beside the search -->
+    <UPopover v-model:open="filtersOpen">
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-list-filter"
+        :aria-label="t('pages.achievements.filters.label')"
+      >
+        <span class="hidden sm:inline">{{ t('pages.achievements.filters.label') }}</span>
+        <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
+          {{ activeFilterCount }}
+        </UBadge>
+      </UButton>
+      <template #content>
+        <div class="p-3 w-64 space-y-3">
+          <UFormField :label="t('pages.achievements.table.track')">
+            <USelect v-model="filters.trackType" :items="trackItems" value-key="value" class="w-full" />
+          </UFormField>
+          <UFormField :label="t('pages.achievements.table.status')">
+            <USelect v-model="filters.status" :items="statusItems" value-key="value" class="w-full" />
+          </UFormField>
+          <UButton
+            v-if="hasActiveFilters"
+            block
+            variant="soft"
+            color="neutral"
+            icon="i-lucide-x"
+            size="sm"
+            @click="clearFilters"
+          >
+            {{ t('pages.achievements.filters.clear') }}
+          </UButton>
+        </div>
+      </template>
+    </UPopover>
+
     <HalaqaFilter class="flex-1 min-w-36 sm:flex-none sm:!w-44" />
 
     <!-- Date (primary) — prev/next day arrows around the calendar picker -->
@@ -109,43 +145,8 @@ function shiftDay(delta: number) {
       />
     </div>
 
-    <!-- Right cluster: filters popover + view toggle + record -->
+    <!-- Right cluster: view toggle + record -->
     <template #actions>
-      <UPopover v-model:open="filtersOpen">
-        <UButton
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-list-filter"
-          :aria-label="t('pages.achievements.filters.label')"
-        >
-          <span class="hidden sm:inline">{{ t('pages.achievements.filters.label') }}</span>
-          <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
-            {{ activeFilterCount }}
-          </UBadge>
-        </UButton>
-        <template #content>
-          <div class="p-3 w-64 space-y-3">
-            <UFormField :label="t('pages.achievements.table.track')">
-              <USelect v-model="filters.trackType" :items="trackItems" value-key="value" class="w-full" />
-            </UFormField>
-            <UFormField :label="t('pages.achievements.table.status')">
-              <USelect v-model="filters.status" :items="statusItems" value-key="value" class="w-full" />
-            </UFormField>
-            <UButton
-              v-if="hasActiveFilters"
-              block
-              variant="soft"
-              color="neutral"
-              icon="i-lucide-x"
-              size="sm"
-              @click="clearFilters"
-            >
-              {{ t('pages.achievements.filters.clear') }}
-            </UButton>
-          </div>
-        </template>
-      </UPopover>
-
       <div class="flex items-center gap-1 rounded-md border border-default p-0.5">
         <UButton
           :variant="viewMode === 'table' ? 'soft' : 'ghost'"

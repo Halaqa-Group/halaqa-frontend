@@ -70,6 +70,42 @@ function onCalendarPick(value: unknown) {
       class="flex-1 min-w-40 sm:flex-none sm:w-52"
     />
 
+    <!-- Filters (track + status) sit beside the student selector -->
+    <UPopover v-if="viewMode !== 'matrix'" v-model:open="filtersOpen">
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-list-filter"
+        :aria-label="t('pages.planner.filters.label')"
+      >
+        <span class="hidden sm:inline">{{ t('pages.planner.filters.label') }}</span>
+        <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
+          {{ activeFilterCount }}
+        </UBadge>
+      </UButton>
+      <template #content>
+        <div class="p-3 w-64 space-y-3">
+          <UFormField :label="t('pages.planner.table.track')">
+            <USelect v-model="filters.trackType" :items="trackItems" value-key="value" class="w-full" />
+          </UFormField>
+          <UFormField :label="t('pages.planner.filters.statusLabel')">
+            <USelect v-model="filters.status" :items="statusItems" value-key="value" class="w-full" />
+          </UFormField>
+          <UButton
+            v-if="hasActiveFilters"
+            block
+            variant="soft"
+            color="neutral"
+            icon="i-lucide-x"
+            size="sm"
+            @click="clearFilters"
+          >
+            {{ t('pages.planner.filters.clear') }}
+          </UButton>
+        </div>
+      </template>
+    </UPopover>
+
     <div class="flex items-center gap-1">
       <UButton
         variant="outline"
@@ -104,41 +140,6 @@ function onCalendarPick(value: unknown) {
     </div>
 
     <template #actions>
-      <UPopover v-if="viewMode !== 'matrix'" v-model:open="filtersOpen">
-        <UButton
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-list-filter"
-          :aria-label="t('pages.planner.filters.label')"
-        >
-          <span class="hidden sm:inline">{{ t('pages.planner.filters.label') }}</span>
-          <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
-            {{ activeFilterCount }}
-          </UBadge>
-        </UButton>
-        <template #content>
-          <div class="p-3 w-64 space-y-3">
-            <UFormField :label="t('pages.planner.table.track')">
-              <USelect v-model="filters.trackType" :items="trackItems" value-key="value" class="w-full" />
-            </UFormField>
-            <UFormField :label="t('pages.planner.filters.statusLabel')">
-              <USelect v-model="filters.status" :items="statusItems" value-key="value" class="w-full" />
-            </UFormField>
-            <UButton
-              v-if="hasActiveFilters"
-              block
-              variant="soft"
-              color="neutral"
-              icon="i-lucide-x"
-              size="sm"
-              @click="clearFilters"
-            >
-              {{ t('pages.planner.filters.clear') }}
-            </UButton>
-          </div>
-        </template>
-      </UPopover>
-
       <UBadge color="primary" variant="subtle" class="hidden sm:inline-flex">
         {{ t('pages.planner.coverage', { achieved: summary.totalAchieved, total: summary.totalPlanned, percent: summary.coverage }) }}
       </UBadge>

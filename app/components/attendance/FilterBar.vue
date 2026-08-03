@@ -21,6 +21,8 @@ const {
 } = useAttendance()
 
 const calendarOpen = ref(false)
+const filtersOpen = ref(false)
+const filterCount = computed(() => (statusFilter.value && statusFilter.value !== 'all' ? 1 : 0))
 
 const statusItems = computed(() => [
   { label: t('pages.attendance.filters.all'), value: 'all' },
@@ -67,6 +69,38 @@ function onCalendarPick(value: unknown) {
       class="flex-1 min-w-40 sm:flex-none sm:w-56"
     />
 
+    <UPopover v-model:open="filtersOpen">
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-list-filter"
+        :aria-label="t('common.filters')"
+      >
+        <span class="hidden sm:inline">{{ t('common.filters') }}</span>
+        <UBadge v-if="filterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
+          {{ filterCount }}
+        </UBadge>
+      </UButton>
+      <template #content>
+        <div class="p-3 w-64 space-y-3">
+          <UFormField :label="t('common.status')">
+            <USelect v-model="statusFilter" :items="statusItems" value-key="value" class="w-full" />
+          </UFormField>
+          <UButton
+            v-if="hasActiveFilters"
+            block
+            variant="soft"
+            color="neutral"
+            icon="i-lucide-x"
+            size="sm"
+            @click="clearFilters"
+          >
+            {{ t('pages.attendance.filters.clear') }}
+          </UButton>
+        </div>
+      </template>
+    </UPopover>
+
     <UPopover v-model:open="calendarOpen">
       <UButton
         variant="outline"
@@ -87,25 +121,6 @@ function onCalendarPick(value: unknown) {
         />
       </template>
     </UPopover>
-
-    <USelect
-      v-model="statusFilter"
-      :items="statusItems"
-      value-key="value"
-      class="flex-1 min-w-32 sm:flex-none sm:w-40"
-    />
-
-    <UButton
-      v-if="hasActiveFilters"
-      variant="link"
-      color="neutral"
-      icon="i-lucide-x"
-      size="sm"
-      class="px-0"
-      @click="clearFilters"
-    >
-      {{ t('pages.attendance.filters.clear') }}
-    </UButton>
 
     <template #actions>
       <div class="flex items-center gap-1.5 text-xs flex-wrap">

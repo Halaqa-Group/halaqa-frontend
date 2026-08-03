@@ -34,10 +34,10 @@ watch(() => route.fullPath, () => {
 <template>
   <nav
     class="lg:hidden fixed inset-x-0 bottom-0 z-40 pointer-events-none"
-    style="padding-bottom: env(safe-area-inset-bottom)"
   >
     <div
-      class="pointer-events-auto mx-3 mb-3 rounded-2xl border border-sidebar-border bg-sidebar-bg/95 shadow-lg backdrop-blur-md"
+      class="pointer-events-auto mx-3 rounded-2xl border border-sidebar-border bg-sidebar-bg/95 shadow-lg backdrop-blur-md"
+      style="margin-bottom: max(0.75rem, env(safe-area-inset-bottom))"
     >
       <ul class="grid grid-flow-col auto-cols-fr">
         <li

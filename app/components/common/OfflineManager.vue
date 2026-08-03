@@ -21,6 +21,7 @@ const open = ref(false)
     v-model:open="open"
     :title="t('pwa.offlineManager')"
     :description="t('pwa.offlineManagerDesc')"
+    :ui="{ content: 'pt-[env(safe-area-inset-top)]' }"
   >
     <template #body>
       <div class="space-y-4">

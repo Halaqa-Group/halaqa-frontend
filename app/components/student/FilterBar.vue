@@ -7,19 +7,22 @@ type StatusFilter = Student['status'] | 'deleted' | null
 const { t } = useI18n()
 const { canRestoreStudent: canManageDeleted, canCreateStudent } = usePermissions()
 const { searchQuery, openAdd } = useStudents()
-const { filterStatus, sortKey, viewMode } = useStudentsView()
+const { filterStatus, sortKey, viewMode, summary } = useStudentsView()
 
-const statusFilters = computed<{ label: string, value: StatusFilter }[]>(() => {
-  const base: { label: string, value: StatusFilter }[] = [
-    { label: t('pages.students.statusAll'), value: null },
-    { label: t('pages.students.statusActive'), value: 'active' },
-    { label: t('pages.students.statusInactive'), value: 'inactive' },
-    { label: t('pages.students.statusGraduated'), value: 'graduated' }
+// Status counts double as the filter: each chip shows its tally and selects that
+// status; "all" clears it. Mirrors the attendance status chips.
+const statusChips = computed(() => {
+  const chips: { value: StatusFilter, label: string, count: number | null, color: 'neutral' | 'success' | 'warning' | 'info' | 'error' }[] = [
+    { value: null, label: t('pages.students.statusAll'), count: summary.value.total, color: 'neutral' },
+    { value: 'active', label: t('pages.students.statusActive'), count: summary.value.active, color: 'success' },
+    { value: 'inactive', label: t('pages.students.statusInactive'), count: summary.value.inactive, color: 'warning' },
+    { value: 'graduated', label: t('pages.students.statusGraduated'), count: summary.value.graduated, color: 'info' }
   ]
   if (canManageDeleted.value) {
-    base.push({ label: t('pages.students.statusDeleted'), value: 'deleted' })
+    // Deleted students are not part of the live summary snapshot, so no count.
+    chips.push({ value: 'deleted', label: t('pages.students.statusDeleted'), count: null, color: 'error' })
   }
-  return base
+  return chips
 })
 
 const sortItems = computed<DropdownMenuItem[][]>(() => [[
@@ -41,54 +44,32 @@ const sortItems = computed<DropdownMenuItem[][]>(() => [[
 ]])
 
 const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
-
-const filtersOpen = ref(false)
-const activeFilterCount = computed(() => (filterStatus.value !== null ? 1 : 0))
-function clearFilters() {
-  filterStatus.value = null
-}
 </script>
 
 <template>
   <CommonToolbar>
+    <div class="flex items-center gap-1.5 flex-wrap w-full sm:w-auto">
+      <UButton
+        v-for="chip in statusChips"
+        :key="String(chip.value)"
+        size="sm"
+        :color="chip.color"
+        :variant="filterStatus === chip.value ? 'solid' : 'soft'"
+        class="rounded-full"
+        @click="filterStatus = chip.value"
+      >
+        {{ chip.label }}
+        <span v-if="chip.count !== null" class="tabular-nums font-semibold ms-1">{{ chip.count }}</span>
+      </UButton>
+    </div>
+
     <UInput
       v-model="searchQuery"
       icon="i-lucide-search"
       :placeholder="t('pages.students.searchByName')"
       class="flex-1 min-w-40 sm:max-w-xs"
     />
-    <UPopover v-model:open="filtersOpen">
-      <UButton
-        variant="outline"
-        color="neutral"
-        icon="i-lucide-list-filter"
-        :aria-label="t('common.filters')"
-      >
-        <span class="hidden sm:inline">{{ t('common.filters') }}</span>
-        <UBadge v-if="activeFilterCount" color="primary" variant="solid" size="sm" class="tabular-nums">
-          {{ activeFilterCount }}
-        </UBadge>
-      </UButton>
-      <template #content>
-        <div class="p-3 w-64 space-y-3">
-          <UFormField :label="t('common.status')">
-            <USelect v-model="filterStatus" :items="statusFilters" value-key="value" class="w-full" />
-          </UFormField>
-          <UButton
-            v-if="activeFilterCount"
-            block
-            variant="soft"
-            color="neutral"
-            icon="i-lucide-x"
-            size="sm"
-            @click="clearFilters"
-          >
-            {{ t('common.clearFilters') }}
-          </UButton>
-        </div>
-      </template>
-    </UPopover>
-    <HalaqaFilter class="w-full sm:w-48" />
+    <HalaqaFilter class="flex-1 min-w-40 sm:flex-none sm:w-48" />
     <UDropdownMenu
       :items="sortItems"
       :content="{ align: 'end', collisionPadding: 12 }"

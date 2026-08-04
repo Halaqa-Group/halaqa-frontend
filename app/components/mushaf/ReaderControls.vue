@@ -201,7 +201,7 @@ const hasNav = computed(() => (props.totalPages ?? 0) > 1)
          beaten from the instance's own `ui`. -->
     <UDrawer
       v-model:open="expanded"
-      :ui="{ overlay: 'z-[60]', content: 'z-[60] rounded-t-3xl overflow-hidden', container: 'gap-3' }"
+      :ui="{ overlay: 'z-[60]', content: 'z-[60] rounded-t-3xl overflow-hidden touch-manipulation', container: 'gap-3' }"
       title="إنهاء التسميع"
       description="راجع الإعدادات والأخطاء قبل الاعتماد"
     >
@@ -375,6 +375,21 @@ const hasNav = computed(() => (props.totalPages ?? 0) > 1)
 .reader-sheet__context {
   padding: 0.4rem 0.6rem;
   border-bottom: 1px solid var(--color-mushaf-border);
+}
+
+/* Kill double-tap-to-zoom across the whole control surface — the persistent bar
+   and everything inside the drawer — the same way the marking page does. It is
+   never a document to zoom into; a quick second tap on a button or a gap should
+   act, not zoom. `manipulation` keeps single taps, scrolling, and pinch-zoom.
+   touch-action isn't inherited, so the tap targets are listed explicitly. */
+.reader-sheet,
+.reader-sheet__bar,
+.reader-sheet__finish,
+.reader-sheet__body,
+.reader-sheet__row,
+.reader-sheet__actions,
+.reader-sheet__nav-btn {
+  touch-action: manipulation;
 }
 
 .reader-sheet__bar {

@@ -106,6 +106,11 @@ const saveDisabled = computed(() => props.approved || !props.canSubmit || busy.v
   gap: 0.4rem;
   width: 100%;
   color: var(--color-mushaf-fg);
+  /* No double-tap-to-zoom on the session actions: these buttons end or clear a
+     session, so a quick second tap must act, not zoom the page. `manipulation`
+     drops the double-tap gesture (and its delay) while keeping single taps.
+     touch-action isn't inherited, so the buttons repeat it below. */
+  touch-action: manipulation;
 }
 
 .mark-toolbar__btn {
@@ -125,6 +130,8 @@ const saveDisabled = computed(() => props.approved || !props.canSubmit || busy.v
   transition: background-color 0.12s, border-color 0.12s, color 0.12s, opacity 0.12s;
   min-height: 44px;
   white-space: nowrap;
+  /* The tap targets themselves (touch-action isn't inherited from .mark-toolbar). */
+  touch-action: manipulation;
 }
 
 .mark-toolbar__btn--wide {

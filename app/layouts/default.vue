@@ -169,7 +169,7 @@ onMounted(async () => {
       </template>
     </UDashboardSidebar>
 
-    <UDashboardPanel id="main" :ui="{ body: 'max-lg:pb-24' }">
+    <UDashboardPanel id="main" :ui="{ body: 'pt-3 sm:pt-3 max-lg:pb-24' }">
       <template #header>
         <UDashboardNavbar :toggle="false" :ui="{ root: 'h-auto min-h-[calc(var(--ui-header-height)_+_env(safe-area-inset-top))] pt-[env(safe-area-inset-top)]', right: 'gap-3' }">
           <template #left>

@@ -62,6 +62,7 @@ function onCalendarPick(value: unknown) {
     <HalaqaFilter required class="flex-1 min-w-36 sm:flex-none sm:!w-44" />
 
     <USelectMenu
+      v-if="viewMode !== 'day'"
       v-model="selectedStudentId"
       :items="studentItems"
       value-key="value"
@@ -71,7 +72,7 @@ function onCalendarPick(value: unknown) {
     />
 
     <!-- Filters (track + status) sit beside the student selector -->
-    <UPopover v-if="viewMode !== 'matrix'" v-model:open="filtersOpen">
+    <UPopover v-if="viewMode === 'table' || viewMode === 'grid'" v-model:open="filtersOpen">
       <UButton
         variant="outline"
         color="neutral"
@@ -106,7 +107,7 @@ function onCalendarPick(value: unknown) {
       </template>
     </UPopover>
 
-    <div class="flex items-center gap-1">
+    <div v-if="viewMode !== 'day'" class="flex items-center gap-1">
       <UButton
         variant="outline"
         color="neutral"
@@ -140,11 +141,20 @@ function onCalendarPick(value: unknown) {
     </div>
 
     <template #actions>
-      <UBadge color="primary" variant="subtle" class="hidden sm:inline-flex">
+      <UBadge v-if="viewMode !== 'day'" color="primary" variant="subtle" class="hidden sm:inline-flex">
         {{ t('pages.planner.coverage', { achieved: summary.totalAchieved, total: summary.totalPlanned, percent: summary.coverage }) }}
       </UBadge>
 
       <div class="flex items-center gap-1 rounded-md border border-default p-0.5">
+        <UButton
+          :variant="viewMode === 'day' ? 'soft' : 'ghost'"
+          color="primary"
+          icon="i-lucide-calendar-check"
+          size="sm"
+          square
+          :aria-label="t('pages.planner.view.day')"
+          @click="viewMode = 'day'"
+        />
         <UButton
           :variant="viewMode === 'matrix' ? 'soft' : 'ghost'"
           color="primary"

@@ -51,7 +51,9 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
 </script>
 
 <template>
-  <div v-if="isLoading && !plan" class="flex justify-center py-16">
+  <PlannerDayRoster v-if="viewMode === 'day'" />
+
+  <div v-else-if="isLoading && !plan" class="flex justify-center py-16">
     <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
   </div>
 

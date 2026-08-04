@@ -3,8 +3,8 @@ import type {
   ApiStudent, ApiStudentListResult, ApiWeeklyPlan, ApiWeeklyPlanItem, StudentWithAttendance
 } from '~/types'
 import { unwrapList } from '~/utils/api/list'
-import { toYmd } from '~/utils/date'
-import { planDirectionOf, startOfWeekSat } from '~/utils/plan'
+import { parseYmd, todayYmd, toYmd } from '~/utils/date'
+import { backendDayOfWeek, planDirectionOf, startOfWeekSat } from '~/utils/plan'
 import { totalVersesInRange } from '~/utils/quran'
 import type { PlanDirection, VerseRange } from '~/utils/quran-structure'
 
@@ -37,6 +37,19 @@ export interface DraftCell extends VerseRange {
   total_verses?: number
 }
 
+// One row of the "today" roster: a halaqa student paired with the sessions their
+// weekly plan schedules for the selected day, plus that day's progress rollup.
+export interface DayRosterRow {
+  student: StudentWithAttendance
+  planId: number | null
+  planStatus: 'draft' | 'approved' | null
+  hasPlan: boolean
+  items: ApiWeeklyPlanItem[]
+  totalPlanned: number
+  totalAchieved: number
+  coverage: number
+}
+
 const cellKey = (day: number, track: TrackType) => `${day}:${track}`
 function splitCellKey(key: string): { day: number, track: TrackType } {
   const idx = key.indexOf(':')
@@ -58,7 +71,14 @@ const filters = reactive<{ trackType: TrackType | null, status: ItemStatus | nul
   trackType: null,
   status: null
 })
-const viewMode = ref<'matrix' | 'table' | 'grid'>('matrix')
+const viewMode = ref<'matrix' | 'table' | 'grid' | 'day'>('matrix')
+
+// "Today" roster: every halaqa student's plan + progress for a single day. Its
+// date is independent of the per-student week selector (`selectedWeekStart`) so
+// switching to the roster always lands on today, whatever week you were editing.
+const selectedDate = ref<string>(todayYmd())
+const dayRoster = ref<DayRosterRow[]>([])
+const dayLoading = ref(false)
 
 const formOpen = ref(false)
 const editing = ref<ApiWeeklyPlanItem | null>(null)
@@ -118,6 +138,70 @@ export function useWeeklyPlan() {
       requests.end('plan', signal)
     }
   }
+
+  // Roster for one day: pull every plan in the halaqa for the week containing
+  // `selectedDate` in a single request, then narrow each student's plan to the
+  // sessions scheduled for that weekday. Students with no plan still get a row so
+  // the roster mirrors the full halaqa, not just the planned students.
+  async function loadDayRoster() {
+    const halaqaId = selectedHalaqaId.value
+    if (!halaqaId) {
+      dayRoster.value = []
+      return
+    }
+    const signal = requests.begin('day-roster')
+    dayLoading.value = true
+    try {
+      const target = parseYmd(selectedDate.value)
+      const weekStart = toYmd(startOfWeekSat(target))
+      const dow = backendDayOfWeek(target)
+      const raw = await api<unknown>(
+        `/weekly-plans?halaqa_id=${halaqaId}&week_start_date=${weekStart}&limit=100`,
+        { signal }
+      )
+      const byStudent = new Map<number, ApiWeeklyPlan>()
+      for (const p of unwrapList<ApiWeeklyPlan>(raw)) byStudent.set(p.student_id, p)
+
+      dayRoster.value = students.value.map((student) => {
+        const wp = byStudent.get(student.id) ?? null
+        const items = wp
+          ? wp.items
+              .filter(it => it.day_of_week === dow)
+              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.id - b.id)
+          : []
+        const totalPlanned = items.reduce((s, it) => s + (it.total_verses || 0), 0)
+        const totalAchieved = items.reduce((s, it) => s + (it.achieved_verses || 0), 0)
+        return {
+          student,
+          planId: wp?.id ?? null,
+          planStatus: wp?.status ?? null,
+          hasPlan: !!wp,
+          items,
+          totalPlanned,
+          totalAchieved,
+          coverage: totalPlanned > 0 ? Math.round((totalAchieved / totalPlanned) * 100) : 0
+        }
+      })
+    } catch (e) {
+      if (signal.aborted || isAbortError(e)) return
+      throw e
+    } finally {
+      if (!signal.aborted) dayLoading.value = false
+      requests.end('day-roster', signal)
+    }
+  }
+
+  function shiftDay(delta: number) {
+    const d = parseYmd(selectedDate.value)
+    d.setDate(d.getDate() + delta)
+    selectedDate.value = toYmd(d)
+  }
+  const prevDay = () => shiftDay(-1)
+  const nextDay = () => shiftDay(1)
+  function goToday() {
+    selectedDate.value = todayYmd()
+  }
+  const isTodaySelected = computed(() => selectedDate.value === todayYmd())
 
   function hydrateDraft() {
     draft.clear()
@@ -586,6 +670,10 @@ export function useWeeklyPlan() {
     students,
     selectedStudentId,
     selectedWeekStart,
+    selectedDate,
+    dayRoster,
+    dayLoading,
+    isTodaySelected,
     plan,
     items,
     planStatus,
@@ -618,6 +706,10 @@ export function useWeeklyPlan() {
 
     loadStudents,
     loadPlan,
+    loadDayRoster,
+    prevDay,
+    nextDay,
+    goToday,
     addItem,
     updateItem,
     deleteItem,

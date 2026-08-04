@@ -1326,7 +1326,18 @@
       "view": {
         "grid": "عرض شبكي",
         "table": "عرض جدول",
-        "matrix": "عرض الجدول"
+        "matrix": "عرض الجدول",
+        "day": "عرض اليوم"
+      },
+      "day": {
+        "prevDay": "اليوم السابق",
+        "nextDay": "اليوم التالي",
+        "today": "اليوم",
+        "backToToday": "العودة إلى اليوم",
+        "studentsWithPlan": "{withPlan} من {total} لديهم خطة",
+        "noStudents": "لا يوجد طلاب في هذه الحلقة",
+        "restDay": "يوم راحة",
+        "noPlan": "لا توجد خطة هذا الأسبوع"
       },
       "itemStatus": {
         "due": "مستحق",

@@ -164,66 +164,66 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div v-if="selectedHalaqaId && selectedStudentId" class="flex items-center justify-end gap-2 flex-wrap">
-        <UBadge v-if="plan" variant="subtle" :color="statusBadgeColor" size="lg">
-          {{ statusLabel }}
-        </UBadge>
-        <UButton
-          v-if="canApprove && planStatus !== 'approved' && (planStatus === 'draft' || (viewMode === 'matrix' && matrixDirty))"
-          icon="i-lucide-check-check"
-          color="primary"
-          :loading="approving"
-          :disabled="savingDraft"
-          @click="onApprove"
-        >
-          {{ t('pages.planner.approvePlan') }}
-        </UButton>
-        <UButton
-          v-if="canUnapprovePlan && planStatus === 'approved'"
-          icon="i-lucide-undo-2"
-          color="warning"
-          variant="soft"
-          @click="onUnapprove"
-        >
-          {{ t('pages.planner.unapprove') }}
-        </UButton>
-        <UButton
-          v-if="canPrint"
-          icon="i-lucide-printer"
-          color="neutral"
-          variant="soft"
-          @click="printOpen = true"
-        >
-          {{ t('pages.planner.downloadPdf') }}
-        </UButton>
-        <UButton
-          v-if="canModify && viewMode === 'matrix'"
-          icon="i-lucide-wand-sparkles"
-          variant="soft"
-          @click="wizardOpen = true"
-        >
-          {{ t('pages.planner.wizard.open') }}
-        </UButton>
-        <UButton
-          v-if="canModify && viewMode === 'matrix'"
-          icon="i-lucide-save"
-          :loading="savingDraft"
-          :disabled="!matrixDirty || approving"
-          @click="onSaveDraft"
-        >
-          {{ t('pages.planner.saveDraft') }}
-        </UButton>
-        <UButton
-          v-if="canModify && viewMode !== 'matrix'"
-          icon="i-lucide-plus"
-          @click="openAdd"
-        >
-          {{ t('pages.planner.addItem') }}
-        </UButton>
-        <UDropdownMenu v-if="planMenu.length" :items="planMenu" :content="{ align: 'end' }">
-          <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
-        </UDropdownMenu>
-      </div>
+    <div v-if="selectedHalaqaId && selectedStudentId && viewMode !== 'day'" class="flex items-center justify-end gap-2 flex-wrap">
+      <UBadge v-if="plan" variant="subtle" :color="statusBadgeColor" size="lg">
+        {{ statusLabel }}
+      </UBadge>
+      <UButton
+        v-if="canApprove && planStatus !== 'approved' && (planStatus === 'draft' || (viewMode === 'matrix' && matrixDirty))"
+        icon="i-lucide-check-check"
+        color="primary"
+        :loading="approving"
+        :disabled="savingDraft"
+        @click="onApprove"
+      >
+        {{ t('pages.planner.approvePlan') }}
+      </UButton>
+      <UButton
+        v-if="canUnapprovePlan && planStatus === 'approved'"
+        icon="i-lucide-undo-2"
+        color="warning"
+        variant="soft"
+        @click="onUnapprove"
+      >
+        {{ t('pages.planner.unapprove') }}
+      </UButton>
+      <UButton
+        v-if="canPrint"
+        icon="i-lucide-printer"
+        color="neutral"
+        variant="soft"
+        @click="printOpen = true"
+      >
+        {{ t('pages.planner.downloadPdf') }}
+      </UButton>
+      <UButton
+        v-if="canModify && viewMode === 'matrix'"
+        icon="i-lucide-wand-sparkles"
+        variant="soft"
+        @click="wizardOpen = true"
+      >
+        {{ t('pages.planner.wizard.open') }}
+      </UButton>
+      <UButton
+        v-if="canModify && viewMode === 'matrix'"
+        icon="i-lucide-save"
+        :loading="savingDraft"
+        :disabled="!matrixDirty || approving"
+        @click="onSaveDraft"
+      >
+        {{ t('pages.planner.saveDraft') }}
+      </UButton>
+      <UButton
+        v-if="canModify && viewMode !== 'matrix'"
+        icon="i-lucide-plus"
+        @click="openAdd"
+      >
+        {{ t('pages.planner.addItem') }}
+      </UButton>
+      <UDropdownMenu v-if="planMenu.length" :items="planMenu" :content="{ align: 'end' }">
+        <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
+      </UDropdownMenu>
+    </div>
 
     <!-- Weekly plans are written per halaqa, so a halaqa is mandatory here even for
          roles that browse the rest of the app unscoped. -->

@@ -1326,7 +1326,18 @@
       "view": {
         "grid": "Grid view",
         "table": "Table view",
-        "matrix": "Matrix view"
+        "matrix": "Matrix view",
+        "day": "Today view"
+      },
+      "day": {
+        "prevDay": "Previous day",
+        "nextDay": "Next day",
+        "today": "Today",
+        "backToToday": "Back to today",
+        "studentsWithPlan": "{withPlan} of {total} planned",
+        "noStudents": "No students in this halaqa",
+        "restDay": "Rest day",
+        "noPlan": "No plan this week"
       },
       "itemStatus": {
         "due": "Due",

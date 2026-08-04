@@ -99,11 +99,15 @@ function compact(groups: DropdownMenuItem[][]): DropdownMenuItem[][] {
 }
 
 function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
-  // Unsynced offline draft: edit reopens the reader on the same draft; approve
-  // toggles its local flag; delete drops the local draft. No server-only actions.
+  // Unsynced offline draft: edit follows the source (mushaf → reader on the same
+  // draft, form → the edit form); approve toggles its local flag; delete drops
+  // the local draft. No server-only actions.
   if (isDraftRow(a)) {
+    const editDraft = sourceOf(a) === 'mushaf'
+      ? () => navigateTo(draftReciteLink(a))
+      : () => openEdit(a)
     const acts: DropdownMenuItem[] = [
-      { label: t('pages.achievements.actions.edit'), icon: 'i-lucide-pencil', onSelect: () => navigateTo(draftReciteLink(a)) }
+      { label: t('pages.achievements.actions.edit'), icon: 'i-lucide-pencil', onSelect: editDraft }
     ]
     if (canApproveAchievement.value && !isApproved(a)) {
       acts.push({ label: t('pages.achievements.approve'), icon: 'i-lucide-check-check', onSelect: () => setDraftApprovalRow(a, true) })

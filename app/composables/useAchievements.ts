@@ -538,6 +538,14 @@ export function useAchievements() {
     isSaving.value = true
     try {
       const full = await withComputedScore(data)
+      // Editing an unsynced draft (form-source): it isn't on the server yet, so
+      // re-save it locally under the same session key instead of PATCHing.
+      if (typeof id === 'string' && (id as string).startsWith(DRAFT_ID_PREFIX)) {
+        const sessionKey = String(id).slice(DRAFT_ID_PREFIX.length)
+        const existing = offlineDrafts.value.find(d => d.id === sessionKey)
+        await useAchievementDrafts().saveDraft(sessionKey, withPositionsPayload(full), existing?.approve ?? false)
+        return null
+      }
       // The update endpoint only accepts mutable fields — student_id, halaqa_id
       // and date are immutable for an existing record and are rejected by the
       // backend's whitelist ("property student_id should not exist"). Sending

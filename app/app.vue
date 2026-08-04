@@ -2,9 +2,15 @@
 import * as locales from '@nuxt/ui/locale'
 
 const { locale } = useI18n()
+const colorMode = useColorMode()
 
 const lang = computed(() => locales[locale.value].code)
 const dir = computed(() => locales[locale.value].dir)
+
+// Follows the app's light/dark toggle so the browser/status-bar chrome (and the
+// iOS strip via --color-background) match the theme instead of staying white.
+// Values mirror --color-background in app/assets/css/main.css.
+const themeColor = computed(() => (colorMode.value === 'dark' ? '#111113' : '#f9f9f9'))
 
 const toaster = {
   expand: false,
@@ -19,6 +25,10 @@ useHead({
     lang,
     dir
   },
+  // Overrides the static theme-color in nuxt.config so it tracks light/dark.
+  meta: [
+    { name: 'theme-color', content: themeColor }
+  ],
   titleTemplate: (titleChunk) => {
     return titleChunk ? `${$t('app.name')} - ${titleChunk}` : $t('app.name')
   }

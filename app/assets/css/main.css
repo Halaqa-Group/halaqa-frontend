@@ -283,17 +283,17 @@ html {
   color: var(--color-on-primary);
 }
 
-/* iOS installed-PWA status bar. The status bar uses the `default` style (dark
-   text), so the area behind the notch is painted white to match the app header.
-   On Android / desktop / non-notch devices the inset is 0 and the strip collapses
-   to nothing. */
+/* iOS installed-PWA status bar. The area behind the notch is painted with the
+   app background so it follows light/dark (var(--color-background) flips with the
+   .dark class). On Android / desktop / non-notch devices the inset is 0 and the
+   strip collapses to nothing. */
 .ios-safe-top-bar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: env(safe-area-inset-top);
-  background-color: #ffffff;
+  background-color: var(--color-background);
   z-index: 60;
   pointer-events: none;
 }

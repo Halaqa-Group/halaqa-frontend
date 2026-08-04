@@ -334,6 +334,14 @@ onBeforeUnmount(clearSkeletonTimer)
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  /* Marking is a burst of quick taps, and two that land close together on the
+     page's padding or the gaps between words read to the browser as a double-tap
+     — which zooms the whole page in mid-session. `manipulation` drops that
+     gesture (and its 300ms delay) while keeping single taps, scrolling, and
+     pinch-to-zoom. The tappable words set their own `pan-y` (see Line.vue); this
+     covers everything they don't — padding, gaps, ayah markers. touch-action
+     isn't inherited, so the line/word rules below repeat it for their targets. */
+  touch-action: manipulation;
   /* iOS inflates text it judges too small for its block ("text autosizing"),
      which sets the glyphs wider than the fit pass measured them and pushes a
      justified line past the margin. The page sizes its own text off the measure;
@@ -386,6 +394,8 @@ onBeforeUnmount(clearSkeletonTimer)
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /* Same no-double-tap-zoom surface as the page (touch-action doesn't inherit). */
+  touch-action: manipulation;
   /* Last resort of the page fit (see fitLines): a browser that won't set the text
      as small as it was asked to still has to obey a transform. 1 everywhere the
      fit worked, which is everywhere but iOS's clamped text sizes. */

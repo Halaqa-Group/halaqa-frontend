@@ -186,6 +186,11 @@ function onWordLeave(word: MushafWord) {
   height: auto;
   line-height: 1;
   justify-content: center;
+  /* A justified line spreads its words with `space-between`, so the gaps between
+     them are wide targets. Two marking taps that catch a gap read as a double-tap
+     and zoom the page; `manipulation` suppresses that here the way the tappable
+     words do for themselves (touch-action isn't inherited from the page). */
+  touch-action: manipulation;
 }
 
 /* A printed mushaf sets its body lines flush to both margins and centres only the
@@ -268,6 +273,9 @@ function onWordLeave(word: MushafWord) {
   padding: 0 1px;
   border-radius: 3px;
   transition: background-color 0.12s ease;
+  /* Non-tappable glyphs (ayah-end markers, locked words) would otherwise keep the
+     default double-tap-to-zoom; tappable words override this with `pan-y` below. */
+  touch-action: manipulation;
 }
 
 /* The ornament keeps a little air of its own. The QCF advances already carry the

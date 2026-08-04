@@ -122,7 +122,6 @@ onBeforeUnmount(() => {
       :items="tabItems"
       variant="link"
       class="w-full"
-      flush-top
     >
       <template #students>
         <AttendanceStudentsSection

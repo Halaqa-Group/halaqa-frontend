@@ -31,6 +31,7 @@ const tabItems = computed<TabsItem[]>(() => [
       :items="tabItems"
       variant="link"
       class="w-full"
+      flush-top
     >
       <template #content="{ item }">
         <div v-if="item.value === 'details'" class="mt-4">

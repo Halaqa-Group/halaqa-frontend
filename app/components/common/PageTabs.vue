@@ -7,6 +7,9 @@ import type { TabsItem, TabsProps } from '@nuxt/ui'
 const props = defineProps<{
   items: TabsItem[]
   ui?: TabsProps['ui']
+  // Sit the tab bar flush under the page header by cancelling the body's `pt-3`
+  // top padding. Use when the tabs are the first thing in the body.
+  flushTop?: boolean
 }>()
 
 // Mirrors UTabs' v-model so the parent keeps owning the active value.
@@ -35,6 +38,8 @@ const mergedUi = computed(() => {
   const label = [passed.label, 'whitespace-nowrap'].filter(Boolean).join(' ')
   return { ...passed, list, trigger, label }
 })
+
+const wrapperClass = computed(() => (props.flushTop ? '-mt-3' : undefined))
 
 const currentIndex = computed(() =>
   Math.max(0, props.items.findIndex(i => String(i.value) === String(model.value)))
@@ -113,7 +118,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="rootEl">
+  <div ref="rootEl" :class="wrapperClass">
     <UTabs
       v-model="model"
       :items="items"

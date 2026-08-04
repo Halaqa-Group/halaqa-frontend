@@ -466,38 +466,37 @@ const schema = computed(() => z.object({
 }))
 type Schema = z.output<typeof schema.value>
 
-async function onSubmit(_event: FormSubmitEvent<Schema>) {
-  const halaqaId = selectedHalaqaId.value
-  const studentId = state.student_id
-  if (!halaqaId || studentId == null) return
+// The form drives three distinct actions, chosen by the footer button that
+// submitted it:
+//   • Update      — editing an existing record (isEdit)
+//   • Save & recite — hand off to the mushaf to mark the recitation (continueToRecite)
+//   • Approve     — record straight from the form and sign it off
+// Each is its own helper below; onSubmit only routes between them.
 
-  // Heading into the mushaf with counts already entered? Confirm the reset, then
-  // zero them so the mushaf's word-level marking becomes the source of truth.
-  if (continueToRecite.value && hasErrorCounts.value) {
-    const ok = await confirmReciteReset()
-    if (!ok) {
-      continueToRecite.value = false
-      return
-    }
-    state.mistakes_count = 0
-    state.warnings_count = 0
-    state.harakat_errors_count = 0
-    positions.value = positions.value.map(p => ({
-      ...p, mistakes_count: 0, warnings_count: 0, harakat_errors_count: 0
-    }))
-  }
+// Zero every error count (top-level and per موضع). Used before handing off to
+// the mushaf, where word-level marking becomes the source of truth.
+function resetErrorCounts() {
+  state.mistakes_count = 0
+  state.warnings_count = 0
+  state.harakat_errors_count = 0
+  positions.value = positions.value.map(p => ({
+    ...p, mistakes_count: 0, warnings_count: 0, harakat_errors_count: 0
+  }))
+}
 
-  await loadEvaluationSettings(halaqaId)
-
-  // The quick form captures error counts, not per-word locations; synthesize
-  // itemized errors at the start word of whichever range owns them — the lesson
-  // range for `full`, each موضع's own range for `test`.
+// Build the create/update DTO from the form. The quick form captures error
+// counts, not per-word locations, so synthesize itemized errors at the start
+// word of whichever range owns them — the lesson range for `full`, each موضع's
+// own range for `test`. `toRecite` stamps the source: the recitation button
+// hands off to the mushaf, so its record is a mushaf one (source = Quran);
+// every other path keeps the form as the source (source = Form).
+async function buildAchievementDto(studentId: number, halaqaId: number, toRecite: boolean): Promise<CreateAchievementDto> {
   const dto: CreateAchievementDto = {
     student_id: studentId,
     halaqa_id: halaqaId,
     date: state.date,
     track_type: state.track_type,
-    completion_method: 'quick',
+    completion_method: toRecite ? 'mushaf' : 'quick',
     recitation_method: isTest.value ? 'test' : 'full',
     start_surah: state.start_surah,
     start_verse: state.start_verse,
@@ -530,52 +529,82 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
       harakat_errors_count: state.harakat_errors_count
     }, state)
   }
+  return dto
+}
+
+// "Save & recite": persist the record (as a mushaf recitation) and continue into
+// the mushaf so the teacher can mark it. The reader owns the session — and
+// offline drafting — so we don't create here when offline (that would
+// double-draft the session).
+async function saveAndRecite(dto: CreateAchievementDto, studentId: number, halaqaId: number) {
+  if (online.value) await addAchievement(dto)
+  // Carry the chosen session so the mushaf opens on that exact lesson (the recite
+  // page hides its session switcher and relies on this). The track + range are
+  // passed explicitly, not just item_id: the session may sit on a different
+  // week/weekday than the record date (a future-dated planned lesson recorded
+  // today), so the recite page can't look it up in that day's plan.
+  const query: Record<string, string | number> = {
+    student_id: studentId,
+    halaqa_id: halaqaId,
+    date: state.date,
+    track: state.track_type,
+    start_surah: state.start_surah,
+    start_verse: state.start_verse,
+    end_surah: state.end_surah,
+    end_verse: state.end_verse
+  }
+  if (selectedPlanItemId.value != null) query.item_id = selectedPlanItemId.value
+  await navigateTo({ path: '/recite', query })
+}
+
+// "Approve achievement": record straight from the form and sign it off. Online
+// it approves on the spot; offline it's saved as a draft (approve intent carried
+// on the draft, applied on sync).
+async function recordAndApprove(dto: CreateAchievementDto) {
+  const created = await addAchievement(dto, true)
+  if (created) {
+    // Recording and approving are the same halaqa-scope check, so if the create
+    // succeeded this cannot 403.
+    await approveAchievement(created.id)
+    toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
+  } else {
+    toast.add({ title: t('pages.achievements.savedOfflineToast'), color: 'success', icon: 'i-lucide-cloud-off' })
+  }
+}
+
+async function onSubmit(_event: FormSubmitEvent<Schema>) {
+  const halaqaId = selectedHalaqaId.value
+  const studentId = state.student_id
+  if (!halaqaId || studentId == null) return
+
+  // `continueToRecite` is a one-shot flag set by the footer button before submit;
+  // consume it up front so every path below reads a stable intent.
+  const toRecite = continueToRecite.value
+  continueToRecite.value = false
+
+  // Heading into the mushaf with counts already entered? Confirm the reset before
+  // discarding them.
+  if (toRecite && hasErrorCounts.value) {
+    const ok = await confirmReciteReset()
+    if (!ok) return
+    resetErrorCounts()
+  }
+
+  await loadEvaluationSettings(halaqaId)
+  const dto = await buildAchievementDto(studentId, halaqaId, toRecite)
 
   try {
     if (isEdit.value && editing.value) {
       await updateAchievement(editing.value.id, dto)
       toast.add({ title: t('pages.achievements.updatedToast'), color: 'success' })
-    } else if (continueToRecite.value) {
-      // "Save & recite": continue into the mushaf so the teacher can mark the
-      // recitation. The reader owns the session — and offline drafting — so we
-      // don't create here when offline (that would double-draft the session).
-      continueToRecite.value = false
-      if (online.value) await addAchievement(dto)
-      // Carry the chosen session so the mushaf opens on that exact lesson (the
-      // recite page hides its session switcher and relies on this). The track +
-      // range are passed explicitly, not just item_id: the session may sit on a
-      // different week/weekday than the record date (a future-dated planned
-      // lesson recorded today), so the recite page can't look it up in that
-      // day's plan.
-      const query: Record<string, string | number> = {
-        student_id: studentId,
-        halaqa_id: halaqaId,
-        date: state.date,
-        track: state.track_type,
-        start_surah: state.start_surah,
-        start_verse: state.start_verse,
-        end_surah: state.end_surah,
-        end_verse: state.end_verse
-      }
-      if (selectedPlanItemId.value != null) query.item_id = selectedPlanItemId.value
-      await navigateTo({ path: '/recite', query })
+    } else if (toRecite) {
+      await saveAndRecite(dto, studentId, halaqaId)
       return
     } else {
-      // Plain record button: approve on the spot online; offline it's saved as a
-      // draft (approve intent carried on the draft, applied on sync).
-      const created = await addAchievement(dto, true)
-      if (created) {
-        // Recording and approving are the same halaqa-scope check, so if the
-        // create succeeded this cannot 403.
-        await approveAchievement(created.id)
-        toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
-      } else {
-        toast.add({ title: t('pages.achievements.savedOfflineToast'), color: 'success', icon: 'i-lucide-cloud-off' })
-      }
+      await recordAndApprove(dto)
     }
     emit('saved')
   } catch (e: any) {
-    continueToRecite.value = false
     toast.add({
       title: apiError.format(e, isEdit.value ? t('pages.achievements.updateErrorTitle') : t('pages.achievements.saveErrorTitle')),
       color: 'error'

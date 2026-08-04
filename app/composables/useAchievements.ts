@@ -200,7 +200,7 @@ const total = ref(0)
 const page = ref(1)
 const limit = ref(20)
 
-const viewMode = ref<'table' | 'grid'>('table')
+const viewMode = ref<'table' | 'grid'>('grid')
 const filters = reactive<{ search: string, trackType: TrackType | null, status: 'approved' | 'unapproved' | null }>({
   search: '',
   trackType: null,

@@ -1,10 +1,14 @@
 <script setup lang="ts">
-// Quick-access offline hub: a top-bar icon that opens a slide-over with the
-// offline downloads (full Mushaf + the selected halaqa's students/plans) and the
-// storage footprint. Keeps these controls one tap away instead of buried in
-// Profile.
+// Quick-access offline hub: a top-bar icon that opens the offline downloads
+// (full Mushaf + the selected halaqa's students/plans) and the storage
+// footprint. Keeps these controls one tap away instead of buried in Profile.
+// On mobile it opens as a bottom drawer (swipe-to-dismiss, native sheet feel);
+// on desktop it keeps the side slide-over.
+import { useMediaQuery } from '@vueuse/core'
+
 const { t } = useI18n()
 const open = ref(false)
+const isDesktop = useMediaQuery('(min-width: 1024px)')
 </script>
 
 <template>
@@ -18,6 +22,7 @@ const open = ref(false)
   />
 
   <USlideover
+    v-if="isDesktop"
     v-model:open="open"
     :title="t('pwa.offlineManager')"
     :description="t('pwa.offlineManagerDesc')"
@@ -30,4 +35,19 @@ const open = ref(false)
       </div>
     </template>
   </USlideover>
+
+  <UDrawer
+    v-else
+    v-model:open="open"
+    :title="t('pwa.offlineManager')"
+    :description="t('pwa.offlineManagerDesc')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden' }"
+  >
+    <template #body>
+      <div class="space-y-4 pb-[env(safe-area-inset-bottom)]">
+        <CommonMushafDownloadCard />
+        <CommonOfflineHalaqaCard />
+      </div>
+    </template>
+  </UDrawer>
 </template>

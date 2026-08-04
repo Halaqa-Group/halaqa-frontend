@@ -97,7 +97,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <UDashboardGroup unit="rem">
+  <!-- The group is `fixed inset-0` (Nuxt UI default), which iOS Safari sizes to
+       the *large* viewport (toolbar-collapsed height), not the visible area. That
+       leaves the inner scroll body taller than the screen: on a short page its
+       bottom (e.g. the record form's action buttons) sits behind Safari's chrome
+       / the floating bottom nav with no overflow to scroll it up. Pin the shell to
+       the dynamic viewport so it matches what's actually visible and the body's
+       overflow-y-auto engages. -->
+  <UDashboardGroup unit="rem" class="h-dvh">
     <!-- iOS standalone runs edge-to-edge (black-translucent status bar), so the
          area behind the notch/status bar is transparent. Paint it with the brand
          brown (the manifest theme_color) so it matches the Android status bar.

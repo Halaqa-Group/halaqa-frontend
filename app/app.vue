@@ -10,7 +10,7 @@ const dir = computed(() => locales[locale.value].dir)
 // Follows the app's light/dark toggle so the browser/status-bar chrome (and the
 // iOS strip via --color-background) match the theme instead of staying white.
 // Values mirror --color-background in app/assets/css/main.css.
-const themeColor = computed(() => (colorMode.value === 'dark' ? '#111113' : '#f9f9f9'))
+const themeColor = computed(() => (colorMode.value === 'dark' ? '#171717' : '#ffffff'))
 
 const toaster = {
   expand: false,

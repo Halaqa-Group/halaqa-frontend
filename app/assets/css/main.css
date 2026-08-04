@@ -293,7 +293,11 @@ html {
   left: 0;
   right: 0;
   height: env(safe-area-inset-top);
-  background-color: var(--color-background);
+  background-color: #ffffff;
   z-index: 60;
   pointer-events: none;
+}
+
+.dark .ios-safe-top-bar {
+  background-color: #171717;
 }

@@ -169,7 +169,11 @@ onMounted(async () => {
       </template>
     </UDashboardSidebar>
 
-    <UDashboardPanel id="main" :ui="{ body: 'pt-3 sm:pt-3 max-lg:pb-24' }">
+    <!-- The floating MobileBottomNav overlays the scroll body's bottom. Reserve
+         its height PLUS the home-indicator safe-area inset as bottom padding, so
+         the last content (e.g. the record form's action buttons) can always be
+         scrolled clear of it. env() is 0 on Android/desktop, leaving just the 6rem. -->
+    <UDashboardPanel id="main" :ui="{ body: 'pt-3 sm:pt-3 max-lg:pb-[calc(6rem_+_env(safe-area-inset-bottom))]' }">
       <template #header>
         <UDashboardNavbar :toggle="false" :ui="{ root: 'h-auto min-h-[calc(var(--ui-header-height)_+_env(safe-area-inset-top))] pt-[env(safe-area-inset-top)]', right: 'gap-3' }">
           <template #left>

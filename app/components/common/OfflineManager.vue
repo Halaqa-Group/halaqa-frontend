@@ -8,7 +8,9 @@ import * as uiLocales from '@nuxt/ui/locale'
 import { useMediaQuery } from '@vueuse/core'
 
 const { t, locale } = useI18n()
-const open = ref(false)
+// Shared so the mobile bottom-nav "More" drawer can open it too (the top-bar
+// trigger is hidden on mobile — see max-lg:hidden below).
+const open = useState('offline-manager-open', () => false)
 const isDesktop = useMediaQuery('(min-width: 1024px)')
 // USlideover's `side` is physical, not logical, so it won't auto-flip for RTL.
 // Anchor it to the inline-end edge — where the trigger lives in the navbar —
@@ -22,6 +24,7 @@ const slideoverSide = computed(() => (uiLocales[locale.value]?.dir === 'rtl' ? '
     color="neutral"
     variant="ghost"
     size="sm"
+    class="max-lg:hidden"
     :aria-label="t('pwa.offlineManager')"
     @click="open = true"
   />

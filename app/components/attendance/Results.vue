@@ -60,7 +60,7 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
   </div>
 
   <template v-else>
-    <div class="md:hidden flex flex-col gap-3 p-3">
+    <div class="md:hidden flex flex-col gap-3 sm:p-3">
       <AttendanceCard
         v-for="row in filteredRows"
         :key="row.studentId"

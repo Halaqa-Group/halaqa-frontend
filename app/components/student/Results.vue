@@ -140,7 +140,7 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
   </div>
 
   <template v-else>
-    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 sm:p-6">
+    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:p-6">
       <StudentCard v-for="student in sortedStudents" :key="student.id" :student="student" />
     </div>
 

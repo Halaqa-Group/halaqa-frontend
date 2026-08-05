@@ -190,7 +190,7 @@ function handleMarkAllPresent() {
       </template>
     </CommonToolbar>
 
-    <UCard :ui="{ body: 'p-0 sm:p-0' }">
+    <div class="overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
       <div v-if="isLoading && staffRows.length === 0" class="flex justify-center py-16">
         <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
       </div>
@@ -229,7 +229,7 @@ function handleMarkAllPresent() {
         <!-- Mobile + grid cards -->
         <div
           v-if="viewMode === 'grid'"
-          class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6"
+          class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:p-6"
         >
           <div
             v-for="row in filteredRows"
@@ -297,7 +297,7 @@ function handleMarkAllPresent() {
           </UTable>
         </div>
       </template>
-    </UCard>
+    </div>
 
     <AttendanceStickyBar
       v-if="canEdit"

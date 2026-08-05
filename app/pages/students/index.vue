@@ -44,11 +44,12 @@ onMounted(() => {
   <div class="flex flex-col gap-6">
     <StudentFilterBar />
 
-    <UCard :ui="{ body: 'p-0 sm:p-0' }">
+    <!-- Card chrome only ≥sm; on mobile the cards stand alone (no box-in-a-box). -->
+    <div class="overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
       <StudentResults />
-      <template v-if="showProgress" #footer>
+      <div v-if="showProgress" class="border-t border-default px-0 py-3 sm:px-6 sm:py-4">
         <StudentProgressFooter />
-      </template>
-    </UCard>
+      </div>
+    </div>
   </div>
 </template>

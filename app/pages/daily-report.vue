@@ -90,42 +90,30 @@ onMounted(async () => {
 // ── Derived view state ───────────────────────────────────────────────────────
 const isNonWorkingDay = computed(() => report.value?.day_status === 'non_working_day')
 
-const weightItems = computed(() => {
+const columns = computed<TableColumn<StudentReportRow>[]>(() => {
+  // Each track's scoring weight rides in its column header (e.g. "حفظ · 40%"),
+  // shown where the score is instead of in a separate strip above the table.
   const w = report.value?.weights
-  if (!w) return []
+  const centered = { class: { th: 'text-center', td: 'text-center' } }
+  const withWeight = (labelKey: string, val?: number) => {
+    const label = t(labelKey)
+    if (val == null) return label
+    const pct = Number.isInteger(val) ? val : Math.round(val * 10) / 10
+    return `${label} · ${pct}%`
+  }
   return [
-    { labelKey: 'tracks.hifz', value: w.hifz },
-    { labelKey: 'tracks.near', value: w.near },
-    { labelKey: 'tracks.far', value: w.far },
-    { labelKey: 'pages.dailyReport.ethics', value: w.ethics }
+    { accessorKey: 'student_name', header: t('pages.dailyReport.columns.student') },
+    { accessorKey: 'attendance_status', header: t('pages.dailyReport.columns.attendance'), meta: centered },
+    { accessorKey: 'hifz_score', header: withWeight('tracks.hifz', w?.hifz), meta: centered },
+    { accessorKey: 'near_score', header: withWeight('tracks.near', w?.near), meta: centered },
+    { accessorKey: 'far_score', header: withWeight('tracks.far', w?.far), meta: centered },
+    { accessorKey: 'ethics_score', header: withWeight('pages.dailyReport.ethics', w?.ethics), meta: centered },
+    { accessorKey: 'plan_completion_rate', header: t('pages.dailyReport.columns.planCompletion'), meta: centered },
+    { accessorKey: 'total_score', header: t('pages.dailyReport.columns.total'), meta: centered },
+    { id: 'alerts', header: t('pages.dailyReport.columns.alerts') },
+    { id: 'actions', header: t('pages.dailyReport.columns.actions') }
   ]
 })
-
-const reportStatusMeta = computed(() => {
-  switch (report.value?.report_status) {
-    case 'complete':
-      return { color: 'success' as const, key: 'pages.dailyReport.status.complete' }
-    case 'partial':
-      return { color: 'warning' as const, key: 'pages.dailyReport.status.partial' }
-    case 'failed':
-      return { color: 'error' as const, key: 'pages.dailyReport.status.failed' }
-    default:
-      return null
-  }
-})
-
-const columns = computed<TableColumn<StudentReportRow>[]>(() => [
-  { accessorKey: 'student_name', header: t('pages.dailyReport.columns.student') },
-  { accessorKey: 'attendance_status', header: t('pages.dailyReport.columns.attendance'), meta: { class: { th: 'text-center', td: 'text-center' } } },
-  { accessorKey: 'hifz_score', header: t('tracks.hifz'), meta: { class: { th: 'text-center', td: 'text-center' } } },
-  { accessorKey: 'near_score', header: t('tracks.near'), meta: { class: { th: 'text-center', td: 'text-center' } } },
-  { accessorKey: 'far_score', header: t('tracks.far'), meta: { class: { th: 'text-center', td: 'text-center' } } },
-  { accessorKey: 'ethics_score', header: t('pages.dailyReport.ethics'), meta: { class: { th: 'text-center', td: 'text-center' } } },
-  { accessorKey: 'plan_completion_rate', header: t('pages.dailyReport.columns.planCompletion'), meta: { class: { th: 'text-center', td: 'text-center' } } },
-  { accessorKey: 'total_score', header: t('pages.dailyReport.columns.total'), meta: { class: { th: 'text-center', td: 'text-center' } } },
-  { id: 'alerts', header: t('pages.dailyReport.columns.alerts') },
-  { id: 'actions', header: t('pages.dailyReport.columns.actions') }
-])
 
 function rowMenuItems(row: StudentReportRow): DropdownMenuItem[][] {
   return [[
@@ -230,19 +218,6 @@ async function onRecalculate(reason: string) {
         </div>
 
         <template #actions>
-          <UBadge
-            v-if="report"
-            :color="report.source === 'live' ? 'success' : 'neutral'"
-            variant="subtle"
-            :icon="report.source === 'live' ? 'i-lucide-radio' : 'i-lucide-history'"
-            :label="t(`pages.dailyReport.source.${report.source}`)"
-          />
-          <UBadge
-            v-if="reportStatusMeta"
-            :color="reportStatusMeta.color"
-            variant="subtle"
-            :label="t(reportStatusMeta.key)"
-          />
           <UButton
             v-if="report && canManageHalaqaLifecycle"
             color="neutral"
@@ -253,18 +228,6 @@ async function onRecalculate(reason: string) {
           />
         </template>
       </CommonToolbar>
-
-      <!-- Weights summary -->
-      <div v-if="report && !isNonWorkingDay" class="flex flex-wrap items-center gap-2">
-        <span class="text-xs text-muted">{{ t('pages.dailyReport.weights') }}:</span>
-        <UBadge
-          v-for="w in weightItems"
-          :key="w.labelKey"
-          color="neutral"
-          variant="soft"
-          :label="`${t(w.labelKey)} ${formatScore(w.value)}`"
-        />
-      </div>
     </div>
 
     <UCard :ui="{ body: 'p-0 sm:p-0' }">
@@ -309,87 +272,87 @@ async function onRecalculate(reason: string) {
           :on-select="onRowSelect"
           :ui="{ base: 'w-full min-w-[800px]', tr: 'cursor-pointer' }"
         >
-        <template #student_name-cell="{ row }">
-          <div class="flex items-center gap-2 min-w-0">
-            <span class="font-medium truncate">{{ row.original.student_name }}</span>
-            <UIcon
-              v-if="row.original.teacher_note"
-              name="i-lucide-sticky-note"
-              class="size-3.5 text-primary shrink-0"
-              :title="row.original.teacher_note"
-            />
-          </div>
-        </template>
-
-        <template #attendance_status-cell="{ row }">
-          <UBadge
-            :color="attendanceMeta(row.original.attendance_status).color"
-            variant="subtle"
-            size="sm"
-            :label="t(attendanceMeta(row.original.attendance_status).labelKey)"
-          />
-        </template>
-
-        <template #hifz_score-cell="{ row }">
-          <span class="tabular-nums">
-            {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.hifz_score) }}
-          </span>
-        </template>
-
-        <template #near_score-cell="{ row }">
-          <span class="tabular-nums">
-            {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.near_score) }}
-          </span>
-        </template>
-
-        <template #far_score-cell="{ row }">
-          <span class="tabular-nums">
-            {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.far_score) }}
-          </span>
-        </template>
-
-        <template #ethics_score-cell="{ row }">
-          <span class="tabular-nums">
-            {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.ethics_score) }}
-          </span>
-        </template>
-
-        <template #plan_completion_rate-cell="{ row }">
-          <span class="tabular-nums text-muted">
-            {{ formatRate(row.original.plan_completion_rate) }}
-          </span>
-        </template>
-
-        <template #total_score-cell="{ row }">
-          <span
-            class="font-bold tabular-nums"
-            :class="row.original.total_score === null ? 'text-muted' : 'text-primary'"
-          >
-            {{ formatScore(row.original.total_score) }}
-          </span>
-        </template>
-
-        <template #alerts-cell="{ row }">
-          <DailyReportSystemAlerts :alerts="row.original.system_alerts" compact />
-        </template>
-
-        <!-- Stop propagation so the menu doesn't also open the row's detail. -->
-        <template #actions-cell="{ row }">
-          <div class="flex justify-end" @click.stop>
-            <UDropdownMenu
-              :items="rowMenuItems(row.original)"
-              :content="{ align: 'end', collisionPadding: 12 }"
-            >
-              <UButton
-                icon="i-lucide-ellipsis-vertical"
-                color="neutral"
-                variant="ghost"
-                square
-                :aria-label="t('pages.dailyReport.columns.actions')"
+          <template #student_name-cell="{ row }">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="font-medium truncate">{{ row.original.student_name }}</span>
+              <UIcon
+                v-if="row.original.teacher_note"
+                name="i-lucide-sticky-note"
+                class="size-3.5 text-primary shrink-0"
+                :title="row.original.teacher_note"
               />
-            </UDropdownMenu>
-          </div>
-        </template>
+            </div>
+          </template>
+
+          <template #attendance_status-cell="{ row }">
+            <UBadge
+              :color="attendanceMeta(row.original.attendance_status).color"
+              variant="subtle"
+              size="sm"
+              :label="t(attendanceMeta(row.original.attendance_status).labelKey)"
+            />
+          </template>
+
+          <template #hifz_score-cell="{ row }">
+            <span class="tabular-nums">
+              {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.hifz_score) }}
+            </span>
+          </template>
+
+          <template #near_score-cell="{ row }">
+            <span class="tabular-nums">
+              {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.near_score) }}
+            </span>
+          </template>
+
+          <template #far_score-cell="{ row }">
+            <span class="tabular-nums">
+              {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.far_score) }}
+            </span>
+          </template>
+
+          <template #ethics_score-cell="{ row }">
+            <span class="tabular-nums">
+              {{ isMissingAttendance(row.original.attendance_status) ? '—' : formatScore(row.original.ethics_score) }}
+            </span>
+          </template>
+
+          <template #plan_completion_rate-cell="{ row }">
+            <span class="tabular-nums text-muted">
+              {{ formatRate(row.original.plan_completion_rate) }}
+            </span>
+          </template>
+
+          <template #total_score-cell="{ row }">
+            <span
+              class="font-bold tabular-nums"
+              :class="row.original.total_score === null ? 'text-muted' : 'text-primary'"
+            >
+              {{ formatScore(row.original.total_score) }}
+            </span>
+          </template>
+
+          <template #alerts-cell="{ row }">
+            <DailyReportSystemAlerts :alerts="row.original.system_alerts" compact />
+          </template>
+
+          <!-- Stop propagation so the menu doesn't also open the row's detail. -->
+          <template #actions-cell="{ row }">
+            <div class="flex justify-end" @click.stop>
+              <UDropdownMenu
+                :items="rowMenuItems(row.original)"
+                :content="{ align: 'end', collisionPadding: 12 }"
+              >
+                <UButton
+                  icon="i-lucide-ellipsis-vertical"
+                  color="neutral"
+                  variant="ghost"
+                  square
+                  :aria-label="t('pages.dailyReport.columns.actions')"
+                />
+              </UDropdownMenu>
+            </div>
+          </template>
         </UTable>
       </div>
     </UCard>

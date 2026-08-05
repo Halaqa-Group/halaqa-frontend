@@ -71,7 +71,7 @@ const filters = reactive<{ trackType: TrackType | null, status: ItemStatus | nul
   trackType: null,
   status: null
 })
-const viewMode = ref<'matrix' | 'table' | 'grid' | 'day'>('matrix')
+const viewMode = ref<"matrix" | "table" | "grid" | "day">("day");
 
 // "Today" roster: every halaqa student's plan + progress for a single day. Its
 // date is independent of the per-student week selector (`selectedWeekStart`) so

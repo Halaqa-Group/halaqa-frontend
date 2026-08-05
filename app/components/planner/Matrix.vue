@@ -237,7 +237,7 @@ function columnMenu(track: TrackType): DropdownMenuItem[][] {
 </script>
 
 <template>
-  <div class="p-3 sm:p-5">
+  <div>
     <div class="hidden md:block overflow-x-auto">
       <div class="min-w-[720px]">
         <div class="grid grid-cols-[10rem_repeat(3,1fr)] gap-2 pb-2">

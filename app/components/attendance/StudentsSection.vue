@@ -32,7 +32,7 @@ const { t } = useI18n()
     </div>
 
     <!-- Card chrome only ≥sm; on mobile the rows/cards stand alone (no box-in-a-box). -->
-    <div v-else class="overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
+    <div v-else class="sm:overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
       <AttendanceResults />
     </div>
   </div>

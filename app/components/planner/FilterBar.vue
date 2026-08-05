@@ -4,10 +4,13 @@ import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 const { t, locale } = useI18n()
 const {
   students, selectedStudentId, selectedWeekStart, filters, viewMode,
-  summary, hasActiveFilters, clearFilters, prevWeek, nextWeek, setWeekFromDate
+  summary, hasActiveFilters, clearFilters, prevWeek, nextWeek, setWeekFromDate,
+  // Day view: the date navigator + roster rollup live in the toolbar too.
+  selectedDate, dayTotals, prevDay, nextDay
 } = useWeeklyPlan()
 
 const calendarOpen = ref(false)
+const dayCalendarOpen = ref(false)
 const filtersOpen = ref(false)
 
 const studentItems = computed(() => students.value.map(s => ({ label: s.name, value: s.id })))
@@ -54,6 +57,29 @@ function onCalendarPick(value: unknown) {
   const v = value as { year: number, month: number, day: number }
   setWeekFromDate(new Date(v.year, v.month - 1, v.day))
   calendarOpen.value = false
+}
+
+// ── Day view date picker ────────────────────────────────────────────────────
+const dayCalendarValue = computed(() => {
+  const [y, m, d] = selectedDate.value.split('-').map(Number)
+  return new CalendarDate(y!, m!, d!)
+})
+const dayLabel = computed(() => {
+  const [y, m, d] = selectedDate.value.split('-').map(Number)
+  if (!y || !m || !d) return selectedDate.value
+  try {
+    return new Date(y, m - 1, d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
+      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+    })
+  } catch {
+    return selectedDate.value
+  }
+})
+function onDayPick(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || !('year' in value)) return
+  const v = value as { year: number, month: number, day: number }
+  selectedDate.value = `${v.year}-${String(v.month).padStart(2, '0')}-${String(v.day).padStart(2, '0')}`
+  dayCalendarOpen.value = false
 }
 </script>
 
@@ -140,10 +166,53 @@ function onCalendarPick(value: unknown) {
       />
     </div>
 
+    <!-- Day view: date navigator (moved out of the roster into the toolbar) -->
+    <div v-if="viewMode === 'day'" class="flex items-center gap-1">
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-chevron-right"
+        square
+        :aria-label="t('pages.planner.day.prevDay')"
+        @click="prevDay"
+      />
+      <UPopover v-model:open="dayCalendarOpen">
+        <UButton variant="outline" color="neutral" icon="i-lucide-calendar-days" class="justify-between min-w-40">
+          {{ dayLabel }}
+        </UButton>
+        <template #content>
+          <UCalendar
+            :model-value="dayCalendarValue"
+            color="primary"
+            class="p-2"
+            @update:model-value="onDayPick"
+          />
+        </template>
+      </UPopover>
+      <UButton
+        variant="outline"
+        color="neutral"
+        icon="i-lucide-chevron-left"
+        square
+        :aria-label="t('pages.planner.day.nextDay')"
+        @click="nextDay"
+      />
+    </div>
+
     <template #actions>
       <UBadge v-if="viewMode !== 'day'" color="primary" variant="subtle" class="hidden sm:inline-flex">
         {{ t('pages.planner.coverage', { achieved: summary.totalAchieved, total: summary.totalPlanned, percent: summary.coverage }) }}
       </UBadge>
+
+      <!-- Day view: roster rollup badges, beside the view toggles -->
+      <template v-if="viewMode === 'day'">
+        <UBadge color="neutral" variant="subtle" class="hidden sm:inline-flex">
+          {{ t('pages.planner.day.studentsWithPlan', { withPlan: dayTotals.withPlan, total: dayTotals.total }) }}
+        </UBadge>
+        <UBadge v-if="dayTotals.planned > 0" color="primary" variant="subtle" class="hidden sm:inline-flex">
+          {{ t('pages.planner.coverage', { achieved: dayTotals.achieved, total: dayTotals.planned, percent: dayTotals.coverage }) }}
+        </UBadge>
+      </template>
 
       <div class="flex items-center gap-1 rounded-md border border-default p-0.5">
         <UButton

@@ -609,6 +609,25 @@ export function useWeeklyPlan() {
     return { totalPlanned, totalAchieved, coverage }
   })
 
+  // Roster-level rollup for the selected day — surfaced in the day-view toolbar.
+  const dayTotals = computed(() => {
+    let planned = 0
+    let achieved = 0
+    let withPlan = 0
+    for (const row of dayRoster.value) {
+      planned += row.totalPlanned
+      achieved += row.totalAchieved
+      if (row.items.length) withPlan++
+    }
+    return {
+      planned,
+      achieved,
+      withPlan,
+      total: dayRoster.value.length,
+      coverage: planned > 0 ? Math.round((achieved / planned) * 100) : 0
+    }
+  })
+
   const hasActiveFilters = computed(() => filters.trackType !== null || filters.status !== null)
   function clearFilters() {
     filters.trackType = null
@@ -696,6 +715,7 @@ export function useWeeklyPlan() {
 
     filteredItems,
     summary,
+    dayTotals,
     hasActiveFilters,
     hasStudents,
     studentById,

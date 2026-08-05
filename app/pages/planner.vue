@@ -247,9 +247,7 @@ onMounted(async () => {
 
     <template v-else>
       <PlannerFilterBar />
-      <UCard :ui="{ body: 'p-0 sm:p-0' }">
-        <PlannerResults />
-      </UCard>
+      <PlannerResults />
     </template>
 
     <div

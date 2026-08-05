@@ -94,7 +94,7 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
   </div>
 
   <template v-else>
-    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6">
+    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <PlannerCard
         v-for="it in filteredItems"
         :key="it.id"
@@ -104,7 +104,8 @@ const columns = computed<TableColumn<ApiWeeklyPlanItem>[]>(() => {
       />
     </div>
 
-    <div v-else>
+    <!-- The card/day views stand alone; the table needs a container border. -->
+    <div v-else class="overflow-hidden rounded-xl border border-default">
       <UTable :data="filteredItems" :columns="columns" :loading="isLoading" :ui="{ base: 'w-full min-w-[700px]' }">
         <template #day-cell="{ row }">
           <span class="font-medium">{{ dayLabel(row.original) }}</span>

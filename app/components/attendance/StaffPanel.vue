@@ -190,7 +190,7 @@ function handleMarkAllPresent() {
       </template>
     </CommonToolbar>
 
-    <div class="overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
+    <div class="sm:overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
       <div v-if="isLoading && staffRows.length === 0" class="flex justify-center py-16">
         <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
       </div>

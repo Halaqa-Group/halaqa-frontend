@@ -74,7 +74,7 @@ onMounted(() => {
 
     <!-- The card chrome (border/bg) only kicks in ≥sm; on mobile the cards stand on
          their own so there's no box-inside-a-box. -->
-    <div v-else class="overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
+    <div v-else class="sm:overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
       <AchievementResults />
 
       <div v-if="totalPages > 1" class="flex justify-end border-t border-default px-0 py-3 sm:px-6">

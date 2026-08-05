@@ -59,11 +59,27 @@ let startX = 0
 let startY = 0
 let tracking = false
 
+// True when the touch began inside something that scrolls horizontally itself
+// (the tab bar, the status-chip row, a wide table). A horizontal drag there is
+// meant to scroll that element, not flip the tab.
+function beganInHorizontalScroller(target: HTMLElement | null): boolean {
+  let node: HTMLElement | null = target
+  while (node && node !== swipeTarget) {
+    if (node.getAttribute('role') === 'tablist') return true
+    const overflowX = getComputedStyle(node).overflowX
+    if ((overflowX === 'auto' || overflowX === 'scroll') && node.scrollWidth > node.clientWidth) {
+      return true
+    }
+    node = node.parentElement
+  }
+  return false
+}
+
 function onTouchStart(e: TouchEvent) {
   const touch = e.touches[0]
   if (!touch) return
-  // Gestures that begin on the tab bar belong to it (scrolling an overflowing bar).
-  if ((e.target as HTMLElement | null)?.closest('[role="tablist"]')) {
+  // Gestures that begin on a horizontally scrollable element belong to it.
+  if (beganInHorizontalScroller(e.target as HTMLElement | null)) {
     tracking = false
     return
   }

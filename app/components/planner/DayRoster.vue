@@ -6,11 +6,11 @@ import { formatVerseRange } from '~/utils/quran'
 import { TRACK_BADGE_COLOR, achievementStatusColor, type AchievementTrack } from '~/utils/achievement'
 import { planItemStatusColor } from '~/utils/plan'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
-  students, selectedDate, dayRoster, dayLoading, isTodaySelected,
-  selectedStudentId, viewMode, loadDayRoster, prevDay, nextDay, goToday
+  students, selectedDate, dayRoster, dayLoading,
+  selectedStudentId, viewMode, loadDayRoster
 } = useWeeklyPlan()
 
 // Self-loading: rebuild whenever the halaqa, the roster date, or the student list
@@ -21,18 +21,6 @@ watch(
   { immediate: true }
 )
 
-const dateLabel = computed(() => {
-  const [y, m, d] = selectedDate.value.split('-').map(Number)
-  if (!y || !m || !d) return selectedDate.value
-  try {
-    return new Date(y, m - 1, d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-    })
-  } catch {
-    return selectedDate.value
-  }
-})
-
 function range(it: ApiWeeklyPlanItem) {
   return formatVerseRange(it.start_surah, it.start_verse, it.end_surah, it.end_verse, SURAH_NAMES)
 }
@@ -42,73 +30,10 @@ function openStudent(row: DayRosterRow) {
   selectedStudentId.value = row.student.id
   viewMode.value = 'matrix'
 }
-
-// Roster-level rollup across all students for the day.
-const totals = computed(() => {
-  let planned = 0
-  let achieved = 0
-  let withPlan = 0
-  for (const row of dayRoster.value) {
-    planned += row.totalPlanned
-    achieved += row.totalAchieved
-    if (row.items.length) withPlan++
-  }
-  return {
-    planned,
-    achieved,
-    withPlan,
-    coverage: planned > 0 ? Math.round((achieved / planned) * 100) : 0
-  }
-})
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 p-4 sm:p-6">
-    <!-- Date navigator + day rollup -->
-    <div class="flex items-center justify-between gap-3 flex-wrap">
-      <div class="flex items-center gap-1">
-        <UButton
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-chevron-right"
-          square
-          :aria-label="t('pages.planner.day.prevDay')"
-          @click="prevDay"
-        />
-        <div class="flex flex-col items-center min-w-44 px-2">
-          <span class="text-sm font-semibold">{{ dateLabel }}</span>
-          <UButton
-            v-if="!isTodaySelected"
-            variant="link"
-            color="primary"
-            size="xs"
-            class="p-0 h-auto"
-            @click="goToday"
-          >
-            {{ t('pages.planner.day.backToToday') }}
-          </UButton>
-          <span v-else class="text-xs text-muted">{{ t('pages.planner.day.today') }}</span>
-        </div>
-        <UButton
-          variant="outline"
-          color="neutral"
-          icon="i-lucide-chevron-left"
-          square
-          :aria-label="t('pages.planner.day.nextDay')"
-          @click="nextDay"
-        />
-      </div>
-
-      <div class="flex items-center gap-2">
-        <UBadge color="neutral" variant="subtle">
-          {{ t('pages.planner.day.studentsWithPlan', { withPlan: totals.withPlan, total: dayRoster.length }) }}
-        </UBadge>
-        <UBadge v-if="totals.planned > 0" color="primary" variant="subtle">
-          {{ t('pages.planner.coverage', { achieved: totals.achieved, total: totals.planned, percent: totals.coverage }) }}
-        </UBadge>
-      </div>
-    </div>
-
+  <div class="flex flex-col gap-4">
     <div v-if="dayLoading && dayRoster.length === 0" class="flex justify-center py-16">
       <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
     </div>

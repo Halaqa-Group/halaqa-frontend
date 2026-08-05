@@ -634,14 +634,12 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         <div v-if="isEdit" class="flex items-center h-9 px-3 rounded-md border border-default bg-elevated text-sm text-muted">
           {{ studentNameWhenEditing }}
         </div>
-        <USelectMenu
+        <CommonWheelSelect
           v-else
           v-model="state.student_id"
           :items="studentItems"
-          value-key="value"
           :placeholder="t('pages.achievements.selectStudent')"
-          searchable
-          class="w-full"
+          :aria-label="t('pages.achievements.selectStudent')"
         />
       </UFormField>
 

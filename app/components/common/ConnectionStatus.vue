@@ -61,9 +61,9 @@ watch(draftsFlushedAt, () => {
       variant="soft"
       size="sm"
       icon="i-lucide-wifi-off"
-    >
-      {{ $t('pwa.offline') }}
-    </UBadge>
+      :title="$t('pwa.offline')"
+      :aria-label="$t('pwa.offline')"
+    />
 
     <CommonOfflineSyncPanel v-model:open="panelOpen" />
   </div>

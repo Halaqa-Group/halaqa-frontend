@@ -83,7 +83,11 @@ watch(() => route.fullPath, () => {
     </div>
   </nav>
 
-  <UDrawer v-model:open="isMoreOpen" :title="t('nav.menu')">
+  <UDrawer
+    v-model:open="isMoreOpen"
+    :title="t('nav.menu')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden' }"
+  >
     <template #body>
       <div class="pb-2" style="padding-bottom: env(safe-area-inset-bottom)">
         <ul v-if="moreLinks.length" class="grid grid-cols-4 gap-2">

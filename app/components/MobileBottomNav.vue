@@ -25,6 +25,13 @@ function isActive(item: NavigationMenuItem): boolean {
 
 const isMoreActive = computed(() => moreLinks.value.some(isActive))
 
+// Shared with CommonOfflineManager (its top-bar trigger is hidden on mobile).
+const offlineManagerOpen = useState('offline-manager-open', () => false)
+function openOfflineManager() {
+  isMoreOpen.value = false
+  offlineManagerOpen.value = true
+}
+
 // Close the drawer whenever navigation lands somewhere new.
 watch(() => route.fullPath, () => {
   isMoreOpen.value = false

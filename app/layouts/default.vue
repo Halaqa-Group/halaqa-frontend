@@ -3,7 +3,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 
 const { t, locale } = useI18n()
 const { activeRole } = useAuth()
-const { isParent, canViewHalaqat, canManageUsers, canViewCalendar } = usePermissions()
+const { isParent, isTeacher, canViewHalaqat, canManageUsers, canViewCalendar } = usePermissions()
 const { initializeHalaqa, isHalaqaScoped } = useGlobalHalaqa()
 const route = useRoute()
 const localePath = useLocalePath()
@@ -59,6 +59,22 @@ const links = computed<NavigationMenuItem[][]>(() => {
   // and the page gates them.
   if (canViewCalendar.value) {
     mainLinks.push({ label: t('nav.school'), icon: 'i-lucide-school', to: '/school' })
+  }
+
+  // A teacher's day is recording and planning, so lift Achievements and the
+  // planner onto the mobile primary bar (its first four links) alongside Home
+  // and Attendance, rather than leaving them buried in the "More" drawer.
+  // Sort is stable, so everything else keeps its relative order.
+  if (isTeacher.value) {
+    const primaryOrder = ['/', '/achievements', '/planner', '/attendance']
+    mainLinks.sort((a, b) => {
+      const ai = primaryOrder.indexOf(a.to as string)
+      const bi = primaryOrder.indexOf(b.to as string)
+      if (ai === -1 && bi === -1) return 0
+      if (ai === -1) return 1
+      if (bi === -1) return -1
+      return ai - bi
+    })
   }
 
   return [mainLinks]

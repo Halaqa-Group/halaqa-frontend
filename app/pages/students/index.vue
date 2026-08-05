@@ -10,7 +10,6 @@ const { students, fetchStudents, fetchSummarySnapshot, searchQuery } = useStuden
 const { sortedStudents, filterStatus } = useStudentsView()
 const { selectedHalaqaId } = useGlobalHalaqa()
 
-const showSummary = computed(() => students.value.length > 0)
 const showProgress = computed(() =>
   students.value.length > 0 && sortedStudents.value.length > 0
 )

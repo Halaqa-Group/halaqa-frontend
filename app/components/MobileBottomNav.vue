@@ -97,7 +97,7 @@ watch(() => route.fullPath, () => {
   >
     <template #body>
       <div class="pb-2" style="padding-bottom: env(safe-area-inset-bottom)">
-        <ul v-if="moreLinks.length" class="grid grid-cols-4 gap-2">
+        <ul class="grid grid-cols-4 gap-2">
           <li
             v-for="link in moreLinks"
             :key="link.to as string"
@@ -113,9 +113,22 @@ watch(() => route.fullPath, () => {
               </span>
             </NuxtLink>
           </li>
+
+          <li>
+            <button
+              type="button"
+              class="flex flex-col items-center justify-center gap-2 rounded-xl p-3 text-center w-full text-muted hover:bg-elevated hover:text-default transition-colors"
+              @click="openOfflineManager"
+            >
+              <UIcon name="i-lucide-cloud-download" class="size-6" />
+              <span class="text-xs font-medium leading-tight line-clamp-2">
+                {{ t('pwa.offlineManager') }}
+              </span>
+            </button>
+          </li>
         </ul>
 
-        <USeparator v-if="moreLinks.length" class="my-4" />
+        <USeparator class="my-4" />
 
         <UserMenu />
       </div>

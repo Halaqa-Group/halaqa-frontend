@@ -221,7 +221,9 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
       />
     </div>
 
-    <div v-else>
+    <!-- The card grid stands alone on mobile; the table still needs a container
+         border there (on ≥sm the page card provides it). -->
+    <div v-else class="max-sm:overflow-hidden max-sm:rounded-xl max-sm:border max-sm:border-default">
       <UTable :data="filteredAchievements" :columns="columns" :loading="isLoading" :ui="{ base: 'w-full min-w-[880px]' }">
         <template #student_id-cell="{ row }">
           <div class="flex items-center gap-3 min-w-0">

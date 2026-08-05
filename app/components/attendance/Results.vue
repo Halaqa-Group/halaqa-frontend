@@ -60,7 +60,7 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
   </div>
 
   <template v-else>
-    <div class="md:hidden flex flex-col gap-3 sm:p-3">
+    <div class="md:hidden flex flex-col gap-3">
       <AttendanceCard
         v-for="row in filteredRows"
         :key="row.studentId"
@@ -75,7 +75,7 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
     </div>
 
     <div class="hidden md:block">
-      <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6">
+      <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         <AttendanceCard
           v-for="row in filteredRows"
           :key="row.studentId"
@@ -88,7 +88,7 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
         />
       </div>
 
-      <div v-else>
+      <div v-else class="overflow-hidden rounded-xl border border-default">
         <UTable :data="filteredRows" :columns="columns" :loading="isLoading" :ui="{ base: 'w-full min-w-[640px]' }">
           <template #name-cell="{ row }">
             <div class="flex items-center gap-3 min-w-0">

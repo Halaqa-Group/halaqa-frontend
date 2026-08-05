@@ -210,7 +210,7 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
   </div>
 
   <template v-else>
-    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:p-6">
+    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
       <AchievementCard
         v-for="a in filteredAchievements"
         :key="a.id"
@@ -221,9 +221,8 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
       />
     </div>
 
-    <!-- The card grid stands alone on mobile; the table still needs a container
-         border there (on ≥sm the page card provides it). -->
-    <div v-else class="max-sm:overflow-hidden max-sm:rounded-xl max-sm:border max-sm:border-default">
+    <!-- The card grid stands alone; only the table gets a container border. -->
+    <div v-else class="overflow-hidden rounded-xl border border-default">
       <UTable :data="filteredAchievements" :columns="columns" :loading="isLoading" :ui="{ base: 'w-full min-w-[880px]' }">
         <template #student_id-cell="{ row }">
           <div class="flex items-center gap-3 min-w-0">

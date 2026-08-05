@@ -72,21 +72,21 @@ onMounted(() => {
       </p>
     </div>
 
-    <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
+    <!-- The card chrome (border/bg) only kicks in ≥sm; on mobile the cards stand on
+         their own so there's no box-inside-a-box. -->
+    <div v-else class="overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
       <AchievementResults />
 
-      <template v-if="totalPages > 1" #footer>
-        <div class="flex justify-end">
-          <UPagination
-            :page="page"
-            :total="total"
-            :items-per-page="limit"
-            :disabled="isLoading"
-            @update:page="onPageChange"
-          />
-        </div>
-      </template>
-    </UCard>
+      <div v-if="totalPages > 1" class="flex justify-end border-t border-default px-0 py-3 sm:px-6">
+        <UPagination
+          :page="page"
+          :total="total"
+          :items-per-page="limit"
+          :disabled="isLoading"
+          @update:page="onPageChange"
+        />
+      </div>
+    </div>
 
     <ConfirmDialog
       v-model:open="deleteOpen"

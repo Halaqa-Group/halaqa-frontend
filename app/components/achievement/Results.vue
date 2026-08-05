@@ -210,7 +210,7 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
   </div>
 
   <template v-else>
-    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6">
+    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:p-6">
       <AchievementCard
         v-for="a in filteredAchievements"
         :key="a.id"

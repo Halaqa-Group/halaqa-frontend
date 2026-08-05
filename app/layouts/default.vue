@@ -208,10 +208,20 @@ onMounted(async () => {
                 :aria-label="t('common.back')"
                 class="shrink-0 -ms-1"
               />
-              <h1 v-if="pageTitle" class="text-base sm:text-lg font-bold truncate">
-                {{ pageTitle }}
-              </h1>
-              <HalaqaMenu v-if="isHalaqaScoped" class="min-w-0 flex-1 sm:flex-none sm:w-56" />
+              <div class="flex items-center gap-1.5 min-w-0">
+                <h1 v-if="pageTitle" class="text-base sm:text-lg font-bold truncate shrink-0">
+                  {{ pageTitle }}
+                </h1>
+                <template v-if="isHalaqaScoped">
+                  <UIcon
+                    v-if="pageTitle"
+                    name="i-lucide-chevron-right"
+                    class="size-4 text-dimmed shrink-0 rtl:rotate-180"
+                    aria-hidden="true"
+                  />
+                  <HalaqaMenu class="min-w-0 shrink -ms-1.5" />
+                </template>
+              </div>
             </div>
           </template>
 

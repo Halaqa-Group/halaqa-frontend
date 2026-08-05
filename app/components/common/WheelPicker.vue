@@ -19,7 +19,7 @@ const props = withDefaults(defineProps<{
   // How many rows are visible at once (odd, so one sits dead centre).
   visibleCount?: number
   ariaLabel?: string
-}>(), { itemHeight: 34, visibleCount: 5 })
+}>(), { itemHeight: 44, visibleCount: 5 })
 
 const model = defineModel<T>({ required: true })
 
@@ -50,15 +50,14 @@ const windowRows = computed(() => {
 })
 
 function styleFor(i: number): Record<string, string> {
-  const d = i - offset.value
-  const ad = Math.abs(d)
-  const tilt = Math.max(-half.value - 1, Math.min(half.value + 1, d))
+  // Flat rows (no tilt/scale) that just fade out from the centre, tracking the
+  // fractional scroll so the fade is smooth mid-spin.
+  const ad = Math.abs(i - offset.value)
   return {
     top: `${padTop.value + i * props.itemHeight}px`,
     height: `${props.itemHeight}px`,
     lineHeight: `${props.itemHeight}px`,
-    opacity: String(Math.max(0.16, 1 - ad * 0.32)),
-    transform: `rotateX(${tilt * -24}deg) scale(${Math.max(0.78, 1 - ad * 0.08)})`
+    opacity: String(Math.max(0.14, 1 - ad * 0.4))
   }
 }
 
@@ -152,14 +151,14 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="wheel relative overflow-hidden rounded-md border border-default bg-default"
+    class="wheel relative overflow-hidden"
     :style="{ height: `${height}px` }"
     role="listbox"
     :aria-label="ariaLabel"
   >
-    <!-- The selection band the centred row parks under. -->
+    <!-- The rounded capsule the centred row parks under. -->
     <div
-      class="pointer-events-none absolute inset-x-0 border-y border-default bg-elevated"
+      class="pointer-events-none absolute inset-x-1 rounded-full bg-elevated"
       :style="{ top: `${padTop}px`, height: `${itemHeight}px` }"
     />
     <div
@@ -176,8 +175,8 @@ onBeforeUnmount(() => {
           type="button"
           role="option"
           :aria-selected="row.index === activeIndex"
-          class="wheel-item absolute inset-x-0 flex items-center justify-center gap-1 px-2 text-sm outline-none"
-          :class="row.index === activeIndex ? 'font-semibold text-highlighted' : 'text-muted'"
+          class="wheel-item absolute inset-x-0 flex items-center justify-center gap-1.5 px-3 text-[15px] text-highlighted outline-none"
+          :class="row.index === activeIndex ? 'font-semibold' : ''"
           :style="styleFor(row.index)"
           @click="selectIndex(row.index)"
         >
@@ -199,14 +198,11 @@ onBeforeUnmount(() => {
   touch-action: pan-y;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  perspective: 700px;
 }
 .wheel-scroller::-webkit-scrollbar {
   display: none;
 }
 .wheel-item {
-  transform-origin: center center;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
+  will-change: opacity;
 }
 </style>

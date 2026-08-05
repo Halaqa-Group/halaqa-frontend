@@ -41,27 +41,24 @@ const items = computed<DropdownMenuItem[][]>(() => {
 <template>
   <UDropdownMenu
     :items="items"
-    :content="{ align: 'center', collisionPadding: 12 }"
-    :ui="{ content: collapsed ? 'w-56' : 'w-(--reka-dropdown-menu-trigger-width)' }"
+    :content="{ align: 'start', collisionPadding: 12 }"
+    :ui="{ content: 'min-w-56' }"
   >
     <UButton
       :icon="triggerIcon"
-      :trailing-icon="(!collapsed && hasMultipleHalaqat) ? 'i-lucide-chevrons-up-down' : undefined"
+      :trailing-icon="(!collapsed && hasMultipleHalaqat) ? 'i-lucide-chevron-down' : undefined"
       color="neutral"
       variant="ghost"
-      block
+      size="sm"
       :square="collapsed"
-      class="data-[state=open]:bg-elevated"
+      class="max-w-full data-[state=open]:bg-elevated"
       :class="[
-        collapsed ? 'aspect-square mx-auto' : 'h-auto py-1.5',
+        collapsed ? 'aspect-square mx-auto' : '',
         !hasMultipleHalaqat && 'pointer-events-none'
       ]"
-      :ui="{ trailingIcon: 'text-dimmed' }"
+      :ui="{ trailingIcon: 'text-dimmed size-3.5' }"
     >
-      <span v-if="!collapsed" class="flex flex-col items-start text-start min-w-0 flex-1 leading-tight">
-        <span class="text-[11px] text-dimmed">حلقة</span>
-        <span class="text-sm font-semibold truncate w-full">{{ triggerName }}</span>
-      </span>
+      <span v-if="!collapsed" class="text-sm font-medium truncate">{{ triggerName }}</span>
     </UButton>
   </UDropdownMenu>
 </template>

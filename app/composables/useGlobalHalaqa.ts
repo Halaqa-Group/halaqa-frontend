@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import type { ListHalaqatQuery } from '~/composables/useHalaqat'
 import type { ApiHalaqaListItem } from '~/types'
 
 // Persisted so an offline reload keeps the user's halaqa — the full object is
@@ -45,12 +46,25 @@ const SCOPED_ROLES = ['teacher']
 
 export function useGlobalHalaqa() {
   const { halaqat, fetchHalaqat, isLoading } = useHalaqat()
-  const { activeRole } = useAuth()
+  const { activeRole, user } = useAuth()
 
   const isHalaqaScoped = computed(() => SCOPED_ROLES.includes(activeRole.value ?? ''))
 
+  // /halaqat is scoped server-side by the UNION of the user's roles, so a
+  // supervisor-and-teacher acting as teacher would otherwise see the halaqat
+  // they supervise in the header too. When acting as teacher, constrain the
+  // list to the ones they actually teach (main/assistant/substitute) by asking
+  // the backend to filter on their own id.
+  function baseListQuery(): ListHalaqatQuery {
+    const query: ListHalaqatQuery = { status: 'active', limit: 100 }
+    if (activeRole.value === 'teacher' && user.value?.id != null) {
+      query.teacher_user_id = user.value.id
+    }
+    return query
+  }
+
   async function initializeHalaqa() {
-    await fetchHalaqat({ status: 'active', limit: 100 })
+    await fetchHalaqat(baseListQuery())
     const list = halaqat.value
     // Prefer an in-session selection, else the one restored from localStorage.
     const preferredId = selectedHalaqa.value?.id ?? storedSelectedId.value
@@ -96,7 +110,7 @@ export function useGlobalHalaqa() {
   // it fetches the list itself when empty.
   async function ensureHalaqaSelected(): Promise<ApiHalaqaListItem | null> {
     if (selectedHalaqa.value) return selectedHalaqa.value
-    if (halaqat.value.length === 0) await fetchHalaqat({ status: 'active', limit: 100 })
+    if (halaqat.value.length === 0) await fetchHalaqat(baseListQuery())
     // A concurrent initializeHalaqa may have settled the scope while we fetched.
     if (selectedHalaqa.value) return selectedHalaqa.value
     const first = halaqat.value[0]

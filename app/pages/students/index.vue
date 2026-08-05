@@ -43,10 +43,10 @@ onMounted(() => {
   <div class="flex flex-col gap-6">
     <StudentFilterBar />
 
-    <!-- Card chrome only ≥sm; on mobile the cards stand alone (no box-in-a-box). -->
-    <div class="sm:overflow-hidden sm:rounded-xl sm:border sm:border-default sm:bg-default">
+    <!-- No parent box: the cards stand alone; the table brings its own border. -->
+    <div>
       <StudentResults />
-      <div v-if="showProgress" class="border-t border-default px-0 py-3 sm:px-6 sm:py-4">
+      <div v-if="showProgress" class="pt-4">
         <StudentProgressFooter />
       </div>
     </div>

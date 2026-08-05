@@ -140,13 +140,12 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
   </div>
 
   <template v-else>
-    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:p-6">
+    <div v-if="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <StudentCard v-for="student in sortedStudents" :key="student.id" :student="student" />
     </div>
 
-    <!-- The card grid stands alone on mobile; the table still needs a container
-         border there (on ≥sm the page card provides it). -->
-    <div v-else class="max-sm:overflow-hidden max-sm:rounded-xl max-sm:border max-sm:border-default">
+    <!-- The card grid stands alone; only the table gets a container border. -->
+    <div v-else class="overflow-hidden rounded-xl border border-default">
       <UTable
         :data="sortedStudents"
         :columns="columns"

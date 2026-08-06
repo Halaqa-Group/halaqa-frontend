@@ -420,322 +420,322 @@ watch(modalOpen, (open) => {
 
 <template>
   <DefineBody>
-      <div v-if="loading" class="flex items-center justify-center py-16">
-        <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
-      </div>
+    <div v-if="loading" class="flex items-center justify-center py-16">
+      <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
+    </div>
 
-      <UForm
-        v-else
-        id="student-form"
-        :state="state"
-        :schema="schema"
-        class="space-y-6"
-        @submit="handleSubmit"
+    <UForm
+      v-else
+      id="student-form"
+      :state="state"
+      :schema="schema"
+      class="space-y-6"
+      @submit="handleSubmit"
+    >
+      <UAlert
+        v-if="lockBio"
+        color="info"
+        variant="soft"
+        icon="i-lucide-info"
+        :title="t('pages.students.addModal.teacherEditHint')"
+      />
+
+      <UAlert
+        v-if="isEditMode && !lockBio"
+        color="neutral"
+        variant="soft"
+        icon="i-lucide-users"
+        :title="t('pages.students.addModal.guardiansEditHint')"
+      />
+
+      <UFormField
+        v-if="!isEditMode"
+        :label="t('pages.students.addModal.halaqaLabel')"
+        name="halaqaIds"
+        :hint="halaqatLoading ? t('pages.students.addModal.halaqaLoading') : t('pages.students.addModal.halaqaHint')"
       >
-        <UAlert
-          v-if="lockBio"
-          color="info"
-          variant="soft"
-          icon="i-lucide-info"
-          :title="t('pages.students.addModal.teacherEditHint')"
+        <USelectMenu
+          v-model="state.halaqaIds"
+          :items="halaqaItems"
+          value-key="value"
+          multiple
+          :loading="halaqatLoading"
+          :disabled="halaqatLoading"
+          :placeholder="t('pages.students.addModal.halaqaPlaceholder')"
+          icon="i-lucide-layers"
+          class="w-full"
         />
+      </UFormField>
 
-        <UAlert
-          v-if="isEditMode && !lockBio"
-          color="neutral"
-          variant="soft"
-          icon="i-lucide-users"
-          :title="t('pages.students.addModal.guardiansEditHint')"
-        />
-
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <UFormField
-          v-if="!isEditMode"
-          :label="t('pages.students.addModal.halaqaLabel')"
-          name="halaqaIds"
-          :hint="halaqatLoading ? t('pages.students.addModal.halaqaLoading') : t('pages.students.addModal.halaqaHint')"
+          v-for="field in NAME_PART_FIELDS"
+          :key="field.key"
+          :label="t(field.labelKey)"
+          :name="field.key"
+          required
         >
-          <USelectMenu
-            v-model="state.halaqaIds"
-            :items="halaqaItems"
-            value-key="value"
-            multiple
-            :loading="halaqatLoading"
-            :disabled="halaqatLoading"
-            :placeholder="t('pages.students.addModal.halaqaPlaceholder')"
-            icon="i-lucide-layers"
+          <UInput
+            v-model="state[field.key]"
+            :maxlength="NAME_PART_MAX_LENGTH"
+            :disabled="lockBio"
             class="w-full"
           />
         </UFormField>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <UFormField
-            v-for="field in NAME_PART_FIELDS"
-            :key="field.key"
-            :label="t(field.labelKey)"
-            :name="field.key"
-            required
-          >
-            <UInput
-              v-model="state[field.key]"
-              :maxlength="NAME_PART_MAX_LENGTH"
-              :disabled="lockBio"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField :label="t('pages.students.addModal.gender')" name="gender" required>
-            <USelect
-              v-model="state.gender"
-              :items="genderItems"
+        <UFormField :label="t('pages.students.addModal.gender')" name="gender" required>
+          <USelect
+            v-model="state.gender"
+            :items="genderItems"
+            value-key="value"
+            :disabled="lockBio"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField :label="t('pages.students.addModal.idNumber')" name="idNumber" :required="!isEditMode">
+          <UInput
+            v-model="state.idNumber"
+            :placeholder="t('pages.students.addModal.idNumberPlaceholder')"
+            inputmode="numeric"
+            dir="ltr"
+            :disabled="lockBio"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          :label="t('pages.students.addModal.phone')"
+          name="phone"
+          :hint="t('pages.students.addModal.phoneHint')"
+          class="sm:col-span-2"
+        >
+          <div class="flex gap-2">
+            <USelectMenu
+              v-model="state.phoneCountryCode"
+              :items="dialCodeItems"
               value-key="value"
+              :search-input="{ placeholder: t('pages.students.addModal.phoneCountrySearch') }"
               :disabled="lockBio"
-              class="w-full"
+              class="w-56 shrink-0"
             />
-          </UFormField>
-          <UFormField :label="t('pages.students.addModal.idNumber')" name="idNumber" :required="!isEditMode">
             <UInput
-              v-model="state.idNumber"
-              :placeholder="t('pages.students.addModal.idNumberPlaceholder')"
-              inputmode="numeric"
+              v-model="state.phone"
+              :placeholder="t('pages.students.addModal.phonePlaceholder')"
+              inputmode="tel"
               dir="ltr"
               :disabled="lockBio"
-              class="w-full"
+              class="flex-1"
             />
-          </UFormField>
-          <UFormField
-            :label="t('pages.students.addModal.phone')"
-            name="phone"
-            :hint="t('pages.students.addModal.phoneHint')"
-            class="sm:col-span-2"
-          >
-            <div class="flex gap-2">
-              <USelectMenu
-                v-model="state.phoneCountryCode"
-                :items="dialCodeItems"
-                value-key="value"
-                :search-input="{ placeholder: t('pages.students.addModal.phoneCountrySearch') }"
-                :disabled="lockBio"
-                class="w-56 shrink-0"
-              />
-              <UInput
-                v-model="state.phone"
-                :placeholder="t('pages.students.addModal.phonePlaceholder')"
-                inputmode="tel"
-                dir="ltr"
-                :disabled="lockBio"
-                class="flex-1"
-              />
-            </div>
-          </UFormField>
-          <UFormField :label="t('pages.students.addModal.dob')" name="dob">
-            <UPopover :disabled="lockBio">
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-calendar"
-                :disabled="lockBio"
-                class="w-full justify-start font-normal"
-              >
-                {{ state.dob ? formatDate(state.dob) : t('pages.students.addModal.pickDate') }}
-              </UButton>
-              <template #content>
-                <UCalendar v-model="dobDate" class="p-2" />
-              </template>
-            </UPopover>
-          </UFormField>
-          <UFormField :label="t('pages.students.addModal.joinDate')" name="joinDate" required>
-            <UPopover :disabled="lockBio">
-              <UButton
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-calendar"
-                :disabled="lockBio"
-                class="w-full justify-start font-normal"
-              >
-                {{ state.joinDate ? formatDate(state.joinDate) : t('pages.students.addModal.pickDate') }}
-              </UButton>
-              <template #content>
-                <UCalendar v-model="joinDate" class="p-2" />
-              </template>
-            </UPopover>
-          </UFormField>
-          <UFormField :label="t('pages.students.addModal.photoUrl')" name="photoUrl" class="sm:col-span-2">
-            <UInput
-              v-model="state.photoUrl"
-              :placeholder="t('pages.students.addModal.photoUrlPlaceholder')"
-              dir="ltr"
-              :disabled="lockBio"
-              class="w-full"
-            />
-          </UFormField>
-          <UFormField
-            v-if="isEditMode"
-            :label="t('pages.students.addModal.status')"
-            name="status"
-            class="sm:col-span-2"
-          >
-            <USelect
-              v-model="state.status"
-              :items="statusItems"
-              value-key="value"
-              :disabled="lockBio"
-              class="w-full"
-            />
-          </UFormField>
-        </div>
-
-        <div v-if="!isEditMode" class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h4 class="font-semibold text-sm">
-              {{ t('pages.students.addModal.guardiansTitle') }}
-            </h4>
+          </div>
+        </UFormField>
+        <UFormField :label="t('pages.students.addModal.dob')" name="dob">
+          <UPopover :disabled="lockBio">
             <UButton
-              variant="soft"
-              color="primary"
-              icon="i-lucide-plus"
-              size="sm"
-              @click="addGuardianRow"
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-calendar"
+              :disabled="lockBio"
+              class="w-full justify-start font-normal"
             >
-              {{ t('pages.students.guardians.add') }}
+              {{ state.dob ? formatDate(state.dob) : t('pages.students.addModal.pickDate') }}
             </UButton>
-          </div>
-          <p class="text-xs text-muted">
-            {{ t('pages.students.addModal.guardiansHint') }}
-          </p>
-
-          <div
-            v-for="(g, idx) in guardians"
-            :key="idx"
-            class="rounded-lg border border-default p-4 space-y-3"
-          >
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-medium">
-                {{ t('pages.students.guardians.row', { n: idx + 1 }) }}
-              </span>
-              <UButton
-                icon="i-lucide-trash-2"
-                color="error"
-                variant="ghost"
-                size="sm"
-                square
-                @click="removeGuardianRow(idx)"
-              />
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <UFormField :label="t('pages.students.guardians.email')">
-                <UInput v-model="g.email" type="email" dir="ltr" class="w-full" />
-              </UFormField>
-              <UFormField :label="t('pages.students.guardians.relation')">
-                <USelect
-                  v-model="g.relation"
-                  :items="relationItems"
-                  value-key="value"
-                  class="w-full"
-                />
-              </UFormField>
-            </div>
-            <div class="flex flex-wrap items-center gap-4 pt-1">
-              <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
-                <UCheckbox :model-value="g.isPrimary" @update:model-value="setPrimary(idx)" />
-                {{ t('pages.students.guardians.isPrimary') }}
-              </label>
-              <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
-                <UCheckbox v-model="g.canPickup" />
-                {{ t('pages.students.guardians.canPickup') }}
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div class="space-y-3">
-          <h4 class="font-semibold text-sm">
-            {{ t('pages.students.addModal.metricsTitle') }}
-          </h4>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <UFormField
-              v-for="metric in metrics"
-              :key="metric.key"
-              :label="metric.label"
-              :hint="t('pages.students.addModal.capacityRange', { max: metric.max })"
-              :name="metric.key"
+            <template #content>
+              <UCalendar v-model="dobDate" class="p-2" />
+            </template>
+          </UPopover>
+        </UFormField>
+        <UFormField :label="t('pages.students.addModal.joinDate')" name="joinDate" required>
+          <UPopover :disabled="lockBio">
+            <UButton
+              color="neutral"
+              variant="outline"
+              icon="i-lucide-calendar"
+              :disabled="lockBio"
+              class="w-full justify-start font-normal"
             >
-              <UInputNumber
-                v-model="state[metric.key as keyof StudentForm] as number"
-                :min="0"
-                :max="metric.max"
+              {{ state.joinDate ? formatDate(state.joinDate) : t('pages.students.addModal.pickDate') }}
+            </UButton>
+            <template #content>
+              <UCalendar v-model="joinDate" class="p-2" />
+            </template>
+          </UPopover>
+        </UFormField>
+        <UFormField :label="t('pages.students.addModal.photoUrl')" name="photoUrl" class="sm:col-span-2">
+          <UInput
+            v-model="state.photoUrl"
+            :placeholder="t('pages.students.addModal.photoUrlPlaceholder')"
+            dir="ltr"
+            :disabled="lockBio"
+            class="w-full"
+          />
+        </UFormField>
+        <UFormField
+          v-if="isEditMode"
+          :label="t('pages.students.addModal.status')"
+          name="status"
+          class="sm:col-span-2"
+        >
+          <USelect
+            v-model="state.status"
+            :items="statusItems"
+            value-key="value"
+            :disabled="lockBio"
+            class="w-full"
+          />
+        </UFormField>
+      </div>
+
+      <div v-if="!isEditMode" class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="font-semibold text-sm">
+            {{ t('pages.students.addModal.guardiansTitle') }}
+          </h4>
+          <UButton
+            variant="soft"
+            color="primary"
+            icon="i-lucide-plus"
+            size="sm"
+            @click="addGuardianRow"
+          >
+            {{ t('pages.students.guardians.add') }}
+          </UButton>
+        </div>
+        <p class="text-xs text-muted">
+          {{ t('pages.students.addModal.guardiansHint') }}
+        </p>
+
+        <div
+          v-for="(g, idx) in guardians"
+          :key="idx"
+          class="rounded-lg border border-default p-4 space-y-3"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-medium">
+              {{ t('pages.students.guardians.row', { n: idx + 1 }) }}
+            </span>
+            <UButton
+              icon="i-lucide-trash-2"
+              color="error"
+              variant="ghost"
+              size="sm"
+              square
+              @click="removeGuardianRow(idx)"
+            />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <UFormField :label="t('pages.students.guardians.email')">
+              <UInput v-model="g.email" type="email" dir="ltr" class="w-full" />
+            </UFormField>
+            <UFormField :label="t('pages.students.guardians.relation')">
+              <USelect
+                v-model="g.relation"
+                :items="relationItems"
+                value-key="value"
                 class="w-full"
               />
             </UFormField>
           </div>
+          <div class="flex flex-wrap items-center gap-4 pt-1">
+            <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
+              <UCheckbox :model-value="g.isPrimary" @update:model-value="setPrimary(idx)" />
+              {{ t('pages.students.guardians.isPrimary') }}
+            </label>
+            <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
+              <UCheckbox v-model="g.canPickup" />
+              {{ t('pages.students.guardians.canPickup') }}
+            </label>
+          </div>
         </div>
-
-        <UFormField :label="t('pages.students.addModal.notesLabel')" name="notes">
-          <UTextarea
-            v-model="state.notes"
-            :rows="3"
-            :placeholder="t('pages.students.addModal.notesPlaceholder')"
-            class="w-full"
-          />
-        </UFormField>
-      </UForm>
-    </DefineBody>
-
-    <DefineFooter>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton
-          variant="soft"
-          color="neutral"
-          :disabled="submitting"
-          @click="emit('close', false)"
-        >
-          {{ t('pages.students.addModal.cancel') }}
-        </UButton>
-        <UButton
-          type="submit"
-          form="student-form"
-          :loading="submitting"
-          :disabled="loading || submitting"
-        >
-          {{ isEditMode ? t('pages.students.addModal.editSubmit') : t('pages.students.addModal.submit') }}
-        </UButton>
       </div>
-    </DefineFooter>
 
-    <UModal
-      v-if="isDesktop"
-      v-model:open="modalOpen"
-      :title="isEditMode ? t('pages.students.addModal.editTitle') : t('pages.students.addModal.title')"
-      :ui="{ content: 'sm:max-w-3xl rounded-2xl' }"
-    >
-      <template #body>
-        <ReuseBody />
-      </template>
-      <template #footer>
-        <ReuseFooter />
-      </template>
-    </UModal>
+      <div class="space-y-3">
+        <h4 class="font-semibold text-sm">
+          {{ t('pages.students.addModal.metricsTitle') }}
+        </h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <UFormField
+            v-for="metric in metrics"
+            :key="metric.key"
+            :label="metric.label"
+            :hint="t('pages.students.addModal.capacityRange', { max: metric.max })"
+            :name="metric.key"
+          >
+            <UInputNumber
+              v-model="state[metric.key as keyof StudentForm] as number"
+              :min="0"
+              :max="metric.max"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
+      </div>
 
-    <UDrawer
-      v-else
-      v-model:open="modalOpen"
-      :title="isEditMode ? t('pages.students.addModal.editTitle') : t('pages.students.addModal.title')"
-      :ui="{ container: 'max-h-[90vh]' }"
-    >
-      <template #body>
-        <ReuseBody />
-      </template>
-      <template #footer>
-        <ReuseFooter />
-      </template>
-    </UDrawer>
+      <UFormField :label="t('pages.students.addModal.notesLabel')" name="notes">
+        <UTextarea
+          v-model="state.notes"
+          :rows="3"
+          :placeholder="t('pages.students.addModal.notesPlaceholder')"
+          class="w-full"
+        />
+      </UFormField>
+    </UForm>
+  </DefineBody>
 
-    <CommonConfirmDialog
-      v-model:open="showIdLockConfirm"
-      :title="t('pages.students.idLock.title')"
-      :message="t('pages.students.idLock.message')"
-      :confirm-label="t('pages.students.idLock.confirm')"
-      :cancel-label="t('pages.students.idLock.cancel')"
-      destructive
-      @update:open="(v) => { if (!v) resolveIdLockOverride(false) }"
-      @confirm="resolveIdLockOverride(true)"
-    />
+  <DefineFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton
+        variant="soft"
+        color="neutral"
+        :disabled="submitting"
+        @click="emit('close', false)"
+      >
+        {{ t('pages.students.addModal.cancel') }}
+      </UButton>
+      <UButton
+        type="submit"
+        form="student-form"
+        :loading="submitting"
+        :disabled="loading || submitting"
+      >
+        {{ isEditMode ? t('pages.students.addModal.editSubmit') : t('pages.students.addModal.submit') }}
+      </UButton>
+    </div>
+  </DefineFooter>
+
+  <UModal
+    v-if="isDesktop"
+    v-model:open="modalOpen"
+    :title="isEditMode ? t('pages.students.addModal.editTitle') : t('pages.students.addModal.title')"
+    :ui="{ content: 'sm:max-w-3xl rounded-2xl' }"
+  >
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="modalOpen"
+    :title="isEditMode ? t('pages.students.addModal.editTitle') : t('pages.students.addModal.title')"
+    :ui="{ container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </UDrawer>
+
+  <CommonConfirmDialog
+    v-model:open="showIdLockConfirm"
+    :title="t('pages.students.idLock.title')"
+    :message="t('pages.students.idLock.message')"
+    :confirm-label="t('pages.students.idLock.confirm')"
+    :cancel-label="t('pages.students.idLock.cancel')"
+    destructive
+    @update:open="(v) => { if (!v) resolveIdLockOverride(false) }"
+    @confirm="resolveIdLockOverride(true)"
+  />
 </template>

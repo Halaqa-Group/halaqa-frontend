@@ -34,6 +34,21 @@ export function startOfWeekSat(d: Date): Date {
   return r
 }
 
+/**
+ * A planner day's long-form label — "الأحد ٣ أغسطس" — using Latin digits, with a
+ * graceful fall back to the ISO date when the locale's formatter chokes.
+ */
+export function dateOfDayLabel(d: Date, locale: string): string {
+  try {
+    return d.toLocaleDateString(locale === 'ar' ? 'ar-EG' : locale, {
+      weekday: 'long', day: 'numeric', month: 'long', numberingSystem: 'latn'
+    })
+  } catch {
+    const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString()
+    return iso.slice(0, 10)
+  }
+}
+
 export function planItemStatusColor(status: string): BadgeColor {
   switch (status) {
     case 'completed': return 'success'

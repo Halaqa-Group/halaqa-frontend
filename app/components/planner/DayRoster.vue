@@ -4,14 +4,18 @@ import type { ApiWeeklyPlanItem } from '~/types'
 import { SURAH_NAMES } from '~/data/constants'
 import { formatVerseRange } from '~/utils/quran'
 import { TRACK_BADGE_COLOR, achievementStatusColor, type AchievementTrack } from '~/utils/achievement'
-import { planItemStatusColor } from '~/utils/plan'
+import { backendDayOfWeek, planItemStatusColor } from '~/utils/plan'
+import { parseYmd } from '~/utils/date'
 
 const { t } = useI18n()
+const { canEditPlanItems } = usePermissions()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
   students, selectedDate, dayRoster, dayLoading,
-  selectedStudentId, viewMode, loadDayRoster
+  selectedStudentId, planStatus, loadDayRoster, loadPlan, setWeekFromDate
 } = useWeeklyPlan()
+
+const canModify = computed(() => canEditPlanItems.value && planStatus.value !== 'approved')
 
 // Self-loading: rebuild whenever the halaqa, the roster date, or the student list
 // changes (students land asynchronously after a halaqa switch).
@@ -25,10 +29,20 @@ function range(it: ApiWeeklyPlanItem) {
   return formatVerseRange(it.start_surah, it.start_verse, it.end_surah, it.end_verse, SURAH_NAMES)
 }
 
-// Jump straight into a student's full week in the matrix editor.
-function openStudent(row: DayRosterRow) {
+// Tapping a roster card opens that student's session-details modal for the day —
+// every track's planned sessions in one place, editable in place. Point the plan
+// state at this student and the week holding `selectedDate`, then load so the
+// modal reads a fresh draft (loadPlan flips isLoading synchronously, so the modal
+// shows a spinner instead of the previous student's sessions while it fetches).
+const dialogOpen = ref(false)
+const activeDay = ref(0)
+function openCard(row: DayRosterRow) {
+  const date = parseYmd(selectedDate.value)
+  activeDay.value = backendDayOfWeek(date)
+  setWeekFromDate(date)
   selectedStudentId.value = row.student.id
-  viewMode.value = 'matrix'
+  loadPlan()
+  dialogOpen.value = true
 }
 </script>
 
@@ -51,7 +65,7 @@ function openStudent(row: DayRosterRow) {
         :key="row.student.id"
         type="button"
         class="text-start rounded-xl border border-default bg-default p-4 flex flex-col gap-3 transition-colors hover:border-primary hover:bg-elevated/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        @click="openStudent(row)"
+        @click="openCard(row)"
       >
         <!-- Student header -->
         <div class="flex items-center gap-3">
@@ -107,5 +121,7 @@ function openStudent(row: DayRosterRow) {
         </template>
       </button>
     </div>
+
+    <PlannerDayDialog v-model:open="dialogOpen" :day="activeDay" :editable="canModify" />
   </div>
 </template>

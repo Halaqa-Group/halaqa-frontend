@@ -335,75 +335,75 @@ function rowActions(e: ApiStudentEnrollment) {
   </UCard>
 
   <DefineBody>
-      <UForm
-        id="student-enroll-form"
-        :schema="enrollSchema"
-        :state="enrollState"
-        class="space-y-4"
-        @submit="submitEnroll"
-      >
-        <UFormField :label="t('pages.halaqat.students.fieldStudent')" name="student_id" required>
-          <USelectMenu
-            v-model="enrollState.student_id"
-            v-model:search-term="studentSearch"
-            :items="studentSelectItems"
-            value-key="value"
-            :placeholder="t('common.selectStudent')"
-            :loading="studentsLoading"
-            icon="i-lucide-user"
-            ignore-filter
-            :reset-search-term-on-blur="false"
-            class="w-full"
-          >
-            <template #empty>
-              {{ studentsLoading ? t('common.loading') : t('pages.halaqat.students.noStudentMatch') }}
-            </template>
-          </USelectMenu>
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.students.fieldEnrollmentDate')" name="enrollment_date">
-          <UInput v-model="enrollState.enrollment_date" type="date" class="w-full" />
-        </UFormField>
-      </UForm>
-    </DefineBody>
-
-    <DefineFooter>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" :disabled="enrollSaving" @click="enrollOpen = false">
-          {{ t('pages.halaqat.cancel') }}
-        </UButton>
-        <UButton type="submit" form="student-enroll-form" :loading="enrollSaving">
-          {{ t('pages.halaqat.save') }}
-        </UButton>
-      </div>
-    </DefineFooter>
-
-    <UModal
-      v-if="isDesktop"
-      v-model:open="enrollOpen"
-      :title="t('pages.halaqat.students.addTitle')"
-      :ui="{ content: 'sm:max-w-md rounded-2xl' }"
+    <UForm
+      id="student-enroll-form"
+      :schema="enrollSchema"
+      :state="enrollState"
+      class="space-y-4"
+      @submit="submitEnroll"
     >
-      <template #body>
-        <ReuseBody />
-      </template>
-      <template #footer>
-        <ReuseFooter />
-      </template>
-    </UModal>
+      <UFormField :label="t('pages.halaqat.students.fieldStudent')" name="student_id" required>
+        <USelectMenu
+          v-model="enrollState.student_id"
+          v-model:search-term="studentSearch"
+          :items="studentSelectItems"
+          value-key="value"
+          :placeholder="t('common.selectStudent')"
+          :loading="studentsLoading"
+          icon="i-lucide-user"
+          ignore-filter
+          :reset-search-term-on-blur="false"
+          class="w-full"
+        >
+          <template #empty>
+            {{ studentsLoading ? t('common.loading') : t('pages.halaqat.students.noStudentMatch') }}
+          </template>
+        </USelectMenu>
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.students.fieldEnrollmentDate')" name="enrollment_date">
+        <UInput v-model="enrollState.enrollment_date" type="date" class="w-full" />
+      </UFormField>
+    </UForm>
+  </DefineBody>
 
-    <UDrawer
-      v-else
-      v-model:open="enrollOpen"
-      :title="t('pages.halaqat.students.addTitle')"
-      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
-    >
-      <template #body>
-        <ReuseBody />
-      </template>
-      <template #footer>
-        <ReuseFooter />
-      </template>
-    </UDrawer>
+  <DefineFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="enrollSaving" @click="enrollOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton type="submit" form="student-enroll-form" :loading="enrollSaving">
+        {{ t('pages.halaqat.save') }}
+      </UButton>
+    </div>
+  </DefineFooter>
+
+  <UModal
+    v-if="isDesktop"
+    v-model:open="enrollOpen"
+    :title="t('pages.halaqat.students.addTitle')"
+    :ui="{ content: 'sm:max-w-md rounded-2xl' }"
+  >
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="enrollOpen"
+    :title="t('pages.halaqat.students.addTitle')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </UDrawer>
 
   <UModal
     v-model:open="removeOpen"

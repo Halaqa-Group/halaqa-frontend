@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { TableColumn } from '@nuxt/ui'
 import type {
   ApiHalaqaListItem,
@@ -100,6 +101,12 @@ const formOpen = ref(false)
 const editing = ref<ApiHalaqaListItem | null>(null)
 const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
 const formSaving = computed(() => formRef.value?.saving.value ?? false)
+
+// The add/edit form is a centered modal on desktop and a bottom drawer on mobile.
+// The body + footer are shared between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineFormBody, ReuseFormBody] = createReusableTemplate()
+const [DefineFormFooter, ReuseFormFooter] = createReusableTemplate()
 
 function openAdd() {
   editing.value = null
@@ -352,35 +359,57 @@ onMounted(() => loadList(1))
       </template>
     </UCard>
 
+    <!-- Shared form body + footer, rendered inside whichever shell is active. -->
+    <DefineFormBody>
+      <HalaqaForm
+        ref="formRef"
+        :editing="editing"
+        @saved="onFormSaved"
+      />
+    </DefineFormBody>
+    <DefineFormFooter>
+      <div class="flex items-center justify-end gap-2 w-full">
+        <UButton
+          variant="soft"
+          color="neutral"
+          :disabled="formSaving"
+          @click="formOpen = false"
+        >
+          {{ t('pages.halaqat.cancel') }}
+        </UButton>
+        <UButton type="submit" form="halaqa-form" :loading="formSaving">
+          {{ t('pages.halaqat.save') }}
+        </UButton>
+      </div>
+    </DefineFormFooter>
+
     <UModal
+      v-if="isDesktop"
       v-model:open="formOpen"
       :title="editing ? t('pages.halaqat.formEditTitle') : t('pages.halaqat.formAddTitle')"
       :ui="{ content: 'sm:max-w-2xl rounded-2xl' }"
     >
-      <UButton class="sr-only" :label="t('pages.halaqat.add')" tabindex="-1" />
       <template #body>
-        <HalaqaForm
-          ref="formRef"
-          :editing="editing"
-          @saved="onFormSaved"
-        />
+        <ReuseFormBody />
       </template>
       <template #footer>
-        <div class="flex items-center justify-end gap-2 w-full">
-          <UButton
-            variant="soft"
-            color="neutral"
-            :disabled="formSaving"
-            @click="formOpen = false"
-          >
-            {{ t('pages.halaqat.cancel') }}
-          </UButton>
-          <UButton type="submit" form="halaqa-form" :loading="formSaving">
-            {{ t('pages.halaqat.save') }}
-          </UButton>
-        </div>
+        <ReuseFormFooter />
       </template>
     </UModal>
+
+    <UDrawer
+      v-else
+      v-model:open="formOpen"
+      :title="editing ? t('pages.halaqat.formEditTitle') : t('pages.halaqat.formAddTitle')"
+      :ui="{ container: 'max-h-[90vh]' }"
+    >
+      <template #body>
+        <ReuseFormBody />
+      </template>
+      <template #footer>
+        <ReuseFormFooter />
+      </template>
+    </UDrawer>
 
     <ConfirmDialog
       v-model:open="lifecycleOpen"

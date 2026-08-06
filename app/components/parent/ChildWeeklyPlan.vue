@@ -9,7 +9,7 @@ const props = defineProps<{
 const { t, locale } = useI18n()
 
 const weekFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', year: 'numeric' })
+  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'latn' })
 )
 
 function weekLabel(iso: string): string {
@@ -24,7 +24,7 @@ function dayLabel(weekStart: string, dayOfWeek: number): string {
   d.setDate(d.getDate() + dayOfWeek)
   try {
     return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      weekday: 'long', day: 'numeric', month: 'short'
+      weekday: 'long', day: 'numeric', month: 'short', numberingSystem: 'latn'
     })
   } catch {
     return String(dayOfWeek)

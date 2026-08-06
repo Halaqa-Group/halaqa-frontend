@@ -38,7 +38,7 @@ const isoDate = computed(() => toYmd(dateOfDay(props.day)))
 const dateLabel = computed(() => {
   const d = dateOfDay(props.day)
   try {
-    return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long', day: 'numeric', month: 'long' })
+    return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long', day: 'numeric', month: 'long', numberingSystem: 'latn' })
   } catch {
     return isoDate.value
   }

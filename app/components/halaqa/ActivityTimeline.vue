@@ -82,7 +82,7 @@ function actionLabel(action: HalaqaActivityAction) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString()
+  return new Date(iso).toLocaleString(undefined, { numberingSystem: 'latn' })
 }
 
 function targetSummary(item: ApiActivityLogItem) {

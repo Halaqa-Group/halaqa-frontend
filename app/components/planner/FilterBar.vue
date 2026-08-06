@@ -45,7 +45,7 @@ const weekLabel = computed(() => {
   if (!y || !m || !d) return selectedWeekStart.value
   try {
     return new Date(y, m - 1, d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      day: 'numeric', month: 'short', year: 'numeric'
+      day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn'
     })
   } catch {
     return selectedWeekStart.value
@@ -69,7 +69,7 @@ const dayLabel = computed(() => {
   if (!y || !m || !d) return selectedDate.value
   try {
     return new Date(y, m - 1, d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn'
     })
   } catch {
     return selectedDate.value

@@ -411,7 +411,7 @@ const formattedDate = computed(() => {
   if (!y || !m || !d) return state.date
   try {
     return new Date(y, m - 1, d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      day: 'numeric', month: 'long', year: 'numeric'
+      day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'latn'
     })
   } catch {
     return state.date

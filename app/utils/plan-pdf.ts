@@ -14,7 +14,7 @@ export const PLAN_PDF_ELEMENT_ID = 'quran-plan-print'
 
 /** Arabic weekday name with no digits (safe for html2canvas). */
 function arabicWeekday(d: Date): string {
-  return d.toLocaleDateString('ar', { weekday: 'long' })
+  return d.toLocaleDateString('ar', { weekday: 'long', numberingSystem: 'latn' })
 }
 
 /**

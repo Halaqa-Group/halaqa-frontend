@@ -13,7 +13,8 @@ const verifiedOn = computed(() => {
   const iso = user.value?.emailVerifiedAt
   if (!iso) return ''
   return new Date(iso).toLocaleDateString(locale.value === 'ar' ? 'ar-SA' : 'en-US', {
-    dateStyle: 'medium'
+    dateStyle: 'medium',
+    numberingSystem: 'latn'
   })
 })
 

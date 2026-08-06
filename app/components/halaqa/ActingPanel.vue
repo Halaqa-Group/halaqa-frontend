@@ -18,7 +18,7 @@ const toast = useToast()
 const apiError = useApiError()
 
 const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
 )
 
 function formatDate(value: string | null | undefined) {

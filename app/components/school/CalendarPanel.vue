@@ -35,7 +35,7 @@ function formatDate(iso: string | null) {
     const [y, m, d] = iso.split('-').map(Number)
     if (!y || !m || !d) return iso
     return new Date(y, m - 1, d).toLocaleDateString(dateLocale.value, {
-      day: 'numeric', month: 'short', year: 'numeric'
+      day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn'
     })
   } catch {
     return iso

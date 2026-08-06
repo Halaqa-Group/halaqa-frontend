@@ -54,7 +54,8 @@ function formatDate(iso: string | null) {
   if (!iso) return t('pages.profile.sessions.never')
   return new Date(iso).toLocaleString(dateLocale.value, {
     dateStyle: 'medium',
-    timeStyle: 'short'
+    timeStyle: 'short',
+    numberingSystem: 'latn'
   })
 }
 

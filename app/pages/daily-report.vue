@@ -45,7 +45,7 @@ const formattedDate = computed(() => {
   const [y, m, d] = selectedDate.value.split('-').map(Number)
   if (!y || !m || !d) return selectedDate.value
   return new Date(y, m - 1, d).toLocaleDateString('ar', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', numberingSystem: 'latn'
   })
 })
 function onCalendarPick(value: unknown) {

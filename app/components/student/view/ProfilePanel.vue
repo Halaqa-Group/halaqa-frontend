@@ -8,7 +8,7 @@ const { canEditStudent: canEdit } = usePermissions()
 const { openEdit } = useStudents()
 
 const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
 )
 
 const statusLabel = computed(() => {

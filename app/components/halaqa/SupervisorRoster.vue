@@ -114,7 +114,7 @@ async function remove(s: ApiSupervisorSummary) {
           <p class="font-medium">{{ s.name }}</p>
           <p class="text-xs text-muted">
             {{ t('pages.halaqat.supervisors.assignedAt') }}:
-            {{ new Date(s.assigned_at).toLocaleDateString() }}
+            {{ new Date(s.assigned_at).toLocaleDateString(undefined, { numberingSystem: 'latn' }) }}
           </p>
         </div>
         <UButton

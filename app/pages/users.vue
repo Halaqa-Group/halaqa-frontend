@@ -25,7 +25,8 @@ function formatDate(iso: string | null) {
   if (!iso) return t('pages.users.neverLoggedIn')
   return new Date(iso).toLocaleString(dateLocale.value, {
     dateStyle: 'medium',
-    timeStyle: 'short'
+    timeStyle: 'short',
+    numberingSystem: 'latn'
   })
 }
 

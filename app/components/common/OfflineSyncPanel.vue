@@ -35,7 +35,7 @@ function draftLabel(d: AchievementDraft): string {
 }
 
 function fmtTime(ts: number): string {
-  return new Date(ts).toLocaleString()
+  return new Date(ts).toLocaleString(undefined, { numberingSystem: 'latn' })
 }
 
 async function syncNow() {

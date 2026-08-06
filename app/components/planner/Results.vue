@@ -18,7 +18,7 @@ const canModify = computed(() => canEditPlanItems.value && planStatus.value !== 
 function dayLabel(it: ApiWeeklyPlanItem) {
   const d = dateOfDay(it.day_of_week)
   try {
-    return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long', day: 'numeric', month: 'short' })
+    return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long', day: 'numeric', month: 'short', numberingSystem: 'latn' })
   } catch {
     return String(it.day_of_week)
   }

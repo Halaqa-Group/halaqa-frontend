@@ -53,7 +53,7 @@ const dayItems = computed(() =>
     const d = dateOfDay(i)
     let label = String(i)
     try {
-      label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long' })
+      label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long', numberingSystem: 'latn' })
     } catch { /* fall back to the numeric day label */ }
     return { label, value: i }
   })

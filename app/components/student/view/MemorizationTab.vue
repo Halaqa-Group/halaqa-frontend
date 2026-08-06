@@ -75,8 +75,8 @@ async function submit() {
         <div class="flex items-end justify-between gap-3">
           <div>
             <p class="text-3xl font-semibold tabular-nums">
-              {{ count.toLocaleString() }}
-              <span class="text-base text-muted">/ {{ TOTAL_AYAT.toLocaleString() }}</span>
+              {{ count.toLocaleString(undefined, { numberingSystem: 'latn' }) }}
+              <span class="text-base text-muted">/ {{ TOTAL_AYAT.toLocaleString(undefined, { numberingSystem: 'latn' }) }}</span>
             </p>
             <p class="text-xs text-muted mt-1">
               {{ t('pages.students.viewModal.memorization.ayatUnit') }}

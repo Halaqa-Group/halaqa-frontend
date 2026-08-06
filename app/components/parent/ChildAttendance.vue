@@ -18,7 +18,7 @@ const STATUS_META: Record<AttendanceStatus, { color: BadgeColor, icon: string, t
 }
 
 const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+  new Intl.DateTimeFormat(locale.value, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' })
 )
 
 function formatDate(iso: string): string {

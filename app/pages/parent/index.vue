@@ -16,7 +16,7 @@ function openChild(student: Student) {
 }
 
 const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
 )
 
 function formatDate(iso: string | null): string {

@@ -24,7 +24,7 @@ const toast = useToast()
 const apiError = useApiError()
 
 const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short' })
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short', numberingSystem: 'latn' })
 )
 
 const { canEditHalaqaMeta, canManageHalaqaMembership } = usePermissions()

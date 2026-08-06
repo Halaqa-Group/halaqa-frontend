@@ -20,7 +20,7 @@ const dailyTracks = computed(() => [
 ])
 
 const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
 )
 
 function formatDateOnly(iso: string | null): string {

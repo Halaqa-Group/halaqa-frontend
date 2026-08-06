@@ -167,8 +167,8 @@ const days = computed(() => {
     let label = String(i)
     let short = String(i)
     try {
-      label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long' })
-      short = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { day: 'numeric', month: 'short' })
+      label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long', numberingSystem: 'latn' })
+      short = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { day: 'numeric', month: 'short', numberingSystem: 'latn' })
     } catch { /* fall back to numeric labels */ }
     return { index: i, label, short, isRest: restDays.has(i) }
   })

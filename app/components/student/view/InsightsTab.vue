@@ -76,8 +76,8 @@ function tileTitle(c: SurahCoverage): string {
       <div class="flex items-end justify-between gap-3">
         <div>
           <p class="text-2xl font-semibold tabular-nums">
-            {{ count.toLocaleString() }}
-            <span class="text-sm font-normal text-muted">/ {{ TOTAL_AYAT.toLocaleString() }}</span>
+            {{ count.toLocaleString(undefined, { numberingSystem: 'latn' }) }}
+            <span class="text-sm font-normal text-muted">/ {{ TOTAL_AYAT.toLocaleString(undefined, { numberingSystem: 'latn' }) }}</span>
           </p>
           <p class="text-xs text-muted">
             {{ t('pages.students.viewModal.insights.ayatMemorized') }}

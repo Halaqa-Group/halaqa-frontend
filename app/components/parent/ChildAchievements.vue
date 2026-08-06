@@ -12,7 +12,7 @@ const props = defineProps<{
 const { t, locale } = useI18n()
 
 const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium' })
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
 )
 
 function formatDate(iso: string | null | undefined): string {

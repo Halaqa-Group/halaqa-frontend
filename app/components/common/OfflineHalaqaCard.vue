@@ -11,7 +11,7 @@ const { state, done, total, progress, isCaching, cachingHalaqaId, makeAvailableO
 const cachedAt = computed(() => (selectedHalaqaId.value != null ? lastCachedAt(selectedHalaqaId.value) : null))
 const cachedAtLabel = computed(() => {
   if (!cachedAt.value) return null
-  return new Date(cachedAt.value).toLocaleString()
+  return new Date(cachedAt.value).toLocaleString(undefined, { numberingSystem: 'latn' })
 })
 
 // Only reflect progress for the halaqa this card is about.

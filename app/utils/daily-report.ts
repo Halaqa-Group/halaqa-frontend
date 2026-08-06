@@ -17,7 +17,8 @@ export function formatScore(value: number | null | undefined, dash = '—'): str
   if (value === null || value === undefined || !Number.isFinite(value)) return dash
   return value.toLocaleString('en-US', {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
+    numberingSystem: 'latn'
   })
 }
 

@@ -1137,7 +1137,7 @@ async function runSync() {
     // watchers skip it instead of fetching the state back over the live marks.
     hydratedFor.value = String(saved.id)
     lastSyncedSignature.value = attempted
-    lastSyncedAt.value = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+    lastSyncedAt.value = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', numberingSystem: 'latn' })
     syncStatus.value = 'saved'
   } catch (e) {
     // Leave the signature dirty so the next tick retries. The marks are never
@@ -1238,7 +1238,7 @@ async function saveSessionOnly(item: ApiWeeklyPlanItem, sid: number, hid: number
     const saved = await saveRecitation(item, sid, hid)
     hydratedFor.value = String(saved.id)
     lastSyncedSignature.value = attempted
-    lastSyncedAt.value = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+    lastSyncedAt.value = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', numberingSystem: 'latn' })
     syncStatus.value = 'saved'
     toast.add({
       title: 'تم حفظ التلاوة — الإنجاز قيد المراجعة ولم يُعتمد بعد.',

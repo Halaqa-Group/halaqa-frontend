@@ -78,7 +78,7 @@ const dateLocale = computed(() => (locale.value === 'ar' ? 'ar-SA' : 'en-US'))
 
 const formattedToday = computed(() =>
   new Date().toLocaleDateString(dateLocale.value, {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', numberingSystem: 'latn'
   })
 )
 

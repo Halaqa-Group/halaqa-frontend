@@ -718,7 +718,7 @@ watch(modalOpen, (open) => {
     v-else
     v-model:open="modalOpen"
     :title="isEditMode ? t('pages.students.addModal.editTitle') : t('pages.students.addModal.title')"
-    :ui="{ container: 'max-h-[90vh]' }"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
   >
     <template #body>
       <ReuseBody />

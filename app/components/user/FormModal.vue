@@ -489,7 +489,7 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
     v-else
     v-model:open="isOpen"
     :dismissible="false"
-    :ui="{ container: 'max-h-[90vh]' }"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
   >
     <template #header>
       <ReuseHeader />

@@ -468,7 +468,7 @@ function rowMenu(g: ApiGuardian): DropdownMenuItem[][] {
       v-else
       v-model:open="linkOpen"
       :title="t('pages.students.guardians.linkTitle')"
-      :ui="{ container: 'max-h-[90vh]' }"
+      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
     >
       <template #body>
         <ReuseBody />

@@ -432,7 +432,7 @@ function roleColor(role: TeacherRole) {
     v-else
     v-model:open="assignOpen"
     :title="t('pages.halaqat.teachers.addTitle')"
-    :ui="{ container: 'max-h-[90vh]' }"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
   >
     <template #body>
       <ReuseBody />

@@ -401,7 +401,7 @@ onMounted(() => loadList(1))
       v-else
       v-model:open="formOpen"
       :title="editing ? t('pages.halaqat.formEditTitle') : t('pages.halaqat.formAddTitle')"
-      :ui="{ container: 'max-h-[90vh]' }"
+      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
     >
       <template #body>
         <ReuseFormBody />

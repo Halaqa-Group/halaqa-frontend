@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { FormSubmitEvent } from '#ui/types'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { Student, ApiGuardian } from '~/types'
@@ -11,6 +12,12 @@ const toast = useToast()
 const apiError = useApiError()
 const { fetchGuardians, linkGuardian, updateGuardian, unlinkGuardian, refetchStudent } = useStudents()
 const { parents, isLoading: isLoadingParents, fetchParents } = useSchoolParents()
+
+// Centered modal on desktop, bottom drawer on mobile — body + footer are shared
+// between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineBody, ReuseBody] = createReusableTemplate()
+const [DefineFooter, ReuseFooter] = createReusableTemplate()
 
 const localGuardians = ref<ApiGuardian[]>([])
 const isLoadingGuardians = ref(false)
@@ -359,95 +366,117 @@ function rowMenu(g: ApiGuardian): DropdownMenuItem[][] {
       </ul>
     </UCard>
 
+    <DefineBody>
+      <UForm
+        id="guardian-link-form"
+        :schema="linkSchema"
+        :state="linkState"
+        class="space-y-4"
+        @submit="submitLink"
+      >
+        <UFormField :label="t('pages.students.guardians.linkMode')" name="mode">
+          <USelect
+            v-model="linkState.mode"
+            :items="linkModeItems"
+            value-key="value"
+            class="w-full"
+          />
+        </UFormField>
+
+        <UFormField
+          v-if="linkState.mode === 'email'"
+          :label="t('pages.students.guardians.email')"
+          :hint="t('pages.students.guardians.emailHint')"
+          name="email"
+          required
+        >
+          <UInput v-model="linkState.email" type="email" dir="ltr" class="w-full" />
+        </UFormField>
+
+        <UFormField
+          v-else
+          :label="t('pages.students.guardians.userId')"
+          :hint="t('pages.students.guardians.userIdHint')"
+          name="userId"
+          required
+        >
+          <USelectMenu
+            v-model="linkState.userId"
+            :items="parentUserItems"
+            value-key="value"
+            searchable
+            :loading="isLoadingParents"
+            :placeholder="t('pages.students.guardians.userIdPlaceholder')"
+            icon="i-lucide-user"
+            class="w-full"
+          />
+        </UFormField>
+
+        <UFormField :label="t('pages.students.guardians.relation')" name="relation" required>
+          <USelect
+            v-model="linkState.relation"
+            :items="relationItems"
+            value-key="value"
+            class="w-full"
+          />
+        </UFormField>
+
+        <div class="flex flex-wrap items-center gap-4 pt-1">
+          <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
+            <UCheckbox v-model="linkState.isPrimary" />
+            {{ t('pages.students.guardians.isPrimary') }}
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
+            <UCheckbox v-model="linkState.canPickup" />
+            {{ t('pages.students.guardians.canPickup') }}
+          </label>
+        </div>
+      </UForm>
+    </DefineBody>
+
+    <DefineFooter>
+      <div class="flex items-center justify-end gap-2 w-full">
+        <UButton
+          variant="soft"
+          color="neutral"
+          :disabled="linkSaving"
+          @click="linkOpen = false"
+        >
+          {{ t('pages.students.addModal.cancel') }}
+        </UButton>
+        <UButton type="submit" form="guardian-link-form" :loading="linkSaving">
+          {{ t('pages.students.guardians.add') }}
+        </UButton>
+      </div>
+    </DefineFooter>
+
     <UModal
+      v-if="isDesktop"
       v-model:open="linkOpen"
       :title="t('pages.students.guardians.linkTitle')"
       :ui="{ content: 'sm:max-w-md rounded-2xl' }"
     >
-      <UButton class="sr-only" tabindex="-1" />
       <template #body>
-        <UForm
-          id="guardian-link-form"
-          :schema="linkSchema"
-          :state="linkState"
-          class="space-y-4"
-          @submit="submitLink"
-        >
-          <UFormField :label="t('pages.students.guardians.linkMode')" name="mode">
-            <USelect
-              v-model="linkState.mode"
-              :items="linkModeItems"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-
-          <UFormField
-            v-if="linkState.mode === 'email'"
-            :label="t('pages.students.guardians.email')"
-            :hint="t('pages.students.guardians.emailHint')"
-            name="email"
-            required
-          >
-            <UInput v-model="linkState.email" type="email" dir="ltr" class="w-full" />
-          </UFormField>
-
-          <UFormField
-            v-else
-            :label="t('pages.students.guardians.userId')"
-            :hint="t('pages.students.guardians.userIdHint')"
-            name="userId"
-            required
-          >
-            <USelectMenu
-              v-model="linkState.userId"
-              :items="parentUserItems"
-              value-key="value"
-              searchable
-              :loading="isLoadingParents"
-              :placeholder="t('pages.students.guardians.userIdPlaceholder')"
-              icon="i-lucide-user"
-              class="w-full"
-            />
-          </UFormField>
-
-          <UFormField :label="t('pages.students.guardians.relation')" name="relation" required>
-            <USelect
-              v-model="linkState.relation"
-              :items="relationItems"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-
-          <div class="flex flex-wrap items-center gap-4 pt-1">
-            <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
-              <UCheckbox v-model="linkState.isPrimary" />
-              {{ t('pages.students.guardians.isPrimary') }}
-            </label>
-            <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
-              <UCheckbox v-model="linkState.canPickup" />
-              {{ t('pages.students.guardians.canPickup') }}
-            </label>
-          </div>
-        </UForm>
+        <ReuseBody />
       </template>
       <template #footer>
-        <div class="flex items-center justify-end gap-2 w-full">
-          <UButton
-            variant="soft"
-            color="neutral"
-            :disabled="linkSaving"
-            @click="linkOpen = false"
-          >
-            {{ t('pages.students.addModal.cancel') }}
-          </UButton>
-          <UButton type="submit" form="guardian-link-form" :loading="linkSaving">
-            {{ t('pages.students.guardians.add') }}
-          </UButton>
-        </div>
+        <ReuseFooter />
       </template>
     </UModal>
+
+    <UDrawer
+      v-else
+      v-model:open="linkOpen"
+      :title="t('pages.students.guardians.linkTitle')"
+      :ui="{ container: 'max-h-[90vh]' }"
+    >
+      <template #body>
+        <ReuseBody />
+      </template>
+      <template #footer>
+        <ReuseFooter />
+      </template>
+    </UDrawer>
 
     <CommonConfirmDialog
       v-model:open="unlinkOpen"

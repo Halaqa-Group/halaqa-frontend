@@ -5,24 +5,12 @@ const { t } = useI18n()
 const {
   state, done, total, progress, isDownloading, supported, start, cancel
 } = useMushafDownload()
-const { usageLabel, percent, supported: storageSupported, refresh, clearOfflineCaches } = useOfflineStorage()
+const { refresh } = useOfflineStorage()
 
-const clearing = ref(false)
-
-onMounted(refresh)
 watch(state, (s) => {
-  // Refresh the footprint once a download settles.
+  // Refresh the footprint (shown in the storage card) once a download settles.
   if (s === 'complete' || s === 'partial' || s === 'cancelled') void refresh()
 })
-
-async function onClear() {
-  clearing.value = true
-  try {
-    await clearOfflineCaches()
-  } finally {
-    clearing.value = false
-  }
-}
 
 const statusText = computed(() => {
   switch (state.value) {
@@ -44,7 +32,9 @@ const statusColor = computed(() => {
 <template>
   <div v-if="supported" class="p-4 rounded-2xl bg-elevated space-y-3">
     <div class="flex items-start gap-3">
-      <UIcon name="i-lucide-book-down" class="size-6 text-primary shrink-0 mt-0.5" />
+      <div class="size-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+        <UIcon name="i-lucide-book-down" class="size-5 text-primary" />
+      </div>
       <div class="min-w-0 flex-1">
         <h3 class="text-base font-bold text-highlighted">
           {{ $t('pwa.mushafDownloadTitle') }}
@@ -82,21 +72,6 @@ const statusColor = computed(() => {
         :label="$t('pwa.mushafCancel')"
         @click="cancel"
       />
-      <UButton
-        icon="i-lucide-trash-2"
-        size="sm"
-        color="neutral"
-        variant="ghost"
-        :loading="clearing"
-        :disabled="isDownloading"
-        :label="$t('pwa.clearData')"
-        @click="onClear"
-      />
     </div>
-
-    <p v-if="storageSupported" class="text-xs text-on-surface-variant flex items-center gap-1.5">
-      <UIcon name="i-lucide-hard-drive" class="size-3.5" />
-      {{ $t('pwa.storageUsed', { size: usageLabel, percent }) }}
-    </p>
   </div>
 </template>

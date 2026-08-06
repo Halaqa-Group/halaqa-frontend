@@ -84,15 +84,15 @@ watch(surah, () => {
     they sit in.
   -->
   <!--
-    On mobile the header + wheels sit in one rounded card; tapping the header
-    reveals/hides the wheels. On ≥sm the card chrome and header drop away
-    (sm:border-0 / sm:hidden) and the wheels show as a plain grid.
+    The header + wheels sit in one rounded card at every breakpoint; tapping the
+    header reveals/hides the wheels (collapsed by default). Pass :collapsible="false"
+    to skip the card/header and always show the wheels inline.
   -->
-  <div :class="collapsible ? 'overflow-hidden rounded-xl border border-default sm:rounded-none sm:border-0 sm:overflow-visible' : ''">
+  <div :class="collapsible ? 'overflow-hidden rounded-xl border border-default' : ''">
     <button
       v-if="collapsible"
       type="button"
-      class="flex w-full items-center justify-between gap-2 px-3 py-3 text-sm sm:hidden"
+      class="flex w-full items-center justify-between gap-2 px-3 py-3 text-sm"
       :aria-expanded="open"
       @click="open = !open"
     >
@@ -105,8 +105,8 @@ watch(surah, () => {
     <div
       class="grid grid-cols-2 gap-2"
       :class="[
-        collapsible ? 'px-2 pb-2 sm:p-0' : '',
-        collapsible && !open ? 'hidden sm:grid' : ''
+        collapsible ? 'px-2 pb-2' : '',
+        collapsible && !open ? 'hidden' : ''
       ]"
     >
       <CommonWheelPicker

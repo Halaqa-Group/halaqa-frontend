@@ -41,6 +41,7 @@ const slideoverSide = computed(() => (uiLocales[locale.value]?.dir === 'rtl' ? '
       <div class="space-y-4">
         <CommonMushafDownloadCard />
         <CommonOfflineHalaqaCard />
+        <CommonOfflineStorageCard />
       </div>
     </template>
   </USlideover>
@@ -56,6 +57,7 @@ const slideoverSide = computed(() => (uiLocales[locale.value]?.dir === 'rtl' ? '
       <div class="space-y-4 pb-[env(safe-area-inset-bottom)]">
         <CommonMushafDownloadCard />
         <CommonOfflineHalaqaCard />
+        <CommonOfflineStorageCard />
       </div>
     </template>
   </UDrawer>

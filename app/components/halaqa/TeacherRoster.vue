@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type {
   ApiTeacherAssignment,
@@ -87,6 +88,12 @@ const assignState = reactive<{
   notes: ''
 })
 const assignSaving = ref(false)
+
+// Centered modal on desktop, bottom drawer on mobile — body + footer are shared
+// between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineBody, ReuseBody] = createReusableTemplate()
+const [DefineFooter, ReuseFooter] = createReusableTemplate()
 
 const teacherSelectItems = computed(() => [
   { label: t('pages.halaqat.fieldTeacherPlaceholder'), value: null },
@@ -345,13 +352,7 @@ function roleColor(role: TeacherRole) {
     </ul>
   </UCard>
 
-  <UModal
-    v-model:open="assignOpen"
-    :title="t('pages.halaqat.teachers.addTitle')"
-    :ui="{ content: 'sm:max-w-md rounded-2xl' }"
-  >
-    <UButton class="sr-only" tabindex="-1" />
-    <template #body>
+  <DefineBody>
       <UForm
         id="teacher-assign-form"
         :schema="assignSchema"

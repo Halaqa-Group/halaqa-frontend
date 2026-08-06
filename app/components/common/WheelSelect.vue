@@ -42,11 +42,11 @@ watch(open, (isOpen) => {
 </script>
 
 <template>
-  <div :class="collapsible ? 'overflow-hidden rounded-xl border border-default sm:rounded-none sm:border-0 sm:overflow-visible' : ''">
+  <div :class="collapsible ? 'overflow-hidden rounded-xl border border-default' : ''">
     <button
       v-if="collapsible"
       type="button"
-      class="flex w-full items-center justify-between gap-2 px-3 py-3 text-sm sm:hidden"
+      class="flex w-full items-center justify-between gap-2 px-3 py-3 text-sm"
       :aria-expanded="open"
       @click="open = !open"
     >
@@ -58,8 +58,8 @@ watch(open, (isOpen) => {
     </button>
     <div
       :class="[
-        collapsible ? 'px-2 pb-2 sm:p-0' : '',
-        collapsible && !open ? 'hidden sm:block' : ''
+        collapsible ? 'px-2 pb-2' : '',
+        collapsible && !open ? 'hidden' : ''
       ]"
     >
       <CommonWheelPicker ref="wheel" v-model="current" :items="items" :aria-label="ariaLabel" />

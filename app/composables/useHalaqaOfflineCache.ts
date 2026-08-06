@@ -26,6 +26,10 @@ const state = ref<OfflineCacheState>('idle')
 const done = ref(0)
 const total = ref(0)
 const cachingHalaqaId = ref<number | null>(null)
+// Batch position when several halaqat are cached in one go ("halaqa 2 of 3").
+// Zero when idle or caching a single halaqa.
+const batchIndex = ref(0)
+const batchCount = ref(0)
 let autoWarming = false
 
 function currentAndNextWeek(): string[] {
@@ -144,6 +148,51 @@ export function useHalaqaOfflineCache() {
     }
   }
 
+  // Cache several halaqat in one run. `done`/`total` reflect the halaqa currently
+  // downloading (via cachingHalaqaId); `batchIndex`/`batchCount` place it in the
+  // overall run ("halaqa 2 of 3"). Each halaqa's timestamp is written as it
+  // finishes so a mid-run failure still leaves the completed ones available.
+  async function makeMultipleAvailableOffline(halaqaIds: number[]): Promise<boolean> {
+    if (!import.meta.client || state.value === 'running') return false
+    const ids = [...new Set(halaqaIds)]
+    if (ids.length === 0) return false
+    if (!navigator.onLine) {
+      state.value = 'error'
+      return false
+    }
+    state.value = 'running'
+    batchCount.value = ids.length
+    let allOk = true
+    try {
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i]!
+        batchIndex.value = i + 1
+        cachingHalaqaId.value = id
+        done.value = 0
+        total.value = 0
+        try {
+          await warmHalaqaData(id, {
+            withMushaf: true,
+            onStep: (d, t) => {
+              done.value = d
+              total.value = t
+            }
+          })
+          writeTimestamp(LAST_CACHED_KEY, id)
+          writeTimestamp(AUTO_WARM_KEY, id)
+        } catch {
+          allOk = false
+        }
+      }
+      state.value = allOk ? 'complete' : 'error'
+      return allOk
+    } finally {
+      cachingHalaqaId.value = null
+      batchIndex.value = 0
+      batchCount.value = 0
+    }
+  }
+
   // Silent, throttled background warm — fired automatically on halaqa select so
   // the teacher-work pages work offline without anyone tapping a button.
   async function autoWarm(halaqaId: number): Promise<void> {
@@ -161,5 +210,18 @@ export function useHalaqaOfflineCache() {
     }
   }
 
-  return { state, done, total, progress, isCaching, cachingHalaqaId, makeAvailableOffline, autoWarm, lastCachedAt }
+  return {
+    state,
+    done,
+    total,
+    progress,
+    isCaching,
+    cachingHalaqaId,
+    batchIndex,
+    batchCount,
+    makeAvailableOffline,
+    makeMultipleAvailableOffline,
+    autoWarm,
+    lastCachedAt
+  }
 }

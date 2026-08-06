@@ -78,6 +78,8 @@ const subOpen = ref(false)
 const isDesktop = useMediaQuery('(min-width: 640px)')
 const [DefineBody, ReuseBody] = createReusableTemplate()
 const [DefineFooter, ReuseFooter] = createReusableTemplate()
+const [DefineExtBody, ReuseExtBody] = createReusableTemplate()
+const [DefineExtFooter, ReuseExtFooter] = createReusableTemplate()
 const subState = reactive<{
   teacher_user_id: number | null
   acting_starts_at: string
@@ -301,34 +303,56 @@ async function endNow() {
     </template>
   </UDrawer>
 
+  <DefineExtBody>
+    <UForm
+      id="acting-ext-form"
+      :schema="extSchema"
+      :state="extState"
+      class="space-y-4"
+      @submit="submitExt"
+    >
+      <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" name="acting_ends_at" required>
+        <UInput v-model="extState.acting_ends_at" type="date" class="w-full" />
+      </UFormField>
+    </UForm>
+  </DefineExtBody>
+
+  <DefineExtFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="extSaving" @click="extOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton type="submit" form="acting-ext-form" :loading="extSaving">
+        {{ t('pages.halaqat.save') }}
+      </UButton>
+    </div>
+  </DefineExtFooter>
+
   <UModal
+    v-if="isDesktop"
     v-model:open="extOpen"
     :title="t('pages.halaqat.acting.extendTitle')"
     :ui="{ content: 'sm:max-w-md rounded-2xl' }"
   >
-    <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <UForm
-        id="acting-ext-form"
-        :schema="extSchema"
-        :state="extState"
-        class="space-y-4"
-        @submit="submitExt"
-      >
-        <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" name="acting_ends_at" required>
-          <UInput v-model="extState.acting_ends_at" type="date" class="w-full" />
-        </UFormField>
-      </UForm>
+      <ReuseExtBody />
     </template>
     <template #footer>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" :disabled="extSaving" @click="extOpen = false">
-          {{ t('pages.halaqat.cancel') }}
-        </UButton>
-        <UButton type="submit" form="acting-ext-form" :loading="extSaving">
-          {{ t('pages.halaqat.save') }}
-        </UButton>
-      </div>
+      <ReuseExtFooter />
     </template>
   </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="extOpen"
+    :title="t('pages.halaqat.acting.extendTitle')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseExtBody />
+    </template>
+    <template #footer>
+      <ReuseExtFooter />
+    </template>
+  </UDrawer>
 </template>

@@ -17,11 +17,11 @@ const props = withDefaults(defineProps<{
 const surah = defineModel<number>('surah', { required: true })
 const verse = defineModel<number>('verse', { required: true })
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 const { pageFor } = useVerseToPage()
 
-// Arabic-Indic digits under an Arabic locale (٣٦), Western otherwise.
-const fmt = (n: number) => locale.value === 'ar' ? n.toLocaleString('ar-EG', { useGrouping: false }) : String(n)
+// Always Western digits (Latin numerals) regardless of locale.
+const fmt = (n: number) => String(n)
 
 // Mobile-only open state; on ≥sm the wheels are shown regardless (see template).
 const open = ref(false)

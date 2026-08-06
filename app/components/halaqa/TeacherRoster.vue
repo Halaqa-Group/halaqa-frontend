@@ -353,66 +353,94 @@ function roleColor(role: TeacherRole) {
   </UCard>
 
   <DefineBody>
-      <UForm
-        id="teacher-assign-form"
-        :schema="assignSchema"
-        :state="assignState"
-        class="space-y-4"
-        @submit="submitAssign"
+    <UForm
+      id="teacher-assign-form"
+      :schema="assignSchema"
+      :state="assignState"
+      class="space-y-4"
+      @submit="submitAssign"
+    >
+      <UFormField
+        :label="t('pages.halaqat.teachers.fieldTeacher')"
+        name="teacher_user_id"
+        required
+        :error="teachersError ?? undefined"
       >
-        <UFormField
-          :label="t('pages.halaqat.teachers.fieldTeacher')"
-          name="teacher_user_id"
-          required
-          :error="teachersError ?? undefined"
-        >
-          <USelect
-            v-model="assignState.teacher_user_id"
-            :items="teacherSelectItems"
-            value-key="value"
-            :loading="teachersLoading"
-            :disabled="teachersLoading"
-            class="w-full"
-          />
-          <template v-if="teachersError" #help>
-            <UButton
-              size="xs"
-              variant="link"
-              color="primary"
-              class="px-0"
-              @click="loadTeacherOptions"
-            >
-              {{ t('common.tryAgain') }}
-            </UButton>
-          </template>
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldRole')" name="role" required>
-          <USelect
-            v-model="assignState.role"
-            :items="roleSelectItems"
-            value-key="value"
-            class="w-full"
-          />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldStartDate')" name="start_date" required>
-          <UInput v-model="assignState.start_date" type="date" class="w-full" />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
-          <UTextarea v-model="assignState.notes" class="w-full" />
-        </UFormField>
-      </UForm>
+        <USelect
+          v-model="assignState.teacher_user_id"
+          :items="teacherSelectItems"
+          value-key="value"
+          :loading="teachersLoading"
+          :disabled="teachersLoading"
+          class="w-full"
+        />
+        <template v-if="teachersError" #help>
+          <UButton
+            size="xs"
+            variant="link"
+            color="primary"
+            class="px-0"
+            @click="loadTeacherOptions"
+          >
+            {{ t('common.tryAgain') }}
+          </UButton>
+        </template>
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.teachers.fieldRole')" name="role" required>
+        <USelect
+          v-model="assignState.role"
+          :items="roleSelectItems"
+          value-key="value"
+          class="w-full"
+        />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.teachers.fieldStartDate')" name="start_date" required>
+        <UInput v-model="assignState.start_date" type="date" class="w-full" />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
+        <UTextarea v-model="assignState.notes" class="w-full" />
+      </UFormField>
+    </UForm>
+  </DefineBody>
+
+  <DefineFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="assignSaving" @click="assignOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton type="submit" form="teacher-assign-form" :loading="assignSaving">
+        {{ t('pages.halaqat.save') }}
+      </UButton>
+    </div>
+  </DefineFooter>
+
+  <UModal
+    v-if="isDesktop"
+    v-model:open="assignOpen"
+    :title="t('pages.halaqat.teachers.addTitle')"
+    :ui="{ content: 'sm:max-w-md rounded-2xl' }"
+  >
+    <template #body>
+      <ReuseBody />
     </template>
     <template #footer>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" :disabled="assignSaving" @click="assignOpen = false">
-          {{ t('pages.halaqat.cancel') }}
-        </UButton>
-        <UButton type="submit" form="teacher-assign-form" :loading="assignSaving">
-          {{ t('pages.halaqat.save') }}
-        </UButton>
-      </div>
+      <ReuseFooter />
     </template>
   </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="assignOpen"
+    :title="t('pages.halaqat.teachers.addTitle')"
+    :ui="{ container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </UDrawer>
 
   <UModal
     v-model:open="endOpen"

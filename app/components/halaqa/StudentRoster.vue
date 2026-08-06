@@ -96,6 +96,10 @@ const enrollOpen = ref(false)
 const isDesktop = useMediaQuery('(min-width: 640px)')
 const [DefineBody, ReuseBody] = createReusableTemplate()
 const [DefineFooter, ReuseFooter] = createReusableTemplate()
+const [DefineRemoveBody, ReuseRemoveBody] = createReusableTemplate()
+const [DefineRemoveFooter, ReuseRemoveFooter] = createReusableTemplate()
+const [DefineTransferBody, ReuseTransferBody] = createReusableTemplate()
+const [DefineTransferFooter, ReuseTransferFooter] = createReusableTemplate()
 const enrollState = reactive<{
   student_id: number | null
   enrollment_date: string
@@ -405,13 +409,7 @@ function rowActions(e: ApiStudentEnrollment) {
     </template>
   </UDrawer>
 
-  <UModal
-    v-model:open="removeOpen"
-    :title="t('pages.halaqat.students.removeTitle')"
-    :ui="{ content: 'sm:max-w-md rounded-2xl' }"
-  >
-    <UButton class="sr-only" tabindex="-1" />
-    <template #body>
+  <DefineRemoveBody>
       <UForm
         id="student-remove-form"
         :schema="removeSchema"
@@ -431,8 +429,9 @@ function rowActions(e: ApiStudentEnrollment) {
           <UTextarea v-model="removeState.notes" class="w-full" />
         </UFormField>
       </UForm>
-    </template>
-    <template #footer>
+    </DefineRemoveBody>
+
+    <DefineRemoveFooter>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="removeSaving" @click="removeOpen = false">
           {{ t('pages.halaqat.cancel') }}
@@ -441,16 +440,37 @@ function rowActions(e: ApiStudentEnrollment) {
           {{ t('pages.halaqat.students.remove') }}
         </UButton>
       </div>
-    </template>
-  </UModal>
+    </DefineRemoveFooter>
 
-  <UModal
-    v-model:open="transferOpen"
-    :title="t('pages.halaqat.students.transferTitle')"
-    :ui="{ content: 'sm:max-w-md rounded-2xl' }"
-  >
-    <UButton class="sr-only" tabindex="-1" />
-    <template #body>
+    <UModal
+      v-if="isDesktop"
+      v-model:open="removeOpen"
+      :title="t('pages.halaqat.students.removeTitle')"
+      :ui="{ content: 'sm:max-w-md rounded-2xl' }"
+    >
+      <template #body>
+        <ReuseRemoveBody />
+      </template>
+      <template #footer>
+        <ReuseRemoveFooter />
+      </template>
+    </UModal>
+
+    <UDrawer
+      v-else
+      v-model:open="removeOpen"
+      :title="t('pages.halaqat.students.removeTitle')"
+      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+    >
+      <template #body>
+        <ReuseRemoveBody />
+      </template>
+      <template #footer>
+        <ReuseRemoveFooter />
+      </template>
+    </UDrawer>
+
+  <DefineTransferBody>
       <UForm
         id="student-transfer-form"
         :schema="transferSchema"
@@ -473,8 +493,9 @@ function rowActions(e: ApiStudentEnrollment) {
           <UTextarea v-model="transferState.reason" class="w-full" />
         </UFormField>
       </UForm>
-    </template>
-    <template #footer>
+    </DefineTransferBody>
+
+    <DefineTransferFooter>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="transferSaving" @click="transferOpen = false">
           {{ t('pages.halaqat.cancel') }}

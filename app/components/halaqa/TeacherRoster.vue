@@ -96,6 +96,8 @@ const [DefineBody, ReuseBody] = createReusableTemplate()
 const [DefineFooter, ReuseFooter] = createReusableTemplate()
 const [DefineEndBody, ReuseEndBody] = createReusableTemplate()
 const [DefineEndFooter, ReuseEndFooter] = createReusableTemplate()
+const [DefineActingBody, ReuseActingBody] = createReusableTemplate()
+const [DefineActingFooter, ReuseActingFooter] = createReusableTemplate()
 
 const teacherSelectItems = computed(() => [
   { label: t('pages.halaqat.fieldTeacherPlaceholder'), value: null },
@@ -508,40 +510,62 @@ function roleColor(role: TeacherRole) {
     </template>
   </UDrawer>
 
+  <DefineActingBody>
+    <UForm
+      id="teacher-acting-form"
+      :schema="actingSchema"
+      :state="actingState"
+      class="space-y-4"
+      @submit="submitActing"
+    >
+      <UFormField :label="t('pages.halaqat.acting.fieldStartsAt')" name="acting_starts_at" required>
+        <UInput v-model="actingState.acting_starts_at" type="date" class="w-full" />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" name="acting_ends_at" required>
+        <UInput v-model="actingState.acting_ends_at" type="date" class="w-full" />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
+        <UTextarea v-model="actingState.notes" class="w-full" />
+      </UFormField>
+    </UForm>
+  </DefineActingBody>
+
+  <DefineActingFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="actingSaving" @click="actingOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton type="submit" form="teacher-acting-form" :loading="actingSaving">
+        {{ t('pages.halaqat.save') }}
+      </UButton>
+    </div>
+  </DefineActingFooter>
+
   <UModal
+    v-if="isDesktop"
     v-model:open="actingOpen"
     :title="t('pages.halaqat.teachers.setActing')"
     :ui="{ content: 'sm:max-w-md rounded-2xl' }"
   >
-    <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <UForm
-        id="teacher-acting-form"
-        :schema="actingSchema"
-        :state="actingState"
-        class="space-y-4"
-        @submit="submitActing"
-      >
-        <UFormField :label="t('pages.halaqat.acting.fieldStartsAt')" name="acting_starts_at" required>
-          <UInput v-model="actingState.acting_starts_at" type="date" class="w-full" />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" name="acting_ends_at" required>
-          <UInput v-model="actingState.acting_ends_at" type="date" class="w-full" />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
-          <UTextarea v-model="actingState.notes" class="w-full" />
-        </UFormField>
-      </UForm>
+      <ReuseActingBody />
     </template>
     <template #footer>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" :disabled="actingSaving" @click="actingOpen = false">
-          {{ t('pages.halaqat.cancel') }}
-        </UButton>
-        <UButton type="submit" form="teacher-acting-form" :loading="actingSaving">
-          {{ t('pages.halaqat.save') }}
-        </UButton>
-      </div>
+      <ReuseActingFooter />
     </template>
   </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="actingOpen"
+    :title="t('pages.halaqat.teachers.setActing')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseActingBody />
+    </template>
+    <template #footer>
+      <ReuseActingFooter />
+    </template>
+  </UDrawer>
 </template>

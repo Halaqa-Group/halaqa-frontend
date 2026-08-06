@@ -94,6 +94,8 @@ const assignSaving = ref(false)
 const isDesktop = useMediaQuery('(min-width: 640px)')
 const [DefineBody, ReuseBody] = createReusableTemplate()
 const [DefineFooter, ReuseFooter] = createReusableTemplate()
+const [DefineEndBody, ReuseEndBody] = createReusableTemplate()
+const [DefineEndFooter, ReuseEndFooter] = createReusableTemplate()
 
 const teacherSelectItems = computed(() => [
   { label: t('pages.halaqat.fieldTeacherPlaceholder'), value: null },
@@ -442,47 +444,69 @@ function roleColor(role: TeacherRole) {
     </template>
   </UDrawer>
 
+  <DefineEndBody>
+    <UForm
+      id="teacher-end-form"
+      :schema="endSchema"
+      :state="endState"
+      class="space-y-4"
+      @submit="submitEnd"
+    >
+      <UFormField :label="t('pages.halaqat.teachers.fieldEndDate')" name="end_date" required>
+        <UInput v-model="endState.end_date" type="date" class="w-full" />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.teachers.fieldEndReason')" name="end_reason" required>
+        <USelect
+          v-model="endState.end_reason"
+          :items="endReasonItems"
+          value-key="value"
+          class="w-full"
+        />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
+        <UTextarea v-model="endState.notes" class="w-full" />
+      </UFormField>
+    </UForm>
+  </DefineEndBody>
+
+  <DefineEndFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="endSaving" @click="endOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton type="submit" form="teacher-end-form" color="error" :loading="endSaving">
+        {{ t('pages.halaqat.teachers.endAssignment') }}
+      </UButton>
+    </div>
+  </DefineEndFooter>
+
   <UModal
+    v-if="isDesktop"
     v-model:open="endOpen"
     :title="t('pages.halaqat.teachers.endTitle')"
     :ui="{ content: 'sm:max-w-md rounded-2xl' }"
   >
-    <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <UForm
-        id="teacher-end-form"
-        :schema="endSchema"
-        :state="endState"
-        class="space-y-4"
-        @submit="submitEnd"
-      >
-        <UFormField :label="t('pages.halaqat.teachers.fieldEndDate')" name="end_date" required>
-          <UInput v-model="endState.end_date" type="date" class="w-full" />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldEndReason')" name="end_reason" required>
-          <USelect
-            v-model="endState.end_reason"
-            :items="endReasonItems"
-            value-key="value"
-            class="w-full"
-          />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
-          <UTextarea v-model="endState.notes" class="w-full" />
-        </UFormField>
-      </UForm>
+      <ReuseEndBody />
     </template>
     <template #footer>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" :disabled="endSaving" @click="endOpen = false">
-          {{ t('pages.halaqat.cancel') }}
-        </UButton>
-        <UButton type="submit" form="teacher-end-form" color="error" :loading="endSaving">
-          {{ t('pages.halaqat.teachers.endAssignment') }}
-        </UButton>
-      </div>
+      <ReuseEndFooter />
     </template>
   </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="endOpen"
+    :title="t('pages.halaqat.teachers.endTitle')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseEndBody />
+    </template>
+    <template #footer>
+      <ReuseEndFooter />
+    </template>
+  </UDrawer>
 
   <UModal
     v-model:open="actingOpen"

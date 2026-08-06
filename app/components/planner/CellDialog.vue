@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import { dateOfDayLabel } from '~/utils/plan'
+import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import { PLAN_TRACKS } from '~/composables/useWeeklyPlan'
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
@@ -56,7 +57,10 @@ const tracks = computed<TrackType[]>(() => {
           :key="n"
           class="rounded-xl border border-default p-4 space-y-3"
         >
-          <USkeleton class="h-5 w-16 rounded-full" />
+          <div class="flex items-center justify-between gap-2">
+            <USkeleton class="h-5 w-16 rounded-full" />
+            <USkeleton class="h-4 w-4 rounded" />
+          </div>
           <div class="rounded-xl border border-default bg-elevated p-3 space-y-2.5">
             <div class="flex items-center justify-between gap-2">
               <USkeleton class="h-4 w-32 rounded" />
@@ -76,15 +80,51 @@ const tracks = computed<TrackType[]>(() => {
         <div
           v-for="tk in tracks"
           :key="tk"
-          class="rounded-xl border border-default p-4"
+          class="rounded-xl border border-default"
         >
-          <PlannerCellSessions
-            :day="day"
-            :track="tk"
-            :editable="editable"
-            :initial-view="track ? initialView : undefined"
-            @close="open = false"
-          />
+          <!-- Each track collapses independently; sessions-bearing tracks open by
+               default, empty ones stay folded. unmount-on-hide is off so a track's
+               edits (and its "add a blank session" seed) survive a collapse. -->
+          <UCollapsible
+            :default-open="track ? true : getCells(day, tk).length > 0"
+            :unmount-on-hide="false"
+          >
+            <template #default="{ open: expanded }">
+              <button type="button" class="flex w-full items-center justify-between gap-2 p-4 text-start">
+                <span class="flex items-center gap-2">
+                  <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[tk as AchievementTrack]">
+                    {{ t(`pages.achievements.tracks.${tk}`) }}
+                  </UBadge>
+                  <UBadge
+                    v-if="getCells(day, tk).length"
+                    variant="subtle"
+                    color="neutral"
+                    size="sm"
+                    class="tabular-nums"
+                  >
+                    {{ getCells(day, tk).length }}
+                  </UBadge>
+                </span>
+                <UIcon
+                  name="i-lucide-chevron-down"
+                  class="w-4 h-4 text-muted transition-transform shrink-0"
+                  :class="expanded && 'rotate-180'"
+                />
+              </button>
+            </template>
+
+            <template #content>
+              <div class="px-4 pb-4">
+                <PlannerCellSessions
+                  :day="day"
+                  :track="tk"
+                  :editable="editable"
+                  :initial-view="track ? initialView : undefined"
+                  @close="open = false"
+                />
+              </div>
+            </template>
+          </UCollapsible>
         </div>
       </div>
     </div>

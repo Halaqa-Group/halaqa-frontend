@@ -2,7 +2,6 @@
 import { useOnline } from '@vueuse/core'
 import { SURAH_NAMES } from '~/data/constants'
 import { formatVerseRange, totalVersesInRange } from '~/utils/quran'
-import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import { defaultSessionRange, planItemStatusColor } from '~/utils/plan'
 import { toYmd, todayYmd } from '~/utils/date'
 import type { VerseRange } from '~/utils/quran-structure'
@@ -141,15 +140,6 @@ onMounted(() => {
 
 <template>
   <div class="space-y-3">
-    <div class="flex items-center justify-between gap-2">
-      <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[track as AchievementTrack]">
-        {{ t(`pages.achievements.tracks.${track}`) }}
-      </UBadge>
-      <UBadge v-if="sessions.length > 1" variant="subtle" color="neutral" size="sm" class="tabular-nums">
-        {{ sessions.length }}
-      </UBadge>
-    </div>
-
     <div
       v-if="!sessions.length"
       class="rounded-xl border border-default bg-elevated py-4 px-3 space-y-3 text-center"

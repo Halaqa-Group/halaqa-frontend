@@ -99,13 +99,19 @@ async function handleOutboxSync(self: ServiceWorkerGlobalScope): Promise<void> {
   if (count === 0) return
   await self.registration.showNotification(text.title, {
     body: text.body,
-    tag: NOTIFICATION_TAG, // collapses repeat nudges into one
+    tag: NOTIFICATION_TAG, // collapses repeat nudges into one…
+    renotify: true, // …but still re-alert (heads-up/sound) instead of a silent tray update
+    requireInteraction: true, // keep it on screen until the user acts on it
+    // A vibration pattern is the cue Android uses to promote a web notification to
+    // a heads-up popup (high importance) rather than dropping it silently into the
+    // tray. Deprecated in some TS lib versions, hence the widened option type.
+    vibrate: [200, 100, 200],
     icon: '/icons/pwa-192x192.png',
     badge: '/icons/pwa-64x64.png',
     lang: text.lang,
     dir: text.dir ?? 'auto',
     data: { url: '/' }
-  })
+  } as NotificationOptions & { renotify?: boolean, vibrate?: number[] })
 }
 
 export function registerOutboxSync(self: ServiceWorkerGlobalScope): void {

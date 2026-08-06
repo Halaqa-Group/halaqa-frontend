@@ -29,6 +29,10 @@ const [DefineFooter, ReuseFooter] = createReusableTemplate()
 
 const dateLabel = computed(() => dateOfDayLabel(dateOfDay(props.day), locale.value))
 
+// Placeholder track boxes while the day-card's plan loads: an editable plan will
+// surface all three tracks, a read-only one only a couple.
+const skeletonCount = computed(() => (props.editable ? PLAN_TRACKS.length : 2))
+
 // One track when opened from a matrix cell; every track when opened from a day
 // card. An editable plan surfaces all tracks (so an empty one can be filled); a
 // read-only plan only shows the tracks that actually carry sessions.
@@ -41,11 +45,27 @@ const tracks = computed<TrackType[]>(() => {
 <template>
   <DefineBody>
     <div class="space-y-5">
-      <span class="text-sm font-medium">{{ dateLabel }}</span>
+      <span class="block text-sm font-medium">{{ dateLabel }}</span>
 
-      <!-- Day-card entry point may still be fetching the student's plan. -->
-      <div v-if="!track && isLoading" class="flex justify-center py-10">
-        <UIcon name="i-lucide-loader-circle" class="w-7 h-7 animate-spin text-primary" />
+      <!-- Day-card entry point may still be fetching the student's plan: skeleton
+           mirrors the real layout — one bordered box per track, each with a track
+           badge over a session row — so nothing shifts when the data lands. -->
+      <div v-if="!track && isLoading" class="space-y-4">
+        <div
+          v-for="n in skeletonCount"
+          :key="n"
+          class="rounded-xl border border-default p-4 space-y-3"
+        >
+          <USkeleton class="h-5 w-16 rounded-full" />
+          <div class="rounded-xl border border-default bg-elevated p-3 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <USkeleton class="h-4 w-32 rounded" />
+              <USkeleton class="h-5 w-14 rounded-full" />
+            </div>
+            <USkeleton class="h-3 w-24 rounded" />
+            <USkeleton class="h-8 w-full rounded-md" />
+          </div>
+        </div>
       </div>
 
       <p v-else-if="!tracks.length" class="text-sm text-muted text-center py-6">

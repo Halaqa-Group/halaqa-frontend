@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { FormSubmitEvent } from '#ui/types'
 import type { CalendarDate } from '@internationalized/date'
 import { DateFormatter, getLocalTimeZone, parseDate, today } from '@internationalized/date'
@@ -19,6 +20,12 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{ close: [boolean] }>()
 
 const { createStudent, updateStudent } = useStudents()
+
+// Centered modal on desktop, bottom drawer on mobile — the body + footer are
+// shared between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineBody, ReuseBody] = createReusableTemplate()
+const [DefineFooter, ReuseFooter] = createReusableTemplate()
 const { halaqat, fetchHalaqat, isLoading: halaqatLoading } = useHalaqat()
 const { palestinianId } = useValidation()
 const { lockStudentBio } = usePermissions()
@@ -412,14 +419,7 @@ watch(modalOpen, (open) => {
 </script>
 
 <template>
-  <UModal
-    v-model:open="modalOpen"
-    :title="isEditMode ? t('pages.students.addModal.editTitle') : t('pages.students.addModal.title')"
-    :ui="{ content: 'sm:max-w-3xl rounded-2xl' }"
-  >
-    <UButton class="sr-only" tabindex="-1" />
-
-    <template #body>
+  <DefineBody>
       <div v-if="loading" class="flex items-center justify-center py-16">
         <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
       </div>
@@ -677,9 +677,9 @@ watch(modalOpen, (open) => {
           />
         </UFormField>
       </UForm>
-    </template>
+    </DefineBody>
 
-    <template #footer>
+    <DefineFooter>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton
           variant="soft"
@@ -698,7 +698,35 @@ watch(modalOpen, (open) => {
           {{ isEditMode ? t('pages.students.addModal.editSubmit') : t('pages.students.addModal.submit') }}
         </UButton>
       </div>
-    </template>
+    </DefineFooter>
+
+    <UModal
+      v-if="isDesktop"
+      v-model:open="modalOpen"
+      :title="isEditMode ? t('pages.students.addModal.editTitle') : t('pages.students.addModal.title')"
+      :ui="{ content: 'sm:max-w-3xl rounded-2xl' }"
+    >
+      <template #body>
+        <ReuseBody />
+      </template>
+      <template #footer>
+        <ReuseFooter />
+      </template>
+    </UModal>
+
+    <UDrawer
+      v-else
+      v-model:open="modalOpen"
+      :title="isEditMode ? t('pages.students.addModal.editTitle') : t('pages.students.addModal.title')"
+      :ui="{ container: 'max-h-[90vh]' }"
+    >
+      <template #body>
+        <ReuseBody />
+      </template>
+      <template #footer>
+        <ReuseFooter />
+      </template>
+    </UDrawer>
 
     <CommonConfirmDialog
       v-model:open="showIdLockConfirm"
@@ -710,5 +738,4 @@ watch(modalOpen, (open) => {
       @update:open="(v) => { if (!v) resolveIdLockOverride(false) }"
       @confirm="resolveIdLockOverride(true)"
     />
-  </UModal>
 </template>

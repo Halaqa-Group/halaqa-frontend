@@ -23,9 +23,10 @@ const { pageFor } = useVerseToPage()
 // Always Western digits (Latin numerals) regardless of locale.
 const fmt = (n: number) => String(n)
 
-// Mobile-only open state; on ≥sm the wheels are shown regardless (see template).
+// Collapsed-card open state (collapsed by default at every breakpoint).
 const open = ref(false)
-const summary = computed(() => `${SURAH_NAMES[surah.value] ?? surah.value} - ${fmt(surah.value)}:${fmt(verse.value)}`)
+// Surah name + ayah only — no surah number.
+const summary = computed(() => `${SURAH_NAMES[surah.value] ?? surah.value} · ${fmt(verse.value)}`)
 
 // The wheels mount while collapsed (display:none), where they can't scroll to the
 // selected row. Once we reveal them, wait for Vue to drop the `hidden` class

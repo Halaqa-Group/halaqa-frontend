@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
-import { achievementStatusColor } from '~/utils/achievement'
 import { weeklyPlanToQuranPlan } from '~/utils/plan-pdf'
 
 definePageMeta({

@@ -84,6 +84,15 @@ function createClient(): ApiClient {
       // to the very next request, not just to clients created after it.
       const locale = currentLocale()
       if (locale) headers.set('Accept-Language', locale)
+      // Tells the backend which role the user is ACTING as, so a multi-role user
+      // (e.g. principal + teacher) gets views scoped to that role instead of the
+      // union of their roles. The backend only ever narrows on it — it can never
+      // widen access — so it is safe to send on every request. Read live so a
+      // role switch applies to the very next request.
+      const activeRole = import.meta.client
+        ? useState<string | null>('auth_active_role').value
+        : null
+      if (activeRole) headers.set('X-Active-Role', activeRole)
       options.headers = headers
     },
     onResponseError({ request, response }) {

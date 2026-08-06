@@ -285,6 +285,33 @@ watch(() => state.student_id, (sid) => {
   }
 })
 
+// A picked suggestion seeds the track + range and stays highlighted. The moment
+// the teacher hand-edits either, the form no longer mirrors that plan lesson — so
+// drop the selection, keeping the edited scope. This is what makes the edit
+// authoritative: an un-highlighted suggestion can't re-apply over it (e.g. when
+// the day is re-picked), yet the teacher can still tap a suggestion to overwrite.
+// The comparison is exact, so pickPlanItem's own seed (range == the item) doesn't
+// trip it — only a real divergence does. Skipped for a planner-handed lesson,
+// which is meant to stay linked through tweaks so the recite hand-off keeps its
+// item_id.
+watch(
+  () => [state.track_type, state.start_surah, state.start_verse, state.end_surah, state.end_verse],
+  () => {
+    if (fromPlanner.value || selectedPlanItemId.value == null) return
+    const it = pickerItems.value.find(i => i.id === selectedPlanItemId.value)
+    if (!it) return
+    if (
+      it.track_type !== state.track_type
+      || it.start_surah !== state.start_surah
+      || it.start_verse !== state.start_verse
+      || it.end_surah !== state.end_surah
+      || it.end_verse !== state.end_verse
+    ) {
+      selectedPlanItemId.value = null
+    }
+  }
+)
+
 // Show the manual track + range inputs when there's no plan, or the teacher
 // explicitly opted into manual entry. When editing, the lesson/range is fixed —
 // it's shown read-only and can't be changed (only counts/notes are editable).

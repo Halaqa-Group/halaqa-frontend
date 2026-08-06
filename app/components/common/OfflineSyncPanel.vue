@@ -239,6 +239,35 @@ async function syncNow() {
           @click="syncNow"
         />
       </div>
-    </template>
-  </USlideover>
+    </DefineFooter>
+
+    <USlideover
+      v-if="isDesktop"
+      v-model:open="open"
+      :title="t('pwa.logTitle')"
+      :description="t('pwa.logSubtitle')"
+      :ui="{ content: 'pt-[env(safe-area-inset-top)]', close: 'top-[calc(env(safe-area-inset-top)+1rem)]' }"
+    >
+      <template #body>
+        <ReuseBody />
+      </template>
+      <template #footer>
+        <ReuseFooter />
+      </template>
+    </USlideover>
+
+    <UDrawer
+      v-else
+      v-model:open="open"
+      :title="t('pwa.logTitle')"
+      :description="t('pwa.logSubtitle')"
+      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+    >
+      <template #body>
+        <ReuseBody />
+      </template>
+      <template #footer>
+        <ReuseFooter />
+      </template>
+    </UDrawer>
 </template>

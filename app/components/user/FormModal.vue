@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { ManagedUser, UserStatus } from '~/composables/useUsers'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import { NAME_PART_MAX_LENGTH } from '~/data/constants'
@@ -21,6 +22,13 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const api = useApi()
 const usersApi = useUsers()
+
+// Centered modal on desktop, bottom drawer on mobile — header/body/footer are
+// shared between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineHeader, ReuseHeader] = createReusableTemplate()
+const [DefineBody, ReuseBody] = createReusableTemplate()
+const [DefineFooter, ReuseFooter] = createReusableTemplate()
 const { roles: rolesCatalog, ensureLoaded: ensureRolesLoaded } = useRoles()
 const apiError = useApiError()
 const { user: authUser } = useAuth()
@@ -310,161 +318,189 @@ const isCatalogLoading = computed(() => rolesCatalog.value.length === 0)
 </script>
 
 <template>
+  <DefineHeader>
+    <div class="flex items-center justify-between gap-3 w-full">
+      <h3 class="text-lg font-bold text-highlighted truncate">
+        {{ titleText }}
+      </h3>
+      <UButton
+        icon="i-lucide-x"
+        color="neutral"
+        variant="ghost"
+        size="sm"
+        square
+        :disabled="isLoading"
+        @click="requestClose"
+      />
+    </div>
+  </DefineHeader>
+
+  <DefineBody>
+    <UForm
+      id="user-form"
+      :schema="schema"
+      :state="state"
+      class="space-y-5"
+      @submit="onSubmit"
+    >
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <UFormField
+          v-for="field in NAME_PART_FIELDS"
+          :key="field.key"
+          :label="$t(field.labelKey)"
+          :name="field.key"
+          required
+        >
+          <UInput v-model="state[field.key]" :maxlength="NAME_PART_MAX_LENGTH" />
+        </UFormField>
+
+        <UFormField v-if="mode === 'add'" :label="$t('label.id_number')" name="id_number" required>
+          <UInput v-model="state.id_number" dir="ltr" :placeholder="$t('placeholder.id_number')" />
+        </UFormField>
+
+        <UFormField
+          :label="$t('label.email_address')"
+          name="email"
+          :hint="mode === 'add' ? $t('common.optional') : undefined"
+        >
+          <UInput
+            v-model="state.email"
+            type="email"
+            dir="ltr"
+            :disabled="mode === 'edit'"
+          />
+        </UFormField>
+
+        <UFormField v-if="mode === 'add'" :label="$t('label.password')" name="password" required>
+          <CommonPasswordToggle
+            v-model:password="state.password"
+            :placeholder="$t('placeholder.new_password')"
+          />
+        </UFormField>
+
+        <UFormField :label="phoneLabel" name="phone">
+          <UInput v-model="state.phone" dir="ltr" placeholder="+970599123456" />
+        </UFormField>
+
+        <UFormField
+          v-if="mode === 'edit'"
+          :label="$t('pages.users.columns.status')"
+          name="status"
+          :hint="lockStatus ? $t('pages.users.form.cannotChangeOwnStatus') : undefined"
+        >
+          <USelectMenu
+            v-model="state.status"
+            :items="statusOptions"
+            value-key="value"
+            :disabled="lockStatus"
+          />
+        </UFormField>
+      </div>
+
+      <div>
+        <h4 class="font-semibold text-sm mb-3">
+          {{ $t('pages.users.editModal.rolesSection') }}
+          <span class="text-error">*</span>
+        </h4>
+
+        <div v-if="isCatalogLoading" class="space-y-2">
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="h-10 rounded-md bg-elevated/50 animate-pulse"
+          />
+        </div>
+
+        <div v-else class="space-y-2">
+          <label
+            v-for="r in rolesCatalog"
+            :key="r.id"
+            class="flex items-center gap-3 px-3 py-2 rounded-md bg-elevated/50 transition"
+            :class="isRoleLocked(r.slug)
+              ? 'opacity-60 cursor-not-allowed'
+              : 'cursor-pointer hover:bg-elevated'"
+          >
+            <UCheckbox
+              :model-value="selectedRoles.includes(r.slug)"
+              :disabled="isRoleLocked(r.slug)"
+              @update:model-value="(v: boolean | 'indeterminate') => toggleSelectedRole(r.slug, v === true)"
+            />
+            <div class="flex-1 font-medium text-sm">
+              {{ locale === 'ar' ? r.nameAr : r.nameEn }}
+            </div>
+            <UIcon
+              v-if="isRoleLocked(r.slug)"
+              name="i-lucide-lock"
+
+              class="size-4 text-muted"
+              :aria-label="$t('pages.users.form.cannotRemoveOwnPrincipal')"
+            />
+          </label>
+        </div>
+
+        <p v-if="lockPrincipalRole" class="text-xs text-muted mt-2">
+          {{ $t('pages.users.form.cannotRemoveOwnPrincipal') }}
+        </p>
+      </div>
+
+      <UAlert v-if="error" color="error" variant="soft" :title="error" />
+    </UForm>
+  </DefineBody>
+
+  <DefineFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton
+        variant="ghost"
+        color="neutral"
+        :disabled="isLoading"
+        @click="requestClose"
+      >
+        {{ $t('common.cancel') }}
+      </UButton>
+      <UButton
+        type="submit"
+        form="user-form"
+        :loading="isLoading"
+        :disabled="!canSubmit"
+      >
+        {{ saveLabel }}
+      </UButton>
+    </div>
+  </DefineFooter>
+
   <UModal
+    v-if="isDesktop"
     v-model:open="isOpen"
     :dismissible="false"
     :ui="{ content: 'sm:max-w-2xl' }"
   >
     <template #header>
-      <div class="flex items-center justify-between gap-3 w-full">
-        <h3 class="text-lg font-bold text-highlighted truncate">
-          {{ titleText }}
-        </h3>
-        <UButton
-          icon="i-lucide-x"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-          square
-          :disabled="isLoading"
-          @click="requestClose"
-        />
-      </div>
+      <ReuseHeader />
     </template>
-
     <template #body>
-      <UForm
-        id="user-form"
-        :schema="schema"
-        :state="state"
-        class="space-y-5"
-        @submit="onSubmit"
-      >
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <UFormField
-            v-for="field in NAME_PART_FIELDS"
-            :key="field.key"
-            :label="$t(field.labelKey)"
-            :name="field.key"
-            required
-          >
-            <UInput v-model="state[field.key]" :maxlength="NAME_PART_MAX_LENGTH" />
-          </UFormField>
-
-          <UFormField v-if="mode === 'add'" :label="$t('label.id_number')" name="id_number" required>
-            <UInput v-model="state.id_number" dir="ltr" :placeholder="$t('placeholder.id_number')" />
-          </UFormField>
-
-          <UFormField
-            :label="$t('label.email_address')"
-            name="email"
-            :hint="mode === 'add' ? $t('common.optional') : undefined"
-          >
-            <UInput
-              v-model="state.email"
-              type="email"
-              dir="ltr"
-              :disabled="mode === 'edit'"
-            />
-          </UFormField>
-
-          <UFormField v-if="mode === 'add'" :label="$t('label.password')" name="password" required>
-            <CommonPasswordToggle
-              v-model:password="state.password"
-              :placeholder="$t('placeholder.new_password')"
-            />
-          </UFormField>
-
-          <UFormField :label="phoneLabel" name="phone">
-            <UInput v-model="state.phone" dir="ltr" placeholder="+970599123456" />
-          </UFormField>
-
-          <UFormField
-            v-if="mode === 'edit'"
-            :label="$t('pages.users.columns.status')"
-            name="status"
-            :hint="lockStatus ? $t('pages.users.form.cannotChangeOwnStatus') : undefined"
-          >
-            <USelectMenu
-              v-model="state.status"
-              :items="statusOptions"
-              value-key="value"
-              :disabled="lockStatus"
-            />
-          </UFormField>
-        </div>
-
-        <div>
-          <h4 class="font-semibold text-sm mb-3">
-            {{ $t('pages.users.editModal.rolesSection') }}
-            <span class="text-error">*</span>
-          </h4>
-
-          <div v-if="isCatalogLoading" class="space-y-2">
-            <div
-              v-for="i in 3"
-              :key="i"
-              class="h-10 rounded-md bg-elevated/50 animate-pulse"
-            />
-          </div>
-
-          <div v-else class="space-y-2">
-            <label
-              v-for="r in rolesCatalog"
-              :key="r.id"
-              class="flex items-center gap-3 px-3 py-2 rounded-md bg-elevated/50 transition"
-              :class="isRoleLocked(r.slug)
-                ? 'opacity-60 cursor-not-allowed'
-                : 'cursor-pointer hover:bg-elevated'"
-            >
-              <UCheckbox
-                :model-value="selectedRoles.includes(r.slug)"
-                :disabled="isRoleLocked(r.slug)"
-                @update:model-value="(v: boolean | 'indeterminate') => toggleSelectedRole(r.slug, v === true)"
-              />
-              <div class="flex-1 font-medium text-sm">
-                {{ locale === 'ar' ? r.nameAr : r.nameEn }}
-              </div>
-              <UIcon
-                v-if="isRoleLocked(r.slug)"
-                name="i-lucide-lock"
-
-                class="size-4 text-muted"
-                :aria-label="$t('pages.users.form.cannotRemoveOwnPrincipal')"
-              />
-            </label>
-          </div>
-
-          <p v-if="lockPrincipalRole" class="text-xs text-muted mt-2">
-            {{ $t('pages.users.form.cannotRemoveOwnPrincipal') }}
-          </p>
-        </div>
-
-        <UAlert v-if="error" color="error" variant="soft" :title="error" />
-      </UForm>
+      <ReuseBody />
     </template>
-
     <template #footer>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton
-          variant="ghost"
-          color="neutral"
-          :disabled="isLoading"
-          @click="requestClose"
-        >
-          {{ $t('common.cancel') }}
-        </UButton>
-        <UButton
-          type="submit"
-          form="user-form"
-          :loading="isLoading"
-          :disabled="!canSubmit"
-        >
-          {{ saveLabel }}
-        </UButton>
-      </div>
+      <ReuseFooter />
     </template>
   </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="isOpen"
+    :dismissible="false"
+    :ui="{ container: 'max-h-[90vh]' }"
+  >
+    <template #header>
+      <ReuseHeader />
+    </template>
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </UDrawer>
 
   <ConfirmDialog
     v-model:open="discardOpen"

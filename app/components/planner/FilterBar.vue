@@ -208,6 +208,10 @@ function onDayPick(value: unknown) {
     </div>
 
     <template #actions>
+      <!-- Page-level actions (approve / add / overflow…) share this toolbar so
+           they never sit in a separate, half-empty band above the content. -->
+      <slot name="pageActions" />
+
       <UBadge v-if="plan && viewMode !== 'day'" variant="subtle" :color="statusBadgeColor">
         {{ statusLabel }}
       </UBadge>

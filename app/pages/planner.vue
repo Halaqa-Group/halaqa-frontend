@@ -198,77 +198,6 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div v-if="selectedHalaqaId && selectedStudentId && viewMode !== 'day'" class="flex items-center justify-end gap-2">
-      <!-- Approve — the decisive action; primary and visible at every breakpoint -->
-      <UButton
-        v-if="showApprove"
-        icon="i-lucide-check-check"
-        color="primary"
-        :loading="approving"
-        :disabled="savingDraft"
-        @click="onApprove"
-      >
-        {{ t('pages.planner.approvePlan') }}
-      </UButton>
-
-      <!-- Secondary actions: inline on sm+, folded into the overflow menu on mobile -->
-      <UButton
-        v-if="showUnapprove"
-        class="hidden sm:inline-flex"
-        icon="i-lucide-undo-2"
-        color="warning"
-        variant="soft"
-        @click="onUnapprove"
-      >
-        {{ t('pages.planner.unapprove') }}
-      </UButton>
-      <UButton
-        v-if="canPrint"
-        class="hidden sm:inline-flex"
-        icon="i-lucide-printer"
-        color="neutral"
-        variant="soft"
-        @click="printOpen = true"
-      >
-        {{ t('pages.planner.downloadPdf') }}
-      </UButton>
-      <UButton
-        v-if="canModify && viewMode === 'matrix'"
-        class="hidden sm:inline-flex"
-        icon="i-lucide-wand-sparkles"
-        variant="soft"
-        @click="wizardOpen = true"
-      >
-        {{ t('pages.planner.wizard.open') }}
-      </UButton>
-      <UButton
-        v-if="canModify && viewMode === 'matrix'"
-        :class="primaryKey === 'saveDraft' ? '' : 'hidden sm:inline-flex'"
-        icon="i-lucide-save"
-        :loading="savingDraft"
-        :disabled="!matrixDirty || approving"
-        @click="onSaveDraft"
-      >
-        {{ t('pages.planner.saveDraft') }}
-      </UButton>
-      <UButton
-        v-if="canModify && viewMode !== 'matrix'"
-        :class="primaryKey === 'add' ? '' : 'hidden sm:inline-flex'"
-        icon="i-lucide-plus"
-        @click="openAdd"
-      >
-        {{ t('pages.planner.addItem') }}
-      </UButton>
-
-      <!-- Overflow: mobile carries the secondary actions + delete; desktop only delete -->
-      <UDropdownMenu v-if="mobileMenu.length" :items="mobileMenu" :content="{ align: 'end' }" class="sm:hidden">
-        <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
-      </UDropdownMenu>
-      <UDropdownMenu v-if="planMenu.length" :items="planMenu" :content="{ align: 'end' }" class="hidden sm:block">
-        <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
-      </UDropdownMenu>
-    </div>
-
     <!-- Weekly plans are written per halaqa, so a halaqa is mandatory here even for
          roles that browse the rest of the app unscoped. -->
     <div
@@ -290,7 +219,80 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <PlannerFilterBar />
+      <PlannerFilterBar>
+        <template #pageActions>
+          <div v-if="selectedStudentId && viewMode !== 'day'" class="flex items-center gap-2">
+            <!-- Approve — the decisive action; primary and visible at every breakpoint -->
+            <UButton
+              v-if="showApprove"
+              icon="i-lucide-check-check"
+              color="primary"
+              :loading="approving"
+              :disabled="savingDraft"
+              @click="onApprove"
+            >
+              {{ t('pages.planner.approvePlan') }}
+            </UButton>
+
+            <!-- Secondary actions: inline on sm+, folded into the overflow menu on mobile -->
+            <UButton
+              v-if="showUnapprove"
+              class="hidden sm:inline-flex"
+              icon="i-lucide-undo-2"
+              color="warning"
+              variant="soft"
+              @click="onUnapprove"
+            >
+              {{ t('pages.planner.unapprove') }}
+            </UButton>
+            <UButton
+              v-if="canPrint"
+              class="hidden sm:inline-flex"
+              icon="i-lucide-printer"
+              color="neutral"
+              variant="soft"
+              @click="printOpen = true"
+            >
+              {{ t('pages.planner.downloadPdf') }}
+            </UButton>
+            <UButton
+              v-if="canModify && viewMode === 'matrix'"
+              class="hidden sm:inline-flex"
+              icon="i-lucide-wand-sparkles"
+              variant="soft"
+              @click="wizardOpen = true"
+            >
+              {{ t('pages.planner.wizard.open') }}
+            </UButton>
+            <UButton
+              v-if="canModify && viewMode === 'matrix'"
+              :class="primaryKey === 'saveDraft' ? '' : 'hidden sm:inline-flex'"
+              icon="i-lucide-save"
+              :loading="savingDraft"
+              :disabled="!matrixDirty || approving"
+              @click="onSaveDraft"
+            >
+              {{ t('pages.planner.saveDraft') }}
+            </UButton>
+            <UButton
+              v-if="canModify && viewMode !== 'matrix'"
+              :class="primaryKey === 'add' ? '' : 'hidden sm:inline-flex'"
+              icon="i-lucide-plus"
+              @click="openAdd"
+            >
+              {{ t('pages.planner.addItem') }}
+            </UButton>
+
+            <!-- Overflow: mobile carries the secondary actions + delete; desktop only delete -->
+            <UDropdownMenu v-if="mobileMenu.length" :items="mobileMenu" :content="{ align: 'end' }" class="sm:hidden">
+              <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
+            </UDropdownMenu>
+            <UDropdownMenu v-if="planMenu.length" :items="planMenu" :content="{ align: 'end' }" class="hidden sm:block">
+              <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
+            </UDropdownMenu>
+          </div>
+        </template>
+      </PlannerFilterBar>
       <PlannerResults />
     </template>
 

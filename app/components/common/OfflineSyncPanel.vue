@@ -2,7 +2,7 @@
 // Full log of everything waiting to sync: offline recitation drafts, queued
 // attendance syncs, queued deletes, and anything that permanently failed — with
 // per-item discard/retry and a "sync now" action. Opened from the status badge.
-import { useOnline } from '@vueuse/core'
+import { createReusableTemplate, useMediaQuery, useOnline } from '@vueuse/core'
 import type { OutboxEntry } from '~/composables/useOfflineOutbox'
 import type { AchievementDraft } from '~/composables/useAchievementDrafts'
 
@@ -14,6 +14,12 @@ const { drafts, deleteDraft, flush: flushDrafts } = useAchievementDrafts()
 
 const hasItems = computed(() => pending.value.length + failed.value.length + drafts.value.length > 0)
 const syncing = ref(false)
+
+// Side slide-over on desktop, bottom drawer on mobile — body + footer are shared
+// between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineBody, ReuseBody] = createReusableTemplate()
+const [DefineFooter, ReuseFooter] = createReusableTemplate()
 
 // Opt-in to a local notification when the SW reconnects while the app is closed
 // (see app/service-worker/outbox-sync.ts). Only offered where Background Sync
@@ -77,8 +83,7 @@ async function syncNow() {
 </script>
 
 <template>
-  <USlideover v-model:open="open" :title="t('pwa.logTitle')" :description="t('pwa.logSubtitle')" :ui="{ content: 'pt-[env(safe-area-inset-top)]', close: 'top-[calc(env(safe-area-inset-top)+1rem)]' }">
-    <template #body>
+  <DefineBody>
       <!-- Reconnect-notification opt-in (Chromium/Android only) -->
       <div v-if="notifSupported" class="mb-4">
         <div
@@ -217,9 +222,9 @@ async function syncNow() {
           </div>
         </section>
       </div>
-    </template>
+    </DefineBody>
 
-    <template #footer>
+    <DefineFooter>
       <div class="flex items-center justify-between w-full gap-3">
         <span class="text-xs text-on-surface-variant flex items-center gap-1.5">
           <UIcon :name="online ? 'i-lucide-wifi' : 'i-lucide-wifi-off'" class="size-3.5" />

@@ -44,5 +44,6 @@ useHead({
       </NuxtLayout>
     </UMain>
     <CommonPwaPrompt />
+    <CommonNotifyPrompt />
   </UApp>
 </template>

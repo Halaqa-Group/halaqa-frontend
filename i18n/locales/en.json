@@ -1671,6 +1671,8 @@
     "notifyReconnectTitle": "You're back online",
     "notifyReconnectBody": "You have unsynced changes. Open the app to sync them.",
     "notifyPrompt": "Notify me when I'm back online if changes are still unsynced.",
+    "notifyPromptTitle": "Turn on sync reminders",
+    "notifyPromptBody": "We'll remind you to sync your changes when you're back online.",
     "notifyEnable": "Enable",
     "notifyEnabled": "You'll be notified when you reconnect.",
     "notifyBlocked": "Notifications are blocked in your browser settings."

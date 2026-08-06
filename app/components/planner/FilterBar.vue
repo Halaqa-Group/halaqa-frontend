@@ -1,13 +1,21 @@
 <script setup lang="ts">
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
+import { achievementStatusColor } from '~/utils/achievement'
 
 const { t, locale } = useI18n()
 const {
   students, selectedStudentId, selectedWeekStart, filters, viewMode,
   summary, hasActiveFilters, clearFilters, prevWeek, nextWeek, setWeekFromDate,
   // Day view: the date navigator + roster rollup live in the toolbar too.
-  selectedDate, dayTotals, prevDay, nextDay
+  selectedDate, dayTotals, prevDay, nextDay,
+  // Plan status lives here as context (beside coverage), not among the action buttons.
+  plan, planStatus
 } = useWeeklyPlan()
+
+const statusBadgeColor = computed(() => achievementStatusColor(planStatus.value === 'approved' ? 'approved' : 'unapproved'))
+const statusLabel = computed(() =>
+  planStatus.value === 'approved' ? t('pages.planner.approved') : t('pages.planner.draft')
+)
 
 const calendarOpen = ref(false)
 const dayCalendarOpen = ref(false)
@@ -200,6 +208,10 @@ function onDayPick(value: unknown) {
     </div>
 
     <template #actions>
+      <UBadge v-if="plan && viewMode !== 'day'" variant="subtle" :color="statusBadgeColor">
+        {{ statusLabel }}
+      </UBadge>
+
       <UBadge v-if="viewMode !== 'day'" color="primary" variant="subtle" class="hidden sm:inline-flex">
         {{ t('pages.planner.coverage', { achieved: summary.totalAchieved, total: summary.totalPlanned, percent: summary.coverage }) }}
       </UBadge>

@@ -364,8 +364,9 @@ function rowActions(e: ApiStudentEnrollment) {
           <UInput v-model="enrollState.enrollment_date" type="date" class="w-full" />
         </UFormField>
       </UForm>
-    </template>
-    <template #footer>
+    </DefineBody>
+
+    <DefineFooter>
       <div class="flex items-center justify-end gap-2 w-full">
         <UButton variant="soft" color="neutral" :disabled="enrollSaving" @click="enrollOpen = false">
           {{ t('pages.halaqat.cancel') }}
@@ -374,8 +375,35 @@ function rowActions(e: ApiStudentEnrollment) {
           {{ t('pages.halaqat.save') }}
         </UButton>
       </div>
-    </template>
-  </UModal>
+    </DefineFooter>
+
+    <UModal
+      v-if="isDesktop"
+      v-model:open="enrollOpen"
+      :title="t('pages.halaqat.students.addTitle')"
+      :ui="{ content: 'sm:max-w-md rounded-2xl' }"
+    >
+      <template #body>
+        <ReuseBody />
+      </template>
+      <template #footer>
+        <ReuseFooter />
+      </template>
+    </UModal>
+
+    <UDrawer
+      v-else
+      v-model:open="enrollOpen"
+      :title="t('pages.halaqat.students.addTitle')"
+      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+    >
+      <template #body>
+        <ReuseBody />
+      </template>
+      <template #footer>
+        <ReuseFooter />
+      </template>
+    </UDrawer>
 
   <UModal
     v-model:open="removeOpen"

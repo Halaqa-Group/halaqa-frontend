@@ -98,6 +98,46 @@ async function onUnapprove() {
   }
 }
 
+// ── Toolbar hierarchy ────────────────────────────────────────────────────────
+// One labeled primary action stays visible at every breakpoint; the rest are
+// inline buttons on sm+ and fold into an overflow menu on mobile. This keeps the
+// phone toolbar to "[primary] ⋮" instead of a wrapped block of equal-weight pills.
+const showApprove = computed(() =>
+  canApprove.value && planStatus.value !== 'approved'
+  && (planStatus.value === 'draft' || (viewMode.value === 'matrix' && matrixDirty.value))
+)
+const showUnapprove = computed(() => canUnapprovePlan.value && planStatus.value === 'approved')
+
+// First available of [approve, add, save draft] leads; everything else is secondary.
+const primaryKey = computed<'approve' | 'add' | 'saveDraft' | null>(() => {
+  if (showApprove.value) return 'approve'
+  if (canModify.value && viewMode.value !== 'matrix') return 'add'
+  if (canModify.value && viewMode.value === 'matrix') return 'saveDraft'
+  return null
+})
+
+// Mobile overflow: the secondary actions that are inline buttons on desktop,
+// plus the delete group. Approve is never here — it's the primary button.
+const mobileMenu = computed(() => {
+  const secondary = []
+  if (showUnapprove.value)
+    secondary.push({ label: t('pages.planner.unapprove'), icon: 'i-lucide-undo-2', onSelect: onUnapprove })
+  if (canPrint.value)
+    secondary.push({ label: t('pages.planner.downloadPdf'), icon: 'i-lucide-printer', onSelect: () => { printOpen.value = true } })
+  if (canModify.value && viewMode.value === 'matrix') {
+    secondary.push({ label: t('pages.planner.wizard.open'), icon: 'i-lucide-wand-sparkles', onSelect: () => { wizardOpen.value = true } })
+    if (primaryKey.value !== 'saveDraft')
+      secondary.push({ label: t('pages.planner.saveDraft'), icon: 'i-lucide-save', disabled: !matrixDirty.value, onSelect: onSaveDraft })
+  }
+  if (canModify.value && viewMode.value !== 'matrix' && primaryKey.value !== 'add')
+    secondary.push({ label: t('pages.planner.addItem'), icon: 'i-lucide-plus', onSelect: openAdd })
+
+  const groups: any[] = []
+  if (secondary.length) groups.push(secondary)
+  if (planMenu.value.length) groups.push(...planMenu.value)
+  return groups
+})
+
 async function onDeleteItem() {
   const target = deleteTarget.value
   if (!target) return

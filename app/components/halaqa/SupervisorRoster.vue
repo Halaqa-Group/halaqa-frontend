@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { ApiSupervisorSummary } from '~/types'
 
@@ -42,6 +43,12 @@ const assignSchema = computed(() => z.object({
 type AssignSchema = z.output<typeof assignSchema.value>
 
 const assignOpen = ref(false)
+
+// Centered modal on desktop, bottom drawer on mobile — body + footer are shared
+// between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineBody, ReuseBody] = createReusableTemplate()
+const [DefineFooter, ReuseFooter] = createReusableTemplate()
 const assignState = reactive<{ supervisor_user_id: number | null }>({
   supervisor_user_id: null
 })
@@ -111,7 +118,9 @@ async function remove(s: ApiSupervisorSummary) {
         class="flex items-center justify-between gap-3 p-4"
       >
         <div class="space-y-1">
-          <p class="font-medium">{{ s.name }}</p>
+          <p class="font-medium">
+            {{ s.name }}
+          </p>
           <p class="text-xs text-muted">
             {{ t('pages.halaqat.supervisors.assignedAt') }}:
             {{ new Date(s.assigned_at).toLocaleDateString(undefined, { numberingSystem: 'latn' }) }}
@@ -131,43 +140,65 @@ async function remove(s: ApiSupervisorSummary) {
     </ul>
   </UCard>
 
+  <DefineBody>
+    <UForm
+      id="supervisor-assign-form"
+      :schema="assignSchema"
+      :state="assignState"
+      class="space-y-4"
+      @submit="submitAssign"
+    >
+      <UFormField
+        :label="t('pages.halaqat.supervisors.fieldSupervisor')"
+        name="supervisor_user_id"
+        required
+      >
+        <USelect
+          v-model="assignState.supervisor_user_id"
+          :items="supervisorSelectItems"
+          value-key="value"
+          class="w-full"
+        />
+      </UFormField>
+    </UForm>
+  </DefineBody>
+
+  <DefineFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="assignSaving" @click="assignOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton type="submit" form="supervisor-assign-form" :loading="assignSaving">
+        {{ t('pages.halaqat.save') }}
+      </UButton>
+    </div>
+  </DefineFooter>
+
   <UModal
+    v-if="isDesktop"
     v-model:open="assignOpen"
     :title="t('pages.halaqat.supervisors.addTitle')"
     :ui="{ content: 'sm:max-w-md rounded-2xl' }"
   >
-    <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <UForm
-        id="supervisor-assign-form"
-        :schema="assignSchema"
-        :state="assignState"
-        class="space-y-4"
-        @submit="submitAssign"
-      >
-        <UFormField
-          :label="t('pages.halaqat.supervisors.fieldSupervisor')"
-          name="supervisor_user_id"
-          required
-        >
-          <USelect
-            v-model="assignState.supervisor_user_id"
-            :items="supervisorSelectItems"
-            value-key="value"
-            class="w-full"
-          />
-        </UFormField>
-      </UForm>
+      <ReuseBody />
     </template>
     <template #footer>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" :disabled="assignSaving" @click="assignOpen = false">
-          {{ t('pages.halaqat.cancel') }}
-        </UButton>
-        <UButton type="submit" form="supervisor-assign-form" :loading="assignSaving">
-          {{ t('pages.halaqat.save') }}
-        </UButton>
-      </div>
+      <ReuseFooter />
     </template>
   </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="assignOpen"
+    :title="t('pages.halaqat.supervisors.addTitle')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </UDrawer>
 </template>

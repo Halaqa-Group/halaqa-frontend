@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { ApiStudent, ApiStudentEnrollment } from '~/types'
 
@@ -89,6 +90,12 @@ const enrollSchema = computed(() => z.object({
 type EnrollSchema = z.output<typeof enrollSchema.value>
 
 const enrollOpen = ref(false)
+
+// Centered modal on desktop, bottom drawer on mobile — body + footer are shared
+// between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineBody, ReuseBody] = createReusableTemplate()
+const [DefineFooter, ReuseFooter] = createReusableTemplate()
 const enrollState = reactive<{
   student_id: number | null
   enrollment_date: string
@@ -327,13 +334,7 @@ function rowActions(e: ApiStudentEnrollment) {
     </ul>
   </UCard>
 
-  <UModal
-    v-model:open="enrollOpen"
-    :title="t('pages.halaqat.students.addTitle')"
-    :ui="{ content: 'sm:max-w-md rounded-2xl' }"
-  >
-    <UButton class="sr-only" tabindex="-1" />
-    <template #body>
+  <DefineBody>
       <UForm
         id="student-enroll-form"
         :schema="enrollSchema"

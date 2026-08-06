@@ -362,7 +362,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       await updateStudent(props.student.id, patch)
       flashWarnings()
       toast.add({ title: t('pages.students.addModal.editSuccess'), color: 'success' })
-      emit('close', false)
+      modalOpen.value = false
       return
     }
 
@@ -401,7 +401,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       })
     }
 
-    emit('close', false)
+    modalOpen.value = false
   } catch (e: any) {
     const fallback = isEditMode.value
       ? t('pages.students.addModal.editError')
@@ -685,7 +685,7 @@ watch(modalOpen, (open) => {
         variant="soft"
         color="neutral"
         :disabled="submitting"
-        @click="emit('close', false)"
+        @click="modalOpen = false"
       >
         {{ t('pages.students.addModal.cancel') }}
       </UButton>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as z from 'zod'
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { ApiTeacherAssignment, ApiTeacherOption } from '~/types'
 
@@ -71,6 +72,12 @@ const subSchema = computed(() => z.object({
 type SubSchema = z.output<typeof subSchema.value>
 
 const subOpen = ref(false)
+
+// Centered modal on desktop, bottom drawer on mobile — body + footer are shared
+// between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineBody, ReuseBody] = createReusableTemplate()
+const [DefineFooter, ReuseFooter] = createReusableTemplate()
 const subState = reactive<{
   teacher_user_id: number | null
   acting_starts_at: string
@@ -209,68 +216,90 @@ async function endNow() {
     </div>
   </UCard>
 
+  <DefineBody>
+    <UForm
+      id="acting-sub-form"
+      :schema="subSchema"
+      :state="subState"
+      class="space-y-4"
+      @submit="submitSub"
+    >
+      <UFormField
+        :label="t('pages.halaqat.teachers.fieldTeacher')"
+        name="teacher_user_id"
+        required
+        :error="teachersError ?? undefined"
+      >
+        <USelect
+          v-model="subState.teacher_user_id"
+          :items="teacherSelectItems"
+          value-key="value"
+          :loading="teachersLoading"
+          :disabled="teachersLoading"
+          class="w-full"
+        />
+        <template v-if="teachersError" #help>
+          <UButton
+            size="xs"
+            variant="link"
+            color="primary"
+            class="px-0"
+            @click="loadTeacherOptions"
+          >
+            {{ t('common.tryAgain') }}
+          </UButton>
+        </template>
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.acting.fieldStartsAt')" name="acting_starts_at" required>
+        <UInput v-model="subState.acting_starts_at" type="date" class="w-full" />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" name="acting_ends_at" required>
+        <UInput v-model="subState.acting_ends_at" type="date" class="w-full" />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
+        <UTextarea v-model="subState.notes" class="w-full" />
+      </UFormField>
+    </UForm>
+  </DefineBody>
+
+  <DefineFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="subSaving" @click="subOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton type="submit" form="acting-sub-form" :loading="subSaving">
+        {{ t('pages.halaqat.save') }}
+      </UButton>
+    </div>
+  </DefineFooter>
+
   <UModal
+    v-if="isDesktop"
     v-model:open="subOpen"
     :title="t('pages.halaqat.acting.substituteTitle')"
     :ui="{ content: 'sm:max-w-md rounded-2xl' }"
   >
-    <UButton class="sr-only" tabindex="-1" />
     <template #body>
-      <UForm
-        id="acting-sub-form"
-        :schema="subSchema"
-        :state="subState"
-        class="space-y-4"
-        @submit="submitSub"
-      >
-        <UFormField
-          :label="t('pages.halaqat.teachers.fieldTeacher')"
-          name="teacher_user_id"
-          required
-          :error="teachersError ?? undefined"
-        >
-          <USelect
-            v-model="subState.teacher_user_id"
-            :items="teacherSelectItems"
-            value-key="value"
-            :loading="teachersLoading"
-            :disabled="teachersLoading"
-            class="w-full"
-          />
-          <template v-if="teachersError" #help>
-            <UButton
-              size="xs"
-              variant="link"
-              color="primary"
-              class="px-0"
-              @click="loadTeacherOptions"
-            >
-              {{ t('common.tryAgain') }}
-            </UButton>
-          </template>
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.acting.fieldStartsAt')" name="acting_starts_at" required>
-          <UInput v-model="subState.acting_starts_at" type="date" class="w-full" />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.acting.fieldEndsAt')" name="acting_ends_at" required>
-          <UInput v-model="subState.acting_ends_at" type="date" class="w-full" />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.teachers.fieldNotes')" name="notes">
-          <UTextarea v-model="subState.notes" class="w-full" />
-        </UFormField>
-      </UForm>
+      <ReuseBody />
     </template>
     <template #footer>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" :disabled="subSaving" @click="subOpen = false">
-          {{ t('pages.halaqat.cancel') }}
-        </UButton>
-        <UButton type="submit" form="acting-sub-form" :loading="subSaving">
-          {{ t('pages.halaqat.save') }}
-        </UButton>
-      </div>
+      <ReuseFooter />
     </template>
   </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="subOpen"
+    :title="t('pages.halaqat.acting.substituteTitle')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </UDrawer>
 
   <UModal
     v-model:open="extOpen"

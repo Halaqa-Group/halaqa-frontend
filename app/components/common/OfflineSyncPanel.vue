@@ -15,6 +15,32 @@ const { drafts, deleteDraft, flush: flushDrafts } = useAchievementDrafts()
 const hasItems = computed(() => pending.value.length + failed.value.length + drafts.value.length > 0)
 const syncing = ref(false)
 
+// Opt-in to a local notification when the SW reconnects while the app is closed
+// (see app/service-worker/outbox-sync.ts). Only offered where Background Sync
+// can actually wake the SW while closed — Chromium/Android. On iOS/Safari and
+// Firefox there is no reconnect wake-up, so we don't promise what we can't keep.
+const notifPermission = ref<NotificationPermission>('default')
+const notifSupported = computed(() =>
+  import.meta.client
+    && 'Notification' in window
+    && 'serviceWorker' in navigator
+    && 'SyncManager' in window
+)
+
+onMounted(() => {
+  if (notifSupported.value) notifPermission.value = Notification.permission
+})
+
+async function enableNotifications() {
+  if (!notifSupported.value) return
+  try {
+    notifPermission.value = await Notification.requestPermission()
+  } catch {
+    // Older Safari uses the callback form and rejects the promise — the support
+    // gate already hides the button there, so just swallow it.
+  }
+}
+
 function outboxLabel(e: OutboxEntry): string {
   if (e.kind.startsWith('attendance')) {
     const records = (e.body as { records?: unknown[] })?.records ?? []
@@ -53,6 +79,34 @@ async function syncNow() {
 <template>
   <USlideover v-model:open="open" :title="t('pwa.logTitle')" :description="t('pwa.logSubtitle')" :ui="{ content: 'pt-[env(safe-area-inset-top)]', close: 'top-[calc(env(safe-area-inset-top)+1rem)]' }">
     <template #body>
+      <!-- Reconnect-notification opt-in (Chromium/Android only) -->
+      <div v-if="notifSupported" class="mb-4">
+        <div
+          v-if="notifPermission === 'default'"
+          class="flex items-center gap-3 p-3 rounded-xl bg-elevated"
+        >
+          <UIcon name="i-lucide-bell" class="size-4 text-primary shrink-0" />
+          <p class="min-w-0 flex-1 text-xs text-on-surface-variant">
+            {{ t('pwa.notifyPrompt') }}
+          </p>
+          <UButton
+            size="xs"
+            color="primary"
+            variant="soft"
+            :label="t('pwa.notifyEnable')"
+            @click="enableNotifications"
+          />
+        </div>
+        <p v-else-if="notifPermission === 'granted'" class="flex items-center gap-1.5 text-xs text-success">
+          <UIcon name="i-lucide-bell-ring" class="size-3.5 shrink-0" />
+          {{ t('pwa.notifyEnabled') }}
+        </p>
+        <p v-else class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+          <UIcon name="i-lucide-bell-off" class="size-3.5 shrink-0" />
+          {{ t('pwa.notifyBlocked') }}
+        </p>
+      </div>
+
       <div v-if="!hasItems" class="flex flex-col items-center justify-center gap-3 py-16 text-center">
         <UIcon name="i-lucide-check-circle" class="size-8 text-success" />
         <p class="text-sm text-on-surface-variant">

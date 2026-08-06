@@ -3,13 +3,17 @@
 // this grows, swap in the `idb` package behind the same surface.
 
 const DB_NAME = 'halaqa-offline'
-const DB_VERSION = 2
+const DB_VERSION = 3
 export const STORE_READCACHE = 'read-cache'
 export const STORE_OUTBOX = 'outbox'
 // Offline recitation drafts, keyed by session so autosync ticks overwrite one
 // draft instead of stacking duplicate creates (POST /achievements is not
 // idempotent server-side).
 export const STORE_DRAFTS = 'achievement-drafts'
+// Small key/value bag for records the service worker must read while the app is
+// closed (it has no i18n) — currently the localized reconnect-notification text.
+// Kept here so the schema stays in one place; the SW reader mirrors these names.
+export const STORE_META = 'meta'
 
 let dbPromise: Promise<IDBDatabase> | null = null
 
@@ -22,6 +26,7 @@ function openDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_READCACHE)) db.createObjectStore(STORE_READCACHE)
       if (!db.objectStoreNames.contains(STORE_OUTBOX)) db.createObjectStore(STORE_OUTBOX, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(STORE_DRAFTS)) db.createObjectStore(STORE_DRAFTS, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(STORE_META)) db.createObjectStore(STORE_META, { keyPath: 'key' })
     }
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)

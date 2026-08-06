@@ -1666,6 +1666,12 @@
     "logRecitation": "Recitation · {date} · {range}",
     "offlineManager": "Offline downloads",
     "offlineManagerDesc": "Download the Mushaf and halaqa data to use without an internet connection.",
-    "notSynced": "Not synced"
+    "notSynced": "Not synced",
+    "notifyReconnectTitle": "You're back online",
+    "notifyReconnectBody": "You have unsynced changes. Open the app to sync them.",
+    "notifyPrompt": "Notify me when I'm back online if changes are still unsynced.",
+    "notifyEnable": "Enable",
+    "notifyEnabled": "You'll be notified when you reconnect.",
+    "notifyBlocked": "Notifications are blocked in your browser settings."
   }
 }

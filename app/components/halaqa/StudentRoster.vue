@@ -410,100 +410,127 @@ function rowActions(e: ApiStudentEnrollment) {
   </UDrawer>
 
   <DefineRemoveBody>
-      <UForm
-        id="student-remove-form"
-        :schema="removeSchema"
-        :state="removeState"
-        class="space-y-4"
-        @submit="submitRemove"
-      >
-        <UFormField :label="t('pages.halaqat.students.fieldOutcome')" name="outcome" required>
-          <USelect
-            v-model="removeState.outcome"
-            :items="outcomeItems"
-            value-key="value"
-            class="w-full"
-          />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.students.fieldNotes')" name="notes">
-          <UTextarea v-model="removeState.notes" class="w-full" />
-        </UFormField>
-      </UForm>
-    </DefineRemoveBody>
-
-    <DefineRemoveFooter>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" :disabled="removeSaving" @click="removeOpen = false">
-          {{ t('pages.halaqat.cancel') }}
-        </UButton>
-        <UButton type="submit" form="student-remove-form" color="error" :loading="removeSaving">
-          {{ t('pages.halaqat.students.remove') }}
-        </UButton>
-      </div>
-    </DefineRemoveFooter>
-
-    <UModal
-      v-if="isDesktop"
-      v-model:open="removeOpen"
-      :title="t('pages.halaqat.students.removeTitle')"
-      :ui="{ content: 'sm:max-w-md rounded-2xl' }"
+    <UForm
+      id="student-remove-form"
+      :schema="removeSchema"
+      :state="removeState"
+      class="space-y-4"
+      @submit="submitRemove"
     >
-      <template #body>
-        <ReuseRemoveBody />
-      </template>
-      <template #footer>
-        <ReuseRemoveFooter />
-      </template>
-    </UModal>
+      <UFormField :label="t('pages.halaqat.students.fieldOutcome')" name="outcome" required>
+        <USelect
+          v-model="removeState.outcome"
+          :items="outcomeItems"
+          value-key="value"
+          class="w-full"
+        />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.students.fieldNotes')" name="notes">
+        <UTextarea v-model="removeState.notes" class="w-full" />
+      </UFormField>
+    </UForm>
+  </DefineRemoveBody>
 
-    <UDrawer
-      v-else
-      v-model:open="removeOpen"
-      :title="t('pages.halaqat.students.removeTitle')"
-      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
-    >
-      <template #body>
-        <ReuseRemoveBody />
-      </template>
-      <template #footer>
-        <ReuseRemoveFooter />
-      </template>
-    </UDrawer>
+  <DefineRemoveFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="removeSaving" @click="removeOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton type="submit" form="student-remove-form" color="error" :loading="removeSaving">
+        {{ t('pages.halaqat.students.remove') }}
+      </UButton>
+    </div>
+  </DefineRemoveFooter>
 
-  <DefineTransferBody>
-      <UForm
-        id="student-transfer-form"
-        :schema="transferSchema"
-        :state="transferState"
-        class="space-y-4"
-        @submit="submitTransfer"
-      >
-        <UFormField :label="t('pages.halaqat.students.fieldToHalaqa')" name="to_halaqa_id" required>
-          <USelect
-            v-model="transferState.to_halaqa_id"
-            :items="transferTargetItems"
-            value-key="value"
-            class="w-full"
-          />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.students.fieldTransferDate')" name="transfer_date">
-          <UInput v-model="transferState.transfer_date" type="date" class="w-full" />
-        </UFormField>
-        <UFormField :label="t('pages.halaqat.students.fieldReason')" name="reason" required>
-          <UTextarea v-model="transferState.reason" class="w-full" />
-        </UFormField>
-      </UForm>
-    </DefineTransferBody>
-
-    <DefineTransferFooter>
-      <div class="flex items-center justify-end gap-2 w-full">
-        <UButton variant="soft" color="neutral" :disabled="transferSaving" @click="transferOpen = false">
-          {{ t('pages.halaqat.cancel') }}
-        </UButton>
-        <UButton type="submit" form="student-transfer-form" :loading="transferSaving">
-          {{ t('pages.halaqat.students.transfer') }}
-        </UButton>
-      </div>
+  <UModal
+    v-if="isDesktop"
+    v-model:open="removeOpen"
+    :title="t('pages.halaqat.students.removeTitle')"
+    :ui="{ content: 'sm:max-w-md rounded-2xl' }"
+  >
+    <template #body>
+      <ReuseRemoveBody />
+    </template>
+    <template #footer>
+      <ReuseRemoveFooter />
     </template>
   </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="removeOpen"
+    :title="t('pages.halaqat.students.removeTitle')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseRemoveBody />
+    </template>
+    <template #footer>
+      <ReuseRemoveFooter />
+    </template>
+  </UDrawer>
+
+  <DefineTransferBody>
+    <UForm
+      id="student-transfer-form"
+      :schema="transferSchema"
+      :state="transferState"
+      class="space-y-4"
+      @submit="submitTransfer"
+    >
+      <UFormField :label="t('pages.halaqat.students.fieldToHalaqa')" name="to_halaqa_id" required>
+        <USelect
+          v-model="transferState.to_halaqa_id"
+          :items="transferTargetItems"
+          value-key="value"
+          class="w-full"
+        />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.students.fieldTransferDate')" name="transfer_date">
+        <UInput v-model="transferState.transfer_date" type="date" class="w-full" />
+      </UFormField>
+      <UFormField :label="t('pages.halaqat.students.fieldReason')" name="reason" required>
+        <UTextarea v-model="transferState.reason" class="w-full" />
+      </UFormField>
+    </UForm>
+  </DefineTransferBody>
+
+  <DefineTransferFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="transferSaving" @click="transferOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton type="submit" form="student-transfer-form" :loading="transferSaving">
+        {{ t('pages.halaqat.students.transfer') }}
+      </UButton>
+    </div>
+  </DefineTransferFooter>
+
+  <UModal
+    v-if="isDesktop"
+    v-model:open="transferOpen"
+    :title="t('pages.halaqat.students.transferTitle')"
+    :ui="{ content: 'sm:max-w-md rounded-2xl' }"
+  >
+    <template #body>
+      <ReuseTransferBody />
+    </template>
+    <template #footer>
+      <ReuseTransferFooter />
+    </template>
+  </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="transferOpen"
+    :title="t('pages.halaqat.students.transferTitle')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseTransferBody />
+    </template>
+    <template #footer>
+      <ReuseTransferFooter />
+    </template>
+  </UDrawer>
 </template>

@@ -1666,6 +1666,12 @@
     "logRecitation": "تلاوة · {date} · {range}",
     "offlineManager": "التحميل دون اتصال",
     "offlineManagerDesc": "نزّل المصحف وبيانات الحلقة لاستخدامها دون اتصال بالإنترنت.",
-    "notSynced": "غير متزامن"
+    "notSynced": "غير متزامن",
+    "notifyReconnectTitle": "عادت الشبكة",
+    "notifyReconnectBody": "لديك تغييرات غير محفوظة. افتح التطبيق لمزامنتها.",
+    "notifyPrompt": "نبّهني عند عودة الاتصال إذا بقيت تغييرات غير مُزامنة.",
+    "notifyEnable": "تفعيل التنبيه",
+    "notifyEnabled": "سنُنبّهك عند عودة الاتصال.",
+    "notifyBlocked": "التنبيهات محظورة في إعدادات المتصفح."
   }
 }

@@ -419,6 +419,7 @@
         "actingTo": "To",
         "extend": "Extend",
         "end": "End acting",
+        "endConfirmMessage": "Are you sure you want to end this teacher's acting period?",
         "substitute": "Bring substitute",
         "substituteTitle": "Bring substitute teacher",
         "extendTitle": "Extend acting period",

@@ -80,6 +80,8 @@ const [DefineBody, ReuseBody] = createReusableTemplate()
 const [DefineFooter, ReuseFooter] = createReusableTemplate()
 const [DefineExtBody, ReuseExtBody] = createReusableTemplate()
 const [DefineExtFooter, ReuseExtFooter] = createReusableTemplate()
+const [DefineEndBody, ReuseEndBody] = createReusableTemplate()
+const [DefineEndFooter, ReuseEndFooter] = createReusableTemplate()
 const subState = reactive<{
   teacher_user_id: number | null
   acting_starts_at: string
@@ -158,13 +160,19 @@ async function submitExt(event: FormSubmitEvent<ExtSchema>) {
   }
 }
 
+const endOpen = ref(false)
+const endSaving = ref(false)
 async function endNow() {
+  endSaving.value = true
   try {
     await endActing(props.halaqaId)
     toast.add({ title: t('pages.halaqat.acting.toastEnded'), color: 'success' })
+    endOpen.value = false
     emit('changed')
   } catch (e: unknown) {
     toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+  } finally {
+    endSaving.value = false
   }
 }
 </script>
@@ -211,7 +219,7 @@ async function endNow() {
         <UButton variant="soft" color="neutral" icon="i-lucide-calendar-plus" @click="openExt">
           {{ t('pages.halaqat.acting.extend') }}
         </UButton>
-        <UButton variant="soft" color="error" icon="i-lucide-x" @click="endNow">
+        <UButton variant="soft" color="error" icon="i-lucide-x" @click="endOpen = true">
           {{ t('pages.halaqat.acting.end') }}
         </UButton>
       </div>
@@ -353,6 +361,52 @@ async function endNow() {
     </template>
     <template #footer>
       <ReuseExtFooter />
+    </template>
+  </UDrawer>
+
+  <!-- End-acting confirmation: bottom drawer on mobile, modal on desktop. -->
+  <DefineEndBody>
+    <p class="text-sm text-muted">
+      {{ t('pages.halaqat.acting.endConfirmMessage') }}
+    </p>
+  </DefineEndBody>
+
+  <DefineEndFooter>
+    <div class="flex items-center justify-end gap-2 w-full">
+      <UButton variant="soft" color="neutral" :disabled="endSaving" @click="endOpen = false">
+        {{ t('pages.halaqat.cancel') }}
+      </UButton>
+      <UButton color="error" :loading="endSaving" @click="endNow">
+        {{ t('pages.halaqat.acting.end') }}
+      </UButton>
+    </div>
+  </DefineEndFooter>
+
+  <UModal
+    v-if="isDesktop"
+    v-model:open="endOpen"
+    :title="t('pages.halaqat.acting.end')"
+    :ui="{ content: 'sm:max-w-md rounded-2xl' }"
+  >
+    <template #body>
+      <ReuseEndBody />
+    </template>
+    <template #footer>
+      <ReuseEndFooter />
+    </template>
+  </UModal>
+
+  <UDrawer
+    v-else
+    v-model:open="endOpen"
+    :title="t('pages.halaqat.acting.end')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseEndBody />
+    </template>
+    <template #footer>
+      <ReuseEndFooter />
     </template>
   </UDrawer>
 </template>

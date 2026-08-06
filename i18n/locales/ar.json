@@ -419,6 +419,7 @@
         "actingTo": "إلى",
         "extend": "تمديد",
         "end": "إنهاء النيابة",
+        "endConfirmMessage": "هل أنت متأكد من إنهاء فترة نيابة هذا المعلم؟",
         "substitute": "إضافة بديل",
         "substituteTitle": "إضافة معلم بديل",
         "extendTitle": "تمديد فترة النيابة",

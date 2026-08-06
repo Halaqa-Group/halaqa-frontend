@@ -1,4 +1,5 @@
 import { STORE_OUTBOX, idbGetAll, idbPut, idbDelete } from '~/utils/idb'
+import { requestBackgroundSync } from '~/utils/backgroundSync'
 
 // A durable, ordered queue of write requests made while offline (or that failed
 // on the network), replayed foreground when connectivity returns.
@@ -60,12 +61,7 @@ export function useOfflineOutbox() {
     await idbPut(STORE_OUTBOX, entry)
     await refresh()
     // Best-effort Background-Sync registration so a closed tab still gets nudged.
-    try {
-      const reg = await navigator.serviceWorker?.ready
-      await (reg as unknown as { sync?: { register: (t: string) => Promise<void> } })?.sync?.register('halaqa-outbox')
-    } catch {
-      // Background Sync unsupported — the online watcher will flush instead.
-    }
+    await requestBackgroundSync()
     return entry
   }
 

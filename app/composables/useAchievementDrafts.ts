@@ -1,4 +1,5 @@
 import { STORE_DRAFTS, idbGetAll, idbPut, idbDelete } from '~/utils/idb'
+import { requestBackgroundSync } from '~/utils/backgroundSync'
 import type { ApiAchievement, CreateAchievementDto } from '~/types'
 
 // Local, exactly-once drafts for recitations recorded offline. Unlike the write
@@ -50,6 +51,10 @@ export function useAchievementDrafts() {
     }
     await idbPut(STORE_DRAFTS, draft)
     await refresh()
+    // A draft is the most common offline action, and it never touches the write
+    // outbox — so register the Background-Sync tag here too, otherwise the SW is
+    // never woken to notify about an unsynced recitation on reconnect.
+    if (!navigator.onLine) await requestBackgroundSync()
   }
 
   async function deleteDraft(sessionKey: string) {

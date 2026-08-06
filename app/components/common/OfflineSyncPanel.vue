@@ -84,190 +84,190 @@ async function syncNow() {
 
 <template>
   <DefineBody>
-      <!-- Reconnect-notification opt-in (Chromium/Android only) -->
-      <div v-if="notifSupported" class="mb-4">
-        <div
-          v-if="notifPermission === 'default'"
-          class="flex items-center gap-3 p-3 rounded-xl bg-elevated"
-        >
-          <UIcon name="i-lucide-bell" class="size-4 text-primary shrink-0" />
-          <p class="min-w-0 flex-1 text-xs text-on-surface-variant">
-            {{ t('pwa.notifyPrompt') }}
-          </p>
-          <UButton
-            size="xs"
-            color="primary"
-            variant="soft"
-            :label="t('pwa.notifyEnable')"
-            @click="enableNotifications"
-          />
-        </div>
-        <p v-else-if="notifPermission === 'granted'" class="flex items-center gap-1.5 text-xs text-success">
-          <UIcon name="i-lucide-bell-ring" class="size-3.5 shrink-0" />
-          {{ t('pwa.notifyEnabled') }}
+    <!-- Reconnect-notification opt-in (Chromium/Android only) -->
+    <div v-if="notifSupported" class="mb-4">
+      <div
+        v-if="notifPermission === 'default'"
+        class="flex items-center gap-3 p-3 rounded-xl bg-elevated"
+      >
+        <UIcon name="i-lucide-bell" class="size-4 text-primary shrink-0" />
+        <p class="min-w-0 flex-1 text-xs text-on-surface-variant">
+          {{ t('pwa.notifyPrompt') }}
         </p>
-        <p v-else class="flex items-center gap-1.5 text-xs text-on-surface-variant">
-          <UIcon name="i-lucide-bell-off" class="size-3.5 shrink-0" />
-          {{ t('pwa.notifyBlocked') }}
-        </p>
-      </div>
-
-      <div v-if="!hasItems" class="flex flex-col items-center justify-center gap-3 py-16 text-center">
-        <UIcon name="i-lucide-check-circle" class="size-8 text-success" />
-        <p class="text-sm text-on-surface-variant">
-          {{ t('pwa.logEmpty') }}
-        </p>
-      </div>
-
-      <div v-else class="space-y-5">
-        <!-- Offline recitation drafts -->
-        <section v-if="drafts.length" class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase text-on-surface-variant">
-            {{ t('pwa.logDrafts') }}
-          </h4>
-          <div
-            v-for="d in drafts"
-            :key="d.id"
-            class="flex items-center gap-3 p-3 rounded-xl bg-elevated"
-          >
-            <UIcon name="i-lucide-book-open" class="size-4 text-primary shrink-0" />
-            <div class="min-w-0 flex-1">
-              <p class="text-sm text-highlighted truncate">
-                {{ draftLabel(d) }}
-              </p>
-              <p class="text-xs text-on-surface-variant">
-                {{ fmtTime(d.updatedAt) }}<span v-if="d.approve"> · {{ t('pwa.logApproved') }}</span>
-              </p>
-            </div>
-            <UButton
-              icon="i-lucide-trash-2"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              :aria-label="t('pwa.discard')"
-              @click="deleteDraft(d.id)"
-            />
-          </div>
-        </section>
-
-        <!-- Pending outbox (attendance syncs, deletes) -->
-        <section v-if="pending.length" class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase text-on-surface-variant">
-            {{ t('pwa.logPending') }}
-          </h4>
-          <div
-            v-for="e in pending"
-            :key="e.id"
-            class="flex items-center gap-3 p-3 rounded-xl bg-elevated"
-          >
-            <UIcon
-              :name="e.kind === 'achievement-delete' ? 'i-lucide-trash-2' : 'i-lucide-user-check'"
-              class="size-4 text-primary shrink-0"
-            />
-            <div class="min-w-0 flex-1">
-              <p class="text-sm text-highlighted truncate">
-                {{ outboxLabel(e) }}
-              </p>
-              <p class="text-xs text-on-surface-variant">
-                {{ fmtTime(e.createdAt) }}
-              </p>
-            </div>
-            <UButton
-              icon="i-lucide-trash-2"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              :aria-label="t('pwa.discard')"
-              @click="discard(e.id)"
-            />
-          </div>
-        </section>
-
-        <!-- Failed (needs attention) -->
-        <section v-if="failed.length" class="space-y-2">
-          <h4 class="text-xs font-semibold uppercase text-error">
-            {{ t('pwa.logFailed') }}
-          </h4>
-          <div
-            v-for="e in failed"
-            :key="e.id"
-            class="flex items-center gap-3 p-3 rounded-xl bg-error/5 border border-error/20"
-          >
-            <UIcon name="i-lucide-alert-triangle" class="size-4 text-error shrink-0" />
-            <div class="min-w-0 flex-1">
-              <p class="text-sm text-highlighted truncate">
-                {{ outboxLabel(e) }}
-              </p>
-              <p class="text-xs text-error truncate">
-                {{ e.error }}
-              </p>
-            </div>
-            <UButton
-              icon="i-lucide-refresh-cw"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              :disabled="!online"
-              :aria-label="t('pwa.retry')"
-              @click="retry(e.id)"
-            />
-            <UButton
-              icon="i-lucide-trash-2"
-              color="neutral"
-              variant="ghost"
-              size="xs"
-              :aria-label="t('pwa.discard')"
-              @click="discard(e.id)"
-            />
-          </div>
-        </section>
-      </div>
-    </DefineBody>
-
-    <DefineFooter>
-      <div class="flex items-center justify-between w-full gap-3">
-        <span class="text-xs text-on-surface-variant flex items-center gap-1.5">
-          <UIcon :name="online ? 'i-lucide-wifi' : 'i-lucide-wifi-off'" class="size-3.5" />
-          {{ online ? t('pwa.online') : t('pwa.offline') }}
-        </span>
         <UButton
-          icon="i-lucide-refresh-cw"
-          size="sm"
-          :label="t('pwa.logSyncNow')"
-          :loading="syncing"
-          :disabled="!online || !hasItems"
-          @click="syncNow"
+          size="xs"
+          color="primary"
+          variant="soft"
+          :label="t('pwa.notifyEnable')"
+          @click="enableNotifications"
         />
       </div>
-    </DefineFooter>
+      <p v-else-if="notifPermission === 'granted'" class="flex items-center gap-1.5 text-xs text-success">
+        <UIcon name="i-lucide-bell-ring" class="size-3.5 shrink-0" />
+        {{ t('pwa.notifyEnabled') }}
+      </p>
+      <p v-else class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+        <UIcon name="i-lucide-bell-off" class="size-3.5 shrink-0" />
+        {{ t('pwa.notifyBlocked') }}
+      </p>
+    </div>
 
-    <USlideover
-      v-if="isDesktop"
-      v-model:open="open"
-      :title="t('pwa.logTitle')"
-      :description="t('pwa.logSubtitle')"
-      :ui="{ content: 'pt-[env(safe-area-inset-top)]', close: 'top-[calc(env(safe-area-inset-top)+1rem)]' }"
-    >
-      <template #body>
-        <ReuseBody />
-      </template>
-      <template #footer>
-        <ReuseFooter />
-      </template>
-    </USlideover>
+    <div v-if="!hasItems" class="flex flex-col items-center justify-center gap-3 py-16 text-center">
+      <UIcon name="i-lucide-check-circle" class="size-8 text-success" />
+      <p class="text-sm text-on-surface-variant">
+        {{ t('pwa.logEmpty') }}
+      </p>
+    </div>
 
-    <UDrawer
-      v-else
-      v-model:open="open"
-      :title="t('pwa.logTitle')"
-      :description="t('pwa.logSubtitle')"
-      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
-    >
-      <template #body>
-        <ReuseBody />
-      </template>
-      <template #footer>
-        <ReuseFooter />
-      </template>
-    </UDrawer>
+    <div v-else class="space-y-5">
+      <!-- Offline recitation drafts -->
+      <section v-if="drafts.length" class="space-y-2">
+        <h4 class="text-xs font-semibold uppercase text-on-surface-variant">
+          {{ t('pwa.logDrafts') }}
+        </h4>
+        <div
+          v-for="d in drafts"
+          :key="d.id"
+          class="flex items-center gap-3 p-3 rounded-xl bg-elevated"
+        >
+          <UIcon name="i-lucide-book-open" class="size-4 text-primary shrink-0" />
+          <div class="min-w-0 flex-1">
+            <p class="text-sm text-highlighted truncate">
+              {{ draftLabel(d) }}
+            </p>
+            <p class="text-xs text-on-surface-variant">
+              {{ fmtTime(d.updatedAt) }}<span v-if="d.approve"> · {{ t('pwa.logApproved') }}</span>
+            </p>
+          </div>
+          <UButton
+            icon="i-lucide-trash-2"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :aria-label="t('pwa.discard')"
+            @click="deleteDraft(d.id)"
+          />
+        </div>
+      </section>
+
+      <!-- Pending outbox (attendance syncs, deletes) -->
+      <section v-if="pending.length" class="space-y-2">
+        <h4 class="text-xs font-semibold uppercase text-on-surface-variant">
+          {{ t('pwa.logPending') }}
+        </h4>
+        <div
+          v-for="e in pending"
+          :key="e.id"
+          class="flex items-center gap-3 p-3 rounded-xl bg-elevated"
+        >
+          <UIcon
+            :name="e.kind === 'achievement-delete' ? 'i-lucide-trash-2' : 'i-lucide-user-check'"
+            class="size-4 text-primary shrink-0"
+          />
+          <div class="min-w-0 flex-1">
+            <p class="text-sm text-highlighted truncate">
+              {{ outboxLabel(e) }}
+            </p>
+            <p class="text-xs text-on-surface-variant">
+              {{ fmtTime(e.createdAt) }}
+            </p>
+          </div>
+          <UButton
+            icon="i-lucide-trash-2"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :aria-label="t('pwa.discard')"
+            @click="discard(e.id)"
+          />
+        </div>
+      </section>
+
+      <!-- Failed (needs attention) -->
+      <section v-if="failed.length" class="space-y-2">
+        <h4 class="text-xs font-semibold uppercase text-error">
+          {{ t('pwa.logFailed') }}
+        </h4>
+        <div
+          v-for="e in failed"
+          :key="e.id"
+          class="flex items-center gap-3 p-3 rounded-xl bg-error/5 border border-error/20"
+        >
+          <UIcon name="i-lucide-alert-triangle" class="size-4 text-error shrink-0" />
+          <div class="min-w-0 flex-1">
+            <p class="text-sm text-highlighted truncate">
+              {{ outboxLabel(e) }}
+            </p>
+            <p class="text-xs text-error truncate">
+              {{ e.error }}
+            </p>
+          </div>
+          <UButton
+            icon="i-lucide-refresh-cw"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :disabled="!online"
+            :aria-label="t('pwa.retry')"
+            @click="retry(e.id)"
+          />
+          <UButton
+            icon="i-lucide-trash-2"
+            color="neutral"
+            variant="ghost"
+            size="xs"
+            :aria-label="t('pwa.discard')"
+            @click="discard(e.id)"
+          />
+        </div>
+      </section>
+    </div>
+  </DefineBody>
+
+  <DefineFooter>
+    <div class="flex items-center justify-between w-full gap-3">
+      <span class="text-xs text-on-surface-variant flex items-center gap-1.5">
+        <UIcon :name="online ? 'i-lucide-wifi' : 'i-lucide-wifi-off'" class="size-3.5" />
+        {{ online ? t('pwa.online') : t('pwa.offline') }}
+      </span>
+      <UButton
+        icon="i-lucide-refresh-cw"
+        size="sm"
+        :label="t('pwa.logSyncNow')"
+        :loading="syncing"
+        :disabled="!online || !hasItems"
+        @click="syncNow"
+      />
+    </div>
+  </DefineFooter>
+
+  <USlideover
+    v-if="isDesktop"
+    v-model:open="open"
+    :title="t('pwa.logTitle')"
+    :description="t('pwa.logSubtitle')"
+    :ui="{ content: 'pt-[env(safe-area-inset-top)]', close: 'top-[calc(env(safe-area-inset-top)+1rem)]' }"
+  >
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </USlideover>
+
+  <UDrawer
+    v-else
+    v-model:open="open"
+    :title="t('pwa.logTitle')"
+    :description="t('pwa.logSubtitle')"
+    :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+  >
+    <template #body>
+      <ReuseBody />
+    </template>
+    <template #footer>
+      <ReuseFooter />
+    </template>
+  </UDrawer>
 </template>

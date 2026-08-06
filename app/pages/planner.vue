@@ -30,11 +30,6 @@ const canModify = computed(() => canEditPlanItems.value && planStatus.value !== 
 const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
 const formSaving = computed(() => formRef.value?.saving.value ?? false)
 
-const statusBadgeColor = computed(() => achievementStatusColor(planStatus.value === 'approved' ? 'approved' : 'unapproved'))
-const statusLabel = computed(() =>
-  planStatus.value === 'approved' ? t('pages.planner.approved') : t('pages.planner.draft')
-)
-
 const deletePlanOpen = ref(false)
 function openDeletePlan() {
   deletePlanOpen.value = true
@@ -204,12 +199,10 @@ onMounted(async () => {
 
 <template>
   <div class="flex flex-col gap-6">
-    <div v-if="selectedHalaqaId && selectedStudentId && viewMode !== 'day'" class="flex items-center justify-end gap-2 flex-wrap">
-      <UBadge v-if="plan" variant="subtle" :color="statusBadgeColor" size="lg">
-        {{ statusLabel }}
-      </UBadge>
+    <div v-if="selectedHalaqaId && selectedStudentId && viewMode !== 'day'" class="flex items-center justify-end gap-2">
+      <!-- Approve — the decisive action; primary and visible at every breakpoint -->
       <UButton
-        v-if="canApprove && planStatus !== 'approved' && (planStatus === 'draft' || (viewMode === 'matrix' && matrixDirty))"
+        v-if="showApprove"
         icon="i-lucide-check-check"
         color="primary"
         :loading="approving"
@@ -218,8 +211,11 @@ onMounted(async () => {
       >
         {{ t('pages.planner.approvePlan') }}
       </UButton>
+
+      <!-- Secondary actions: inline on sm+, folded into the overflow menu on mobile -->
       <UButton
-        v-if="canUnapprovePlan && planStatus === 'approved'"
+        v-if="showUnapprove"
+        class="hidden sm:inline-flex"
         icon="i-lucide-undo-2"
         color="warning"
         variant="soft"
@@ -229,6 +225,7 @@ onMounted(async () => {
       </UButton>
       <UButton
         v-if="canPrint"
+        class="hidden sm:inline-flex"
         icon="i-lucide-printer"
         color="neutral"
         variant="soft"
@@ -238,6 +235,7 @@ onMounted(async () => {
       </UButton>
       <UButton
         v-if="canModify && viewMode === 'matrix'"
+        class="hidden sm:inline-flex"
         icon="i-lucide-wand-sparkles"
         variant="soft"
         @click="wizardOpen = true"
@@ -246,6 +244,7 @@ onMounted(async () => {
       </UButton>
       <UButton
         v-if="canModify && viewMode === 'matrix'"
+        :class="primaryKey === 'saveDraft' ? '' : 'hidden sm:inline-flex'"
         icon="i-lucide-save"
         :loading="savingDraft"
         :disabled="!matrixDirty || approving"
@@ -255,12 +254,18 @@ onMounted(async () => {
       </UButton>
       <UButton
         v-if="canModify && viewMode !== 'matrix'"
+        :class="primaryKey === 'add' ? '' : 'hidden sm:inline-flex'"
         icon="i-lucide-plus"
         @click="openAdd"
       >
         {{ t('pages.planner.addItem') }}
       </UButton>
-      <UDropdownMenu v-if="planMenu.length" :items="planMenu" :content="{ align: 'end' }">
+
+      <!-- Overflow: mobile carries the secondary actions + delete; desktop only delete -->
+      <UDropdownMenu v-if="mobileMenu.length" :items="mobileMenu" :content="{ align: 'end' }" class="sm:hidden">
+        <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
+      </UDropdownMenu>
+      <UDropdownMenu v-if="planMenu.length" :items="planMenu" :content="{ align: 'end' }" class="hidden sm:block">
         <UButton icon="i-lucide-ellipsis-vertical" color="neutral" variant="ghost" square :aria-label="t('pages.planner.table.actions')" />
       </UDropdownMenu>
     </div>

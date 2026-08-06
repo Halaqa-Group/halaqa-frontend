@@ -122,6 +122,6 @@ function openCard(row: DayRosterRow) {
       </button>
     </div>
 
-    <PlannerDayDialog v-model:open="dialogOpen" :day="activeDay" :editable="canModify" />
+    <PlannerCellDialog v-model:open="dialogOpen" :day="activeDay" :editable="canModify" />
   </div>
 </template>

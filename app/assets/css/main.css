@@ -224,11 +224,11 @@
 
   /* Mushaf reader surfaces — a warm near-black, never pure #000: the QCF glyphs
      are hairline-thin and full contrast makes them shimmer. */
-  --color-mushaf-bg: #16130f;
+  --color-mushaf-bg: #171717;
   --color-mushaf-fg: #e8e0d2;
   --color-mushaf-border: #35302a;
   --color-mushaf-muted: #a09585;
-  --color-mushaf-chrome: #100e0b;
+  --color-mushaf-chrome: #171717;
   --color-mushaf-accent: #d8b06a;
   --mushaf-ink-rgb: 232 224 210;
   --mushaf-spot-rgb: 147 180 255;

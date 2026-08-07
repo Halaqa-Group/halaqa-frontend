@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import { weeklyPlanToQuranPlan } from '~/utils/plan-pdf'
+import { dateOfDayLabel } from '~/utils/plan'
 
 definePageMeta({
   breadcrumb: [
@@ -9,7 +10,7 @@ definePageMeta({
   ]
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 const { canApprovePlan, canEditPlanItems, canDeletePlan, canUnapprovePlan } = usePermissions()
@@ -18,6 +19,7 @@ const {
   selectedStudentId, selectedWeekStart, plan, planStatus, viewMode,
   formOpen, editing, deleteOpen, deleteTarget,
   wizardOpen, matrixDirty, matrixSummary, saveDraft, dateOfDay, studentName,
+  copiedPlan, hasDraftContent, copyWholePlan, pasteWholePlan,
   loadStudents, loadPlan, approvePlan, unapprovePlan, deletePlan, deleteItem, openAdd
 } = useWeeklyPlan()
 
@@ -92,6 +94,33 @@ async function onUnapprove() {
   }
 }
 
+// ── Whole-plan copy / paste ──────────────────────────────────────────────────
+// Copy the current week's matrix into a module-level clipboard, then paste it onto
+// another student or another week. The clipboard survives switching the selected
+// student and navigating weeks, which is what makes "copy student A → student B" and
+// "copy a past week → an upcoming week" a single flow.
+function onCopyPlan() {
+  const source = [
+    selectedStudentId.value ? studentName(selectedStudentId.value) : '',
+    dateOfDayLabel(new Date(selectedWeekStart.value), locale.value)
+  ].filter(Boolean).join(' · ')
+  if (!copyWholePlan(source)) return
+  toast.add({ title: t('pages.planner.planCopiedToast'), color: 'success' })
+}
+
+const pastePlanOpen = ref(false)
+function onPastePlanClick() {
+  if (!copiedPlan.value) return
+  // Overwriting a week that already carries sessions is destructive, so confirm
+  // first. An empty week just takes the paste immediately.
+  if (hasDraftContent.value) pastePlanOpen.value = true
+  else applyPastePlan()
+}
+function applyPastePlan() {
+  if (!pasteWholePlan()) return
+  toast.add({ title: t('pages.planner.planPastedToast'), color: 'success' })
+}
+
 // ── Toolbar hierarchy ────────────────────────────────────────────────────────
 // One labeled primary action stays visible at every breakpoint; the rest are
 // inline buttons on sm+ and fold into an overflow menu on mobile. This keeps the
@@ -120,6 +149,16 @@ const mobileMenu = computed(() => {
     secondary.push({ label: t('pages.planner.downloadPdf'), icon: 'i-lucide-printer', onSelect: () => { printOpen.value = true } })
   if (canModify.value && viewMode.value === 'matrix') {
     secondary.push({ label: t('pages.planner.wizard.open'), icon: 'i-lucide-wand-sparkles', onSelect: () => { wizardOpen.value = true } })
+    if (hasDraftContent.value)
+      secondary.push({ label: t('pages.planner.copyPlan'), icon: 'i-lucide-clipboard-copy', onSelect: onCopyPlan })
+    if (copiedPlan.value)
+      secondary.push({
+        label: copiedPlan.value.label
+          ? t('pages.planner.pastePlanFrom', { source: copiedPlan.value.label })
+          : t('pages.planner.pastePlan'),
+        icon: 'i-lucide-clipboard-paste',
+        onSelect: onPastePlanClick
+      })
     if (primaryKey.value !== 'saveDraft')
       secondary.push({ label: t('pages.planner.saveDraft'), icon: 'i-lucide-save', disabled: !matrixDirty.value, onSelect: onSaveDraft })
   }
@@ -265,6 +304,27 @@ onMounted(async () => {
               {{ t('pages.planner.wizard.open') }}
             </UButton>
             <UButton
+              v-if="canModify && viewMode === 'matrix' && hasDraftContent"
+              class="hidden sm:inline-flex"
+              icon="i-lucide-clipboard-copy"
+              color="neutral"
+              variant="soft"
+              @click="onCopyPlan"
+            >
+              {{ t('pages.planner.copyPlan') }}
+            </UButton>
+            <UButton
+              v-if="canModify && viewMode === 'matrix' && copiedPlan"
+              class="hidden sm:inline-flex"
+              icon="i-lucide-clipboard-paste"
+              color="primary"
+              variant="soft"
+              :title="copiedPlan.label ? t('pages.planner.pastePlanFrom', { source: copiedPlan.label }) : undefined"
+              @click="onPastePlanClick"
+            >
+              {{ t('pages.planner.pastePlan') }}
+            </UButton>
+            <UButton
               v-if="canModify && viewMode === 'matrix'"
               :class="primaryKey === 'saveDraft' ? '' : 'hidden sm:inline-flex'"
               icon="i-lucide-save"
@@ -374,6 +434,15 @@ onMounted(async () => {
       destructive
       :confirm-label="t('common.delete')"
       @confirm="onDeletePlan"
+    />
+
+    <ConfirmDialog
+      v-model:open="pastePlanOpen"
+      :title="t('pages.planner.pastePlanConfirm.title')"
+      :message="t('pages.planner.pastePlanConfirm.message')"
+      destructive
+      :confirm-label="t('pages.planner.pastePlan')"
+      @confirm="applyPastePlan"
     />
   </div>
 </template>

@@ -1466,6 +1466,15 @@
       "pageBadge": "Page {page}",
       "cellCopiedToast": "Cell copied",
       "cellPastedToast": "Cell pasted",
+      "copyPlan": "Copy plan",
+      "pastePlan": "Paste plan",
+      "pastePlanFrom": "Paste plan from {source}",
+      "planCopiedToast": "Whole plan copied — open another student or week, then paste",
+      "planPastedToast": "Plan pasted — review and save the draft",
+      "pastePlanConfirm": {
+        "title": "Replace this week's plan",
+        "message": "This week already has sessions. Pasting replaces every day and track with the copied plan. Continue?"
+      },
       "cellDialog": {
         "title": "Session details",
         "sessions": "Planned sessions",

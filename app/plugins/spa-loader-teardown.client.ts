@@ -1,19 +1,26 @@
 // Nuxt renders the SPA loading template as a sibling overlay (#__nuxt-loader,
 // position:fixed, on top of the app) and removes it ONLY on `app:suspense:resolve`
-// — see nuxt/dist/app/entry.js. When that hook is delayed or never fires, the
-// app mounts and runs fine underneath but the overlay never lifts, trapping the
-// user on the preloader. This was seen on iOS Safari offline, where the app
-// booted (offline worked before the preloader existed) yet the splash stayed up.
+// — see nuxt/dist/app/entry.js. That hook was seen not to fire on iOS Safari
+// offline: the app mounts and renders underneath, but the overlay never lifts,
+// trapping the user on the splash. (Offline worked before the preloader existed,
+// which is why the overlay — not the app — is the thing that gets stuck.)
 //
-// Tearing it down on `app:mounted` as well — which fires the moment vueApp.mount()
-// returns, independent of Suspense — guarantees the overlay lifts as soon as the
-// app is live, restoring the pre-preloader "it just works" behaviour. Removing an
-// already-removed node is a no-op, so running on both hooks is safe.
+// Timing matters here. `<NuxtPage>` is wrapped in <Suspense>, and vueApp.mount()
+// returns — firing `app:mounted` — BEFORE that Suspense resolves. Removing the
+// overlay on `app:mounted` therefore uncovers the empty Suspense fallback for a
+// beat: splash → blank white → content. So:
 //
-// The id mirrors Nuxt's `appSpaLoaderAttrs.id`; it has been '__nuxt-loader' since
-// the outside-template mode landed. The optional chaining means a rename just
-// makes this a harmless no-op (the watchdog in spa-loading-template.html remains
-// the final safety net).
+//   • Primary: remove on `app:suspense:resolve` — the moment the initial page's
+//     content is actually ready, so the splash hands straight to the UI with no
+//     blank frame.
+//   • Fallback: `app:mounted` fires reliably at mount, so arm a short delay from
+//     there. On a healthy boot `app:suspense:resolve` wins first and this is a
+//     no-op (no flash); on the broken iOS path it lifts the overlay to reveal the
+//     already-rendered app instead of leaving it stuck. `remove()` is idempotent,
+//     so whichever fires first wins and the other is harmless.
+//
+// The 12s watchdog in spa-loading-template.html remains the last-resort net for
+// the case where the app never mounts at all.
 export default defineNuxtPlugin((nuxtApp) => {
   if (!import.meta.client) return
 
@@ -21,6 +28,8 @@ export default defineNuxtPlugin((nuxtApp) => {
     document.getElementById('__nuxt-loader')?.remove()
   }
 
-  nuxtApp.hook('app:mounted', removeLoader)
   nuxtApp.hook('app:suspense:resolve', removeLoader)
+  nuxtApp.hook('app:mounted', () => {
+    window.setTimeout(removeLoader, 2000)
+  })
 })

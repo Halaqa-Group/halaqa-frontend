@@ -933,6 +933,13 @@
         "primaryGuardian": "ولي الأمر الأساسي",
         "viewProfile": "عرض الملف"
       },
+      "capacityUnits": {
+        "page": "صفحة",
+        "juz": "جزء",
+        "hizb": "حزب",
+        "quarter": "ربع",
+        "surah": "سورة"
+      },
       "actions": {
         "viewProfile": "عرض الملف",
         "logAchievement": "تسجيل إنجاز",
@@ -990,10 +997,13 @@
         "guardiansTitle": "أولياء الأمور",
         "guardiansHint": "يمكنك إضافة أولياء الأمور بعد إنشاء الطالب من تبويب أولياء الأمور.",
         "metricsTitle": "مقاييس الأداء اليومي",
-        "memPages": "صفحات الحفظ الجديد",
-        "nearPages": "صفحات المراجعة القريبة",
-        "farPages": "صفحات المراجعة البعيدة",
-        "capacityRange": "الحد الأقصى: {max} صفحة/يوم",
+        "memPages": "قدرة الحفظ الجديد",
+        "nearPages": "قدرة المراجعة القريبة",
+        "farPages": "قدرة المراجعة البعيدة",
+        "capacityRange": "الحد الأقصى: {max}/يوم",
+        "capacityUnitLabel": "وحدة القياس",
+        "capacityIncrease": "زيادة",
+        "capacityDecrease": "إنقاص",
         "notesLabel": "ملاحظات إضافية",
         "notesPlaceholder": "اكتب أي ملاحظات خاصة بالحالة الصحية أو الأكاديمية للطالب...",
         "successTitle": "تم إضافة الطالب بنجاح",

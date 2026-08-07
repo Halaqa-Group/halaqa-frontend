@@ -13,18 +13,19 @@ import {
  *
  * Every figure comes from `GET /dashboard/*`, which resolves the caller's scope
  * server-side: principal/VP see the whole school, a supervisor their supervised
- * halaqat, a teacher the halaqat they currently teach. That is why this page
- * has no halaqa filter and no role branches around the data calls — a teacher
- * hitting the same endpoints simply receives a narrower answer.
+ * halaqat, a teacher the halaqat they currently teach. So this page needs no
+ * role branches around the data calls — a teacher hitting the same endpoints
+ * simply receives a narrower answer.
  *
- * Two things are deliberately NOT wired:
- *  • The navbar halaqa picker. `/dashboard/*` takes no halaqa parameter, so a
- *    teacher's pinned halaqa cannot narrow these numbers — they always cover
- *    every halaqa in scope. Pretending otherwise would show a filter that does
- *    nothing.
- *  • Teacher commitment for the teacher role. That endpoint reports on staff and
- *    403s below supervisor; `canViewTeacherCommitment` gates both the request
- *    and the section.
+ * The navbar halaqa picker IS wired, but only for a scoped role (a teacher):
+ * their selected halaqa is passed as `halaqa_id`, narrowing every figure to it.
+ * The backend intersects that id with the caller's scope, so it can only ever
+ * narrow — never reach a halaqa they cannot see. Unscoped roles (principal/VP/
+ * supervisor) send no `halaqa_id` and keep the full-scope view.
+ *
+ * Teacher commitment is deliberately NOT shown for the teacher role: that
+ * endpoint reports on staff and 403s below supervisor; `canViewTeacherCommitment`
+ * gates both the request and the section.
  */
 
 definePageMeta({
@@ -36,6 +37,7 @@ definePageMeta({
 const { t, locale } = useI18n()
 const { user, activeRole } = useAuth()
 const { canViewTeacherCommitment } = usePermissions()
+const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
 
 const {
   overview, topStudents, halaqat, teachers, alerts,
@@ -52,7 +54,10 @@ const stalledDays = ref(7)
 const windowQuery = computed(() => ({
   period: selection.value.mode === 'custom' ? undefined : selection.value.mode,
   from: selection.value.from,
-  to: selection.value.to
+  to: selection.value.to,
+  // Only a scoped role (teacher) narrows the dashboard to its navbar-selected
+  // halaqa; unscoped roles omit it and keep the full-scope view.
+  halaqa_id: isHalaqaScoped.value ? (selectedHalaqaId.value ?? undefined) : undefined
 }))
 
 function reload() {
@@ -70,6 +75,13 @@ watch(track, newTrack =>
 watch(stalledDays, days =>
   fetchAlerts({ ...windowQuery.value, stalled_days: days })
 )
+
+// A scoped role picks its halaqa from the navbar; every section follows it.
+// (Resolves after the layout's initializeHalaqa, so this also covers the first
+// selection landing just after the initial mount.)
+watch(selectedHalaqaId, () => {
+  if (isHalaqaScoped.value) reload()
+})
 
 onMounted(reload)
 

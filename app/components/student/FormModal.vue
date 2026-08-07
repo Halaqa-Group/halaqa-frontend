@@ -5,7 +5,7 @@ import type { FormSubmitEvent } from '#ui/types'
 import type { CalendarDate } from '@internationalized/date'
 import { DateFormatter, getLocalTimeZone, parseDate, today } from '@internationalized/date'
 import { normalizeDigits } from '~/composables/useValidation'
-import { NAME_PART_MAX_LENGTH } from '~/data/constants'
+import { NAME_PART_MAX_LENGTH, CAPACITY_UNITS, CAPACITY_UNIT_MAX, DEFAULT_CAPACITY_UNIT, type StudentCapacityUnit } from '~/data/constants'
 import { COUNTRY_DIAL_CODES, DEFAULT_DIAL_CODE, dialCodeFlag } from '~/data/country-dial-codes'
 import type { ApiStudent } from '~/types'
 
@@ -29,18 +29,13 @@ const [DefineFooter, ReuseFooter] = createReusableTemplate()
 const { halaqat, fetchHalaqat, isLoading: halaqatLoading } = useHalaqat()
 const { palestinianId } = useValidation()
 const { lockStudentBio } = usePermissions()
+const { unitItems } = useCapacityUnits()
 
 const isEditMode = computed(() => props.mode === 'edit')
 const api = useApi()
 const toast = useToast()
 const apiError = useApiError()
 const { t, locale } = useI18n()
-
-const CAPACITY = {
-  hifz: { min: 0, max: 20 },
-  near: { min: 0, max: 50 },
-  far: { min: 0, max: 100 }
-} as const
 
 // National number only — the dial code lives in its own field, and the API caps
 // the two together at E.164's 15 digits.
@@ -109,12 +104,27 @@ const schema = computed(() => {
     ),
     dob: z.string(),
     joinDate: z.string(),
-    memPages: z.number().min(CAPACITY.hifz.min).max(CAPACITY.hifz.max),
-    nearPages: z.number().min(CAPACITY.near.min).max(CAPACITY.near.max),
-    farPages: z.number().min(CAPACITY.far.min).max(CAPACITY.far.max),
+    memPages: z.number().min(0),
+    memUnit: z.enum(CAPACITY_UNITS),
+    nearPages: z.number().min(0),
+    nearUnit: z.enum(CAPACITY_UNITS),
+    farPages: z.number().min(0),
+    farUnit: z.enum(CAPACITY_UNITS),
     notes: z.string(),
     photoUrl: z.string(),
     halaqaIds: z.array(z.number())
+  }).superRefine((data, ctx) => {
+    // The ceiling on each capacity is the whole-Quran total for its chosen unit.
+    for (const [valueKey, unitKey] of [
+      ['memPages', 'memUnit'],
+      ['nearPages', 'nearUnit'],
+      ['farPages', 'farUnit']
+    ] as const) {
+      const max = CAPACITY_UNIT_MAX[data[unitKey]]
+      if (data[valueKey] > max) {
+        ctx.addIssue({ code: 'custom', path: [valueKey], message: t('validation.max', { max }) })
+      }
+    }
   })
 })
 
@@ -134,8 +144,11 @@ function emptyState(): StudentForm {
     dob: '',
     joinDate: today(getLocalTimeZone()).toString(),
     memPages: 1,
+    memUnit: DEFAULT_CAPACITY_UNIT,
     nearPages: 5,
+    nearUnit: DEFAULT_CAPACITY_UNIT,
     farPages: 10,
+    farUnit: DEFAULT_CAPACITY_UNIT,
     notes: '',
     photoUrl: '',
     halaqaIds: []
@@ -143,6 +156,18 @@ function emptyState(): StudentForm {
 }
 
 const state = reactive<StudentForm>(emptyState())
+
+// Switching to a unit with a smaller ceiling clamps the current value down so it
+// never sits above the max the input now allows.
+watch(
+  [() => state.memUnit, () => state.nearUnit, () => state.farUnit],
+  () => {
+    state.memPages = Math.min(state.memPages, CAPACITY_UNIT_MAX[state.memUnit])
+    state.nearPages = Math.min(state.nearPages, CAPACITY_UNIT_MAX[state.nearUnit])
+    state.farPages = Math.min(state.farPages, CAPACITY_UNIT_MAX[state.farUnit])
+  }
+)
+
 const guardians = ref<GuardianRow[]>([])
 const submitting = ref(false)
 const showIdLockConfirm = ref(false)
@@ -188,10 +213,14 @@ const relationItems = computed(() =>
 )
 
 const metrics = computed(() => [
-  { key: 'memPages', icon: 'i-lucide-book-open', label: t('pages.students.addModal.memPages'), max: CAPACITY.hifz.max },
-  { key: 'nearPages', icon: 'i-lucide-history', label: t('pages.students.addModal.nearPages'), max: CAPACITY.near.max },
-  { key: 'farPages', icon: 'i-lucide-repeat', label: t('pages.students.addModal.farPages'), max: CAPACITY.far.max }
+  { key: 'memPages', unitKey: 'memUnit', icon: 'i-lucide-book-open', label: t('pages.students.addModal.memPages') },
+  { key: 'nearPages', unitKey: 'nearUnit', icon: 'i-lucide-history', label: t('pages.students.addModal.nearPages') },
+  { key: 'farPages', unitKey: 'farUnit', icon: 'i-lucide-repeat', label: t('pages.students.addModal.farPages') }
 ] as const)
+
+// The +/- steppers jump by whole units; typing still accepts any decimal (1.4,
+// 1.5) up to the two places the API stores.
+const CAPACITY_STEP = 1
 
 onMounted(() => {
   if (halaqat.value.length === 0) fetchHalaqat()
@@ -211,8 +240,11 @@ watch(() => props.student, (student) => {
   state.dob = student.dob ? student.dob.slice(0, 10) : ''
   state.joinDate = student.join_date ? student.join_date.slice(0, 10) : today(getLocalTimeZone()).toString()
   state.memPages = Number(student.daily_hifz_pages_capacity) || 0
+  state.memUnit = student.daily_hifz_capacity_unit ?? DEFAULT_CAPACITY_UNIT
   state.nearPages = Number(student.daily_near_pages_capacity) || 0
+  state.nearUnit = student.daily_near_capacity_unit ?? DEFAULT_CAPACITY_UNIT
   state.farPages = Number(student.daily_far_pages_capacity) || 0
+  state.farUnit = student.daily_far_capacity_unit ?? DEFAULT_CAPACITY_UNIT
   state.notes = student.notes ?? ''
   state.photoUrl = student.photo_url ?? ''
   state.halaqaIds = []
@@ -355,8 +387,11 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       }
 
       patch.daily_hifz_pages_capacity = state.memPages
+      patch.daily_hifz_capacity_unit = state.memUnit
       patch.daily_near_pages_capacity = state.nearPages
+      patch.daily_near_capacity_unit = state.nearUnit
       patch.daily_far_pages_capacity = state.farPages
+      patch.daily_far_capacity_unit = state.farUnit
       patch.notes = state.notes.trim() || null
 
       await updateStudent(props.student.id, patch)
@@ -378,8 +413,11 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       ...(state.dob ? { dob: state.dob } : {}),
       join_date: state.joinDate,
       daily_hifz_pages_capacity: state.memPages,
+      daily_hifz_capacity_unit: state.memUnit,
       daily_near_pages_capacity: state.nearPages,
+      daily_near_capacity_unit: state.nearUnit,
       daily_far_pages_capacity: state.farPages,
+      daily_far_capacity_unit: state.farUnit,
       ...(state.photoUrl.trim() ? { photo_url: state.photoUrl.trim() } : {}),
       ...(state.notes.trim() ? { notes: state.notes.trim() } : {}),
       guardians: buildCreateGuardiansPayload()
@@ -433,14 +471,6 @@ watch(modalOpen, (open) => {
       @submit="handleSubmit"
     >
       <UAlert
-        v-if="lockBio"
-        color="info"
-        variant="soft"
-        icon="i-lucide-info"
-        :title="t('pages.students.addModal.teacherEditHint')"
-      />
-
-      <UAlert
         v-if="isEditMode && !lockBio"
         color="neutral"
         variant="soft"
@@ -467,7 +497,7 @@ watch(modalOpen, (open) => {
         />
       </UFormField>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div v-if="!lockBio" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <UFormField
           v-for="field in NAME_PART_FIELDS"
           :key="field.key"
@@ -655,15 +685,26 @@ watch(modalOpen, (open) => {
             v-for="metric in metrics"
             :key="metric.key"
             :label="metric.label"
-            :hint="t('pages.students.addModal.capacityRange', { max: metric.max })"
             :name="metric.key"
           >
-            <UInputNumber
-              v-model="state[metric.key as keyof StudentForm] as number"
-              :min="0"
-              :max="metric.max"
-              class="w-full"
-            />
+            <div class="flex gap-2">
+              <UInputNumber
+                v-model="state[metric.key as keyof StudentForm] as number"
+                :min="0"
+                :max="CAPACITY_UNIT_MAX[state[metric.unitKey]]"
+                :step="CAPACITY_STEP"
+                :step-snapping="false"
+                :format-options="{ maximumFractionDigits: 2 }"
+                class="flex-1 min-w-0"
+              />
+              <USelect
+                v-model="state[metric.unitKey as keyof StudentForm] as StudentCapacityUnit"
+                :items="unitItems"
+                value-key="value"
+                :aria-label="t('pages.students.addModal.capacityUnitLabel')"
+                class="w-24 shrink-0"
+              />
+            </div>
           </UFormField>
         </div>
       </div>

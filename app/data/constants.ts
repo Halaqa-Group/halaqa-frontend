@@ -42,6 +42,26 @@ export const ETHICS_RATING_DEFAULT = 5
 /** Max characters per name part, matching NAME_PART_MAX_LENGTH on the backend. */
 export const NAME_PART_MAX_LENGTH = 50
 
+// وحدة القدرة اليومية — the unit each `daily_*_pages_capacity` number is counted
+// in. Mirrors CAPACITY_UNITS in the backend capacity.config.ts. The column names
+// still say `pages` for API compatibility, so the number is only pages when its
+// paired `*_capacity_unit` is `page` (`quarter` is ربع الحزب, an eighth of a juz).
+export const CAPACITY_UNITS = ['page', 'juz', 'hizb', 'quarter', 'surah'] as const
+
+export type StudentCapacityUnit = typeof CAPACITY_UNITS[number]
+
+export const DEFAULT_CAPACITY_UNIT: StudentCapacityUnit = 'page'
+
+// Whole-Quran totals per unit — the ceiling a daily capacity can take when
+// counted in that unit: 614 pages, 30 أجزاء, 60 أحزاب, 240 أرباع, 114 سور.
+export const CAPACITY_UNIT_MAX: Record<StudentCapacityUnit, number> = {
+  page: 614,
+  juz: 30,
+  hizb: 60,
+  quarter: 240,
+  surah: 114
+}
+
 export const STATUS_CYCLE = [
   'bg-[#A7D2CB]',
   'bg-[#93C6E7]',
@@ -49,4 +69,3 @@ export const STATUS_CYCLE = [
   'bg-[#EFB0C1]',
   'bg-[#86A3B8]'
 ] as const
-

@@ -3,6 +3,7 @@ import type { Student } from '~/types'
 
 const props = defineProps<{ student: Student }>()
 const { t, locale } = useI18n()
+const { unitLabel } = useCapacityUnits()
 
 // The name is stored as four parts; the display `name` in the header is what the
 // database derives from them, so show the breakdown here.
@@ -14,9 +15,9 @@ const nameParts = computed(() => [
 ] as const)
 
 const dailyTracks = computed(() => [
-  { label: t('pages.students.card.dailyHifz'), value: props.student.dailyHifzPagesCapacity },
-  { label: t('pages.students.card.dailyNear'), value: props.student.dailyNearPagesCapacity },
-  { label: t('pages.students.card.dailyFar'), value: props.student.dailyFarPagesCapacity }
+  { label: t('pages.students.card.dailyHifz'), value: props.student.dailyHifzPagesCapacity, unit: unitLabel(props.student.dailyHifzCapacityUnit) },
+  { label: t('pages.students.card.dailyNear'), value: props.student.dailyNearPagesCapacity, unit: unitLabel(props.student.dailyNearCapacityUnit) },
+  { label: t('pages.students.card.dailyFar'), value: props.student.dailyFarPagesCapacity, unit: unitLabel(props.student.dailyFarCapacityUnit) }
 ])
 
 const dateFormatter = computed(() =>
@@ -166,7 +167,7 @@ const ageLabel = computed(() => {
             {{ track.value }}
           </p>
           <p class="text-xs text-muted mt-1">
-            {{ t('pages.students.card.pagesUnit') }}
+            {{ track.unit }}
           </p>
         </div>
       </div>

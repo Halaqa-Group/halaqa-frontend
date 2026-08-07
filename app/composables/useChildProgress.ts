@@ -2,6 +2,7 @@ import type {
   ApiAchievement, ApiAttendance, ApiStudent, ApiWeeklyPlan, Student
 } from '~/types'
 import { unwrapList } from '~/utils/api/list'
+import { DEFAULT_CAPACITY_UNIT } from '~/data/constants'
 
 function apiToStudent(s: ApiStudent): Student {
   return {
@@ -22,8 +23,11 @@ function apiToStudent(s: ApiStudent): Student {
     deletedAt: s.deleted_at ?? null,
     notes: s.notes,
     dailyHifzPagesCapacity: Number(s.daily_hifz_pages_capacity) || 0,
+    dailyHifzCapacityUnit: s.daily_hifz_capacity_unit ?? DEFAULT_CAPACITY_UNIT,
     dailyNearPagesCapacity: Number(s.daily_near_pages_capacity) || 0,
+    dailyNearCapacityUnit: s.daily_near_capacity_unit ?? DEFAULT_CAPACITY_UNIT,
     dailyFarPagesCapacity: Number(s.daily_far_pages_capacity) || 0,
+    dailyFarCapacityUnit: s.daily_far_capacity_unit ?? DEFAULT_CAPACITY_UNIT,
     photoUrl: s.photo_url,
     guardians: s.guardians ?? [],
     avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`

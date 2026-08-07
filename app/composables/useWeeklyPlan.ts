@@ -1,7 +1,9 @@
 import { computed, reactive, ref } from 'vue'
 import type {
-  ApiStudent, ApiStudentListResult, ApiWeeklyPlan, ApiWeeklyPlanItem, StudentWithAttendance
+  ApiStudent, ApiStudentListResult, ApiWeeklyPlan, ApiWeeklyPlanItem,
+  StudentCapacities, StudentWithAttendance
 } from '~/types'
+import { DEFAULT_CAPACITY_UNIT } from '~/data/constants'
 import { unwrapList } from '~/utils/api/list'
 import { parseYmd, todayYmd, toYmd } from '~/utils/date'
 import { backendDayOfWeek, planDirectionOf, startOfWeekSat } from '~/utils/plan'
@@ -104,7 +106,12 @@ export function useWeeklyPlan() {
         name: s.name,
         avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`,
         attendanceStatus: null,
-        memorizationDirection: s.memorization_direction
+        memorizationDirection: s.memorization_direction,
+        capacities: {
+          Hifz: { amount: Number(s.daily_hifz_pages_capacity) || 0, unit: s.daily_hifz_capacity_unit ?? DEFAULT_CAPACITY_UNIT },
+          Near: { amount: Number(s.daily_near_pages_capacity) || 0, unit: s.daily_near_capacity_unit ?? DEFAULT_CAPACITY_UNIT },
+          Far: { amount: Number(s.daily_far_pages_capacity) || 0, unit: s.daily_far_capacity_unit ?? DEFAULT_CAPACITY_UNIT }
+        }
       }))
     } catch (e) {
       if (signal.aborted || isAbortError(e)) return
@@ -653,6 +660,14 @@ export function useWeeklyPlan() {
     return planDirectionOf(id ? studentById.value.get(id)?.memorizationDirection : null)
   })
 
+  // مقاييس الطالب المحدد — the selected student's per-track daily capacity, so the
+  // create-plan wizard seeds its amount + unit from this student. Undefined when no
+  // student is selected (multi-student targets fall back to the wizard defaults).
+  const selectedStudentCapacities = computed<StudentCapacities | undefined>(() => {
+    const id = selectedStudentId.value
+    return id ? studentById.value.get(id)?.capacities : undefined
+  })
+
   function shiftWeek(deltaDays: number) {
     const d = new Date(selectedWeekStart.value)
     d.setDate(d.getDate() + deltaDays)
@@ -722,6 +737,7 @@ export function useWeeklyPlan() {
     studentName,
     studentAvatar,
     selectedStudentDirection,
+    selectedStudentCapacities,
     dateOfDay,
 
     loadStudents,

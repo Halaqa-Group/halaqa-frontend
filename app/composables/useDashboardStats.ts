@@ -174,7 +174,8 @@ export function useDashboardStats() {
     const range: DashboardWindowQuery = {
       period: query.period,
       from: query.from,
-      to: query.to
+      to: query.to,
+      halaqa_id: query.halaqa_id
     }
 
     // A re-run on a window change supersedes this one; only the latest owns isLoading.

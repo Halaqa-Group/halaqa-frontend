@@ -34,7 +34,10 @@ const items = computed<DropdownMenuItem[][]>(() => ([[{
           checked: activeRole.value === role,
           onSelect(e: Event) {
             e.preventDefault()
+            if (activeRole.value === role) return
             activeRole.value = role
+            // Reload so every page refetches its data scoped to the new role.
+            reloadNuxtApp({ persistState: false })
           }
         }))
       }]

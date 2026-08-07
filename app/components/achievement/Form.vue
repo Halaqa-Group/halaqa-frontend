@@ -9,7 +9,7 @@ import { isValidVerseRange, totalVersesInRange, formatVerseRange } from '~/utils
 import { verseToGlobal } from '~/utils/quran-structure'
 import { computePercentageScore, type ScoreCounts } from '~/utils/score'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
-import { defaultSessionRange, planDirectionOf } from '~/utils/plan'
+import { defaultSessionRange, planDirectionOf, DEFAULT_PLAN_START_SURAH } from '~/utils/plan'
 import type { AchievementTestPosition, ApiWeeklyPlanItem, CreateAchievementDto, RecitationMethod } from '~/types'
 
 const emit = defineEmits<{ saved: [] }>()
@@ -141,7 +141,9 @@ const studentDirection = computed(() =>
   planDirectionOf(students.value.find(s => s.id === state.student_id)?.memorizationDirection)
 )
 function applyDefaultRange() {
-  Object.assign(state, defaultSessionRange(studentDirection.value))
+  // Seed manual entry (تحديد يدوي) on سورة الروم — where the teacher's records
+  // almost always start — rather than at either end of the mushaf.
+  Object.assign(state, defaultSessionRange(studentDirection.value, DEFAULT_PLAN_START_SURAH))
 }
 
 // Restore the tested positions of an existing record. Duplicating keeps the

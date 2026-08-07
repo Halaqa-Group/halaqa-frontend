@@ -4,6 +4,7 @@ import type { Student } from '~/types'
 
 const props = defineProps<{ student: Student }>()
 const { t } = useI18n()
+const { unitLabel } = useCapacityUnits()
 const {
   canEditStudent, canGraduateStudent, canDeleteStudent, canRestoreStudent
 } = usePermissions()
@@ -131,20 +132,23 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     <div class="grid grid-cols-3 gap-2 text-sm mb-4">
       <div class="flex flex-col">
         <span class="text-xs text-muted">{{ t('pages.students.card.dailyHifz') }}</span>
-        <span class="tabular-nums font-medium">
-          {{ student.dailyHifzPagesCapacity }}
+        <span class="font-medium">
+          <span class="tabular-nums">{{ student.dailyHifzPagesCapacity }}</span>
+          <span class="text-xs text-muted"> {{ unitLabel(student.dailyHifzCapacityUnit) }}</span>
         </span>
       </div>
       <div class="flex flex-col">
         <span class="text-xs text-muted">{{ t('pages.students.card.dailyNear') }}</span>
-        <span class="tabular-nums font-medium">
-          {{ student.dailyNearPagesCapacity }}
+        <span class="font-medium">
+          <span class="tabular-nums">{{ student.dailyNearPagesCapacity }}</span>
+          <span class="text-xs text-muted"> {{ unitLabel(student.dailyNearCapacityUnit) }}</span>
         </span>
       </div>
       <div class="flex flex-col">
         <span class="text-xs text-muted">{{ t('pages.students.card.dailyFar') }}</span>
-        <span class="tabular-nums font-medium">
-          {{ student.dailyFarPagesCapacity }}
+        <span class="font-medium">
+          <span class="tabular-nums">{{ student.dailyFarPagesCapacity }}</span>
+          <span class="text-xs text-muted"> {{ unitLabel(student.dailyFarCapacityUnit) }}</span>
         </span>
       </div>
     </div>

@@ -9,6 +9,7 @@ import type {
   ApiStudent,
   ApiStudentListResult
 } from '~/types'
+import { DEFAULT_CAPACITY_UNIT } from '~/data/constants'
 
 const students = ref<Student[]>([])
 const searchQuery = ref('')
@@ -45,8 +46,11 @@ function apiToStudent(s: ApiStudent): Student {
     deletedAt: s.deleted_at ?? null,
     notes: s.notes,
     dailyHifzPagesCapacity: hifz,
+    dailyHifzCapacityUnit: s.daily_hifz_capacity_unit ?? DEFAULT_CAPACITY_UNIT,
     dailyNearPagesCapacity: near,
+    dailyNearCapacityUnit: s.daily_near_capacity_unit ?? DEFAULT_CAPACITY_UNIT,
     dailyFarPagesCapacity: far,
+    dailyFarCapacityUnit: s.daily_far_capacity_unit ?? DEFAULT_CAPACITY_UNIT,
     photoUrl: s.photo_url,
     guardians,
     avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`
@@ -184,10 +188,14 @@ export function useStudents() {
       method: 'PATCH',
       body: dto
     })
+    const mapped = apiToStudent(data)
     const idx = students.value.findIndex(s => s.id === String(id))
-    if (idx !== -1) {
-      students.value[idx] = apiToStudent(data)
-    }
+    // Update in place when the list holds this student; otherwise seed the store
+    // so pages that read from it (e.g. a deep-linked /students/:id opened without
+    // the list) reflect the edit immediately. The list re-fetches on mount, so
+    // this transient entry is never stale for long.
+    if (idx !== -1) students.value[idx] = mapped
+    else students.value.push(mapped)
     return { data, warnings: api.lastWarnings.value.slice() }
   }
 

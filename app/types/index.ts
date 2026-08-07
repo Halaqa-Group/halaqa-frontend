@@ -1,5 +1,8 @@
 import type { FetchOptions } from 'ofetch'
 import type { Ref } from 'vue'
+import type { StudentCapacityUnit } from '~/data/constants'
+
+export type { StudentCapacityUnit }
 
 export type ApiClient = {
   <T = unknown>(url: string, opts?: FetchOptions): Promise<T>
@@ -72,8 +75,11 @@ export interface Student {
   deletedAt: string | null
   notes: string | null
   dailyHifzPagesCapacity: number
+  dailyHifzCapacityUnit: StudentCapacityUnit
   dailyNearPagesCapacity: number
+  dailyNearCapacityUnit: StudentCapacityUnit
   dailyFarPagesCapacity: number
+  dailyFarCapacityUnit: StudentCapacityUnit
   photoUrl: string | null
   guardians: ApiGuardian[]
   avatar: string
@@ -109,8 +115,11 @@ export interface ApiStudent extends ApiPersonName {
   status: 'active' | 'inactive' | 'graduated'
   deleted_at?: string | null
   daily_hifz_pages_capacity: number | string
+  daily_hifz_capacity_unit: StudentCapacityUnit
   daily_near_pages_capacity: number | string
+  daily_near_capacity_unit: StudentCapacityUnit
   daily_far_pages_capacity: number | string
+  daily_far_capacity_unit: StudentCapacityUnit
   memorization_direction: MemorizationDirection
   notes: string | null
   photo_url: string | null
@@ -676,6 +685,23 @@ export interface CreateAchievementDto {
   approve?: boolean
 }
 
+export interface StudentTrackCapacity {
+  /** The raw capacity number, counted in `unit`. */
+  amount: number
+  unit: StudentCapacityUnit
+}
+
+/**
+ * مقاييس الطالب — the student's daily capacity per plan track: how much (amount)
+ * and in which unit. Seeds the "create weekly plan" wizard so a generated week
+ * starts from the student's own capacity instead of a hardcoded page/day.
+ */
+export interface StudentCapacities {
+  Hifz: StudentTrackCapacity
+  Near: StudentTrackCapacity
+  Far: StudentTrackCapacity
+}
+
 export interface StudentWithAttendance {
   id: number
   name: string
@@ -684,6 +710,9 @@ export interface StudentWithAttendance {
   // Carried through so plan defaults (wizard anchor, new-session range) follow the
   // student's own memorization direction instead of a hardcoded guess.
   memorizationDirection?: MemorizationDirection
+  // The student's daily capacity per track (مقاييس) — seeds the plan wizard's
+  // amount + unit so it reflects this student, not a fixed default.
+  capacities?: StudentCapacities
 }
 
 // ─── Daily evaluation report ──────────────────────────────────────────────────
@@ -886,6 +915,8 @@ export interface DashboardWindowQuery {
   period?: DashboardPeriod
   from?: string
   to?: string
+  /** Narrow every figure to one halaqa; intersected with the caller's scope. */
+  halaqa_id?: number
 }
 
 /** The headline KPIs over the immediately-preceding window, for trend deltas. */

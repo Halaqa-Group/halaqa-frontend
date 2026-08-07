@@ -1,4 +1,5 @@
 import type { ApiStudent, Student } from '~/types'
+import { DEFAULT_CAPACITY_UNIT } from '~/data/constants'
 
 const children = ref<Student[]>([])
 const isLoading = ref(false)
@@ -27,8 +28,11 @@ function apiToStudent(s: ApiStudent): Student {
     deletedAt: s.deleted_at ?? null,
     notes: s.notes,
     dailyHifzPagesCapacity: hifz,
+    dailyHifzCapacityUnit: s.daily_hifz_capacity_unit ?? DEFAULT_CAPACITY_UNIT,
     dailyNearPagesCapacity: near,
+    dailyNearCapacityUnit: s.daily_near_capacity_unit ?? DEFAULT_CAPACITY_UNIT,
     dailyFarPagesCapacity: far,
+    dailyFarCapacityUnit: s.daily_far_capacity_unit ?? DEFAULT_CAPACITY_UNIT,
     photoUrl: s.photo_url,
     guardians: s.guardians ?? [],
     avatar: s.photo_url || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(s.name)}`

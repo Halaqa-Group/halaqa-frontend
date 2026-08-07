@@ -933,6 +933,13 @@
         "primaryGuardian": "Primary guardian",
         "viewProfile": "View profile"
       },
+      "capacityUnits": {
+        "page": "page",
+        "juz": "juz",
+        "hizb": "hizb",
+        "quarter": "quarter",
+        "surah": "surah"
+      },
       "actions": {
         "viewProfile": "View profile",
         "logAchievement": "Log achievement",
@@ -990,10 +997,13 @@
         "guardiansTitle": "Guardians",
         "guardiansHint": "You can add guardians after creating the student from the Guardians tab.",
         "metricsTitle": "Daily performance targets",
-        "memPages": "New memorization pages",
-        "nearPages": "Near revision pages",
-        "farPages": "Far revision pages",
-        "capacityRange": "Maximum: {max} pages/day",
+        "memPages": "New memorization capacity",
+        "nearPages": "Near revision capacity",
+        "farPages": "Far revision capacity",
+        "capacityRange": "Maximum: {max}/day",
+        "capacityUnitLabel": "Unit",
+        "capacityIncrease": "Increase",
+        "capacityDecrease": "Decrease",
         "notesLabel": "Additional notes",
         "notesPlaceholder": "Write any health or academic notes about the student...",
         "successTitle": "Student added successfully",

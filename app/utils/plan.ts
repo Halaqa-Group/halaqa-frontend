@@ -6,6 +6,13 @@ import type { PlanDirection, VerseRange } from '~/utils/quran-structure'
 const LAST_SURAH = 114
 
 /**
+ * Where a teacher's plans and records almost always open — سورة الروم, the start of
+ * جزء ٢١. Forms seed their "start from" picker here (passed explicitly) instead of
+ * defaulting to either end of the mushaf.
+ */
+export const DEFAULT_PLAN_START_SURAH = 30
+
+/**
  * The student's `memorization_direction` as the planner's own direction flag.
  * Anything unset falls back to `desc` — the API's column default.
  */
@@ -17,9 +24,10 @@ export function planDirectionOf(direction: MemorizationDirection | null | undefi
  * Where a fresh session starts when nothing else is known: the first surah going
  * forwards, the last one going backwards (`descending` starts at An-Nas). Covers
  * the whole anchor surah, which is what a new lesson usually gets trimmed from.
+ * Pass `anchorSurah` to seed a specific surah instead (e.g. DEFAULT_PLAN_START_SURAH).
  */
-export function defaultSessionRange(direction: PlanDirection): VerseRange {
-  const surah = direction === 'desc' ? LAST_SURAH : 1
+export function defaultSessionRange(direction: PlanDirection, anchorSurah?: number): VerseRange {
+  const surah = anchorSurah ?? (direction === 'desc' ? LAST_SURAH : 1)
   return { start_surah: surah, start_verse: 1, end_surah: surah, end_verse: VERSE_COUNTS[surah] || 1 }
 }
 

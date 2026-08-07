@@ -18,6 +18,7 @@ const {
   requestRestore
 } = useStudents()
 const { viewMode, sortedStudents, clearFilters } = useStudentsView()
+const { unitLabel } = useCapacityUnits()
 
 const columns = computed<TableColumn<Student>[]>(() => [
   { accessorKey: 'name', header: t('pages.students.table.student') },
@@ -183,14 +184,17 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
 
         <template #dailyHifzPagesCapacity-cell="{ row }">
           <span class="tabular-nums">{{ row.original.dailyHifzPagesCapacity }}</span>
+          <span class="text-xs text-muted"> {{ unitLabel(row.original.dailyHifzCapacityUnit) }}</span>
         </template>
 
         <template #dailyNearPagesCapacity-cell="{ row }">
           <span class="tabular-nums">{{ row.original.dailyNearPagesCapacity }}</span>
+          <span class="text-xs text-muted"> {{ unitLabel(row.original.dailyNearCapacityUnit) }}</span>
         </template>
 
         <template #dailyFarPagesCapacity-cell="{ row }">
           <span class="tabular-nums">{{ row.original.dailyFarPagesCapacity }}</span>
+          <span class="text-xs text-muted"> {{ unitLabel(row.original.dailyFarCapacityUnit) }}</span>
         </template>
 
         <template #actions-cell="{ row }">

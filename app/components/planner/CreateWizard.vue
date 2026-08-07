@@ -2,8 +2,9 @@
 import { expandPlan, UNIT_TOTALS, type PlanUnit, type PlanDirection, type VerseRange } from '~/utils/quran-structure'
 import { TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
 import { PLAN_TRACKS, type CreatePlanItemDto } from '~/composables/useWeeklyPlan'
-import { defaultSessionRange } from '~/utils/plan'
+import { DEFAULT_PLAN_START_SURAH } from '~/utils/plan'
 import { SURAH_NAMES } from '~/data/constants'
+import type { StudentTrackCapacity } from '~/types'
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
 type Target = 'this' | 'all' | 'selected'
@@ -14,7 +15,8 @@ const toast = useToast()
 const apiError = useApiError()
 const {
   wizardOpen, activeDays, applyTrackGeneration,
-  students, selectedStudentId, selectedStudentDirection, applyPlanToStudents, isSaving
+  students, selectedStudentId, selectedStudentDirection, selectedStudentCapacities,
+  applyPlanToStudents, isSaving
 } = useWeeklyPlan()
 const { boundariesFor, unitAvailable } = useQuranStructure()
 
@@ -28,18 +30,33 @@ interface TrackConfig {
   unit: PlanUnit
   direction: PlanDirection
 }
-// Memorization opens on the student's own `memorization_direction`: `desc` (the API
-// default, عكس اتجاه المصحف) anchors at the first ayah of An-Nas and walks surahs
-// downwards reading each forwards; `asc` anchors at Al-Fatihah. Only the Hifz track
-// exposes the switch — a review track (قريبة/بعيدة) always walks with the mushaf.
-function defaults(enabled: boolean, direction: PlanDirection = 'asc'): TrackConfig {
-  const range = defaultSessionRange(direction)
-  return { enabled, surah: range.start_surah, verse: range.start_verse, amount: 1, unit: 'page', direction }
+// A track's daily amount + unit is seeded from the selected student's مقاييس (its
+// daily capacity for that track) when known, so a generated week starts from what
+// the student can actually do rather than a fixed 1 page/day. The capacity number
+// is rounded and clamped into the unit's [1, max] range the wizard allows.
+function seedAmount(cap: StudentTrackCapacity): number {
+  return Math.min(Math.max(Math.round(cap.amount), 1), unitMax(cap.unit))
+}
+
+// The "start from" picker is seeded on سورة الروم (DEFAULT_PLAN_START_SURAH) rather
+// than at either end of the mushaf. `direction` still governs which surah comes
+// *next* during expansion (`desc` = عكس اتجاه المصحف), it just no longer moves the
+// anchor. Only the Hifz track exposes the switch — a review track (قريبة/بعيدة)
+// always walks with the mushaf.
+function defaults(enabled: boolean, direction: PlanDirection = 'asc', cap?: StudentTrackCapacity): TrackConfig {
+  return {
+    enabled,
+    surah: DEFAULT_PLAN_START_SURAH,
+    verse: 1,
+    amount: cap ? seedAmount(cap) : 1,
+    unit: cap?.unit ?? 'page',
+    direction
+  }
 }
 const config = reactive<Record<TrackType, TrackConfig>>({
-  Hifz: defaults(true, selectedStudentDirection.value),
-  Near: defaults(false),
-  Far: defaults(false)
+  Hifz: defaults(true, selectedStudentDirection.value, selectedStudentCapacities.value?.Hifz),
+  Near: defaults(false, 'asc', selectedStudentCapacities.value?.Near),
+  Far: defaults(false, 'asc', selectedStudentCapacities.value?.Far)
 })
 
 const target = ref<Target>('this')
@@ -65,11 +82,13 @@ const resolvedStudentIds = computed<number[]>(() => {
 
 watch(wizardOpen, (v) => {
   if (v) {
-    // Re-seeded on every open: the direction belongs to the student who's selected
-    // now, not whoever was selected the last time the wizard ran.
-    Object.assign(config.Hifz, defaults(true, selectedStudentDirection.value))
-    Object.assign(config.Near, defaults(false))
-    Object.assign(config.Far, defaults(false))
+    // Re-seeded on every open: the direction and مقاييس (per-track daily capacity)
+    // belong to the student who's selected now, not whoever was selected the last
+    // time the wizard ran.
+    const caps = selectedStudentCapacities.value
+    Object.assign(config.Hifz, defaults(true, selectedStudentDirection.value, caps?.Hifz))
+    Object.assign(config.Near, defaults(false, 'asc', caps?.Near))
+    Object.assign(config.Far, defaults(false, 'asc', caps?.Far))
     target.value = 'this'
     targetStudentIds.value = []
     policy.value = 'skip'
@@ -339,7 +358,6 @@ async function submit() {
             <UFormField
               v-if="track === 'Hifz'"
               :label="t('pages.planner.wizard.direction.label')"
-              :help="t('pages.planner.wizard.direction.help')"
             >
               <div class="flex gap-1 rounded-md border border-default p-0.5">
                 <UButton

@@ -16,35 +16,112 @@
   matches the app's real appearance (a light-pinned app stays light on an OS in
   dark mode); it only falls back to the OS when the user never chose. Colors
   mirror --color-background and the primary scale in app/assets/css/main.css.
+
+  WATCHDOG: the splash is removed only when Vue mounts, so any pre-mount stall
+  (iOS Safari evicting a precached JS chunk offline is the known one) would trap
+  the user here forever. The inline script below runs at HTML-parse time — before
+  and independently of the app's module graph — and after a grace period swaps
+  the loader for a recovery panel if the app still hasn't mounted. If the app
+  DOES mount (even late), Vue replaces this whole subtree and the panel vanishes
+  on its own, so a false trigger self-heals.
 -->
 <div class="halaqa-splash" role="status" aria-live="polite" aria-label="جارٍ التحميل">
-  <svg class="halaqa-splash__art" viewBox="0 0 100 92" width="120" height="110" aria-hidden="true" fill="none">
-    <!-- the halaqa: a dashed circle turning slowly around the mushaf -->
-    <circle class="halaqa-splash__ring" cx="50" cy="44" r="44" stroke-width="1.5" stroke-dasharray="3 7" stroke-linecap="round" />
+  <div class="halaqa-splash__loader">
+    <svg class="halaqa-splash__art" viewBox="0 0 100 92" width="120" height="110" aria-hidden="true" fill="none">
+      <!-- the halaqa: a dashed circle turning slowly around the mushaf -->
+      <circle class="halaqa-splash__ring" cx="50" cy="44" r="44" stroke-width="1.5" stroke-dasharray="3 7" stroke-linecap="round" />
 
-    <!-- the mushaf: two open pages meeting at the spine -->
-    <g class="halaqa-splash__book" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
-      <path d="M50 24 C 40 18, 24 18, 12 21 L 12 62 C 24 59, 40 59, 50 64" />
-      <path d="M50 24 C 60 18, 76 18, 88 21 L 88 62 C 76 59, 60 59, 50 64" />
-      <path d="M50 24 L50 64" />
-    </g>
+      <!-- the mushaf: two open pages meeting at the spine -->
+      <g class="halaqa-splash__book" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M50 24 C 40 18, 24 18, 12 21 L 12 62 C 24 59, 40 59, 50 64" />
+        <path d="M50 24 C 60 18, 76 18, 88 21 L 88 62 C 76 59, 60 59, 50 64" />
+        <path d="M50 24 L50 64" />
+      </g>
 
-    <!-- the verses filling in. Right page first (RTL), then left; top to bottom -->
-    <g class="halaqa-splash__lines">
-      <rect x="56" y="27" width="26" height="2.6" rx="1.3" style="animation-delay:0s" />
-      <rect x="56" y="33" width="26" height="2.6" rx="1.3" style="animation-delay:.12s" />
-      <rect x="56" y="39" width="26" height="2.6" rx="1.3" style="animation-delay:.24s" />
-      <rect x="56" y="45" width="26" height="2.6" rx="1.3" style="animation-delay:.36s" />
-      <rect x="68" y="51" width="14" height="2.6" rx="1.3" style="animation-delay:.48s" />
+      <!-- the verses filling in. Right page first (RTL), then left; top to bottom -->
+      <g class="halaqa-splash__lines">
+        <rect x="56" y="27" width="26" height="2.6" rx="1.3" style="animation-delay:0s" />
+        <rect x="56" y="33" width="26" height="2.6" rx="1.3" style="animation-delay:.12s" />
+        <rect x="56" y="39" width="26" height="2.6" rx="1.3" style="animation-delay:.24s" />
+        <rect x="56" y="45" width="26" height="2.6" rx="1.3" style="animation-delay:.36s" />
+        <rect x="68" y="51" width="14" height="2.6" rx="1.3" style="animation-delay:.48s" />
 
-      <rect x="18" y="27" width="26" height="2.6" rx="1.3" style="animation-delay:.60s" />
-      <rect x="18" y="33" width="26" height="2.6" rx="1.3" style="animation-delay:.72s" />
-      <rect x="18" y="39" width="26" height="2.6" rx="1.3" style="animation-delay:.84s" />
-      <rect x="18" y="45" width="26" height="2.6" rx="1.3" style="animation-delay:.96s" />
-      <rect x="30" y="51" width="14" height="2.6" rx="1.3" style="animation-delay:1.08s" />
-    </g>
-  </svg>
+        <rect x="18" y="27" width="26" height="2.6" rx="1.3" style="animation-delay:.60s" />
+        <rect x="18" y="33" width="26" height="2.6" rx="1.3" style="animation-delay:.72s" />
+        <rect x="18" y="39" width="26" height="2.6" rx="1.3" style="animation-delay:.84s" />
+        <rect x="18" y="45" width="26" height="2.6" rx="1.3" style="animation-delay:.96s" />
+        <rect x="30" y="51" width="14" height="2.6" rx="1.3" style="animation-delay:1.08s" />
+      </g>
+    </svg>
+  </div>
+
+  <!-- Escape hatch — hidden via CSS until the watchdog adds `is-recovering`. -->
+  <div class="halaqa-splash__recover" dir="rtl">
+    <p class="halaqa-splash__msg">استغرق فتح التطبيق وقتًا أطول من المعتاد.</p>
+    <div class="halaqa-splash__actions">
+      <button type="button" class="halaqa-splash__btn halaqa-splash__btn--primary halaqa-splash__reload">
+        إعادة المحاولة
+      </button>
+      <!-- Clearing the cache only helps (and only works) with a connection, so
+           the watchdog hides this button when offline. -->
+      <button type="button" class="halaqa-splash__btn halaqa-splash__btn--ghost halaqa-splash__reset">
+        مسح التخزين المؤقت وإعادة التحميل
+      </button>
+    </div>
+  </div>
 </div>
+
+<script>
+  (function () {
+    // Generous grace period: a slow first online load can legitimately take a
+    // while, and a late mount self-heals anyway, so we err on the patient side.
+    var GRACE_MS = 12000
+
+    function el(sel) {
+      var root = document.querySelector('.halaqa-splash')
+      return root ? root.querySelector(sel) : null
+    }
+
+    window.setTimeout(function () {
+      var splash = document.querySelector('.halaqa-splash')
+      // If Vue mounted, it replaced #__nuxt's children and this node is detached.
+      if (!splash || !splash.isConnected) return
+
+      // A single state class swaps loader → recovery via CSS (below). More
+      // robust than toggling the `hidden` attribute, which a CSS reset that sets
+      // `display` on the element can silently override.
+      splash.classList.add('is-recovering')
+      var resetBtn = splash.querySelector('.halaqa-splash__reset')
+      if (resetBtn && !navigator.onLine) resetBtn.style.display = 'none'
+    }, GRACE_MS)
+
+    var reloadBtn = el('.halaqa-splash__reload')
+    if (reloadBtn) reloadBtn.addEventListener('click', function () {
+      window.location.reload()
+    })
+
+    var resetBtn = el('.halaqa-splash__reset')
+    if (resetBtn) resetBtn.addEventListener('click', function () {
+      resetBtn.disabled = true
+      var jobs = []
+      try {
+        if ('serviceWorker' in navigator) {
+          jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all(regs.map(function (r) { return r.unregister() }))
+          }))
+        }
+        if (window.caches) {
+          jobs.push(caches.keys().then(function (keys) {
+            return Promise.all(keys.map(function (k) { return caches.delete(k) }))
+          }))
+        }
+      } catch (e) { /* storage APIs unavailable — just reload */ }
+      Promise.all(jobs).catch(function () {}).then(function () {
+        window.location.reload()
+      })
+    })
+  })()
+</script>
 
 <style>
   .halaqa-splash {
@@ -97,12 +174,75 @@
     50%      { transform: scale(1.04); }
   }
 
+  /* ── Recovery panel (revealed by the watchdog) ─────────────────────────── */
+  /* The loader shows by default; when the watchdog adds `is-recovering` the two
+     swap so the panel fully replaces the loader (never side by side). */
+  .halaqa-splash__recover            { display: none; }
+  .halaqa-splash.is-recovering .halaqa-splash__loader  { display: none; }
+  .halaqa-splash.is-recovering .halaqa-splash__recover { display: flex; }
+
+  .halaqa-splash__recover {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+    max-width: 20rem;
+    padding: 0 1.5rem;
+    text-align: center;
+  }
+
+  .halaqa-splash__msg {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #3f3f46;
+  }
+
+  .halaqa-splash__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .halaqa-splash__btn {
+    appearance: none;
+    border: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    cursor: pointer;
+  }
+
+  .halaqa-splash__btn--primary {
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.625rem;
+    background-color: #1a6b4a; /* --color-primary-700 */
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .halaqa-splash__btn--ghost {
+    padding: 0.4rem;
+    background: transparent;
+    color: #22915c; /* --color-primary-600 */
+    font-size: 0.82rem;
+    font-weight: 500;
+    text-decoration: underline;
+  }
+
+  .halaqa-splash__btn[disabled] { opacity: 0.5; cursor: default; }
+
   /* html.dark is set synchronously by the color-mode script before this paints,
      so it reflects the user's chosen appearance (not the OS). */
   html.dark .halaqa-splash            { background-color: #111113; } /* --color-background (.dark) */
   html.dark .halaqa-splash__ring      { stroke: #22915c; }          /* --color-primary-600 */
   html.dark .halaqa-splash__book path { stroke: #4db482; }          /* --color-primary-400 */
   html.dark .halaqa-splash__lines rect{ fill:   #4db482; }          /* --color-primary-400 */
+  html.dark .halaqa-splash__msg           { color: #d4d4d8; }
+  html.dark .halaqa-splash__btn--primary  { background-color: #22915c; } /* --color-primary-600 */
+  html.dark .halaqa-splash__btn--ghost    { color: #4db482; }           /* --color-primary-400 */
 
   @media (prefers-reduced-motion: reduce) {
     .halaqa-splash__art        { animation-duration: 6.4s; }

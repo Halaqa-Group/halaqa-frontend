@@ -153,11 +153,11 @@
      so it gets its own scale rather than borrowing --color-surface-*.
      --mushaf-ink-rgb is the bare triplet, for the alpha washes the word states
      paint on top of the page (hover, press, block outlines). */
-  --color-mushaf-bg: #fdfaf2;
+  --color-mushaf-bg: #ffffff;
   --color-mushaf-fg: #1c1917;
   --color-mushaf-border: #d6d3d1;
   --color-mushaf-muted: #78716c;
-  --color-mushaf-chrome: #fbf6ea;
+  --color-mushaf-chrome: #ffffff;
   --color-mushaf-accent: #9a6b1f;
   --mushaf-ink-rgb: 28 25 23;
   --mushaf-spot-rgb: 37 99 235;

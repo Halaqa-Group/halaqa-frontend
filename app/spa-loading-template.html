@@ -1,0 +1,112 @@
+<!--
+  SPA preloader. With `ssr: false`, Nuxt injects this markup into the app root
+  and keeps it on screen until the Vue app mounts — and mount waits (via
+  Suspense) for the initial route's global middleware (refresh()/fetchMe()) and
+  the first page's async setup to resolve. So this single template covers the
+  whole white gap on reload: bundle boot + auth + first data.
+
+  The motif joins both meanings of the app: an open mushaf whose lines light up
+  one after another — right page then left, top to bottom, the way an Arabic
+  page is read/memorised (تحفيظ) — ringed by a slowly turning dashed circle, the
+  halaqa (حلقة) the students sit in. Pure SVG/CSS so it paints before any JS.
+
+  @nuxtjs/color-mode injects a synchronous <head> script that stamps `dark` or
+  `light` on <html> from the stored `nuxt-color-mode` preference BEFORE the body
+  paints — so we key the splash off that class, not prefers-color-scheme. That
+  matches the app's real appearance (a light-pinned app stays light on an OS in
+  dark mode); it only falls back to the OS when the user never chose. Colors
+  mirror --color-background and the primary scale in app/assets/css/main.css.
+-->
+<div class="halaqa-splash" role="status" aria-live="polite" aria-label="جارٍ التحميل">
+  <svg class="halaqa-splash__art" viewBox="0 0 100 92" width="120" height="110" aria-hidden="true" fill="none">
+    <!-- the halaqa: a dashed circle turning slowly around the mushaf -->
+    <circle class="halaqa-splash__ring" cx="50" cy="44" r="44" stroke-width="1.5" stroke-dasharray="3 7" stroke-linecap="round" />
+
+    <!-- the mushaf: two open pages meeting at the spine -->
+    <g class="halaqa-splash__book" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M50 24 C 40 18, 24 18, 12 21 L 12 62 C 24 59, 40 59, 50 64" />
+      <path d="M50 24 C 60 18, 76 18, 88 21 L 88 62 C 76 59, 60 59, 50 64" />
+      <path d="M50 24 L50 64" />
+    </g>
+
+    <!-- the verses filling in. Right page first (RTL), then left; top to bottom -->
+    <g class="halaqa-splash__lines">
+      <rect x="56" y="27" width="26" height="2.6" rx="1.3" style="animation-delay:0s" />
+      <rect x="56" y="33" width="26" height="2.6" rx="1.3" style="animation-delay:.12s" />
+      <rect x="56" y="39" width="26" height="2.6" rx="1.3" style="animation-delay:.24s" />
+      <rect x="56" y="45" width="26" height="2.6" rx="1.3" style="animation-delay:.36s" />
+      <rect x="68" y="51" width="14" height="2.6" rx="1.3" style="animation-delay:.48s" />
+
+      <rect x="18" y="27" width="26" height="2.6" rx="1.3" style="animation-delay:.60s" />
+      <rect x="18" y="33" width="26" height="2.6" rx="1.3" style="animation-delay:.72s" />
+      <rect x="18" y="39" width="26" height="2.6" rx="1.3" style="animation-delay:.84s" />
+      <rect x="18" y="45" width="26" height="2.6" rx="1.3" style="animation-delay:.96s" />
+      <rect x="30" y="51" width="14" height="2.6" rx="1.3" style="animation-delay:1.08s" />
+    </g>
+  </svg>
+</div>
+
+<style>
+  .halaqa-splash {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff; /* pure white shell while the app boots */
+    z-index: 999999;
+  }
+
+  /* Gentle breathing so the whole scene feels alive, not frozen. */
+  .halaqa-splash__art {
+    animation: halaqa-splash-breathe 3.2s ease-in-out infinite;
+  }
+
+  .halaqa-splash__ring {
+    stroke: #9ed4b9; /* --color-primary-200 */
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: halaqa-splash-turn 9s linear infinite;
+  }
+
+  .halaqa-splash__book path {
+    stroke: #1a6b4a; /* --color-primary-700 */
+  }
+
+  /* Each verse-line sits dim, then pulses bright when its delay comes round —
+     the staggered delays send a "reading" highlight down the two pages. */
+  .halaqa-splash__lines rect {
+    fill: #1a6b4a; /* --color-primary-700 */
+    opacity: 0.18;
+    animation: halaqa-splash-read 2.4s ease-in-out infinite;
+  }
+
+  @keyframes halaqa-splash-turn {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes halaqa-splash-read {
+    0%   { opacity: 0.18; }
+    10%  { opacity: 1;    }
+    30%  { opacity: 0.18; }
+    100% { opacity: 0.18; }
+  }
+
+  @keyframes halaqa-splash-breathe {
+    0%, 100% { transform: scale(1);    }
+    50%      { transform: scale(1.04); }
+  }
+
+  /* html.dark is set synchronously by the color-mode script before this paints,
+     so it reflects the user's chosen appearance (not the OS). */
+  html.dark .halaqa-splash            { background-color: #111113; } /* --color-background (.dark) */
+  html.dark .halaqa-splash__ring      { stroke: #22915c; }          /* --color-primary-600 */
+  html.dark .halaqa-splash__book path { stroke: #4db482; }          /* --color-primary-400 */
+  html.dark .halaqa-splash__lines rect{ fill:   #4db482; }          /* --color-primary-400 */
+
+  @media (prefers-reduced-motion: reduce) {
+    .halaqa-splash__art        { animation-duration: 6.4s; }
+    .halaqa-splash__ring       { animation-duration: 24s;  }
+    .halaqa-splash__lines rect { animation-duration: 4.8s; }
+  }
+</style>

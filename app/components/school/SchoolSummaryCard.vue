@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { ApiSchool } from '~/types'
+
+// Centered modal on desktop, bottom drawer on mobile — body + footer shared
+// between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineBody, ReuseBody] = createReusableTemplate()
+const [DefineFooter, ReuseFooter] = createReusableTemplate()
 
 const { t } = useI18n()
 const toast = useToast()
@@ -157,40 +164,65 @@ async function submitForm() {
       </dl>
     </div>
 
-    <UModal
-      v-model:open="editOpen"
-      :title="t('pages.home.schoolCard.formTitle')"
-      :ui="{ content: 'sm:max-w-lg rounded-2xl', footer: 'justify-end' }"
-    >
-      <template #body>
-        <div class="space-y-4">
-          <UFormField :label="t('pages.home.schoolCard.fieldName')" name="name">
-            <UInput v-model="form.name" class="w-full" />
-          </UFormField>
-          <UFormField :label="t('pages.home.schoolCard.fieldAddress')" name="address">
-            <UTextarea v-model="form.address" class="w-full" :rows="3" autoresize />
-          </UFormField>
-          <UFormField :label="t('pages.home.schoolCard.fieldPhone')" name="phone">
-            <UInput v-model="form.phone" class="w-full" dir="ltr" />
-          </UFormField>
-          <UFormField :label="t('pages.home.schoolCard.fieldStatus')" name="status">
-            <USelect
-              v-model="form.status"
-              :items="statusItems"
-              value-key="value"
-              class="w-full"
-            />
-          </UFormField>
-        </div>
-      </template>
-      <template #footer="{ close }">
-        <UButton variant="ghost" color="neutral" :disabled="saving" @click="close">
+    <DefineBody>
+      <div class="space-y-4">
+        <UFormField :label="t('pages.home.schoolCard.fieldName')" name="name">
+          <UInput v-model="form.name" class="w-full" />
+        </UFormField>
+        <UFormField :label="t('pages.home.schoolCard.fieldAddress')" name="address">
+          <UTextarea v-model="form.address" class="w-full" :rows="3" autoresize />
+        </UFormField>
+        <UFormField :label="t('pages.home.schoolCard.fieldPhone')" name="phone">
+          <UInput v-model="form.phone" class="w-full" dir="ltr" />
+        </UFormField>
+        <UFormField :label="t('pages.home.schoolCard.fieldStatus')" name="status">
+          <USelect
+            v-model="form.status"
+            :items="statusItems"
+            value-key="value"
+            class="w-full"
+          />
+        </UFormField>
+      </div>
+    </DefineBody>
+
+    <DefineFooter>
+      <div class="flex items-center justify-end gap-2 w-full">
+        <UButton variant="ghost" color="neutral" :disabled="saving" @click="editOpen = false">
           {{ t('common.cancel') }}
         </UButton>
         <UButton :loading="saving" @click="submitForm">
           {{ t('common.save') }}
         </UButton>
+      </div>
+    </DefineFooter>
+
+    <UModal
+      v-if="isDesktop"
+      v-model:open="editOpen"
+      :title="t('pages.home.schoolCard.formTitle')"
+      :ui="{ content: 'sm:max-w-lg rounded-2xl', footer: 'justify-end' }"
+    >
+      <template #body>
+        <ReuseBody />
+      </template>
+      <template #footer>
+        <ReuseFooter />
       </template>
     </UModal>
+
+    <UDrawer
+      v-else
+      v-model:open="editOpen"
+      :title="t('pages.home.schoolCard.formTitle')"
+      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+    >
+      <template #body>
+        <ReuseBody />
+      </template>
+      <template #footer>
+        <ReuseFooter />
+      </template>
+    </UDrawer>
   </div>
 </template>

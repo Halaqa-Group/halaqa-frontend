@@ -1,7 +1,16 @@
 <script setup lang="ts">
+import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { TableColumn } from '@nuxt/ui'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
 import type { ApiHoliday, ApiSchoolSchedule } from '~/types'
+
+// Centered modal on desktop, bottom drawer on mobile — each dialog's body +
+// footer are shared between the two shells via reusable templates.
+const isDesktop = useMediaQuery('(min-width: 640px)')
+const [DefineScheduleBody, ReuseScheduleBody] = createReusableTemplate()
+const [DefineScheduleFooter, ReuseScheduleFooter] = createReusableTemplate()
+const [DefineHolidayBody, ReuseHolidayBody] = createReusableTemplate()
+const [DefineHolidayFooter, ReuseHolidayFooter] = createReusableTemplate()
 
 const { t, locale } = useI18n()
 const toast = useToast()
@@ -271,64 +280,108 @@ async function confirmHolidayDelete() {
       </div>
     </UCard>
 
-    <!-- Add schedule modal -->
-    <UModal v-model:open="scheduleOpen" :title="t('pages.schoolCalendar.schedule.addButton')">
+    <!-- Add schedule dialog -->
+    <DefineScheduleBody>
+      <div class="flex flex-col gap-4">
+        <UFormField :label="t('pages.schoolCalendar.schedule.day')">
+          <USelect v-model="scheduleForm.day_of_week" :items="dayItems" value-key="value" class="w-full" />
+        </UFormField>
+        <UFormField :label="t('pages.schoolCalendar.schedule.from')">
+          <UInput v-model="scheduleForm.effective_from" type="date" class="w-full" />
+        </UFormField>
+        <UFormField :label="t('pages.schoolCalendar.schedule.toOptional')">
+          <UInput v-model="scheduleForm.effective_to" type="date" class="w-full" />
+        </UFormField>
+        <UFormField :label="t('pages.schoolCalendar.schedule.notesOptional')">
+          <UInput v-model="scheduleForm.notes" class="w-full" :placeholder="t('pages.schoolCalendar.schedule.notesPlaceholder')" />
+        </UFormField>
+      </div>
+    </DefineScheduleBody>
+
+    <DefineScheduleFooter>
+      <div class="flex items-center justify-end gap-2 w-full">
+        <UButton variant="soft" color="neutral" :disabled="scheduleSaving" @click="scheduleOpen = false">
+          {{ t('common.cancel') }}
+        </UButton>
+        <UButton color="primary" :loading="scheduleSaving" :disabled="!scheduleForm.effective_from" @click="submitSchedule">
+          {{ t('common.save') }}
+        </UButton>
+      </div>
+    </DefineScheduleFooter>
+
+    <UModal v-if="isDesktop" v-model:open="scheduleOpen" :title="t('pages.schoolCalendar.schedule.addButton')">
       <template #body>
-        <div class="flex flex-col gap-4">
-          <UFormField :label="t('pages.schoolCalendar.schedule.day')">
-            <USelect v-model="scheduleForm.day_of_week" :items="dayItems" value-key="value" class="w-full" />
-          </UFormField>
-          <UFormField :label="t('pages.schoolCalendar.schedule.from')">
-            <UInput v-model="scheduleForm.effective_from" type="date" class="w-full" />
-          </UFormField>
-          <UFormField :label="t('pages.schoolCalendar.schedule.toOptional')">
-            <UInput v-model="scheduleForm.effective_to" type="date" class="w-full" />
-          </UFormField>
-          <UFormField :label="t('pages.schoolCalendar.schedule.notesOptional')">
-            <UInput v-model="scheduleForm.notes" class="w-full" :placeholder="t('pages.schoolCalendar.schedule.notesPlaceholder')" />
-          </UFormField>
-        </div>
+        <ReuseScheduleBody />
       </template>
       <template #footer>
-        <div class="flex items-center justify-end gap-2 w-full">
-          <UButton variant="soft" color="neutral" :disabled="scheduleSaving" @click="scheduleOpen = false">
-            {{ t('common.cancel') }}
-          </UButton>
-          <UButton color="primary" :loading="scheduleSaving" :disabled="!scheduleForm.effective_from" @click="submitSchedule">
-            {{ t('common.save') }}
-          </UButton>
-        </div>
+        <ReuseScheduleFooter />
       </template>
     </UModal>
 
-    <!-- Add holiday modal -->
-    <UModal v-model:open="holidayOpen" :title="t('pages.schoolCalendar.holiday.addButton')">
+    <UDrawer
+      v-else
+      v-model:open="scheduleOpen"
+      :title="t('pages.schoolCalendar.schedule.addButton')"
+      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+    >
       <template #body>
-        <div class="flex flex-col gap-4">
-          <UFormField :label="t('pages.schoolCalendar.holiday.date')">
-            <UInput v-model="holidayForm.holiday_date" type="date" class="w-full" />
-          </UFormField>
-          <UFormField :label="t('pages.schoolCalendar.holiday.description')">
-            <UInput v-model="holidayForm.description" class="w-full" :placeholder="t('pages.schoolCalendar.holiday.descriptionPlaceholder')" />
-          </UFormField>
-        </div>
+        <ReuseScheduleBody />
       </template>
       <template #footer>
-        <div class="flex items-center justify-end gap-2 w-full">
-          <UButton variant="soft" color="neutral" :disabled="holidaySaving" @click="holidayOpen = false">
-            {{ t('common.cancel') }}
-          </UButton>
-          <UButton
-            color="primary"
-            :loading="holidaySaving"
-            :disabled="!holidayForm.holiday_date || !holidayForm.description.trim()"
-            @click="submitHoliday"
-          >
-            {{ t('common.save') }}
-          </UButton>
-        </div>
+        <ReuseScheduleFooter />
+      </template>
+    </UDrawer>
+
+    <!-- Add holiday dialog -->
+    <DefineHolidayBody>
+      <div class="flex flex-col gap-4">
+        <UFormField :label="t('pages.schoolCalendar.holiday.date')">
+          <UInput v-model="holidayForm.holiday_date" type="date" class="w-full" />
+        </UFormField>
+        <UFormField :label="t('pages.schoolCalendar.holiday.description')">
+          <UInput v-model="holidayForm.description" class="w-full" :placeholder="t('pages.schoolCalendar.holiday.descriptionPlaceholder')" />
+        </UFormField>
+      </div>
+    </DefineHolidayBody>
+
+    <DefineHolidayFooter>
+      <div class="flex items-center justify-end gap-2 w-full">
+        <UButton variant="soft" color="neutral" :disabled="holidaySaving" @click="holidayOpen = false">
+          {{ t('common.cancel') }}
+        </UButton>
+        <UButton
+          color="primary"
+          :loading="holidaySaving"
+          :disabled="!holidayForm.holiday_date || !holidayForm.description.trim()"
+          @click="submitHoliday"
+        >
+          {{ t('common.save') }}
+        </UButton>
+      </div>
+    </DefineHolidayFooter>
+
+    <UModal v-if="isDesktop" v-model:open="holidayOpen" :title="t('pages.schoolCalendar.holiday.addButton')">
+      <template #body>
+        <ReuseHolidayBody />
+      </template>
+      <template #footer>
+        <ReuseHolidayFooter />
       </template>
     </UModal>
+
+    <UDrawer
+      v-else
+      v-model:open="holidayOpen"
+      :title="t('pages.schoolCalendar.holiday.addButton')"
+      :ui="{ content: 'rounded-t-3xl overflow-hidden', container: 'max-h-[90vh]' }"
+    >
+      <template #body>
+        <ReuseHolidayBody />
+      </template>
+      <template #footer>
+        <ReuseHolidayFooter />
+      </template>
+    </UDrawer>
 
     <ConfirmDialog
       v-model:open="scheduleDeleteOpen"

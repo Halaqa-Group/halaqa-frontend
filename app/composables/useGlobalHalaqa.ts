@@ -67,33 +67,39 @@ export function useGlobalHalaqa() {
   async function initializeHalaqa() {
     await fetchHalaqat(baseListQuery())
     const list = halaqat.value
+    // "All" is only meaningful when the user can see more than one halaqa.
+    const hasMultiple = list.length > 1
     // Prefer an in-session selection, else the one restored from localStorage.
     const preferredId = selectedHalaqa.value?.id ?? storedSelectedId.value
 
-    if (!isHalaqaScoped.value) {
-      // Keep a filter the user already set, as long as it still resolves.
-      const found = preferredId != null ? list.find(h => h.id === preferredId) : undefined
-      selectedHalaqa.value = found ?? null
-      viewAllHalaqat.value = !found
+    // Honor an explicit "all halaqat" choice for anyone (scoped or not) with more
+    // than one halaqa. This runs on every mount/role-switch, so without this the
+    // scoped branch below would silently reset a teacher's "All" back to one halaqa.
+    if (viewAllHalaqat.value && hasMultiple) {
+      selectedHalaqa.value = null
+      viewAllHalaqat.value = true
       persistSelection()
       return
     }
 
-    viewAllHalaqat.value = false
-    if (list.length === 0) {
-      selectedHalaqa.value = null
+    // Keep a specific halaqa the user already picked, as long as it still resolves.
+    const found = preferredId != null ? list.find(h => h.id === preferredId) : undefined
+    if (found) {
+      selectedHalaqa.value = found
+      viewAllHalaqat.value = false
       persistSelection()
       return
     }
-    if (preferredId != null) {
-      const found = list.find(h => h.id === preferredId)
-      if (found) {
-        selectedHalaqa.value = found
-        persistSelection()
-        return
-      }
+
+    // Nothing chosen yet — fall back to the role's default scope. Scoped roles
+    // (teacher) land on their first halaqa; everyone else browses all of them.
+    if (isHalaqaScoped.value) {
+      selectedHalaqa.value = list[0] ?? null
+      viewAllHalaqat.value = false
+    } else {
+      selectedHalaqa.value = null
+      viewAllHalaqat.value = list.length > 0
     }
-    selectedHalaqa.value = list[0]!
     persistSelection()
   }
 

@@ -390,7 +390,11 @@ export function useWeeklyPlan() {
     if (list.length) copiedCell.value = list.map(c => makeSession(toRange(c)))
   }
   function pasteCell(day: number, track: TrackType) {
-    if (copiedCell.value?.length) setCellSessions(day, track, copiedCell.value.map(toRange))
+    if (!copiedCell.value?.length) return
+    setCellSessions(day, track, copiedCell.value.map(toRange))
+    // One paste consumes the clipboard, so the paste affordance clears from every
+    // box until the user copies again.
+    copiedCell.value = null
   }
 
   async function saveDraft() {

@@ -37,11 +37,12 @@ function persistSelection() {
   writeStoredSelection(storedSelectedId.value, viewAllHalaqat.value)
 }
 
-// Roles that work inside a single halaqa at a time and pick it from the navbar.
-// Everyone else (principal, vice_principal, supervisor) browses unscoped: the API
-// scopes every list to what the caller may see, so omitting halaqa_id is the
-// "whole school" query for an admin and "all my halaqat" for a supervisor. Those
-// roles narrow down per page via <HalaqaFilter> instead.
+// Roles that default to a single halaqa at a time. Everyone else (principal,
+// vice_principal, supervisor) browses unscoped: the API scopes every list to what
+// the caller may see, so omitting halaqa_id is the "whole school" query for an
+// admin and "all my halaqat" for a supervisor. Both pick/narrow from the navbar
+// HalaqaMenu, which also offers an "all halaqat" option to anyone assigned to more
+// than one.
 const SCOPED_ROLES = ['teacher']
 
 export function useGlobalHalaqa() {

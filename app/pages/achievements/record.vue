@@ -61,18 +61,12 @@ onMounted(async () => {
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10 text-muted" />
       <p class="text-sm text-muted">
-        {{ isHalaqaScoped ? t('common.selectHalaqaPrompt') : t('common.selectHalaqaToContinue') }}
+        {{ t('common.selectHalaqaPrompt') }}
       </p>
-      <HalaqaFilter required />
     </div>
 
     <template v-else>
       <UCard>
-        <div v-if="!isHalaqaScoped" class="mb-4">
-          <UFormField :label="t('common.selectHalaqa')">
-            <HalaqaFilter required />
-          </UFormField>
-        </div>
         <AchievementForm ref="formRef" @saved="onSaved" />
       </UCard>
 

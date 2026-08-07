@@ -14,7 +14,7 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 const { canApprovePlan, canEditPlanItems, canDeletePlan, canUnapprovePlan } = usePermissions()
-const { selectedHalaqaId, isHalaqaScoped, ensureHalaqaSelected } = useGlobalHalaqa()
+const { selectedHalaqaId, ensureHalaqaSelected } = useGlobalHalaqa()
 const {
   selectedStudentId, selectedWeekStart, plan, planStatus, viewMode,
   formOpen, editing, deleteOpen, deleteTarget,
@@ -262,9 +262,8 @@ onMounted(async () => {
     >
       <UIcon name="i-lucide-layers" class="w-10 h-10 text-muted" />
       <p class="text-sm text-muted">
-        {{ isHalaqaScoped ? t('common.selectHalaqaPrompt') : t('common.selectHalaqaToContinue') }}
+        {{ t('common.selectHalaqaPrompt') }}
       </p>
-      <HalaqaFilter required />
     </div>
 
     <template v-else>

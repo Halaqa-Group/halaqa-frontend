@@ -909,8 +909,10 @@
       "sort": {
         "label": "ترتيب",
         "newest": "الأحدث إضافةً",
+        "joinDateAsc": "الأقدم انضماماً",
         "joinDateDesc": "الأحدث انضماماً",
-        "nameAsc": "الاسم (أ-ي)"
+        "nameAsc": "الاسم (أ-ي)",
+        "nameDesc": "الاسم (ي-أ)"
       },
       "view": {
         "grid": "عرض البطاقات",
@@ -920,6 +922,7 @@
         "student": "الطالب",
         "idNumber": "رقم الهوية",
         "status": "الحالة",
+        "joinDate": "تاريخ الانضمام",
         "dailyHifz": "حفظ",
         "dailyNear": "مراجعة قريبة",
         "dailyFar": "مراجعة بعيدة",

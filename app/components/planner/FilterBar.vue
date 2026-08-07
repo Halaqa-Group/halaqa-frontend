@@ -93,8 +93,6 @@ function onDayPick(value: unknown) {
 
 <template>
   <CommonToolbar>
-    <HalaqaFilter required class="flex-1 min-w-36 sm:flex-none sm:!w-44" />
-
     <USelectMenu
       v-if="viewMode !== 'day'"
       v-model="selectedStudentId"

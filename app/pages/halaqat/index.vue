@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
-import type { TableColumn } from '@nuxt/ui'
+import type { TableColumn, TableRow } from '@nuxt/ui'
 import type {
   ApiHalaqaListItem,
   HalaqaStatus,
@@ -219,6 +219,10 @@ function rowActions(row: ApiHalaqaListItem) {
   return [items]
 }
 
+function onRowSelect(_e: Event, row: TableRow<ApiHalaqaListItem>) {
+  navigateTo(`/halaqat/${row.original.id}`)
+}
+
 const columns = computed<TableColumn<ApiHalaqaListItem>[]>(() => [
   { accessorKey: 'name', header: t('pages.halaqat.table.name') },
   { accessorKey: 'type', header: t('pages.halaqat.table.type') },
@@ -293,7 +297,8 @@ onMounted(() => loadList(1))
           :columns="columns"
           :loading="isLoading"
           :empty-state="{ icon: 'i-lucide-circle-slash-2', label: t('pages.halaqat.noResults') }"
-          :ui="{ base: 'w-full min-w-[800px]' }"
+          :on-select="onRowSelect"
+          :ui="{ base: 'w-full min-w-[800px]', tr: 'cursor-pointer' }"
         >
           <template #name-cell="{ row }">
             <NuxtLink
@@ -333,16 +338,19 @@ onMounted(() => loadList(1))
           <template #students_count-cell="{ row }">
             {{ row.original.students_count }}
           </template>
+          <!-- Stop propagation so the menu doesn't also open the row's detail. -->
           <template #actions-cell="{ row }">
-            <UDropdownMenu :items="rowActions(row.original)">
-              <UButton
-                icon="i-lucide-ellipsis-vertical"
-                color="neutral"
-                variant="ghost"
-                square
-                :aria-label="t('pages.halaqat.actions')"
-              />
-            </UDropdownMenu>
+            <div class="flex justify-end" @click.stop>
+              <UDropdownMenu :items="rowActions(row.original)">
+                <UButton
+                  icon="i-lucide-ellipsis-vertical"
+                  color="neutral"
+                  variant="ghost"
+                  square
+                  :aria-label="t('pages.halaqat.actions')"
+                />
+              </UDropdownMenu>
+            </div>
           </template>
         </UTable>
       </div>

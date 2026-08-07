@@ -909,8 +909,10 @@
       "sort": {
         "label": "Sort",
         "newest": "Newest first",
+        "joinDateAsc": "Earliest join date",
         "joinDateDesc": "Latest join date",
-        "nameAsc": "Name (A-Z)"
+        "nameAsc": "Name (A-Z)",
+        "nameDesc": "Name (Z-A)"
       },
       "view": {
         "grid": "Grid view",
@@ -920,6 +922,7 @@
         "student": "Student",
         "idNumber": "ID number",
         "status": "Status",
+        "joinDate": "Join date",
         "dailyHifz": "Hifz",
         "dailyNear": "Near revision",
         "dailyFar": "Far revision",

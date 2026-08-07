@@ -69,8 +69,10 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
       :placeholder="t('pages.students.searchByName')"
       class="flex-1 min-w-40 sm:max-w-xs"
     />
-    <HalaqaFilter class="flex-1 min-w-40 sm:flex-none sm:w-48" />
+    <!-- In table view the column headers drive sorting; the dropdown is only
+         needed for the grid, which has no headers to click. -->
     <UDropdownMenu
+      v-if="viewMode === 'grid'"
       :items="sortItems"
       :content="{ align: 'end', collisionPadding: 12 }"
     >

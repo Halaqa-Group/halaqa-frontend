@@ -4,7 +4,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 const { t, locale } = useI18n()
 const { activeRole } = useAuth()
 const { isParent, isTeacher, canViewHalaqat, canManageUsers, canViewCalendar } = usePermissions()
-const { initializeHalaqa, isHalaqaScoped } = useGlobalHalaqa()
+const { initializeHalaqa, halaqat } = useGlobalHalaqa()
 const route = useRoute()
 const localePath = useLocalePath()
 const { title: pageTitle } = usePageTitle()
@@ -212,7 +212,7 @@ onMounted(async () => {
                 <h1 v-if="pageTitle" class="text-base sm:text-lg font-bold truncate shrink-0">
                   {{ pageTitle }}
                 </h1>
-                <template v-if="isHalaqaScoped">
+                <template v-if="halaqat.length > 0">
                   <UIcon
                     v-if="pageTitle"
                     name="i-lucide-chevron-right"

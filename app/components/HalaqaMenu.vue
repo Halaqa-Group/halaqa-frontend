@@ -5,7 +5,8 @@ defineProps<{
   collapsed?: boolean
 }>()
 
-const { selectedHalaqa, halaqat, selectHalaqa } = useGlobalHalaqa()
+const { t } = useI18n()
+const { selectedHalaqa, halaqat, viewAllHalaqat, selectHalaqa, selectAllHalaqat } = useGlobalHalaqa()
 
 const TYPE_ICONS: Record<string, string> = {
   Memorization: 'i-lucide-book-open',
@@ -17,22 +18,44 @@ function iconFor(type: string | undefined) {
   return (type && TYPE_ICONS[type]) || 'i-lucide-layers'
 }
 
+// Only users assigned to more than one halaqa can view them all at once — and
+// only they get an interactive dropdown at all (a single-halaqa user has nothing
+// to switch between).
 const hasMultipleHalaqat = computed(() => halaqat.value.length > 1)
 
-const triggerName = computed(() => selectedHalaqa.value?.name ?? 'اختر الحلقة')
-const triggerIcon = computed(() => iconFor(selectedHalaqa.value?.type))
+const triggerName = computed(() => {
+  if (viewAllHalaqat.value) return t('common.allHalaqat')
+  return selectedHalaqa.value?.name ?? t('common.selectHalaqa')
+})
+const triggerIcon = computed(() =>
+  viewAllHalaqat.value ? 'i-lucide-layers' : iconFor(selectedHalaqa.value?.type)
+)
 
 const items = computed<DropdownMenuItem[][]>(() => {
   const halaqaItems: DropdownMenuItem[] = halaqat.value.map(h => ({
     label: h.name,
     icon: iconFor(h.type),
-    checked: selectedHalaqa.value?.id === h.id,
+    checked: !viewAllHalaqat.value && selectedHalaqa.value?.id === h.id,
     type: 'checkbox' as const,
     onSelect: (e: Event) => {
       e.preventDefault()
       selectHalaqa(h)
     }
   }))
+
+  // "All halaqat" sits above the individual halaqat for anyone with more than one.
+  if (hasMultipleHalaqat.value) {
+    halaqaItems.unshift({
+      label: t('common.allHalaqat'),
+      icon: 'i-lucide-layers',
+      checked: viewAllHalaqat.value,
+      type: 'checkbox' as const,
+      onSelect: (e: Event) => {
+        e.preventDefault()
+        selectAllHalaqat()
+      }
+    })
+  }
 
   return [halaqaItems]
 })

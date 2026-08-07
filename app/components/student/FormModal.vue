@@ -5,9 +5,10 @@ import type { FormSubmitEvent } from '#ui/types'
 import type { CalendarDate } from '@internationalized/date'
 import { DateFormatter, getLocalTimeZone, parseDate, today } from '@internationalized/date'
 import { normalizeDigits } from '~/composables/useValidation'
-import { NAME_PART_MAX_LENGTH, CAPACITY_UNITS, CAPACITY_UNIT_MAX, DEFAULT_CAPACITY_UNIT, type StudentCapacityUnit } from '~/data/constants'
+import { NAME_PART_MAX_LENGTH, CAPACITY_UNITS, DEFAULT_CAPACITY_UNIT, type StudentCapacityUnit } from '~/data/constants'
+import { UNIT_TOTALS } from '~/utils/quran-structure'
 import { COUNTRY_DIAL_CODES, DEFAULT_DIAL_CODE, dialCodeFlag } from '~/data/country-dial-codes'
-import type { ApiStudent } from '~/types'
+import type { ApiStudent, MemorizationDirection } from '~/types'
 
 const props = withDefaults(defineProps<{
   mode: 'add' | 'edit'
@@ -104,6 +105,7 @@ const schema = computed(() => {
     ),
     dob: z.string(),
     joinDate: z.string(),
+    memorizationDirection: z.enum(['ascending', 'descending'] as const),
     memPages: z.number().min(0),
     memUnit: z.enum(CAPACITY_UNITS),
     nearPages: z.number().min(0),
@@ -120,7 +122,7 @@ const schema = computed(() => {
       ['nearPages', 'nearUnit'],
       ['farPages', 'farUnit']
     ] as const) {
-      const max = CAPACITY_UNIT_MAX[data[unitKey]]
+      const max = UNIT_TOTALS[data[unitKey]]
       if (data[valueKey] > max) {
         ctx.addIssue({ code: 'custom', path: [valueKey], message: t('validation.max', { max }) })
       }
@@ -143,6 +145,8 @@ function emptyState(): StudentForm {
     phone: '',
     dob: '',
     joinDate: today(getLocalTimeZone()).toString(),
+    // `descending` (من الناس للخلف) is the API default and the common huffaz path.
+    memorizationDirection: 'descending',
     memPages: 1,
     memUnit: DEFAULT_CAPACITY_UNIT,
     nearPages: 5,
@@ -162,9 +166,9 @@ const state = reactive<StudentForm>(emptyState())
 watch(
   [() => state.memUnit, () => state.nearUnit, () => state.farUnit],
   () => {
-    state.memPages = Math.min(state.memPages, CAPACITY_UNIT_MAX[state.memUnit])
-    state.nearPages = Math.min(state.nearPages, CAPACITY_UNIT_MAX[state.nearUnit])
-    state.farPages = Math.min(state.farPages, CAPACITY_UNIT_MAX[state.farUnit])
+    state.memPages = Math.min(state.memPages, UNIT_TOTALS[state.memUnit])
+    state.nearPages = Math.min(state.nearPages, UNIT_TOTALS[state.nearUnit])
+    state.farPages = Math.min(state.farPages, UNIT_TOTALS[state.farUnit])
   }
 )
 
@@ -212,6 +216,13 @@ const relationItems = computed(() =>
   GUARDIAN_RELATIONS.map(r => ({ value: r, label: t(`pages.students.guardians.relations.${r}`) }))
 )
 
+// اتجاه الحفظ — `ascending` = مع اتجاه المصحف (الفاتحة ← الناس),
+// `descending` = ضد اتجاه المصحف (الناس ← الفاتحة). Seeds the plan wizard's direction.
+const directionItems = computed<{ value: MemorizationDirection, label: string }[]>(() => [
+  { value: 'ascending', label: t('pages.students.addModal.directionWith') },
+  { value: 'descending', label: t('pages.students.addModal.directionAgainst') }
+])
+
 const metrics = computed(() => [
   { key: 'memPages', unitKey: 'memUnit', icon: 'i-lucide-book-open', label: t('pages.students.addModal.memPages') },
   { key: 'nearPages', unitKey: 'nearUnit', icon: 'i-lucide-history', label: t('pages.students.addModal.nearPages') },
@@ -239,6 +250,7 @@ watch(() => props.student, (student) => {
   state.phone = student.phone ?? ''
   state.dob = student.dob ? student.dob.slice(0, 10) : ''
   state.joinDate = student.join_date ? student.join_date.slice(0, 10) : today(getLocalTimeZone()).toString()
+  state.memorizationDirection = student.memorization_direction ?? 'descending'
   state.memPages = Number(student.daily_hifz_pages_capacity) || 0
   state.memUnit = student.daily_hifz_capacity_unit ?? DEFAULT_CAPACITY_UNIT
   state.nearPages = Number(student.daily_near_pages_capacity) || 0
@@ -386,6 +398,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
         }
       }
 
+      patch.memorization_direction = state.memorizationDirection
       patch.daily_hifz_pages_capacity = state.memPages
       patch.daily_hifz_capacity_unit = state.memUnit
       patch.daily_near_pages_capacity = state.nearPages
@@ -412,6 +425,7 @@ async function handleSubmit(_event: FormSubmitEvent<StudentForm>) {
       ...(phone ? { phone_country_code: state.phoneCountryCode, phone } : {}),
       ...(state.dob ? { dob: state.dob } : {}),
       join_date: state.joinDate,
+      memorization_direction: state.memorizationDirection,
       daily_hifz_pages_capacity: state.memPages,
       daily_hifz_capacity_unit: state.memUnit,
       daily_near_pages_capacity: state.nearPages,
@@ -680,6 +694,18 @@ watch(modalOpen, (open) => {
         <h4 class="font-semibold text-sm">
           {{ t('pages.students.addModal.metricsTitle') }}
         </h4>
+        <UFormField
+          :label="t('pages.students.addModal.direction')"
+          name="memorizationDirection"
+        >
+          <USelect
+            v-model="state.memorizationDirection"
+            :items="directionItems"
+            value-key="value"
+            icon="i-lucide-book-marked"
+            class="w-full"
+          />
+        </UFormField>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <UFormField
             v-for="metric in metrics"
@@ -691,7 +717,7 @@ watch(modalOpen, (open) => {
               <UInputNumber
                 v-model="state[metric.key as keyof StudentForm] as number"
                 :min="0"
-                :max="CAPACITY_UNIT_MAX[state[metric.unitKey]]"
+                :max="UNIT_TOTALS[state[metric.unitKey]]"
                 :step="CAPACITY_STEP"
                 :step-snapping="false"
                 :format-options="{ maximumFractionDigits: 2 }"

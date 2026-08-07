@@ -934,11 +934,11 @@
         "viewProfile": "View profile"
       },
       "capacityUnits": {
-        "page": "page",
-        "juz": "juz",
-        "hizb": "hizb",
-        "quarter": "quarter",
-        "surah": "surah"
+        "page": "Page",
+        "juz": "Juz",
+        "hizb": "Hizb",
+        "quarter": "Quarter",
+        "surah": "Surah"
       },
       "actions": {
         "viewProfile": "View profile",
@@ -997,6 +997,10 @@
         "guardiansTitle": "Guardians",
         "guardiansHint": "You can add guardians after creating the student from the Guardians tab.",
         "metricsTitle": "Daily performance targets",
+        "direction": "Memorization direction",
+        "directionWith": "With mushaf order",
+        "directionAgainst": "Against mushaf order",
+        "directionHint": "With mushaf order: Al-Fatihah → An-Nas. Against: An-Nas → Al-Fatihah.",
         "memPages": "New memorization capacity",
         "nearPages": "Near revision capacity",
         "farPages": "Far revision capacity",
@@ -1472,13 +1476,6 @@
         "record": "Record achievement",
         "recordForSession": "Record achievement for {range}",
         "noAchievements": "No achievements recorded yet"
-      },
-      "units": {
-        "page": "Page",
-        "juz": "Juz",
-        "hizb": "Hizb",
-        "quarter": "Quarter",
-        "surah": "Surah"
       },
       "wizard": {
         "title": "Create weekly plan",

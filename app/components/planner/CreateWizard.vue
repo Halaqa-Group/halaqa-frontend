@@ -3,7 +3,7 @@ import { expandPlan, UNIT_TOTALS, type PlanUnit, type PlanDirection, type VerseR
 import { TRACK_ICON, type AchievementTrack } from '~/utils/achievement'
 import { PLAN_TRACKS, type CreatePlanItemDto } from '~/composables/useWeeklyPlan'
 import { DEFAULT_PLAN_START_SURAH } from '~/utils/plan'
-import { SURAH_NAMES } from '~/data/constants'
+import { SURAH_NAMES, CAPACITY_UNITS } from '~/data/constants'
 import type { StudentTrackCapacity } from '~/types'
 
 type TrackType = 'Hifz' | 'Near' | 'Far'
@@ -19,8 +19,7 @@ const {
   applyPlanToStudents, isSaving
 } = useWeeklyPlan()
 const { boundariesFor, unitAvailable } = useQuranStructure()
-
-const UNITS: PlanUnit[] = ['page', 'juz', 'hizb', 'quarter', 'surah']
+const { unitLabel } = useCapacityUnits()
 
 interface TrackConfig {
   enabled: boolean
@@ -32,10 +31,10 @@ interface TrackConfig {
 }
 // A track's daily amount + unit is seeded from the selected student's مقاييس (its
 // daily capacity for that track) when known, so a generated week starts from what
-// the student can actually do rather than a fixed 1 page/day. The capacity number
-// is rounded and clamped into the unit's [1, max] range the wizard allows.
+// the student can actually do rather than a fixed 1 page/day. The capacity keeps
+// its decimals (1.5 صفحة/يوم) — only clamped into the unit's [1, max] range.
 function seedAmount(cap: StudentTrackCapacity): number {
-  return Math.min(Math.max(Math.round(cap.amount), 1), unitMax(cap.unit))
+  return Math.min(Math.max(cap.amount, 1), unitMax(cap.unit))
 }
 
 // The "start from" picker is seeded on سورة الروم (DEFAULT_PLAN_START_SURAH) rather
@@ -114,8 +113,8 @@ watch(config, () => {
 }, { deep: true })
 
 const unitItems = computed(() =>
-  UNITS.map(u => ({
-    label: t(`pages.planner.units.${u}`),
+  CAPACITY_UNITS.map(u => ({
+    label: unitLabel(u),
     value: u,
     disabled: !unitAvailable(u)
   }))
@@ -393,6 +392,8 @@ async function submit() {
                   v-model="config[track].amount"
                   :min="1"
                   :max="unitMax(config[track].unit)"
+                  :step-snapping="false"
+                  :format-options="{ maximumFractionDigits: 2 }"
                   class="w-full"
                 />
               </UFormField>

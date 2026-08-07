@@ -51,16 +51,8 @@ export const CAPACITY_UNITS = ['page', 'juz', 'hizb', 'quarter', 'surah'] as con
 export type StudentCapacityUnit = typeof CAPACITY_UNITS[number]
 
 export const DEFAULT_CAPACITY_UNIT: StudentCapacityUnit = 'page'
-
-// Whole-Quran totals per unit — the ceiling a daily capacity can take when
-// counted in that unit: 614 pages, 30 أجزاء, 60 أحزاب, 240 أرباع, 114 سور.
-export const CAPACITY_UNIT_MAX: Record<StudentCapacityUnit, number> = {
-  page: 614,
-  juz: 30,
-  hizb: 60,
-  quarter: 240,
-  surah: 114
-}
+// The per-unit ceiling (614 pages, 30 juz, …) lives in `~/utils/quran-structure`
+// as `UNIT_TOTALS` — the single source shared with the weekly-plan wizard.
 
 export const STATUS_CYCLE = [
   'bg-[#A7D2CB]',

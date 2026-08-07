@@ -1,10 +1,13 @@
 import { VERSE_COUNTS } from '~/utils/quran'
+import type { StudentCapacityUnit } from '~/data/constants'
 
-export type PlanUnit = 'page' | 'juz' | 'hizb' | 'quarter' | 'surah'
+// The plan unit and the student-capacity unit are the same five-value set; alias
+// the canonical type so there is one definition, not two that can drift apart.
+export type PlanUnit = StudentCapacityUnit
 
-// Whole-Quran totals per unit — the upper bound for a daily amount of each
-// نوع المقدار. A daily amount is only meaningful up to the number of units the
-// Quran holds (e.g. at most 30 juz, 240 quarters).
+// Whole-Quran totals per unit — the single source of truth for the ceiling a
+// daily amount / daily capacity can take (at most 30 juz, 240 quarters, …). Both
+// the plan wizard and the student مقاييس form read their max from here.
 export const UNIT_TOTALS: Record<PlanUnit, number> = {
   page: 614,
   juz: 30,
@@ -126,11 +129,16 @@ export function expandPlan(
   // one session. Stopping the day at the surah's edge instead would either cut the
   // مقدار short or split it in two, and the teacher asked for neither.
   const days: VerseRange[][] = []
+  const base = lastBoundaryAtOrBefore(bg, verseKeyToGlobal(startKey))
   let cursor = verseKeyToGlobal(startKey)
   for (let day = 0; day < activeDayCount; day++) {
     if (cursor > TOTAL_VERSES) break
     const startG = cursor
-    const nextIdx = lastBoundaryAtOrBefore(bg, startG) + amount
+    // Advance by the cumulative boundary count so a fractional مقدار (e.g. 1.5
+    // صفحة/يوم) still lands on whole page boundaries whose per-day count averages
+    // back to the amount over the week. Integer amounts land on exact multiples,
+    // unchanged from a fixed per-day step.
+    const nextIdx = base + Math.round((day + 1) * amount)
     const endG = Math.min(nextIdx < bg.length ? bg[nextIdx]! - 1 : TOTAL_VERSES, TOTAL_VERSES)
     days.push([rangeOf(startG, endG)])
     cursor = endG + 1
@@ -150,7 +158,7 @@ function expandReverse(
 ): VerseRange[][] {
   const start = globalToVerse(verseKeyToGlobal(startKey))
   const startG = verseToGlobal(start.surah, start.verse)
-  const needed = amount * activeDayCount
+  const needed = Math.ceil(amount * activeDayCount)
 
   // A flat, forward-ordered page list walking from the anchor surah down to
   // الفاتحة. Every surah opens a fresh page at its first ayah (a page shared across a
@@ -171,7 +179,12 @@ function expandReverse(
 
   const days: VerseRange[][] = []
   for (let day = 0; day < activeDayCount; day++) {
-    const dayUnits = units.slice(day * amount, day * amount + amount)
+    // Cumulative bounds so a fractional مقدار spreads whole pages across the week
+    // (e.g. 1.5/day → 2,1,2,1,…) instead of truncating each day's slice.
+    const dayUnits = units.slice(
+      Math.round(day * amount),
+      Math.round((day + 1) * amount)
+    )
     if (dayUnits.length === 0) break
     // Fold consecutive pages of the same surah into one range; a page from the next
     // surah down opens a new range since its verses aren't contiguous with the last.
@@ -189,22 +202,6 @@ function expandReverse(
     days.push(ranges)
   }
   return days
-}
-
-function firstBoundaryAtOrAfter(sortedGlobals: number[], target: number): number {
-  let lo = 0
-  let hi = sortedGlobals.length - 1
-  let ans = -1
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1
-    if (sortedGlobals[mid]! >= target) {
-      ans = mid
-      hi = mid - 1
-    } else {
-      lo = mid + 1
-    }
-  }
-  return ans
 }
 
 function lastBoundaryAtOrBefore(sortedGlobals: number[], target: number): number {

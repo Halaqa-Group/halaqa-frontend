@@ -92,6 +92,19 @@ const restDays = reactive(new Set<number>())
 const copiedCell = ref<DraftCell[] | null>(null)
 const wizardOpen = ref(false)
 
+// Whole-plan clipboard. A snapshot of every cell + the rest-day layout, captured
+// as plain ranges (no ids/status) so it can be dropped onto ANY student or week.
+// Module-level like the rest of this state, so it survives switching the selected
+// student or navigating to another week between copy and paste.
+export interface CopiedPlan {
+  cells: { day: number, track: TrackType, ranges: VerseRange[] }[]
+  restDays: number[]
+  // Where it came from — "أحمد · ٢ أغسطس" — shown on the paste affordance so the
+  // teacher can tell what they're about to drop in.
+  label: string
+}
+const copiedPlan = ref<CopiedPlan | null>(null)
+
 export function useWeeklyPlan() {
   const api = useApi()
   const requests = useAbortController()
@@ -395,6 +408,45 @@ export function useWeeklyPlan() {
     // One paste consumes the clipboard, so the paste affordance clears from every
     // box until the user copies again.
     copiedCell.value = null
+  }
+
+  // Whether the current matrix draft carries anything worth copying.
+  const hasDraftContent = computed(() => {
+    for (const list of draft.values()) if (list.length) return true
+    return false
+  })
+
+  // Snapshot the whole week — every filled cell and the rest-day layout — into the
+  // plan clipboard. Ranges only, so the paste lands cleanly on another student or a
+  // different week without dragging along the source's item ids or progress.
+  function copyWholePlan(label = ''): boolean {
+    const cells: CopiedPlan['cells'] = []
+    for (const [k, list] of draft) {
+      if (!list.length) continue
+      const { day, track } = splitCellKey(k)
+      cells.push({ day, track, ranges: list.map(toRange) })
+    }
+    if (!cells.length) return false
+    copiedPlan.value = { cells, restDays: Array.from(restDays), label }
+    return true
+  }
+
+  // Overwrite the current draft with the copied plan. Unlike the single-cell paste,
+  // this keeps the clipboard so the same plan can be stamped onto several students
+  // or weeks in a row. Callers save the draft to persist it to the loaded week.
+  function pasteWholePlan(): boolean {
+    const snap = copiedPlan.value
+    if (!snap) return false
+    draft.clear()
+    restDays.clear()
+    // Cells first: setCellSessions clears a day's rest flag, so seeding rest days
+    // afterwards can't be undone by a cell that shares the day (copies never hold
+    // both, but ordering this way keeps the invariant explicit).
+    for (const c of snap.cells) setCellSessions(c.day, c.track, c.ranges)
+    for (const d of snap.restDays) {
+      if (!PLAN_TRACKS.some(t => draft.has(cellKey(d, t)))) restDays.add(d)
+    }
+    return true
   }
 
   async function saveDraft() {
@@ -727,6 +779,8 @@ export function useWeeklyPlan() {
     draft,
     restDays,
     copiedCell,
+    copiedPlan,
+    hasDraftContent,
     wizardOpen,
     activeDays,
     matrixDirty,
@@ -777,6 +831,8 @@ export function useWeeklyPlan() {
     applyColumnToAllDays,
     copyCell,
     pasteCell,
+    copyWholePlan,
+    pasteWholePlan,
     moveCell,
     moveSession,
     reorderSession,

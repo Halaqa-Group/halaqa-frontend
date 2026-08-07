@@ -37,7 +37,7 @@ definePageMeta({
 const { t, locale } = useI18n()
 const { user, activeRole } = useAuth()
 const { canViewTeacherCommitment } = usePermissions()
-const { selectedHalaqaId, isHalaqaScoped } = useGlobalHalaqa()
+const { selectedHalaqaId } = useGlobalHalaqa()
 
 const {
   overview, topStudents, halaqat, teachers, alerts,
@@ -55,9 +55,9 @@ const windowQuery = computed(() => ({
   period: selection.value.mode === 'custom' ? undefined : selection.value.mode,
   from: selection.value.from,
   to: selection.value.to,
-  // Only a scoped role (teacher) narrows the dashboard to its navbar-selected
-  // halaqa; unscoped roles omit it and keep the full-scope view.
-  halaqa_id: isHalaqaScoped.value ? (selectedHalaqaId.value ?? undefined) : undefined
+  // The dashboard follows the navbar halaqa for every role. A specific halaqa
+  // narrows every section to it; "all halaqat" (no id) is the full-scope view.
+  halaqa_id: selectedHalaqaId.value ?? undefined
 }))
 
 function reload() {
@@ -76,12 +76,10 @@ watch(stalledDays, days =>
   fetchAlerts({ ...windowQuery.value, stalled_days: days })
 )
 
-// A scoped role picks its halaqa from the navbar; every section follows it.
-// (Resolves after the layout's initializeHalaqa, so this also covers the first
-// selection landing just after the initial mount.)
-watch(selectedHalaqaId, () => {
-  if (isHalaqaScoped.value) reload()
-})
+// The navbar halaqa drives every section, for every role. (Resolves after the
+// layout's initializeHalaqa, so this also covers the first selection landing just
+// after the initial mount.)
+watch(selectedHalaqaId, reload)
 
 onMounted(reload)
 

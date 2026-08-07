@@ -28,6 +28,14 @@ const {
 const canApprove = canApprovePlan
 const canModify = computed(() => canEditPlanItems.value && planStatus.value !== 'approved')
 
+// Copying a plan is read-only, so it stays available even after approval — an
+// approved plan is exactly the polished one a teacher most wants to reuse for
+// another student or an upcoming week. Pasting still writes, so it keeps the
+// canModify gate: you can only paste onto an editable (non-approved) target.
+const canCopyPlan = computed(() =>
+  canEditPlanItems.value && viewMode.value === 'matrix' && hasDraftContent.value
+)
+
 const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
 const formSaving = computed(() => formRef.value?.saving.value ?? false)
 
@@ -147,10 +155,12 @@ const mobileMenu = computed(() => {
     secondary.push({ label: t('pages.planner.unapprove'), icon: 'i-lucide-undo-2', onSelect: onUnapprove })
   if (canPrint.value)
     secondary.push({ label: t('pages.planner.downloadPdf'), icon: 'i-lucide-printer', onSelect: () => { printOpen.value = true } })
-  if (canModify.value && viewMode.value === 'matrix') {
+  if (canModify.value && viewMode.value === 'matrix')
     secondary.push({ label: t('pages.planner.wizard.open'), icon: 'i-lucide-wand-sparkles', onSelect: () => { wizardOpen.value = true } })
-    if (hasDraftContent.value)
-      secondary.push({ label: t('pages.planner.copyPlan'), icon: 'i-lucide-clipboard-copy', onSelect: onCopyPlan })
+  // Copy survives approval; paste and save do not.
+  if (canCopyPlan.value)
+    secondary.push({ label: t('pages.planner.copyPlan'), icon: 'i-lucide-clipboard-copy', onSelect: onCopyPlan })
+  if (canModify.value && viewMode.value === 'matrix') {
     if (copiedPlan.value)
       secondary.push({
         label: copiedPlan.value.label
@@ -304,7 +314,7 @@ onMounted(async () => {
               {{ t('pages.planner.wizard.open') }}
             </UButton>
             <UButton
-              v-if="canModify && viewMode === 'matrix' && hasDraftContent"
+              v-if="canCopyPlan"
               class="hidden sm:inline-flex"
               icon="i-lucide-clipboard-copy"
               color="neutral"

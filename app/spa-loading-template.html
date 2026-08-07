@@ -1,0 +1,93 @@
+<!--
+  SPA preloader. With `ssr: false`, Nuxt injects this markup into the app root
+  and keeps it on screen until the Vue app mounts — and mount waits (via
+  Suspense) for the initial route's global middleware (refresh()/fetchMe()) and
+  the first page's async setup to resolve. So this single template covers the
+  whole white gap on reload: bundle boot + auth + first data.
+
+  The loader is a ring of dots orbiting a circle — "halaqa" (حلقة) literally
+  means the study *circle* students sit in, so the motif is the app itself.
+  Pure CSS/SVG so it paints before any JS boots.
+
+  @nuxtjs/color-mode injects a synchronous <head> script that stamps `dark` or
+  `light` on <html> from the stored `nuxt-color-mode` preference BEFORE the body
+  paints — so we key the splash off that class, not prefers-color-scheme. That
+  matches the app's real appearance (a light-pinned app stays light on an OS in
+  dark mode); it only falls back to the OS when the user never chose. Colors
+  mirror --color-background and the primary scale in app/assets/css/main.css.
+-->
+<div class="halaqa-splash" role="status" aria-live="polite" aria-label="جارٍ التحميل">
+  <div class="halaqa-splash__ring" aria-hidden="true">
+    <div></div><div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div><div></div>
+  </div>
+</div>
+
+<style>
+  .halaqa-splash {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f9f9f9; /* --color-background (light) */
+    z-index: 999999;
+  }
+
+  /* 12 dots placed evenly around a circle. Each dot is positioned with a
+     rotate()+translate() transform; the animation only touches opacity/scale,
+     so there is no transform conflict. Staggered delays make a lit "head"
+     travel around the ring — a circle forming and reforming. */
+  .halaqa-splash__ring {
+    position: relative;
+    width: 68px;
+    height: 68px;
+  }
+
+  .halaqa-splash__ring div {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 9px;
+    height: 9px;
+    margin: -4.5px;
+    border-radius: 50%;
+    background-color: #1a6b4a; /* --color-primary-700 */
+    animation: halaqa-splash-orbit 1.2s linear infinite;
+  }
+
+  .halaqa-splash__ring div:nth-child(1)  { transform: rotate(0deg)   translate(30px); animation-delay: -1.20s; }
+  .halaqa-splash__ring div:nth-child(2)  { transform: rotate(30deg)  translate(30px); animation-delay: -1.10s; }
+  .halaqa-splash__ring div:nth-child(3)  { transform: rotate(60deg)  translate(30px); animation-delay: -1.00s; }
+  .halaqa-splash__ring div:nth-child(4)  { transform: rotate(90deg)  translate(30px); animation-delay: -0.90s; }
+  .halaqa-splash__ring div:nth-child(5)  { transform: rotate(120deg) translate(30px); animation-delay: -0.80s; }
+  .halaqa-splash__ring div:nth-child(6)  { transform: rotate(150deg) translate(30px); animation-delay: -0.70s; }
+  .halaqa-splash__ring div:nth-child(7)  { transform: rotate(180deg) translate(30px); animation-delay: -0.60s; }
+  .halaqa-splash__ring div:nth-child(8)  { transform: rotate(210deg) translate(30px); animation-delay: -0.50s; }
+  .halaqa-splash__ring div:nth-child(9)  { transform: rotate(240deg) translate(30px); animation-delay: -0.40s; }
+  .halaqa-splash__ring div:nth-child(10) { transform: rotate(270deg) translate(30px); animation-delay: -0.30s; }
+  .halaqa-splash__ring div:nth-child(11) { transform: rotate(300deg) translate(30px); animation-delay: -0.20s; }
+  .halaqa-splash__ring div:nth-child(12) { transform: rotate(330deg) translate(30px); animation-delay: -0.10s; }
+
+  /* Only opacity/scale animate — the positioning transform above is preserved
+     because it lives on the element, and the keyframes never set `transform`. */
+  @keyframes halaqa-splash-orbit {
+    0%   { opacity: 1;    }
+    100% { opacity: 0.15; }
+  }
+
+  /* html.dark is set synchronously by the color-mode script before this paints,
+     so it reflects the user's chosen appearance (not the OS). */
+  html.dark .halaqa-splash {
+    background-color: #111113; /* --color-background (.dark) */
+  }
+  html.dark .halaqa-splash__ring div {
+    background-color: #4db482; /* --color-primary-400 */
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .halaqa-splash__ring div {
+      animation-duration: 2.4s;
+    }
+  }
+</style>

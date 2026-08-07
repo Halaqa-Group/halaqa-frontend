@@ -216,8 +216,6 @@ const relationItems = computed(() =>
   GUARDIAN_RELATIONS.map(r => ({ value: r, label: t(`pages.students.guardians.relations.${r}`) }))
 )
 
-// اتجاه الحفظ — `ascending` = مع اتجاه المصحف (الفاتحة ← الناس),
-// `descending` = ضد اتجاه المصحف (الناس ← الفاتحة). Seeds the plan wizard's direction.
 const directionItems = computed<{ value: MemorizationDirection, label: string }[]>(() => [
   { value: 'ascending', label: t('pages.students.addModal.directionWith') },
   { value: 'descending', label: t('pages.students.addModal.directionAgainst') }

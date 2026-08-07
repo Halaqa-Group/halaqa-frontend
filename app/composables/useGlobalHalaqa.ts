@@ -32,6 +32,13 @@ const viewAllHalaqat = ref(storedSelection?.viewAll ?? false)
 // Only the id survives a reload; the object is resolved once the list loads.
 const storedSelectedId = ref<number | null>(storedSelection?.id ?? null)
 
+// The navbar's halaqa list. Kept separate from useHalaqat().halaqat — that ref is
+// a shared singleton any page can overwrite with a broader query (the halaqat
+// admin list, analytics, the student form modal…). Reading it directly let those
+// fetches "reset" the navbar to every halaqa. This copy is only ever written by
+// the role-scoped fetch in initializeHalaqa, so the navbar stays stable.
+const globalHalaqat = ref<ApiHalaqaListItem[]>([])
+
 function persistSelection() {
   storedSelectedId.value = selectedHalaqa.value?.id ?? null
   writeStoredSelection(storedSelectedId.value, viewAllHalaqat.value)
@@ -46,7 +53,7 @@ function persistSelection() {
 const SCOPED_ROLES = ['teacher']
 
 export function useGlobalHalaqa() {
-  const { halaqat, fetchHalaqat, isLoading } = useHalaqat()
+  const { fetchHalaqat, isLoading } = useHalaqat()
   const { activeRole, user } = useAuth()
 
   const isHalaqaScoped = computed(() => SCOPED_ROLES.includes(activeRole.value ?? ''))
@@ -65,8 +72,11 @@ export function useGlobalHalaqa() {
   }
 
   async function initializeHalaqa() {
-    await fetchHalaqat(baseListQuery())
-    const list = halaqat.value
+    // Use the fetch result directly (not the shared halaqat ref) so a concurrent
+    // broad fetch from another page can't slip its list into the navbar.
+    const result = await fetchHalaqat(baseListQuery())
+    globalHalaqat.value = result.items
+    const list = globalHalaqat.value
     // "All" is only meaningful when the user can see more than one halaqa.
     const hasMultiple = list.length > 1
     // Prefer an in-session selection, else the one restored from localStorage.
@@ -117,10 +127,15 @@ export function useGlobalHalaqa() {
   // it fetches the list itself when empty.
   async function ensureHalaqaSelected(): Promise<ApiHalaqaListItem | null> {
     if (selectedHalaqa.value) return selectedHalaqa.value
-    if (halaqat.value.length === 0) await fetchHalaqat(baseListQuery())
-    // A concurrent initializeHalaqa may have settled the scope while we fetched.
+    // Resolve the scope through initializeHalaqa (role-scoped, and the sole writer
+    // of globalHalaqat) rather than a bare fetch — otherwise this eager, pre-layout
+    // call could seed the navbar with an unscoped list.
+    if (globalHalaqat.value.length === 0) await initializeHalaqa()
+    // initializeHalaqa may have settled a selection (or "all") already.
     if (selectedHalaqa.value) return selectedHalaqa.value
-    const first = halaqat.value[0]
+    // Still nothing pinned (e.g. an unscoped role defaulted to "all") — the caller
+    // needs a concrete halaqa, so land on the first one in scope.
+    const first = globalHalaqat.value[0]
     if (first) selectHalaqa(first)
     return first ?? null
   }
@@ -145,7 +160,7 @@ export function useGlobalHalaqa() {
     viewAllHalaqat,
     hasHalaqa,
     isHalaqaScoped,
-    halaqat,
+    halaqat: globalHalaqat,
     isLoading,
 
     initializeHalaqa,

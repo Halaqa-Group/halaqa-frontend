@@ -85,15 +85,16 @@ let positionSeq = 0
 // New memorization is always recited in full — same rule the mushaf enforces, so
 // Hifz hides the method tabs and is locked to `full`.
 const canTest = computed(() => state.track_type !== 'Hifz')
-// The teacher picks the method explicitly via three tabs (تقييم سريع / اختبار /
-// تسميع كامل). `untracked` and `full` share the same whole-lesson counters and
-// differ only in the payload (see buildAchievementDto); `test` shows per-موضع cards.
-const recitationMethod = ref<RecitationMethod>('full')
-const isTest = computed(() => recitationMethod.value === 'test')
+// Two tabs drive the method: "اختبار" (exam) and "تسميع كامل" (full). The exam tab
+// covers BOTH a quick review (no مواضع → `untracked`) and a partial test (one or
+// more مواضع → `test`) — the split is simply whether a موضع was added. Full is its
+// own tab. Hifz is locked to full. See buildAchievementDto for the payload mapping.
+const methodTab = ref<'exam' | 'full'>('full')
+const isTest = computed(() => methodTab.value === 'exam' && positions.value.length > 0)
 watch(() => state.track_type, (track) => {
-  // Hifz is always full; switching into a review track defaults to quick review.
-  if (track === 'Hifz') recitationMethod.value = 'full'
-  else if (!isEdit.value) recitationMethod.value = 'untracked'
+  // Hifz is always full; switching into a review track defaults to the exam tab.
+  if (track === 'Hifz') methodTab.value = 'full'
+  else if (!isEdit.value) methodTab.value = 'exam'
 })
 
 function newPositionRow(counts?: Partial<ScoreCounts>): PositionRow {
@@ -157,7 +158,7 @@ function hydratePositions() {
   const src = editing.value ?? duplicateFrom.value
   const keepCounts = editing.value != null
   if (src?.recitation_method === 'test' && src.recitation_positions?.length) {
-    recitationMethod.value = 'test'
+    methodTab.value = 'exam'
     positions.value = src.recitation_positions.map(p => ({
       id: `pos-${++positionSeq}`,
       start_surah: p.start_surah,
@@ -169,11 +170,11 @@ function hydratePositions() {
       harakat_errors_count: keepCounts ? (p.harakat_errors_count ?? 0) : 0
     }))
   } else {
-    // Non-test: restore the saved method when editing/duplicating; a fresh review
-    // record defaults to quick review (untracked), Hifz to full.
-    recitationMethod.value = src
-      ? (src.recitation_method === 'untracked' ? 'untracked' : 'full')
-      : (canTest.value ? 'untracked' : 'full')
+    // Non-test: the exam tab also holds an untracked quick review, so only a saved
+    // `full` record (or a fresh Hifz) opens on the full tab.
+    methodTab.value = src
+      ? (src.recitation_method === 'full' ? 'full' : 'exam')
+      : (canTest.value ? 'exam' : 'full')
     positions.value = []
   }
 }
@@ -537,12 +538,14 @@ async function buildAchievementDto(studentId: number, halaqaId: number, toRecite
   //    heading to the mushaf (toRecite), where real word-level marks replace these
   //    counts. We synthesize placeholder errors at the range start to carry them.
   // `test` always has real مواضع ranges, so it keeps its per-position errors.
-  // The teacher chose the method explicitly (the three tabs). Two overrides: Hifz
-  // is always full, and heading to the mushaf (toRecite) records a full recitation
-  // there — never untracked, whose whole point is that no locations are marked.
-  let method: RecitationMethod = recitationMethod.value
-  if (state.track_type === 'Hifz') method = 'full'
-  else if (toRecite && method === 'untracked') method = 'full'
+  // The "اختبار" tab is a quick review with no مواضع (untracked) and a partial test
+  // once مواضع are added; "تسميع كامل" is always full. Two overrides: Hifz is always
+  // full, and heading to the mushaf (toRecite) records a full recitation there —
+  // never untracked, whose whole point is that no locations are marked.
+  let method: RecitationMethod
+  if (state.track_type === 'Hifz' || methodTab.value === 'full') method = 'full'
+  else method = positions.value.length > 0 ? 'test' : 'untracked'
+  if (toRecite && method === 'untracked') method = 'full'
 
   const dto: CreateAchievementDto = {
     student_id: studentId,
@@ -842,20 +845,20 @@ defineExpose({ saving: isSaving, setContinueToRecite })
           />
         </div>
       </div>
-      <!-- Method tabs: quick review (untracked) / test (اختبار) / full (تسميع كامل).
-           Review tracks choose freely; Hifz is locked to full, so it shows a note. -->
-      <div v-if="canTest" class="grid grid-cols-3 gap-1.5 p-2.5 pb-0">
+      <!-- Method tabs: اختبار (a quick review, or a partial test once مواضع are added)
+           and تسميع كامل. Review tracks choose; Hifz is locked to full (note below). -->
+      <div v-if="canTest" class="grid grid-cols-2 gap-1.5 p-2.5 pb-0">
         <button
-          v-for="m in (['untracked', 'test', 'full'] as const)"
-          :key="m"
+          v-for="tab in (['exam', 'full'] as const)"
+          :key="tab"
           type="button"
-          class="rounded-lg border px-2 py-2 text-xs sm:text-sm font-medium transition"
-          :class="recitationMethod === m
+          class="rounded-lg border px-3 py-2 text-sm font-medium transition"
+          :class="methodTab === tab
             ? 'border-primary bg-primary/5 ring-1 ring-primary text-primary'
             : 'border-default hover:border-primary/60 hover:bg-elevated'"
-          @click="recitationMethod = m"
+          @click="methodTab = tab"
         >
-          {{ t(`pages.achievements.recitationMethods.${m}`) }}
+          {{ t(`pages.achievements.recitationMethods.${tab === 'exam' ? 'test' : 'full'}`) }}
         </button>
       </div>
       <p v-else class="px-3 pt-2.5 text-xs text-muted">
@@ -869,8 +872,8 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         <AchievementCounterField v-model="state.harakat_errors_count" :label="t('pages.achievements.harakat')" />
       </div>
 
-      <!-- test: one card per موضع, each with its own range and counters -->
-      <UFormField v-else name="positions" class="block p-2.5">
+      <!-- Once مواضع are added under the exam tab: one card per موضع -->
+      <UFormField v-if="isTest" name="positions" class="block p-2.5 pb-0">
         <div class="space-y-2">
           <div
             v-for="(p, i) in positions"
@@ -907,16 +910,16 @@ defineExpose({ saving: isSaving, setContinueToRecite })
               <AchievementCounterField v-model="p.harakat_errors_count" :label="t('pages.achievements.harakat')" />
             </div>
           </div>
-
-          <p v-if="!positions.length" class="text-xs text-muted">
-            {{ t('pages.achievements.noPositionsYet') }}
-          </p>
-
-          <UButton icon="i-lucide-plus" variant="soft" size="sm" block @click="addPosition">
-            {{ t('pages.achievements.addPosition') }}
-          </UButton>
         </div>
       </UFormField>
+
+      <!-- Add a موضع (exam tab only): none → quick review (untracked); one or more →
+           partial test. Full and Hifz are never split into مواضع. -->
+      <div v-if="canTest && methodTab === 'exam'" class="p-2.5">
+        <UButton icon="i-lucide-plus" variant="soft" size="sm" block @click="addPosition">
+          {{ t('pages.achievements.addPosition') }}
+        </UButton>
+      </div>
     </div>
 
     <UFormField :label="t('pages.achievements.notes')" name="teacher_notes">

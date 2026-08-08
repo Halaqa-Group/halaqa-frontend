@@ -206,7 +206,7 @@ onMounted(async () => {
                 color="neutral"
                 square
                 :aria-label="t('common.back')"
-                class="shrink-0 -ms-1"
+                class="shrink-0 -ms-1 lg:hidden"
               />
               <div class="flex items-center gap-1.5 min-w-0">
                 <h1 v-if="pageTitle" class="text-base sm:text-lg font-bold truncate shrink-0">

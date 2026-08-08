@@ -37,10 +37,8 @@ const items = computed<DropdownMenuItem[][]>(() => {
     icon: iconFor(h.type),
     checked: !viewAllHalaqat.value && selectedHalaqa.value?.id === h.id,
     type: 'checkbox' as const,
-    onSelect: (e: Event) => {
-      e.preventDefault()
-      selectHalaqa(h)
-    }
+    // No preventDefault — selecting a halaqa should close the menu.
+    onSelect: () => selectHalaqa(h)
   }))
 
   // "All halaqat" sits above the individual halaqat for anyone with more than one.
@@ -50,10 +48,7 @@ const items = computed<DropdownMenuItem[][]>(() => {
       icon: 'i-lucide-layers',
       checked: viewAllHalaqat.value,
       type: 'checkbox' as const,
-      onSelect: (e: Event) => {
-        e.preventDefault()
-        selectAllHalaqat()
-      }
+      onSelect: () => selectAllHalaqat()
     })
   }
 

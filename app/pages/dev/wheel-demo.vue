@@ -31,7 +31,7 @@ const studentItems = [
         </div>
         <div class="space-y-1">
           <span class="text-xs font-medium text-muted">إلى الآية</span>
-          <PlannerAyahSelect v-model:surah="range.end_surah" v-model:verse="range.end_verse" snap-to="last" />
+          <PlannerAyahSelect v-model:surah="range.end_surah" v-model:verse="range.end_verse" :min-surah="range.start_surah" snap-to="last" />
         </div>
       </div>
       <pre class="rounded bg-elevated p-3 text-xs text-default">{{ JSON.stringify({ studentId, ...range }) }}</pre>

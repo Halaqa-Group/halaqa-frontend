@@ -12,6 +12,10 @@ const props = withDefaults(defineProps<{
   // mobile each picker collapses to a one-line summary you tap to open; on wider
   // screens the wheels always show. Opt out with :collapsible="false".
   collapsible?: boolean
+  // Floor for the surah column: any surah before this one is dropped from the
+  // wheel. Used by a range's end picker so it can't sit before the start surah
+  // (`isValidVerseRange` forbids end < start anyway — this keeps it unreachable).
+  minSurah?: number
 }>(), { snapTo: 'first', collapsible: true })
 
 const surah = defineModel<number>('surah', { required: true })
@@ -43,8 +47,16 @@ watch(open, (isOpen) => {
 })
 
 const surahItems = computed(() =>
-  Object.entries(SURAH_NAMES).map(([n, name]) => ({ value: Number(n), label: `${fmt(Number(n))} - ${name}` }))
+  Object.entries(SURAH_NAMES)
+    .map(([n, name]) => ({ value: Number(n), label: `${fmt(Number(n))} - ${name}` }))
+    .filter(i => props.minSurah == null || i.value >= props.minSurah)
 )
+
+// When the floor rises past the current surah (the start surah was bumped forward),
+// pull this picker up to it so the wheel never holds a value it no longer offers.
+watch(() => props.minSurah, (min) => {
+  if (min != null && surah.value < min) surah.value = min
+})
 
 function isPageStart(s: number, v: number): boolean {
   const page = pageFor(`${s}:${v}`)

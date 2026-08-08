@@ -763,6 +763,7 @@ defineExpose({ saving: isSaving, setContinueToRecite })
             <PlannerAyahSelect
               v-model:surah="state.end_surah"
               v-model:verse="state.end_verse"
+              :min-surah="state.start_surah"
               :snap-to="studentDirection === 'desc' ? 'last' : 'first'"
             />
           </div>
@@ -865,7 +866,7 @@ defineExpose({ saving: isSaving, setContinueToRecite })
               </div>
               <div class="space-y-1">
                 <span class="text-[11px] font-medium text-muted">{{ t('pages.achievements.toLabel') }}</span>
-                <PlannerAyahSelect v-model:surah="p.end_surah" v-model:verse="p.end_verse" />
+                <PlannerAyahSelect v-model:surah="p.end_surah" v-model:verse="p.end_verse" :min-surah="p.start_surah" />
               </div>
             </div>
             <div class="grid grid-cols-3 gap-2">

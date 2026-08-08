@@ -66,7 +66,12 @@ onMounted(async () => {
     </div>
 
     <template v-else>
-      <UCard>
+      <UCard
+        :ui="{
+          root: 'max-sm:border-0 max-sm:bg-transparent max-sm:rounded-none max-sm:ring-0 max-sm:shadow-none',
+          body: 'max-sm:p-0'
+        }"
+      >
         <AchievementForm ref="formRef" @saved="onSaved" />
       </UCard>
 

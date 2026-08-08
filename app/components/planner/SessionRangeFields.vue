@@ -54,6 +54,7 @@ watch(form, () => {
         <PlannerAyahSelect
           v-model:surah="form.end_surah"
           v-model:verse="form.end_verse"
+          :min-surah="form.start_surah"
           :snap-to="direction === 'desc' ? 'last' : 'first'"
         />
       </div>

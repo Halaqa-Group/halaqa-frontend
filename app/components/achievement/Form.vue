@@ -359,10 +359,17 @@ const rangePagesSummary = computed(() => {
   })
 })
 
+// The exam tab with no مواضع is a quick review (untracked) — mirror buildAchievementDto.
+const isUntracked = computed(() =>
+  state.track_type !== 'Hifz' && methodTab.value === 'exam' && positions.value.length === 0
+)
+
 // Weights are per mushaf page, so the pages actually recited scale the deduction:
-// the lesson range for `full`, the sum of the مواضع (fractional) for `test`.
+// `full` over the lesson range, `test` over the sum of the مواضع (fractional). A
+// quick review (untracked) is scored as a SINGLE page (divisor 1) so a few errors
+// actually bite — it isn't spread thin across the whole range. Mirrors withComputedScore.
 const rangePages = computed(() =>
-  pagesRecited(state, isTest.value ? positions.value : null)
+  isUntracked.value ? 1 : pagesRecited(state, isTest.value ? positions.value : null)
 )
 
 // `test` scores off the sum of every موضع; `full` off the single counters block.

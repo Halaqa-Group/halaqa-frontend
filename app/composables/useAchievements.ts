@@ -503,12 +503,13 @@ export function useAchievements() {
   // stored as-is. Page counts ride along — see withPageCounts.
   async function withComputedScore(data: CreateAchievementDto): Promise<CreateAchievementDto> {
     const settings = await loadEvaluationSettings(data.halaqa_id)
-    // A test is scored over the positions actually recited; `full`/`untracked`
-    // over the whole lesson span.
-    const pages = pagesRecited(
-      data,
-      data.recitation_method === 'test' ? data.test_positions : null
-    )
+    // Untracked (تقييم سريع) is a quick, deliberately strict eval: its deductions
+    // apply as if on a SINGLE page (divisor 1), not spread across the whole range —
+    // otherwise a few errors over many pages barely move the score. `full` is scored
+    // over the whole lesson span, `test` over the positions actually recited.
+    const pages = data.recitation_method === 'untracked'
+      ? 1
+      : pagesRecited(data, data.recitation_method === 'test' ? data.test_positions : null)
     // Untracked has no itemized errors — score from the aggregate counts instead.
     const counts = data.recitation_method === 'untracked'
       ? scoreCountsFromErrorCounts(data.error_counts)

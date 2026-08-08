@@ -1,99 +1,111 @@
 <script setup lang="ts">
-import { SURAH_NAMES } from '~/data/constants'
-import { VERSE_COUNTS } from '~/utils/quran'
-import { verseToGlobal, globalToVerse } from '~/utils/quran-structure'
+import { SURAH_NAMES } from "~/data/constants";
+import { VERSE_COUNTS } from "~/utils/quran";
+import { verseToGlobal, globalToVerse } from "~/utils/quran-structure";
 
-const props = withDefaults(defineProps<{
-  // Which ayah to land on when the surah changes — the last one when the plan
-  // walks backwards through the mushaf.
-  snapTo?: 'first' | 'last'
-  // On a phone a pair of wheels is ~170px tall, and forms stack several of them
-  // (the achievement lesson range plus every موضع, the recite start+end). So on
-  // mobile each picker collapses to a one-line summary you tap to open; on wider
-  // screens the wheels always show. Opt out with :collapsible="false".
-  collapsible?: boolean
-  // Floor for the surah column: any surah before this one is dropped from the
-  // wheel. Used by a range's end picker so it can't sit before the start surah
-  // (`isValidVerseRange` forbids end < start anyway — this keeps it unreachable).
-  minSurah?: number
-}>(), { snapTo: 'first', collapsible: true })
+const props = withDefaults(
+  defineProps<{
+    // Which ayah to land on when the surah changes - the last one when the plan
+    // walks backwards through the mushaf.
+    snapTo?: "first" | "last";
+    // On a phone a pair of wheels is ~170px tall, and forms stack several of them
+    // (the achievement lesson range plus every موضع, the recite start+end). So on
+    // mobile each picker collapses to a one-line summary you tap to open; on wider
+    // screens the wheels always show. Opt out with :collapsible="false".
+    collapsible?: boolean;
+    // Floor for the surah column: any surah before this one is dropped from the
+    // wheel. Used by a range's end picker so it can't sit before the start surah
+    // (`isValidVerseRange` forbids end < start anyway - this keeps it unreachable).
+    minSurah?: number;
+  }>(),
+  { snapTo: "first", collapsible: true },
+);
 
-const surah = defineModel<number>('surah', { required: true })
-const verse = defineModel<number>('verse', { required: true })
+const surah = defineModel<number>("surah", { required: true });
+const verse = defineModel<number>("verse", { required: true });
 
-const { t } = useI18n()
-const { pageFor } = useVerseToPage()
+const { t } = useI18n();
+const { pageFor } = useVerseToPage();
 
 // Always Western digits (Latin numerals) regardless of locale.
-const fmt = (n: number) => String(n)
+const fmt = (n: number) => String(n);
 
 // Collapsed-card open state (collapsed by default at every breakpoint).
-const open = ref(false)
-// Surah name + ayah only — no surah number.
-const summary = computed(() => `${SURAH_NAMES[surah.value] ?? surah.value} · ${fmt(verse.value)}`)
+const open = ref(false);
+// Surah name + ayah only - no surah number.
+const summary = computed(
+  () => `${SURAH_NAMES[surah.value] ?? surah.value} · ${fmt(verse.value)}`,
+);
 
 // The wheels mount while collapsed (display:none), where they can't scroll to the
 // selected row. Once we reveal them, wait for Vue to drop the `hidden` class
 // (nextTick) then re-anchor both so they open already centred on the current
-// surah/ayah — reanchor sets scrollTop, which forces the layout it needs.
-const surahWheel = useTemplateRef<{ reanchor: () => void }>('surahWheel')
-const verseWheel = useTemplateRef<{ reanchor: () => void }>('verseWheel')
+// surah/ayah - reanchor sets scrollTop, which forces the layout it needs.
+const surahWheel = useTemplateRef<{ reanchor: () => void }>("surahWheel");
+const verseWheel = useTemplateRef<{ reanchor: () => void }>("verseWheel");
 watch(open, (isOpen) => {
-  if (!isOpen) return
+  if (!isOpen) return;
   nextTick(() => {
-    surahWheel.value?.reanchor()
-    verseWheel.value?.reanchor()
-  })
-})
+    surahWheel.value?.reanchor();
+    verseWheel.value?.reanchor();
+  });
+});
 
 const surahItems = computed(() =>
   Object.entries(SURAH_NAMES)
-    .map(([n, name]) => ({ value: Number(n), label: `${fmt(Number(n))} - ${name}` }))
-    .filter(i => props.minSurah == null || i.value >= props.minSurah)
-)
+    .map(([n, name]) => ({
+      value: Number(n),
+      label: `${fmt(Number(n))} - ${name}`,
+    }))
+    .filter((i) => props.minSurah == null || i.value >= props.minSurah),
+);
 
 // When the floor rises past the current surah (the start surah was bumped forward),
 // pull this picker up to it so the wheel never holds a value it no longer offers.
-watch(() => props.minSurah, (min) => {
-  if (min != null && surah.value < min) surah.value = min
-})
+watch(
+  () => props.minSurah,
+  (min) => {
+    if (min != null && surah.value < min) surah.value = min;
+  },
+);
 
 function isPageStart(s: number, v: number): boolean {
-  const page = pageFor(`${s}:${v}`)
-  if (page === undefined) return false
-  const g = verseToGlobal(s, v)
-  if (g <= 1) return true
-  const prev = globalToVerse(g - 1)
-  return pageFor(`${prev.surah}:${prev.verse}`) !== page
+  const page = pageFor(`${s}:${v}`);
+  if (page === undefined) return false;
+  const g = verseToGlobal(s, v);
+  if (g <= 1) return true;
+  const prev = globalToVerse(g - 1);
+  return pageFor(`${prev.surah}:${prev.verse}`) !== page;
 }
 
 const verseItems = computed(() => {
-  const count = VERSE_COUNTS[surah.value] || 1
-  const out: { value: number, label: string, badge?: string }[] = []
+  const count = VERSE_COUNTS[surah.value] || 1;
+  const out: { value: number; label: string; badge?: string }[] = [];
   for (let v = 1; v <= count; v++) {
-    // Badge a verse with the mushaf page it opens, but only where a page begins —
+    // Badge a verse with the mushaf page it opens, but only where a page begins -
     // the same cue the old dropdown showed, carried onto the wheel row.
-    const page = pageFor(`${surah.value}:${v}`)
-    const badge = isPageStart(surah.value, v) && page !== undefined
-      ? t('pages.planner.pageBadge', { page: fmt(page) })
-      : undefined
-    out.push({ value: v, label: fmt(v), badge })
+    const page = pageFor(`${surah.value}:${v}`);
+    const badge =
+      isPageStart(surah.value, v) && page !== undefined
+        ? t("pages.planner.pageBadge", { page: fmt(page) })
+        : undefined;
+    out.push({ value: v, label: fmt(v), badge });
   }
-  return out
-})
+  return out;
+});
 
 watch(surah, () => {
-  const max = VERSE_COUNTS[surah.value] || 1
-  if (props.snapTo === 'last') verse.value = max
-  else if (verse.value > max || verse.value < 1) verse.value = 1
-})
+  const max = VERSE_COUNTS[surah.value] || 1;
+  if (props.snapTo === "last") verse.value = max;
+  else if (verse.value > max || verse.value < 1) verse.value = 1;
+});
 </script>
 
 <template>
   <!--
     An inline wheel per column: the surah on the left, its ayah on the right. No
     popover or teleport, so the old z-index dance around the recite reader's
-    finish-sheet is gone — the wheels live in the normal flow of whatever card
+    finish-sheet is gone - the wheels live in the normal flow of whatever card
     they sit in.
   -->
   <!--
@@ -101,11 +113,17 @@ watch(surah, () => {
     header reveals/hides the wheels (collapsed by default). Pass :collapsible="false"
     to skip the card/header and always show the wheels inline.
   -->
-  <div :class="collapsible ? 'overflow-hidden rounded-md bg-default ring ring-inset ring-accented' : ''">
+  <div
+    :class="
+      collapsible
+        ? 'overflow-hidden rounded-md bg-default ring ring-inset ring-accented'
+        : ''
+    "
+  >
     <button
       v-if="collapsible"
       type="button"
-      class="flex w-full items-center justify-between gap-1.5 px-2.5 py-1.5 text-sm transition-colors hover:bg-elevated"
+      class="flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-colors cursor-pointer"
       :aria-expanded="open"
       @click="open = !open"
     >
@@ -119,7 +137,7 @@ watch(surah, () => {
       class="grid grid-cols-2 gap-2"
       :class="[
         collapsible ? 'px-2 pb-2' : '',
-        collapsible && !open ? 'hidden' : ''
+        collapsible && !open ? 'hidden' : '',
       ]"
     >
       <CommonWheelPicker

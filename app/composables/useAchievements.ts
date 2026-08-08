@@ -2,7 +2,7 @@ import { computed, reactive, ref } from 'vue'
 import type {
   ApiAchievement, ApiAttendance, ApiAttendanceListResult, ApiHalaqaDetail, ApiStudent,
   ApiStudentListResult, StudentWithAttendance, CreateAchievementDto,
-  AchievementErrorType, AchievementTestPosition, PositionError
+  AchievementErrorType, AchievementErrorCounts, AchievementTestPosition, PositionError
 } from '~/types'
 import type { MarkGroups, RecitationMarks, Severity, WordKey } from '~/types/recitation'
 import { SEVERITY_LEVELS } from '~/types/recitation'
@@ -53,6 +53,18 @@ export function tallyErrors(errors: PositionError[] | undefined | null): ScoreCo
     else if (e.error_type === 'harakat') c.harakat_errors_count++
   }
   return c
+}
+
+// An `untracked` recitation carries its counts as an aggregate `error_counts`
+// object (how many, not where) rather than an itemized errors[] list — map it to
+// the same ScoreCounts shape the scorer and card use. `tajweed` is dropped: it is
+// retired on the frontend and never scored.
+export function scoreCountsFromErrorCounts(counts: AchievementErrorCounts | undefined | null): ScoreCounts {
+  return {
+    mistakes_count: counts?.mistakes ?? 0,
+    warnings_count: counts?.warnings ?? 0,
+    harakat_errors_count: counts?.harakat ?? 0
+  }
 }
 
 // Quick-entry form: the teacher types how many of each error type occurred, with
@@ -376,6 +388,11 @@ export function useAchievements() {
     return String(a.id).slice(DRAFT_ID_PREFIX.length)
   }
   function draftErrorCounts(dto: CreateAchievementDto) {
+    // Untracked drafts hold their counts directly — there are no error rows to tally.
+    if (dto.recitation_method === 'untracked') {
+      const c = scoreCountsFromErrorCounts(dto.error_counts)
+      return { mistakes: c.mistakes_count, warnings: c.warnings_count, harakat: c.harakat_errors_count }
+    }
     const errs: PositionError[] = dto.recitation_method === 'test'
       ? (dto.test_positions ?? []).flatMap((p: AchievementTestPosition) => p.errors ?? [])
       : (dto.errors ?? [])
@@ -481,31 +498,43 @@ export function useAchievements() {
   }
 
   // percentage_score is computed on the frontend from the error counts (derived
-  // from the itemized errors[]), the halaqa's weights, and the range's page span
-  // (weights are per page), then stored as-is. Page counts ride along — see
-  // withPageCounts.
+  // from the itemized errors[], or the aggregate error_counts for `untracked`),
+  // the halaqa's weights, and the range's page span (weights are per page), then
+  // stored as-is. Page counts ride along — see withPageCounts.
   async function withComputedScore(data: CreateAchievementDto): Promise<CreateAchievementDto> {
     const settings = await loadEvaluationSettings(data.halaqa_id)
-    // A test is scored over the positions actually recited, not the lesson span.
+    // A test is scored over the positions actually recited; `full`/`untracked`
+    // over the whole lesson span.
     const pages = pagesRecited(
       data,
       data.recitation_method === 'test' ? data.test_positions : null
     )
-    const percentage_score = computePercentageScore(tallyErrors(allErrorsOf(data)), settings, pages)
+    // Untracked has no itemized errors — score from the aggregate counts instead.
+    const counts = data.recitation_method === 'untracked'
+      ? scoreCountsFromErrorCounts(data.error_counts)
+      : tallyErrors(allErrorsOf(data))
+    const percentage_score = computePercentageScore(counts, settings, pages)
     return withPageCounts({ ...data, percentage_score })
   }
 
-  // The API accepts exactly one error carrier per method and 400s on the other:
-  // "test_positions is only valid when recitation_method is 'test'" / "Errors are
-  // per-position when recitation_method is 'test'". Send one, strip the other.
+  // The API accepts exactly one error carrier per method and 400s on the others:
+  // `test` → test_positions, `untracked` → error_counts, `full` → errors. Send the
+  // one that matches the method and strip the rest, or the backend rejects the body.
   function withPositionsPayload(data: CreateAchievementDto): CreateAchievementDto {
-    const body: CreateAchievementDto = { ...data, recitation_method: data.recitation_method ?? 'full' }
-    if (body.recitation_method === 'test') {
+    const method = data.recitation_method ?? 'full'
+    const body: CreateAchievementDto = { ...data, recitation_method: method }
+    if (method === 'untracked') {
+      body.error_counts = body.error_counts ?? {}
+      delete body.errors
+      delete body.test_positions
+    } else if (method === 'test') {
       body.test_positions = body.test_positions ?? []
       delete body.errors
+      delete body.error_counts
     } else {
       body.errors = body.errors ?? []
       delete body.test_positions
+      delete body.error_counts
     }
     return body
   }
@@ -564,8 +593,11 @@ export function useAchievements() {
         total_pages: full.total_pages,
         teacher_notes: full.teacher_notes
       }
-      // Same one-carrier rule as create.
-      if (method === 'test') body.test_positions = full.test_positions ?? []
+      // Same one-carrier rule as create: send only the carrier the method accepts.
+      // On `untracked`, error_counts alone resets the four counts and deletes any
+      // positions/error rows the record previously had.
+      if (method === 'untracked') body.error_counts = full.error_counts ?? {}
+      else if (method === 'test') body.test_positions = full.test_positions ?? []
       else body.errors = full.errors ?? []
       const updated = await api<ApiAchievement>(`/achievements/${id}`, { method: 'PATCH', body })
       await loadAchievements()

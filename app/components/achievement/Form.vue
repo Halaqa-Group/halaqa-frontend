@@ -84,9 +84,12 @@ const positions = ref<PositionRow[]>([])
 let positionSeq = 0
 
 // New memorization is always recited in full — same rule the mushaf enforces.
+// Everything else defaults to testing (اختبار). Skipped when editing so a saved
+// record keeps its own method.
 const canTest = computed(() => state.track_type !== 'Hifz')
 watch(() => state.track_type, (track) => {
   if (track === 'Hifz') recitationMethod.value = 'full'
+  else if (!isEdit.value) recitationMethod.value = 'test'
 })
 
 function newPositionRow(counts?: Partial<ScoreCounts>): PositionRow {
@@ -164,7 +167,9 @@ function hydratePositions() {
       harakat_errors_count: keepCounts ? (p.harakat_errors_count ?? 0) : 0
     }))
   } else {
-    recitationMethod.value = 'full'
+    // Fresh testable record defaults to اختبار; Hifz (and edits of a non-test
+    // record) stay on full.
+    recitationMethod.value = (!isEdit.value && canTest.value) ? 'test' : 'full'
     positions.value = []
   }
 }
@@ -520,13 +525,25 @@ function resetErrorCounts() {
 // hands off to the mushaf, so its record is a mushaf one (source = Quran);
 // every other path keeps the form as the source (source = Form).
 async function buildAchievementDto(studentId: number, halaqaId: number, toRecite: boolean): Promise<CreateAchievementDto> {
+  // The quick form never captures WHERE an error was, only how many. For the
+  // whole-lesson case that leaves two honest ways to send it:
+  //  • `untracked` — the backend stores the aggregate counts as-is, no fake
+  //    locations. This is what a review evaluation (Near/Far) really is.
+  //  • `full` — needed for Hifz (the backend rejects untracked there), and when
+  //    heading to the mushaf (toRecite), where real word-level marks replace these
+  //    counts. We synthesize placeholder errors at the range start to carry them.
+  // `test` always has real مواضع ranges, so it keeps its per-position errors.
+  const method: RecitationMethod = isTest.value
+    ? 'test'
+    : (state.track_type !== 'Hifz' && !toRecite ? 'untracked' : 'full')
+
   const dto: CreateAchievementDto = {
     student_id: studentId,
     halaqa_id: halaqaId,
     date: state.date,
     track_type: state.track_type,
     completion_method: toRecite ? 'mushaf' : 'quick',
-    recitation_method: isTest.value ? 'test' : 'full',
+    recitation_method: method,
     start_surah: state.start_surah,
     start_verse: state.start_verse,
     end_surah: state.end_surah,
@@ -535,7 +552,7 @@ async function buildAchievementDto(studentId: number, halaqaId: number, toRecite
     teacher_notes: state.teacher_notes || undefined
   }
 
-  if (isTest.value) {
+  if (method === 'test') {
     const built: AchievementTestPosition[] = []
     for (const p of positions.value) {
       built.push({
@@ -551,6 +568,13 @@ async function buildAchievementDto(studentId: number, halaqaId: number, toRecite
       })
     }
     dto.test_positions = built
+  } else if (method === 'untracked') {
+    // Aggregate counts, no locations — omit the retired `tajweed` type (never scored).
+    dto.error_counts = {
+      mistakes: state.mistakes_count,
+      warnings: state.warnings_count,
+      harakat: state.harakat_errors_count
+    }
   } else {
     dto.errors = await buildErrorsFromCounts({
       mistakes_count: state.mistakes_count,
@@ -814,7 +838,7 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       <!-- Recitation method: full, or tested at chosen مواضع (mirrors the mushaf). -->
       <div v-if="canTest" class="grid grid-cols-2 gap-1.5 p-2.5 pb-0">
         <button
-          v-for="m in (['full', 'test'] as const)"
+          v-for="m in (['test', 'full'] as const)"
           :key="m"
           type="button"
           class="rounded-lg border px-3 py-2 text-sm font-medium transition"

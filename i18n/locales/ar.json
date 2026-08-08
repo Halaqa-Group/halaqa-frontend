@@ -1157,6 +1157,7 @@
       "statusApproved": "معتمد",
       "statusPending": "بانتظار الاعتماد",
       "methodTest": "اختبار",
+      "methodUntracked": "تقييم سريع",
       "testedSpots": "المواضع المُختبَرة",
       "spotClean": "بلا أخطاء",
       "spotErrorsCount": "{n} أخطاء",

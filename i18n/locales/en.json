@@ -1157,6 +1157,7 @@
       "statusApproved": "Approved",
       "statusPending": "Pending approval",
       "methodTest": "Test",
+      "methodUntracked": "Quick review",
       "testedSpots": "Tested spots",
       "spotClean": "Clean",
       "spotErrorsCount": "{n} errors",

@@ -1,7 +1,4 @@
 <script setup lang="ts" generic="T extends string | number">
-// A single-column wheel select — the CommonWheelPicker styling applied to a plain
-// one-value choice (e.g. picking a student), with the same mobile collapse-to-a-
-// card behaviour as the surah/ayah range wheels.
 const props = withDefaults(defineProps<{
   items: { label: string, value: T }[]
   // Mobile: collapse to a one-line summary you tap to open. Always-on ≥sm.

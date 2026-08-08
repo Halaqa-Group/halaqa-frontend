@@ -1170,6 +1170,7 @@
       "unapproveErrorTitle": "Failed to revoke approval",
       "computedScore": "Computed score",
       "recitationMethods": {
+        "untracked": "Quick review",
         "full": "Full recitation",
         "test": "Test"
       },

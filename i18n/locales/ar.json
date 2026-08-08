@@ -1170,6 +1170,7 @@
       "unapproveErrorTitle": "خطأ في إلغاء اعتماد الإنجاز",
       "computedScore": "النتيجة المحسوبة",
       "recitationMethods": {
+        "untracked": "تقييم سريع",
         "full": "تسميع كامل",
         "test": "اختبار"
       },

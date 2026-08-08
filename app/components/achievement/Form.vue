@@ -79,17 +79,21 @@ interface PositionRow {
   harakat_errors_count: number
 }
 
-const recitationMethod = ref<RecitationMethod>('full')
 const positions = ref<PositionRow[]>([])
 let positionSeq = 0
 
-// New memorization is always recited in full — same rule the mushaf enforces.
-// Everything else defaults to testing (اختبار). Skipped when editing so a saved
-// record keeps its own method.
+// New memorization is always recited in full — same rule the mushaf enforces, so
+// Hifz hides the method tabs and is locked to `full`.
 const canTest = computed(() => state.track_type !== 'Hifz')
+// The teacher picks the method explicitly via three tabs (تقييم سريع / اختبار /
+// تسميع كامل). `untracked` and `full` share the same whole-lesson counters and
+// differ only in the payload (see buildAchievementDto); `test` shows per-موضع cards.
+const recitationMethod = ref<RecitationMethod>('full')
+const isTest = computed(() => recitationMethod.value === 'test')
 watch(() => state.track_type, (track) => {
+  // Hifz is always full; switching into a review track defaults to quick review.
   if (track === 'Hifz') recitationMethod.value = 'full'
-  else if (!isEdit.value) recitationMethod.value = 'test'
+  else if (!isEdit.value) recitationMethod.value = 'untracked'
 })
 
 function newPositionRow(counts?: Partial<ScoreCounts>): PositionRow {
@@ -122,8 +126,6 @@ function positionWithinLesson(p: PositionRow): boolean {
   return verseToGlobal(p.start_surah, p.start_verse) >= lo
     && verseToGlobal(p.end_surah, p.end_verse) <= hi
 }
-
-const isTest = computed(() => recitationMethod.value === 'test')
 
 // When true, the track + range are entered by hand; otherwise they come from a
 // picked plan item. selectedPlanItemId tracks which plan lesson is chosen.
@@ -167,9 +169,11 @@ function hydratePositions() {
       harakat_errors_count: keepCounts ? (p.harakat_errors_count ?? 0) : 0
     }))
   } else {
-    // Fresh testable record defaults to اختبار; Hifz (and edits of a non-test
-    // record) stay on full.
-    recitationMethod.value = (!isEdit.value && canTest.value) ? 'test' : 'full'
+    // Non-test: restore the saved method when editing/duplicating; a fresh review
+    // record defaults to quick review (untracked), Hifz to full.
+    recitationMethod.value = src
+      ? (src.recitation_method === 'untracked' ? 'untracked' : 'full')
+      : (canTest.value ? 'untracked' : 'full')
     positions.value = []
   }
 }
@@ -533,9 +537,12 @@ async function buildAchievementDto(studentId: number, halaqaId: number, toRecite
   //    heading to the mushaf (toRecite), where real word-level marks replace these
   //    counts. We synthesize placeholder errors at the range start to carry them.
   // `test` always has real مواضع ranges, so it keeps its per-position errors.
-  const method: RecitationMethod = isTest.value
-    ? 'test'
-    : (state.track_type !== 'Hifz' && !toRecite ? 'untracked' : 'full')
+  // The teacher chose the method explicitly (the three tabs). Two overrides: Hifz
+  // is always full, and heading to the mushaf (toRecite) records a full recitation
+  // there — never untracked, whose whole point is that no locations are marked.
+  let method: RecitationMethod = recitationMethod.value
+  if (state.track_type === 'Hifz') method = 'full'
+  else if (toRecite && method === 'untracked') method = 'full'
 
   const dto: CreateAchievementDto = {
     student_id: studentId,
@@ -835,13 +842,14 @@ defineExpose({ saving: isSaving, setContinueToRecite })
           />
         </div>
       </div>
-      <!-- Recitation method: full, or tested at chosen مواضع (mirrors the mushaf). -->
-      <div v-if="canTest" class="grid grid-cols-2 gap-1.5 p-2.5 pb-0">
+      <!-- Method tabs: quick review (untracked) / test (اختبار) / full (تسميع كامل).
+           Review tracks choose freely; Hifz is locked to full, so it shows a note. -->
+      <div v-if="canTest" class="grid grid-cols-3 gap-1.5 p-2.5 pb-0">
         <button
-          v-for="m in (['test', 'full'] as const)"
+          v-for="m in (['untracked', 'test', 'full'] as const)"
           :key="m"
           type="button"
-          class="rounded-lg border px-3 py-2 text-sm font-medium transition"
+          class="rounded-lg border px-2 py-2 text-xs sm:text-sm font-medium transition"
           :class="recitationMethod === m
             ? 'border-primary bg-primary/5 ring-1 ring-primary text-primary'
             : 'border-default hover:border-primary/60 hover:bg-elevated'"
@@ -854,7 +862,7 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         {{ t('pages.achievements.fullRequiredForHifz') }}
       </p>
 
-      <!-- full: one set of counters for the whole lesson -->
+      <!-- untracked / full: one set of counters for the whole lesson -->
       <div v-if="!isTest" class="grid grid-cols-3 gap-2 p-2.5">
         <AchievementCounterField v-model="state.mistakes_count" :label="t('pages.achievements.mistakes')" />
         <AchievementCounterField v-model="state.warnings_count" :label="t('pages.achievements.warnings')" />

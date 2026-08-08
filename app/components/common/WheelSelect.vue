@@ -46,7 +46,7 @@ watch(open, (isOpen) => {
     <button
       v-if="collapsible"
       type="button"
-      class="flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-colors hover:bg-elevated"
+      class="flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-colors cursor-pointer"
       :aria-expanded="open"
       @click="open = !open"
     >

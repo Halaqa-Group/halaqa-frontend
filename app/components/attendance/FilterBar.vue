@@ -75,8 +75,6 @@ function onCalendarPick(value: unknown) {
       </UButton>
     </div>
 
-    <HalaqaFilter class="flex-1 min-w-40 sm:flex-none sm:w-48" />
-
     <UInput
       v-model="search"
       icon="i-lucide-search"

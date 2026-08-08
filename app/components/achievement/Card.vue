@@ -81,6 +81,14 @@ function spotErrorLabel(p: RecitationPosition): string {
         {{ t('pages.achievements.methodTest') }}
       </UBadge>
       <UBadge
+        v-else-if="achievement.recitation_method === 'untracked'"
+        variant="subtle"
+        color="neutral"
+        icon="i-lucide-gauge"
+      >
+        {{ t('pages.achievements.methodUntracked') }}
+      </UBadge>
+      <UBadge
         v-if="isDraft"
         color="warning"
         variant="soft"

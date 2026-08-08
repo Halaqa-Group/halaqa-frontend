@@ -1,7 +1,4 @@
 <script setup lang="ts" generic="T extends string | number">
-// A single-column wheel select — the CommonWheelPicker styling applied to a plain
-// one-value choice (e.g. picking a student), with the same mobile collapse-to-a-
-// card behaviour as the surah/ayah range wheels.
 const props = withDefaults(defineProps<{
   items: { label: string, value: T }[]
   // Mobile: collapse to a one-line summary you tap to open. Always-on ≥sm.
@@ -42,18 +39,18 @@ watch(open, (isOpen) => {
 </script>
 
 <template>
-  <div :class="collapsible ? 'overflow-hidden rounded-xl border border-default' : ''">
+  <div :class="collapsible ? 'overflow-hidden rounded-md bg-default ring ring-inset ring-accented' : ''">
     <button
       v-if="collapsible"
       type="button"
-      class="flex w-full items-center justify-between gap-2 px-3 py-3 text-sm"
+      class="flex w-full items-center justify-between gap-2 px-3 py-2 text-sm transition-colors cursor-pointer"
       :aria-expanded="open"
       @click="open = !open"
     >
-      <span class="min-w-0 truncate font-medium text-highlighted">{{ summary }}</span>
+      <span class="min-w-0 truncate text-highlighted">{{ summary }}</span>
       <UIcon
         :name="open ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-        class="size-5 shrink-0 text-muted"
+        class="size-5 shrink-0 text-dimmed"
       />
     </button>
     <div

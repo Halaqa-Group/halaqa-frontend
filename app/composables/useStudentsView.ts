@@ -1,6 +1,7 @@
 import type { Student } from '~/types'
 
-type SortKey = 'newest' | 'nameAsc' | 'joinDateDesc'
+type SortKey = 'newest' | 'nameAsc' | 'nameDesc' | 'joinDateAsc' | 'joinDateDesc'
+type SortField = 'name' | 'joinDate'
 type ViewMode = 'grid' | 'table'
 type StatusFilter = Student['status'] | 'deleted' | null
 
@@ -25,15 +26,35 @@ export function useStudentsView() {
       ? students.value.filter(s => !!s.deletedAt)
       : [...students.value]
     switch (sortKey.value) {
+      case 'joinDateAsc':
+        return arr.sort((a, b) => a.joinDate.localeCompare(b.joinDate))
       case 'joinDateDesc':
         return arr.sort((a, b) => b.joinDate.localeCompare(a.joinDate))
       case 'nameAsc':
         return arr.sort((a, b) => a.name.localeCompare(b.name, 'ar'))
+      case 'nameDesc':
+        return arr.sort((a, b) => b.name.localeCompare(a.name, 'ar'))
       case 'newest':
       default:
         return arr
     }
   })
+
+  // Column-header sorting: first click sorts ascending, second flips to
+  // descending, a third clears back to the default "newest" order.
+  function toggleSort(field: SortField) {
+    const asc = `${field}Asc` as SortKey
+    const desc = `${field}Desc` as SortKey
+    if (sortKey.value === asc) sortKey.value = desc
+    else if (sortKey.value === desc) sortKey.value = 'newest'
+    else sortKey.value = asc
+  }
+
+  function sortDirection(field: SortField): 'asc' | 'desc' | null {
+    if (sortKey.value === `${field}Asc`) return 'asc'
+    if (sortKey.value === `${field}Desc`) return 'desc'
+    return null
+  }
 
   const summary = computed(() => {
     if (summarySnapshot.value) return summarySnapshot.value
@@ -69,6 +90,8 @@ export function useStudentsView() {
   return {
     filterStatus,
     sortKey,
+    toggleSort,
+    sortDirection,
     viewMode,
     sortedStudents,
     summary,

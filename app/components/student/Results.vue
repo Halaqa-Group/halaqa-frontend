@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
+import type { TableColumn, TableRow, DropdownMenuItem } from '@nuxt/ui'
 import type { Student } from '~/types'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const {
   canCreateStudent, canEditStudent, canGraduateStudent, canDeleteStudent, canRestoreStudent
 } = usePermissions()
@@ -17,18 +17,41 @@ const {
   requestGraduate,
   requestRestore
 } = useStudents()
-const { viewMode, sortedStudents, clearFilters } = useStudentsView()
+const { viewMode, sortedStudents, clearFilters, toggleSort, sortDirection } = useStudentsView()
 const { unitLabel } = useCapacityUnits()
 
 const columns = computed<TableColumn<Student>[]>(() => [
   { accessorKey: 'name', header: t('pages.students.table.student') },
   { accessorKey: 'idNumber', header: t('pages.students.table.idNumber') },
   { accessorKey: 'status', header: t('pages.students.table.status') },
+  { accessorKey: 'joinDate', header: t('pages.students.table.joinDate') },
   { accessorKey: 'dailyHifzPagesCapacity', header: t('pages.students.table.dailyHifz') },
   { accessorKey: 'dailyNearPagesCapacity', header: t('pages.students.table.dailyNear') },
   { accessorKey: 'dailyFarPagesCapacity', header: t('pages.students.table.dailyFar') },
   { id: 'actions', header: t('pages.students.table.actions') }
 ])
+
+// Latin digits keep the dates aligned regardless of the UI locale's numerals.
+const dateFormatter = computed(() =>
+  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
+)
+
+function formatJoinDate(iso: string | null): string {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+}
+
+function sortIcon(field: 'name' | 'joinDate'): string {
+  const dir = sortDirection(field)
+  if (dir === 'asc') return 'i-lucide-arrow-up'
+  if (dir === 'desc') return 'i-lucide-arrow-down'
+  return 'i-lucide-chevrons-up-down'
+}
+
+function onRowSelect(_e: Event, row: TableRow<Student>) {
+  openView(row.original)
+}
 
 function statusLabel(student: Student) {
   if (student.deletedAt) return t('pages.students.statusDeleted')
@@ -151,8 +174,39 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
         :data="sortedStudents"
         :columns="columns"
         :loading="isLoading"
-        :ui="{ base: 'w-full min-w-[800px]' }"
+        :on-select="onRowSelect"
+        :ui="{ base: 'w-full min-w-[900px]', tr: 'cursor-pointer' }"
       >
+        <template #name-header>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 -mx-1 px-1 rounded hover:text-highlighted"
+            @click="toggleSort('name')"
+          >
+            {{ t('pages.students.table.student') }}
+            <UIcon
+              :name="sortIcon('name')"
+              class="w-3.5 h-3.5 shrink-0"
+              :class="sortDirection('name') ? 'text-primary' : 'text-dimmed'"
+            />
+          </button>
+        </template>
+
+        <template #joinDate-header>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 -mx-1 px-1 rounded hover:text-highlighted"
+            @click="toggleSort('joinDate')"
+          >
+            {{ t('pages.students.table.joinDate') }}
+            <UIcon
+              :name="sortIcon('joinDate')"
+              class="w-3.5 h-3.5 shrink-0"
+              :class="sortDirection('joinDate') ? 'text-primary' : 'text-dimmed'"
+            />
+          </button>
+        </template>
+
         <template #name-cell="{ row }">
           <button
             type="button"
@@ -182,6 +236,12 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
           />
         </template>
 
+        <template #joinDate-cell="{ row }">
+          <span class="tabular-nums text-muted" dir="ltr">
+            {{ formatJoinDate(row.original.joinDate) }}
+          </span>
+        </template>
+
         <template #dailyHifzPagesCapacity-cell="{ row }">
           <span class="tabular-nums">{{ row.original.dailyHifzPagesCapacity }}</span>
           <span class="text-xs text-muted"> {{ unitLabel(row.original.dailyHifzCapacityUnit) }}</span>
@@ -197,19 +257,22 @@ function rowMenuItems(student: Student): DropdownMenuItem[][] {
           <span class="text-xs text-muted"> {{ unitLabel(row.original.dailyFarCapacityUnit) }}</span>
         </template>
 
+        <!-- Stop propagation so the menu doesn't also open the student's profile. -->
         <template #actions-cell="{ row }">
-          <UDropdownMenu
-            :items="rowMenuItems(row.original)"
-            :content="{ align: 'end', collisionPadding: 12 }"
-          >
-            <UButton
-              icon="i-lucide-ellipsis-vertical"
-              color="neutral"
-              variant="ghost"
-              square
-              :aria-label="t('pages.students.table.actions')"
-            />
-          </UDropdownMenu>
+          <div class="flex justify-end" @click.stop>
+            <UDropdownMenu
+              :items="rowMenuItems(row.original)"
+              :content="{ align: 'end', collisionPadding: 12 }"
+            >
+              <UButton
+                icon="i-lucide-ellipsis-vertical"
+                color="neutral"
+                variant="ghost"
+                square
+                :aria-label="t('pages.students.table.actions')"
+              />
+            </UDropdownMenu>
+          </div>
         </template>
       </UTable>
     </div>

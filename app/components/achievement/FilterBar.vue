@@ -105,8 +105,6 @@ function shiftDay(delta: number) {
       </template>
     </UPopover>
 
-    <HalaqaFilter class="flex-1 min-w-36 sm:flex-none sm:!w-44" />
-
     <!-- Date (primary) — prev/next day arrows around the calendar picker -->
     <div class="flex items-center gap-1">
       <UButton

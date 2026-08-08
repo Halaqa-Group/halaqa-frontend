@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
 import type { Student } from '~/types'
 
 type StatusFilter = Student['status'] | 'deleted' | null
@@ -7,7 +6,7 @@ type StatusFilter = Student['status'] | 'deleted' | null
 const { t } = useI18n()
 const { canRestoreStudent: canManageDeleted, canCreateStudent } = usePermissions()
 const { searchQuery, openAdd } = useStudents()
-const { filterStatus, sortKey, viewMode, summary } = useStudentsView()
+const { filterStatus, viewMode, summary } = useStudentsView()
 
 // Status counts double as the filter: each chip shows its tally and selects that
 // status; "all" clears it. Mirrors the attendance status chips.
@@ -24,26 +23,6 @@ const statusChips = computed(() => {
   }
   return chips
 })
-
-const sortItems = computed<DropdownMenuItem[][]>(() => [[
-  {
-    label: t('pages.students.sort.newest'),
-    icon: 'i-lucide-clock',
-    onSelect: () => { sortKey.value = 'newest' }
-  },
-  {
-    label: t('pages.students.sort.joinDateDesc'),
-    icon: 'i-lucide-calendar',
-    onSelect: () => { sortKey.value = 'joinDateDesc' }
-  },
-  {
-    label: t('pages.students.sort.nameAsc'),
-    icon: 'i-lucide-arrow-down-a-z',
-    onSelect: () => { sortKey.value = 'nameAsc' }
-  }
-]])
-
-const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
 </script>
 
 <template>
@@ -69,22 +48,6 @@ const sortLabel = computed(() => t(`pages.students.sort.${sortKey.value}`))
       :placeholder="t('pages.students.searchByName')"
       class="flex-1 min-w-40 sm:max-w-xs"
     />
-    <HalaqaFilter class="flex-1 min-w-40 sm:flex-none sm:w-48" />
-    <UDropdownMenu
-      :items="sortItems"
-      :content="{ align: 'end', collisionPadding: 12 }"
-    >
-      <UButton
-        variant="outline"
-        color="neutral"
-        trailing-icon="i-lucide-chevron-down"
-        icon="i-lucide-arrow-up-down"
-        size="sm"
-      >
-        {{ t('pages.students.sort.label') }}: {{ sortLabel }}
-      </UButton>
-    </UDropdownMenu>
-
     <template #actions>
       <div class="flex items-center gap-1 rounded-md border border-default p-0.5">
         <UButton

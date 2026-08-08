@@ -499,7 +499,22 @@ export interface CreateHolidayPayload {
 
 export type AchievementErrorType = 'mistake' | 'warning' | 'harakat'
 export type CompletionMethod = 'quick' | 'mushaf'
-export type RecitationMethod = 'full' | 'test'
+// 'full' recited the whole range in one go; 'test' examined at chosen positions;
+// 'untracked' recited and scored without documenting where — a quick review
+// evaluation that carries aggregate `error_counts` and no positions at all.
+export type RecitationMethod = 'full' | 'test' | 'untracked'
+
+// Aggregate error counts for an `untracked` recitation — how many errors, not
+// where. The only carrier the backend accepts for that method (itemized errors
+// and test_positions are rejected). Omitted types count as zero server-side.
+// `tajweed` is retired on the frontend (never scored, see utils/score.ts), so we
+// only ever send the three scored types; the field stays here to match the API.
+export interface AchievementErrorCounts {
+  mistakes?: number
+  warnings?: number
+  tajweed?: number
+  harakat?: number
+}
 
 // A single itemized error occurrence at a QUL word span. surah/ayah/juz/hizb are
 // supplied by the client from QUL at capture time; the backend denormalizes the
@@ -674,12 +689,20 @@ export interface CreateAchievementDto {
   // Tested spots (recitation_method='test' only, >=1). Mutually exclusive with
   // top-level `errors`, which the backend rejects for a test recitation.
   test_positions?: AchievementTestPosition[]
+  // Aggregate counts (recitation_method='untracked' only) — how many errors of
+  // each type, with no locations. Mutually exclusive with `errors`/`test_positions`;
+  // the backend 400s if it's sent for a `full`/`test` recitation (their counts are
+  // derived from the itemized errors).
+  error_counts?: AchievementErrorCounts
   percentage_score: number
   // الصفحات الكلية — mushaf pages the whole [start,end] range covers, fractional.
-  // The backend never derives this; whatever the client sends is what the
-  // dashboard (`total_pages`) and the daily report read back. For `full` it also
-  // becomes the single position's pages; for `test` the per-position `pages`
-  // inside `test_positions` roll up into `positions_pages` separately.
+  // Optional: when omitted the backend derives it from the verse range (identical
+  // page math to the frontend's), so it is never left empty — it is the volume
+  // metric every dashboard KPI sums. When we can resolve the range we still send it
+  // (it may capture detail the range can't). For `full` it also becomes the single
+  // position's pages; for `test` the per-position `pages` inside `test_positions`
+  // roll up into `positions_pages` separately; for `untracked` there are no
+  // positions, so `positions_pages` stays NULL.
   total_pages?: number | null
   teacher_notes?: string
   approve?: boolean

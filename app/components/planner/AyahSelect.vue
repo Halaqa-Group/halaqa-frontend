@@ -101,18 +101,18 @@ watch(surah, () => {
     header reveals/hides the wheels (collapsed by default). Pass :collapsible="false"
     to skip the card/header and always show the wheels inline.
   -->
-  <div :class="collapsible ? 'overflow-hidden rounded-xl border border-default' : ''">
+  <div :class="collapsible ? 'overflow-hidden rounded-md bg-default ring ring-inset ring-accented' : ''">
     <button
       v-if="collapsible"
       type="button"
-      class="flex w-full items-center justify-between gap-2 px-3 py-3 text-sm"
+      class="flex w-full items-center justify-between gap-1.5 px-2.5 py-1.5 text-sm transition-colors hover:bg-elevated"
       :aria-expanded="open"
       @click="open = !open"
     >
-      <span class="min-w-0 truncate font-medium text-highlighted">{{ summary }}</span>
+      <span class="min-w-0 truncate text-highlighted">{{ summary }}</span>
       <UIcon
         :name="open ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-        class="size-5 shrink-0 text-muted"
+        class="size-5 shrink-0 text-dimmed"
       />
     </button>
     <div

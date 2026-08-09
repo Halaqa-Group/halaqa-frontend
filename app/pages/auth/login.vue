@@ -25,7 +25,7 @@ type Schema = z.output<typeof schema>
 const state = reactive<Partial<Schema>>({
   identifier: undefined,
   password: undefined,
-  remember_me: false
+  remember_me: true
 })
 
 const isLoading = ref(false)

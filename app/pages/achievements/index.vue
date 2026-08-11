@@ -13,7 +13,7 @@ const toast = useToast()
 const apiError = useApiError()
 const { selectedHalaqaId, hasHalaqa } = useGlobalHalaqa()
 const {
-  selectedDate, filters, page, total, limit, totalPages, isLoading,
+  selectedDate, filters, page, listTotal, limit, totalPages, isLoading, isSearching,
   deleteOpen, deleteTarget,
   loadAll, loadAchievements, deleteAchievement
 } = useAchievements()
@@ -32,7 +32,9 @@ async function onDeleteConfirm() {
 
 function onPageChange(next: number) {
   page.value = next
-  loadAchievements()
+  // A search already holds the whole scope in memory and pages over the matches
+  // locally, so only the server-paged list needs a fetch here.
+  if (!isSearching.value) loadAchievements()
 }
 
 watch(selectedHalaqaId, () => {
@@ -42,6 +44,21 @@ watch(selectedHalaqaId, () => {
 watch([selectedDate, () => filters.trackType, () => filters.status], () => {
   page.value = 1
   loadAchievements()
+})
+
+// Starting or clearing a search changes how much has to be loaded — the whole
+// scope versus one page. Typing further characters only narrows what's already
+// here, so it re-filters without another request.
+watch(isSearching, () => {
+  page.value = 1
+  loadAchievements()
+})
+
+// Narrowing a search can leave the current page past the end of the matches.
+// Safe to do without a refetch only here: the search slice is derived from `page`,
+// so it re-renders correctly the moment this changes.
+watch(totalPages, (count) => {
+  if (isSearching.value && page.value > count) page.value = Math.max(1, count)
 })
 
 // When offline work finishes syncing (draft recitations uploaded, queued deletes
@@ -79,7 +96,7 @@ onMounted(() => {
       <div v-if="totalPages > 1" class="flex justify-end border-t border-default px-0 py-3 sm:px-6">
         <UPagination
           :page="page"
-          :total="total"
+          :total="listTotal"
           :items-per-page="limit"
           :disabled="isLoading"
           @update:page="onPageChange"

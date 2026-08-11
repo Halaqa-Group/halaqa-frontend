@@ -11,16 +11,18 @@ const { t } = useI18n()
 const { canEditPlanItems } = usePermissions()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
-  students, selectedDate, dayRoster, dayLoading,
+  studentsHalaqaId, selectedDate, dayRoster, dayLoading,
   selectedStudentId, planStatus, loadDayRoster, loadPlan, setWeekFromDate
 } = useWeeklyPlan()
 
 const canModify = computed(() => canEditPlanItems.value && planStatus.value !== 'approved')
 
-// Self-loading: rebuild whenever the halaqa, the roster date, or the student list
-// changes (students land asynchronously after a halaqa switch).
+// Self-loading: rebuild whenever the halaqa or the roster date changes, and again
+// once this halaqa's students land (they arrive asynchronously, and a run before
+// then has nothing to map). Keyed on `studentsHalaqaId` rather than the student
+// array so a re-fetch that returns the same roster doesn't re-trigger the fetch.
 watch(
-  [selectedHalaqaId, selectedDate, () => students.value.length],
+  [selectedHalaqaId, selectedDate, studentsHalaqaId],
   () => { void loadDayRoster() },
   { immediate: true }
 )

@@ -10,6 +10,8 @@ import { verseToGlobal } from '~/utils/quran-structure'
 import { computePercentageScore, type ScoreCounts } from '~/utils/score'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import { defaultSessionRange, planDirectionOf, DEFAULT_PLAN_START_SURAH } from '~/utils/plan'
+import { newRequestId } from '~/utils/requestId'
+import { todayYmd } from '~/utils/date'
 import type { AchievementTestPosition, ApiWeeklyPlanItem, CreateAchievementDto, RecitationMethod } from '~/types'
 
 const emit = defineEmits<{ saved: [] }>()
@@ -21,8 +23,8 @@ const overlay = useOverlay()
 const online = useOnline()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
-  students, editing, duplicateFrom, prefillStudentId, prefillPlanItem, selectedDate, currentEvaluationSettings,
-  isSaving, addAchievement, updateAchievement, approveAchievement, loadEvaluationSettings
+  students, editing, duplicateFrom, prefillStudentId, prefillPlanItem, prefillDate, currentEvaluationSettings,
+  evaluationSettingsKnown, isSaving, addAchievement, updateAchievement, loadEvaluationSettings
 } = useAchievements()
 // Warm the QUL word-id / juz / hizb lookup used to synthesize errors[] on submit.
 useQuranWords()
@@ -38,6 +40,12 @@ const fromPlanner = computed(() => prefillPlanItem.value != null)
 // Set by the "Save & recite" footer button before it submits the form.
 const continueToRecite = ref(false)
 
+// Idempotency key for the create: one id per recording the teacher is entering,
+// so every re-save of it — a re-tapped button after a slow save, a draft flushed
+// on reconnect — is recognisable as the same record rather than a new one. Reset
+// when the form is (re)hydrated for a different record, and after a save lands.
+const requestId = ref(newRequestId())
+
 const state = reactive<{
   student_id: number | undefined
   date: string
@@ -52,7 +60,9 @@ const state = reactive<{
   teacher_notes: string
 }>({
   student_id: undefined,
-  date: selectedDate.value,
+  // A new record is dated today; hydrate() overrides it for edit/duplicate and
+  // for a planner-launched record that names its own day.
+  date: todayYmd(),
   track_type: 'Hifz',
   start_surah: 1,
   start_verse: 1,
@@ -197,14 +207,20 @@ function hydrate() {
     state.warnings_count = editing.value ? (src.warnings_count ?? 0) : 0
     state.harakat_errors_count = editing.value ? (src.harakat_errors_count ?? 0) : 0
     state.teacher_notes = editing.value ? (src.teacher_notes ?? '') : ''
-    if (duplicateFrom.value) state.date = selectedDate.value
+    // A duplicate is a new recording of an old one — it is being entered now, so
+    // it takes today's date rather than the source record's.
+    if (duplicateFrom.value) state.date = todayYmd()
   } else {
     // A fresh record may be launched from the planner's session-details dialog
     // with the student and lesson already chosen; otherwise fall back to an
     // empty picker.
     const pref = prefillPlanItem.value
     state.student_id = prefillStudentId.value ?? undefined
-    state.date = selectedDate.value
+    // Today, unless the planner handed in the day its cell belongs to. The list's
+    // browsed day deliberately doesn't seed this: recording while looking at an
+    // older day still files the achievement under today (the teacher can still
+    // pick another day in the calendar below).
+    state.date = prefillDate.value ?? todayYmd()
     if (pref) {
       // Show the clicked session's track and range as editable inputs, pre-filled,
       // so the teacher can see and tweak them (incl. end_verse) before saving.
@@ -234,6 +250,8 @@ function hydrate() {
     state.teacher_notes = ''
   }
   hydratePositions()
+  // A different record is being entered — it is its own write intent.
+  requestId.value = newRequestId()
 }
 watch([editing, duplicateFrom], hydrate, { immediate: true })
 
@@ -324,12 +342,9 @@ watch(
   }
 )
 
-// Show the manual track + range inputs when there's no plan, or the teacher
-// explicitly opted into manual entry. When editing, the lesson/range is fixed —
-// it's shown read-only and can't be changed (only counts/notes are editable).
-// Editable track + range inputs: shown for manual entry, when there's no plan, or
-// when launched from the planner (picker hidden, but the range stays editable).
-const showManual = computed(() => !isEdit.value && (fromPlanner.value || manualRange.value || pickerItems.value.length === 0))
+const showManual = computed(() =>
+  isEdit.value || fromPlanner.value || manualRange.value || pickerItems.value.length === 0
+)
 function planItemRange(it: PickerItem) {
   return formatVerseRange(it.start_surah, it.start_verse, it.end_surah, it.end_verse, SURAH_NAMES)
 }
@@ -555,6 +570,7 @@ async function buildAchievementDto(studentId: number, halaqaId: number, toRecite
   if (toRecite && method === 'untracked') method = 'full'
 
   const dto: CreateAchievementDto = {
+    client_request_id: requestId.value,
     student_id: studentId,
     halaqa_id: halaqaId,
     date: state.date,
@@ -607,7 +623,17 @@ async function buildAchievementDto(studentId: number, halaqaId: number, toRecite
 // offline drafting — so we don't create here when offline (that would
 // double-draft the session).
 async function saveAndRecite(dto: CreateAchievementDto, studentId: number, halaqaId: number) {
-  if (online.value) await addAchievement(dto)
+  if (online.value) {
+    try {
+      await addAchievement(dto, { draftWhenUnreachable: false })
+    } catch (e) {
+      // Too slow to land: hand off to the mushaf anyway rather than blocking the
+      // teacher on it. If the create did reach the server, the reader finds that
+      // record and updates it; if it didn't, the reader's own autosync creates
+      // it. Either way this must not draft — that's the reader's job.
+      if (!isTimeoutError(e)) throw e
+    }
+  }
   // Carry the chosen session so the mushaf opens on that exact lesson (the recite
   // page hides its session switcher and relies on this). The track + range are
   // passed explicitly, not just item_id: the session may sit on a different
@@ -628,24 +654,35 @@ async function saveAndRecite(dto: CreateAchievementDto, studentId: number, halaq
 }
 
 // "Approve achievement": record straight from the form and sign it off. Online
-// it approves on the spot; offline it's saved as a draft (approve intent carried
-// on the draft, applied on sync).
+// it approves on the spot; offline — or when the connection was too slow to wait
+// for — it's saved as a draft (approve intent carried on the draft, applied on
+// sync).
 async function recordAndApprove(dto: CreateAchievementDto) {
-  const created = await addAchievement(dto, true)
-  if (created) {
-    // Recording and approving are the same halaqa-scope check, so if the create
-    // succeeded this cannot 403.
-    await approveAchievement(created.id)
-    toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
-  } else {
-    toast.add({ title: t('pages.achievements.savedOfflineToast'), color: 'success', icon: 'i-lucide-cloud-off' })
+  // One request: the approval rides on the create. That also removes the state
+  // where the record saved but the approval didn't — which read as a failure and
+  // got answered with a second recording of the same lesson.
+  const created = await addAchievement(dto, { approve: true })
+  if (!created) {
+    // Stored on the device. Which of the two reasons decides the wording: still
+    // "online" means the link was simply too slow to finish in time.
+    toast.add({
+      title: t(online.value ? 'pages.achievements.savedSlowToast' : 'pages.achievements.savedOfflineToast'),
+      color: 'success',
+      icon: 'i-lucide-cloud-off'
+    })
+    return
   }
+  toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
 }
 
 async function onSubmit(_event: FormSubmitEvent<Schema>) {
   const halaqaId = selectedHalaqaId.value
   const studentId = state.student_id
   if (!halaqaId || studentId == null) return
+  // The footer buttons are disabled while saving, but a keyboard submit isn't —
+  // and a save in flight on a weak connection is exactly when a second one gets
+  // fired. One at a time.
+  if (isSaving.value) return
 
   // `continueToRecite` is a one-shot flag set by the footer button before submit;
   // consume it up front so every path below reads a stable intent.
@@ -672,6 +709,21 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
       return
     } else {
       await recordAndApprove(dto)
+      // Saved (on the server or on the device) — anything entered from here on is
+      // a new record and must not reuse this one's idempotency key.
+      requestId.value = newRequestId()
+    }
+    // The halaqa's weights couldn't be read, so the stored score came out of the
+    // default deductions. The backend keeps percentage_score verbatim (it never
+    // recomputes), so say it plainly — reopening the record once the settings load
+    // recomputes it. Additive to the success toast above, not a replacement: the
+    // record IS saved.
+    if (!evaluationSettingsKnown.value) {
+      toast.add({
+        title: t('pages.achievements.defaultWeightsWarning'),
+        color: 'warning',
+        icon: 'i-lucide-triangle-alert'
+      })
     }
     emit('saved')
   } catch (e: any) {
@@ -737,9 +789,9 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </UFormField>
     </div>
 
-    <!-- Pick the planned lesson so the range isn't re-typed. Hidden on edit (lesson
-         fixed, read-only below) and when launched from the planner (the session's
-         track + range show as editable inputs below instead). -->
+    <!-- Pick the planned lesson so the range isn't re-typed. Hidden on edit and
+         when launched from the planner — both of those show the track + range as
+         editable inputs below instead. -->
     <UFormField v-if="!isEdit && !fromPlanner" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
       <div v-if="planLoading" class="flex items-center gap-2 text-xs text-muted">
         <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
@@ -805,6 +857,7 @@ defineExpose({ saving: isSaving, setContinueToRecite })
               v-model:surah="state.end_surah"
               v-model:verse="state.end_verse"
               :min-surah="state.start_surah"
+              :min-verse="state.start_verse"
               :snap-to="studentDirection === 'desc' ? 'last' : 'first'"
             />
           </div>
@@ -816,9 +869,9 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </UFormField>
     </template>
 
-    <!-- Chosen lesson summary (read-only) — the fixed lesson when editing, or the
-         picked plan item. Not editable. -->
-    <UFormField v-else-if="isEdit || selectedPlanItemId != null" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
+    <!-- Chosen lesson summary (read-only) — the plan item the teacher picked
+         above. Editing shows the inputs instead, so it never lands here. -->
+    <UFormField v-else-if="selectedPlanItemId != null" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
       <div class="flex items-center justify-between gap-2 rounded-lg border border-default bg-elevated px-3 py-2.5">
         <span class="inline-flex items-center gap-2 text-sm font-medium min-w-0">
           <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[state.track_type as AchievementTrack]" class="shrink-0">
@@ -830,7 +883,6 @@ defineExpose({ saving: isSaving, setContinueToRecite })
           <span v-if="rangeSummary" class="text-xs text-muted">
             {{ rangeSummary }}<template v-if="rangePagesSummary"> · {{ rangePagesSummary }}</template>
           </span>
-          <UIcon v-if="isEdit" name="i-lucide-lock" class="w-4 h-4 text-muted" />
         </span>
       </div>
     </UFormField>
@@ -908,7 +960,12 @@ defineExpose({ saving: isSaving, setContinueToRecite })
               </div>
               <div class="space-y-1">
                 <span class="text-[11px] font-medium text-muted">{{ t('pages.achievements.toLabel') }}</span>
-                <PlannerAyahSelect v-model:surah="p.end_surah" v-model:verse="p.end_verse" :min-surah="p.start_surah" />
+                <PlannerAyahSelect
+                  v-model:surah="p.end_surah"
+                  v-model:verse="p.end_verse"
+                  :min-surah="p.start_surah"
+                  :min-verse="p.start_verse"
+                />
               </div>
             </div>
             <div class="grid grid-cols-3 gap-2">

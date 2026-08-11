@@ -11,6 +11,29 @@ let readCacheWrites = 0
 
 const SKIP_REFRESH_FOR = new Set(['/auth/login', '/auth/refresh'])
 
+// A weak connection ("lie-fi") is worse than no connection: `navigator.onLine`
+// stays TRUE on a stalled mobile link, so every offline path below is bypassed
+// while the request itself hangs until the OS gives up — minutes of a spinning
+// save button, after which the teacher taps save again and creates a duplicate.
+// So every request carries a deadline, and an expired one is treated exactly
+// like a network failure (serve a cached read, queue a queueable write), NOT
+// like a caller cancellation. Callers that need a tighter bound pass `timeout`.
+const DEFAULT_TIMEOUT_MS = 15_000
+
+const TIMEOUT_FLAG = '__apiTimeout'
+
+/** True when a request was cut off by its own deadline (weak connection). */
+export function isTimeoutError(e: unknown): boolean {
+  return !!e && typeof e === 'object' && (e as Record<string, unknown>)[TIMEOUT_FLAG] === true
+}
+
+function timeoutError(url: string): Error {
+  const e = new Error(`Request timed out: ${url}`)
+  // `name` deliberately isn't 'AbortError': isAbortError() must NOT match this,
+  // or a deadline would be mistaken for a superseded request and dropped.
+  return Object.assign(e, { name: 'ApiTimeoutError', [TIMEOUT_FLAG]: true })
+}
+
 interface ReadCacheRecord<T> { data: T, cachedAt: number, pinned?: boolean }
 
 // Namespaced per user + active role so a role switch (which re-scopes what the
@@ -134,6 +157,15 @@ function createClient(): ApiClient {
     // then strip it so it never reaches the network layer.
     const pin = (opts as { pin?: boolean }).pin === true
     if (pin) delete (opts as { pin?: boolean }).pin
+    // Same for `timeout`: it's ours, not ofetch's (whose own timeout would
+    // replace the signal we compose below).
+    const timeout = (opts as { timeout?: number }).timeout ?? DEFAULT_TIMEOUT_MS
+    if ('timeout' in opts) delete (opts as { timeout?: number }).timeout
+    // `fresh` opts out of every read-cache fallback: the caller needs server
+    // truth or an error, never a possibly-stale local copy (see the duplicate
+    // check in useAchievementDrafts.flush).
+    const fresh = (opts as { fresh?: boolean }).fresh === true
+    if ('fresh' in opts) delete (opts as { fresh?: boolean }).fresh
     const cacheKey = method === 'GET' ? readCacheKey(url, opts) : null
     const outboxKind = writeOutboxKind(url, method)
 
@@ -147,18 +179,20 @@ function createClient(): ApiClient {
     // Offline GET → serve straight from IndexedDB instead of a doomed network
     // round-trip. Only fall through to the network when there's no cached copy
     // (so a never-cached request still surfaces its real offline error).
-    if (cacheKey && import.meta.client && !navigator.onLine) {
+    if (cacheKey && !fresh && import.meta.client && !navigator.onLine) {
       const cached = await readFromCache<T>(cacheKey)
       if (cached !== undefined) return cached
     }
 
     // Dedup concurrent identical GETs by sharing the in-flight promise. Skipped
     // when the caller passes its own signal: it wants independent cancellation,
-    // and one caller aborting a shared promise would break the others.
-    if (cacheKey && !opts.signal) {
+    // and one caller aborting a shared promise would break the others. Also
+    // skipped for `fresh`, which must not adopt a promise that may resolve from
+    // the cache (nor hand its own network-only result to a cache-tolerant caller).
+    if (cacheKey && !opts.signal && !fresh) {
       const existing = inFlightGets.get(cacheKey)
       if (existing) return existing as Promise<T>
-      const pending = execute<T>(url, opts, cacheKey, pin, outboxKind)
+      const pending = execute<T>(url, opts, cacheKey, pin, outboxKind, timeout, fresh)
       inFlightGets.set(cacheKey, pending)
       try {
         return await pending
@@ -167,7 +201,34 @@ function createClient(): ApiClient {
       }
     }
 
-    return execute<T>(url, opts, cacheKey, pin, outboxKind)
+    return execute<T>(url, opts, cacheKey, pin, outboxKind, timeout, fresh)
+  }
+
+  // One network attempt under a deadline. The caller's own signal (used for
+  // superseding a request) is chained into ours, so aborting it still works —
+  // but an abort we raised ourselves surfaces as a distinguishable timeout,
+  // which execute() then handles as a network failure rather than a cancel.
+  async function send<T>(url: string, opts: FetchOptions, timeout: number): Promise<T> {
+    const caller = opts.signal as AbortSignal | undefined
+    const controller = new AbortController()
+    let expired = false
+    const timer = setTimeout(() => {
+      expired = true
+      controller.abort()
+    }, timeout)
+    const relay = () => controller.abort()
+    if (caller?.aborted) controller.abort()
+    else caller?.addEventListener('abort', relay, { once: true })
+    try {
+      const raw = await network<unknown>(url, { ...opts, signal: controller.signal } as Parameters<typeof network>[1])
+      return unwrap<T>(raw, lastWarnings)
+    } catch (e: unknown) {
+      if (expired && !caller?.aborted) throw timeoutError(url)
+      throw e
+    } finally {
+      clearTimeout(timer)
+      caller?.removeEventListener('abort', relay)
+    }
   }
 
   async function execute<T>(
@@ -175,11 +236,13 @@ function createClient(): ApiClient {
     opts: FetchOptions,
     cacheKey: string | null,
     pin: boolean,
-    outboxKind: string | null
+    outboxKind: string | null,
+    timeout: number,
+    fresh: boolean
   ): Promise<T> {
     const method = ((opts.method as string) || 'GET').toUpperCase()
     try {
-      const data = unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
+      const data = await send<T>(url, opts, timeout)
       if (cacheKey) writeToCache(cacheKey, data, pin)
       return data
     } catch (e: unknown) {
@@ -190,10 +253,11 @@ function createClient(): ApiClient {
       const status = (e as { response?: { status?: number }, status?: number } | null)?.response?.status
         ?? (e as { status?: number } | null)?.status
 
-      // Network failure (no HTTP status): fall back to a cached read, or queue a
-      // queueable write, before treating it as a hard error.
+      // Network failure — or our own deadline, which carries no status either, so
+      // a stalled request gets the same treatment as a dead one: fall back to a
+      // cached read, or queue a queueable write, before treating it as a hard error.
       if (status == null) {
-        if (cacheKey) {
+        if (cacheKey && !fresh) {
           const cached = await readFromCache<T>(cacheKey)
           if (cached !== undefined) return cached
         }
@@ -221,7 +285,8 @@ function createClient(): ApiClient {
         }
         throw e
       }
-      const retried = unwrap<T>(await network<unknown>(url, opts as Parameters<typeof network>[1]), lastWarnings)
+      // Fresh deadline for the retry — the first attempt's is spent.
+      const retried = await send<T>(url, opts, timeout)
       if (cacheKey) writeToCache(cacheKey, retried, pin)
       return retried
     }

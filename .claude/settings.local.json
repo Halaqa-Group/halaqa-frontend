@@ -47,7 +47,8 @@
       "Bash(grep -oE \"\\\\`\\\\\\\\\\\\$\\\\{[^}]*\\\\}-header\\\\`|\\\\-header|header\\\\?:\" node_modules/@nuxt/ui/dist/runtime/components/Table.vue.d.ts)",
       "Bash(pnpm exec *)",
       "Bash(grep -nA20 '\"scripts\"' package.json)",
-      "Bash(xargs grep -ln \"ring-inset ring-accented\")"
+      "Bash(xargs grep -ln \"ring-inset ring-accented\")",
+      "Bash(python -)"
     ]
   }
 }

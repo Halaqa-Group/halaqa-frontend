@@ -12,6 +12,7 @@ import { pageCoverage, pagesRecited } from '~/composables/useVerseToPage'
 import { unwrapList } from '~/utils/api/list'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { computePercentageScore, type ScoreCounts } from '~/utils/score'
+import { forWire } from '~/utils/requestId'
 import { ensureQuranWordData, locateError, wordId } from '~/utils/quran-words'
 import { todayYmd } from '~/utils/date'
 
@@ -206,11 +207,14 @@ const students = ref<StudentWithAttendance[]>([])
 const achievements = ref<ApiAchievement[]>([])
 const selectedDate = ref(todayYmd())
 const isLoading = ref(false)
+// The list request failed (offline with no cached copy for this day/filter, or a
+// real error). Kept separate from an empty result so the page can say why.
+const loadFailed = ref(false)
 const isSaving = ref(false)
 
 const total = ref(0)
 const page = ref(1)
-const limit = ref(20)
+const limit = ref(21)
 
 const viewMode = ref<'table' | 'grid'>('grid')
 const filters = reactive<{ search: string, trackType: TrackType | null, status: 'approved' | 'unapproved' | null }>({
@@ -218,6 +222,15 @@ const filters = reactive<{ search: string, trackType: TrackType | null, status: 
   trackType: null,
   status: null
 })
+
+// `limit` is the server's cap on one request (ListAchievementsQuery @Max(100)),
+// and SEARCH_PAGE_CAP bounds the full pull a search does — 1000 records is far
+// past any real day's list, so it only ever guards against a runaway loop.
+const SERVER_MAX_LIMIT = 100
+const SEARCH_PAGE_CAP = 10
+
+const searchQuery = computed(() => filters.search.trim().toLowerCase())
+const isSearching = computed(() => searchQuery.value !== '')
 
 const editing = ref<ApiAchievement | null>(null)
 const duplicateFrom = ref<ApiAchievement | null>(null)
@@ -234,19 +247,15 @@ export interface PrefillPlanItem {
   end_surah: number
   end_verse: number
 }
-// Pre-selects the planned lesson (track + range) when recording from the
-// planner's cell dialog, so the teacher doesn't re-pick it. Kept selected even
-// when the lesson's weekday differs from the record date. Cleared by openRecord.
 const prefillPlanItem = ref<PrefillPlanItem | null>(null)
+const prefillDate = ref<string | null>(null)
 const deleteOpen = ref(false)
 const deleteTarget = ref<ApiAchievement | null>(null)
 
 const settingsCache = new Map<number, Record<string, unknown> | null>()
 const currentEvaluationSettings = ref<Record<string, unknown> | null>(null)
+const evaluationSettingsKnown = ref(true)
 
-// Weights are fetched once per halaqa and reused for every score computed in the
-// session. Editing them on the halaqa page has to seed the new value here, or
-// the next achievement would still be scored with the old deductions.
 export function invalidateEvaluationSettings(halaqaId: number, next: Record<string, unknown> | null) {
   settingsCache.set(halaqaId, next)
 }
@@ -255,9 +264,6 @@ export function useAchievements() {
   const api = useApi()
   const { selectedHalaqaId, halaqat, selectHalaqa } = useGlobalHalaqa()
 
-  // The record form writes halaqa_id from the global scope, so editing a row while
-  // unscoped (principal viewing all halaqat) has to pin the scope to that row's
-  // own halaqa first.
   function pinHalaqa(halaqaId: number) {
     if (selectedHalaqaId.value === halaqaId) return
     const halaqa = halaqat.value.find(h => h.id === halaqaId)
@@ -268,17 +274,19 @@ export function useAchievements() {
     if (settingsCache.has(halaqaId)) {
       const cached = settingsCache.get(halaqaId) ?? null
       currentEvaluationSettings.value = cached
+      evaluationSettingsKnown.value = true
       return cached
     }
     try {
-      const halaqa = await api<ApiHalaqaDetail>(`/halaqat/${halaqaId}`)
+      const halaqa = await api<ApiHalaqaDetail>(`/halaqat/${halaqaId}`, { timeout: 6_000 } as Parameters<typeof api>[1])
       const settings = halaqa.evaluation_settings ?? null
       settingsCache.set(halaqaId, settings)
       currentEvaluationSettings.value = settings
+      evaluationSettingsKnown.value = true
       return settings
     } catch {
-      settingsCache.set(halaqaId, null)
       currentEvaluationSettings.value = null
+      evaluationSettingsKnown.value = false
       return null
     }
   }
@@ -304,26 +312,53 @@ export function useAchievements() {
     }))
   }
 
-  async function loadAchievements() {
+  async function fetchPage(pageNum: number, pageLimit: number) {
     const halaqaId = selectedHalaqaId.value
-    isLoading.value = true
-    try {
-      // halaqa_id is an additive filter server-side: omitting it returns every
-      // achievement the caller may see.
-      const params = new URLSearchParams({
-        date: selectedDate.value,
-        page: String(page.value),
-        limit: String(limit.value)
-      })
-      if (halaqaId) params.set('halaqa_id', String(halaqaId))
-      if (filters.trackType) params.set('track_type', filters.trackType)
-      if (filters.status) params.set('status', filters.status)
+    const params = new URLSearchParams({
+      date: selectedDate.value,
+      page: String(pageNum),
+      limit: String(pageLimit)
+    })
+    if (halaqaId) params.set('halaqa_id', String(halaqaId))
+    if (filters.trackType) params.set('track_type', filters.trackType)
+    if (filters.status) params.set('status', filters.status)
 
-      const raw = await api<unknown>(`/achievements?${params.toString()}`)
-      achievements.value = unwrapList<ApiAchievement>(raw)
-      total.value = raw && typeof raw === 'object' && 'total' in raw
-        ? Number((raw as { total: number }).total)
-        : achievements.value.length
+    const raw = await api<unknown>(`/achievements?${params.toString()}`)
+    const items = unwrapList<ApiAchievement>(raw)
+    const count = raw && typeof raw === 'object' && 'total' in raw
+      ? Number((raw as { total: number }).total)
+      : items.length
+    return { items, count }
+  }
+
+  async function loadAchievements() {
+    isLoading.value = true
+    loadFailed.value = false
+    try {
+      if (isSearching.value) {
+        const first = await fetchPage(1, SERVER_MAX_LIMIT)
+        const rows = first.items
+        for (let p = 2; rows.length < first.count && p <= SEARCH_PAGE_CAP; p++) {
+          const next = await fetchPage(p, SERVER_MAX_LIMIT)
+          if (!next.items.length) break
+          rows.push(...next.items)
+        }
+        achievements.value = rows
+        total.value = first.count
+      } else {
+        const { items, count } = await fetchPage(page.value, limit.value)
+        achievements.value = items
+        total.value = count
+      }
+    } catch {
+      // Offline the read-cache only holds the days/filters that were actually
+      // warmed or visited — anything else misses and throws. Keeping the rows
+      // from the previous query made the date arrows and the track/status
+      // filters look like no-ops (the same records stayed on screen), so drop
+      // them and let the page show its offline/empty state instead.
+      achievements.value = []
+      total.value = 0
+      loadFailed.value = true
     } finally {
       isLoading.value = false
     }
@@ -427,7 +462,21 @@ export function useAchievements() {
       status: draft.approve ? 'approved' : 'pending'
     } as unknown as ApiAchievement
   }
-  const draftRows = computed(() => offlineDrafts.value.map(draftToRow))
+  // Date, halaqa, track and status are server-side query params, so they never
+  // reach a local draft — the list has to apply them itself, or an offline
+  // recitation would surface on every other day (and in every other halaqa).
+  const draftRows = computed(() => {
+    const halaqaId = selectedHalaqaId.value
+    return offlineDrafts.value.filter(({ dto, approve }) => {
+      if (dto.date !== selectedDate.value) return false
+      // Unscoped (principal viewing all halaqat) lists every halaqa's drafts.
+      if (halaqaId != null && dto.halaqa_id !== halaqaId) return false
+      if (filters.trackType && dto.track_type !== filters.trackType) return false
+      if (filters.status === 'approved' && !approve) return false
+      if (filters.status === 'unapproved' && approve) return false
+      return true
+    }).map(draftToRow)
+  })
 
   // Reopen the reader on a draft: no achievement_id (so recite takes the fresh
   // path), but the exact session (item_id + track + range) so its session key
@@ -454,16 +503,32 @@ export function useAchievements() {
     await setDraftApproval(draftSessionKey(a), approve)
   }
 
-  const filteredAchievements = computed(() => {
+  // Every loaded row that survives the search — the full match set, not one page
+  // of it. While searching `achievements` holds the whole scope (see
+  // `loadAchievements`), so this is the true count of what the query found.
+  const matchedAchievements = computed(() => {
     const pend = pendingDeleteIds.value
     // Server ids arrive as strings ("47"); the pending-delete set holds numbers.
     const server = pend.size ? achievements.value.filter(a => !pend.has(Number(a.id))) : achievements.value
     // Drafts first so unsynced work is always visible at the top.
     const combined = [...draftRows.value, ...server]
-    const q = filters.search.trim().toLowerCase()
+    const q = searchQuery.value
     if (!q) return combined
     return combined.filter(a => studentDisplayName(a).toLowerCase().includes(q))
   })
+
+  // What the page renders. Without a search the server already paged for us; a
+  // search paged nothing, so the slice happens here.
+  const filteredAchievements = computed(() => {
+    if (!isSearching.value) return matchedAchievements.value
+    const start = (page.value - 1) * limit.value
+    return matchedAchievements.value.slice(start, start + limit.value)
+  })
+
+  // Drives the pager: the server's count normally, the number of matches while
+  // searching — so 30 matches across two server pages become two local pages, and
+  // 12 matches become none.
+  const listTotal = computed(() => (isSearching.value ? matchedAchievements.value.length : total.value))
 
   const hasActiveFilters = computed(() =>
     filters.search.trim() !== '' || filters.trackType !== null || filters.status !== null
@@ -475,7 +540,7 @@ export function useAchievements() {
     filters.status = null
   }
 
-  const totalPages = computed(() => (limit.value > 0 ? Math.ceil(total.value / limit.value) : 1))
+  const totalPages = computed(() => (limit.value > 0 ? Math.ceil(listTotal.value / limit.value) : 1))
 
   // Where the itemized errors live depends on the method: `full` carries them at
   // the top level, `test` inside each position.
@@ -540,28 +605,96 @@ export function useAchievements() {
     return body
   }
 
-  // `approveIfOffline` is only consulted on the offline draft path: a plain
-  // "record & approve" wants the synced record approved too, "save & recite"
-  // leaves it pending.
-  async function addAchievement(data: CreateAchievementDto, approveIfOffline = false) {
+  // How long the teacher waits on the network before the record is stored on the
+  // device instead. Deliberately short: a save that hasn't landed in 10s on a
+  // weak link probably won't land soon, and every extra second of spinner is a
+  // second in which the save is re-tapped.
+  const SAVE_TIMEOUT_MS = 10_000
+
+  // The session key a recording is drafted under. Identical across re-saves of
+  // the same recording, which is what makes the draft store exactly-once.
+  function draftKeyOf(data: CreateAchievementDto): string {
+    return `${data.student_id}:${data.date}:${data.track_type}:${data.start_surah}-${data.start_verse}-${data.end_surah}-${data.end_verse}`
+  }
+
+  interface AddAchievementOptions {
+    // Sign the record off as part of the recording. Online this rides along on the
+    // create (`approve: true`) instead of costing a second round-trip: the API
+    // gates create and approve on the SAME halaqa-scope check, so it cannot fail
+    // where a plain create would have succeeded — and it refuses outright rather
+    // than silently storing the record unapproved. Offline the intent is carried
+    // on the draft and applied when it uploads.
+    approve?: boolean
+    // Whether a create the network couldn't deliver in time becomes a local
+    // draft. "Save & recite" opts out: the mushaf owns that session's draft, so
+    // drafting here as well would store the recitation twice.
+    draftWhenUnreachable?: boolean
+  }
+
+  // Returns the created record, or `null` when it was stored locally instead —
+  // either offline, or because the network was too slow to wait for. The caller
+  // tells the teacher which happened and must not treat `null` as a failure.
+  async function addAchievement(data: CreateAchievementDto, opts: AddAchievementOptions = {}) {
+    const { approve = false, draftWhenUnreachable = true } = opts
     isSaving.value = true
     try {
       const full = await withComputedScore(data)
       const body = withPositionsPayload(full)
+      const drafts = useAchievementDrafts()
       // Offline: POST /achievements is NOT idempotent, so store an exactly-once
       // draft (keyed by student+date+range so re-saves overwrite) and sync it on
       // reconnect instead of firing a doomed request.
       if (import.meta.client && !navigator.onLine) {
-        const key = `${full.student_id}:${full.date}:${full.track_type}:${full.start_surah}-${full.start_verse}-${full.end_surah}-${full.end_verse}`
-        await useAchievementDrafts().saveDraft(key, body, approveIfOffline)
+        if (!draftWhenUnreachable) return null
+        await drafts.saveDraft(draftKeyOf(full), body, approve)
         return null
       }
-      const created = await api<ApiAchievement>('/achievements', { method: 'POST', body })
-      await loadAchievements()
+      let created: ApiAchievement
+      try {
+        // `approve` rides on the create rather than costing a second request. It's
+        // applied to the wire body only — the draft keeps its own approve flag as
+        // the single source of that intent. `forWire` strips client_request_id
+        // while the API still rejects unknown properties.
+        created = await api<ApiAchievement>('/achievements', {
+          method: 'POST',
+          body: forWire(approve ? { ...body, approve: true } : body),
+          timeout: SAVE_TIMEOUT_MS
+        } as Parameters<typeof api>[1])
+      } catch (e) {
+        // Weak connection: `navigator.onLine` was true but nothing came back in
+        // time. Take the offline route rather than surfacing an error the teacher
+        // answers by tapping save again — that re-tap is where duplicates come
+        // from. The flush reconciles against the server first, in case this very
+        // request did land and only its response was lost.
+        if (import.meta.client && isTimeoutError(e) && draftWhenUnreachable) {
+          await drafts.saveDraft(draftKeyOf(full), body, approve)
+          return null
+        }
+        throw e
+      }
+      // No list reload here: on a weak link that doubled the wait for a save the
+      // teacher is navigating away from anyway (the list refetches on mount, and
+      // syncs re-pull it). Splice the new row in so an open list still shows it.
+      mergeCreated(created)
       return created
     } finally {
       isSaving.value = false
     }
+  }
+
+  // Show a freshly created record in the loaded list without a refetch. Only
+  // when it belongs to the current view — a record dated other than the day on
+  // screen, or outside the active filters, would otherwise appear out of scope.
+  function mergeCreated(created: ApiAchievement) {
+    if (!created?.id) return
+    if (created.date !== selectedDate.value) return
+    if (selectedHalaqaId.value != null && created.halaqa_id !== selectedHalaqaId.value) return
+    if (filters.trackType && created.track_type !== filters.trackType) return
+    if (filters.status === 'approved' && created.status !== 'approved') return
+    if (filters.status === 'unapproved' && created.status === 'approved') return
+    if (achievements.value.some(a => a.id === created.id)) return
+    achievements.value = [created, ...achievements.value]
+    total.value += 1
   }
 
   async function updateAchievement(id: number, data: CreateAchievementDto) {
@@ -576,12 +709,9 @@ export function useAchievements() {
         await useAchievementDrafts().saveDraft(sessionKey, withPositionsPayload(full), existing?.approve ?? false)
         return null
       }
-      // The update endpoint only accepts mutable fields — student_id, halaqa_id
-      // and date are immutable for an existing record and are rejected by the
-      // backend's whitelist ("property student_id should not exist"). Sending
-      // the errors + recitation_method regenerates the positions wholesale.
       const method = full.recitation_method ?? 'full'
       const body: Record<string, unknown> = {
+        date: full.date,
         track_type: full.track_type,
         completion_method: full.completion_method,
         recitation_method: method,
@@ -620,6 +750,9 @@ export function useAchievements() {
     }
   }
 
+  // Only the list's own row action reaches this now — recording signs off through
+  // `addAchievement({ approve: true })`, which needs no second request. The reload
+  // is wanted here: the page stays put and wants server truth.
   async function approveAchievement(id: number) {
     await api<ApiAchievement>(`/achievements/${id}/approve`, { method: 'POST' })
     await loadAchievements()
@@ -637,6 +770,7 @@ export function useAchievements() {
     duplicateFrom.value = null
     prefillStudentId.value = null
     prefillPlanItem.value = null
+    prefillDate.value = null
     navigateTo('/achievements/record')
   }
   // Record against a specific planned session (the planner's cell dialog). The
@@ -646,6 +780,7 @@ export function useAchievements() {
     editing.value = null
     duplicateFrom.value = null
     selectedDate.value = opts.date ?? todayYmd()
+    prefillDate.value = opts.date ?? todayYmd()
     prefillStudentId.value = opts.studentId
     prefillPlanItem.value = opts.item
     navigateTo('/achievements/record')
@@ -653,12 +788,14 @@ export function useAchievements() {
   function openEdit(a: ApiAchievement) {
     duplicateFrom.value = null
     editing.value = a
+    prefillDate.value = null
     pinHalaqa(a.halaqa_id)
     navigateTo('/achievements/record')
   }
   function openDuplicate(a: ApiAchievement) {
     editing.value = null
     duplicateFrom.value = a
+    prefillDate.value = null
     pinHalaqa(a.halaqa_id)
     navigateTo('/achievements/record')
   }
@@ -674,17 +811,22 @@ export function useAchievements() {
     achievements,
     selectedDate,
     isLoading,
+    loadFailed,
     isSaving,
     currentEvaluationSettings,
+    evaluationSettingsKnown,
     total,
+    listTotal,
     page,
     limit,
     viewMode,
     filters,
+    isSearching,
     editing,
     duplicateFrom,
     prefillStudentId,
     prefillPlanItem,
+    prefillDate,
     deleteOpen,
     deleteTarget,
 

@@ -19,8 +19,11 @@ useSetPageTitle(() => t(isEdit.value ? 'pages.achievements.editTitle' : 'pages.a
 // Back button lives in the header, before the title.
 useSetPageBack('/achievements')
 
-const formRef = useTemplateRef<{ saving: Ref<boolean>, setContinueToRecite: (v: boolean) => void } | null>('formRef')
-const formSaving = computed(() => formRef.value?.saving.value ?? false)
+// `defineExpose` runs its object through `proxyRefs`, so the exposed `saving` ref
+// arrives here already unwrapped — reading `.value` off it yields undefined and
+// the spinner never shows.
+const formRef = useTemplateRef<{ saving: boolean, setContinueToRecite: (v: boolean) => void } | null>('formRef')
+const formSaving = computed(() => formRef.value?.saving ?? false)
 
 function goBack() {
   navigateTo('/achievements')
@@ -28,9 +31,14 @@ function goBack() {
 function onSaved() {
   navigateTo('/achievements')
 }
+// Both actions submit the same form, so the spinner has to follow the button that
+// was pressed — otherwise «حفظ ومتابعة» saves with the other button spinning.
+const continueToRecite = ref(false)
+
 // Set on the submit button's click (fires before the form submits) so the form
 // knows whether to continue into the mushaf after saving.
 function setContinueToRecite(value: boolean) {
+  continueToRecite.value = value
   formRef.value?.setContinueToRecite(value)
 }
 
@@ -87,6 +95,7 @@ onMounted(async () => {
           variant="soft"
           color="primary"
           icon="i-lucide-book-open"
+          :loading="formSaving && continueToRecite"
           :disabled="formSaving"
           @click="setContinueToRecite(true)"
         >
@@ -96,7 +105,8 @@ onMounted(async () => {
           type="submit"
           form="achievement-form"
           :icon="isEdit ? undefined : 'i-lucide-check-check'"
-          :loading="formSaving"
+          :loading="formSaving && !continueToRecite"
+          :disabled="formSaving"
           @click="setContinueToRecite(false)"
         >
           {{ isEdit ? t('pages.achievements.update') : t('pages.achievements.recordApprove') }}

@@ -63,13 +63,19 @@ const statusFilterItems = computed(() => [
 ])
 
 async function loadList(targetPage = 1) {
-  await fetchHalaqat({
-    page: targetPage,
-    limit: limit.value,
-    type: filters.type ?? undefined,
-    status: filters.status ?? undefined,
-    search: filters.search.trim() || undefined
-  })
+  try {
+    await fetchHalaqat({
+      page: targetPage,
+      limit: limit.value,
+      type: filters.type ?? undefined,
+      status: filters.status ?? undefined,
+      search: filters.search.trim() || undefined
+    })
+  } catch (e: unknown) {
+    // The filter watchers call this unawaited; without a handler a failed load
+    // was an unhandled rejection and the page just kept the old rows.
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+  }
 }
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
@@ -99,8 +105,9 @@ const activeFilterCount = computed(() =>
 
 const formOpen = ref(false)
 const editing = ref<ApiHalaqaListItem | null>(null)
-const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
-const formSaving = computed(() => formRef.value?.saving.value ?? false)
+// `defineExpose` unwraps refs on the way out, so `saving` is a plain boolean here.
+const formRef = useTemplateRef<{ saving: boolean } | null>('formRef')
+const formSaving = computed(() => formRef.value?.saving ?? false)
 
 // The add/edit form is a centered modal on desktop and a bottom drawer on mobile.
 // The body + footer are shared between the two shells via reusable templates.

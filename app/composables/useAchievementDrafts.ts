@@ -1,5 +1,7 @@
 import { STORE_DRAFTS, idbGetAll, idbPut, idbDelete } from '~/utils/idb'
 import { requestBackgroundSync } from '~/utils/backgroundSync'
+import { unwrapList } from '~/utils/api/list'
+import { forWire } from '~/utils/requestId'
 import type { ApiAchievement, CreateAchievementDto } from '~/types'
 
 // Local, exactly-once drafts for recitations recorded offline. Unlike the write
@@ -71,9 +73,39 @@ export function useAchievementDrafts() {
     await refresh()
   }
 
-  // Send each draft exactly once, in order: create → (approve if flagged) →
-  // remove. Runs online, so it uses the normal API client. Guarded so two
-  // triggers (online watcher + startup) can't double-send.
+  // A draft can describe a record the server ALREADY has: on a weak connection a
+  // create is stored locally once its deadline expires, and such a request may
+  // well have been applied with only its response lost. POST /achievements is not
+  // idempotent, so ask the server before sending — one GET of that student's day —
+  // and adopt the existing record instead of creating a second one.
+  //
+  // Matched on the same fields the draft key is built from (student + date + track
+  // + range), which is precisely what "the same recording" means here. Throws if
+  // the check itself can't complete: not knowing has to postpone the send, never
+  // wave it through.
+  async function findAlreadySynced(dto: CreateAchievementDto): Promise<ApiAchievement | null> {
+    const api = useApi()
+    const params = new URLSearchParams({ date: dto.date, limit: '100' })
+    if (dto.halaqa_id) params.set('halaqa_id', String(dto.halaqa_id))
+    // `fresh`: never let this read fall back to the offline copy of the list — a
+    // stale copy that predates the lost create would answer "not there" and hand
+    // us the duplicate we're trying to avoid.
+    const raw = await api<unknown>(`/achievements?${params.toString()}`, { fresh: true } as Parameters<typeof api>[1])
+    const rows = unwrapList<ApiAchievement>(raw)
+    return rows.find(a =>
+      a.student_id === dto.student_id
+      && a.date === dto.date
+      && a.track_type === dto.track_type
+      && a.start_surah === dto.start_surah
+      && a.start_verse === dto.start_verse
+      && a.end_surah === dto.end_surah
+      && a.end_verse === dto.end_verse
+    ) ?? null
+  }
+
+  // Send each draft exactly once, in order: reconcile → create → (approve if
+  // flagged) → remove. Runs online, so it uses the normal API client. Guarded so
+  // two triggers (online watcher + startup) can't double-send.
   async function flush(): Promise<void> {
     if (flushing || !import.meta.client || !navigator.onLine) return
     flushing = true
@@ -83,12 +115,28 @@ export function useAchievementDrafts() {
       await refresh()
       let changed = 0
       for (const draft of [...drafts.value]) {
+        // Kept out of the try below on purpose: a failed *read* must not be
+        // mistaken for the create being rejected (which drops the draft). Not
+        // knowing whether the server already has it postpones the send instead.
+        let existing: ApiAchievement | null
         try {
-          const created = await api<ApiAchievement>('/achievements', { method: 'POST', body: draft.dto })
+          existing = await findAlreadySynced(draft.dto)
+        } catch {
+          break
+        }
+        try {
+          // Bundle the approval into the create — one request instead of two, and
+          // the same halaqa-scope check either way. Only an ADOPTED record (already
+          // on the server, unapproved) still needs the separate call below.
+          const created = existing
+            ?? await api<ApiAchievement>('/achievements', {
+              method: 'POST',
+              body: forWire(draft.approve ? { ...draft.dto, approve: true } : draft.dto)
+            })
           // Delete BEFORE any further await so a concurrent flush can't re-create it.
           await deleteDraft(draft.id)
           changed++
-          if (draft.approve && created?.id != null) {
+          if (draft.approve && created?.id != null && created.status !== 'approved') {
             // Best-effort approve; if it fails the record still exists unapproved
             // and the teacher can approve it from the list.
             try {

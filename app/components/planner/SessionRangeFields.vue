@@ -55,6 +55,7 @@ watch(form, () => {
           v-model:surah="form.end_surah"
           v-model:verse="form.end_verse"
           :min-surah="form.start_surah"
+          :min-verse="form.start_verse"
           :snap-to="direction === 'desc' ? 'last' : 'first'"
         />
       </div>

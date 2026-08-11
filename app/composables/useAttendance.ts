@@ -188,6 +188,14 @@ export function useAttendance() {
       if (signal.aborted || isAbortError(e)) return
       loadError.value = apiError.format(e, 'حدث خطأ أثناء تحميل الحضور')
       loadedSessionKey = null
+      // Drop the previous (halaqa, date)'s session instead of leaving it on
+      // screen under the new one — offline, a day that was never cached misses
+      // and throws, and the old rows made the date picker look like a no-op
+      // (worse: saving would have written yesterday's statuses to today).
+      attendanceRows.value = []
+      existingRecords.value = new Map()
+      historyByDate.value = new Map()
+      originalSnapshot.value = new Map()
     } finally {
       if (!signal.aborted) isLoading.value = false
     }

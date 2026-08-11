@@ -17,6 +17,10 @@ const props = withDefaults(
     // wheel. Used by a range's end picker so it can't sit before the start surah
     // (`isValidVerseRange` forbids end < start anyway - this keeps it unreachable).
     minSurah?: number;
+    // Floor for the ayah column, applied only while sitting on `minSurah` - the
+    // same surah the range starts in, where an earlier ayah would mean "from 100
+    // to 50". Other surahs are wholly after the start, so they keep all their ayat.
+    minVerse?: number;
   }>(),
   { snapTo: "first", collapsible: true },
 );
@@ -78,10 +82,18 @@ function isPageStart(s: number, v: number): boolean {
   return pageFor(`${prev.surah}:${prev.verse}`) !== page;
 }
 
+// The lowest ayah this picker may hold. Only bites on the start surah itself:
+// past it every ayah is already after the range start.
+const verseFloor = computed(() => {
+  if (props.minVerse == null) return 1;
+  if (props.minSurah != null && surah.value !== props.minSurah) return 1;
+  return Math.min(props.minVerse, VERSE_COUNTS[surah.value] || 1);
+});
+
 const verseItems = computed(() => {
   const count = VERSE_COUNTS[surah.value] || 1;
   const out: { value: number; label: string; badge?: string }[] = [];
-  for (let v = 1; v <= count; v++) {
+  for (let v = verseFloor.value; v <= count; v++) {
     // Badge a verse with the mushaf page it opens, but only where a page begins -
     // the same cue the old dropdown showed, carried onto the wheel row.
     const page = pageFor(`${surah.value}:${v}`);
@@ -96,8 +108,16 @@ const verseItems = computed(() => {
 
 watch(surah, () => {
   const max = VERSE_COUNTS[surah.value] || 1;
+  const min = verseFloor.value;
   if (props.snapTo === "last") verse.value = max;
-  else if (verse.value > max || verse.value < 1) verse.value = 1;
+  else if (verse.value > max || verse.value < min) verse.value = min;
+});
+
+// The floor moved under us (the start ayah was pushed forward, or the surah
+// changed onto/off the start surah) - pull this picker up so the wheel never
+// holds a value it no longer offers.
+watch(verseFloor, (min) => {
+  if (verse.value < min) verse.value = min;
 });
 </script>
 

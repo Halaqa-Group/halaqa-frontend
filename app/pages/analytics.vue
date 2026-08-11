@@ -34,6 +34,9 @@ async function loadWarnings() {
     )
   } catch (e: any) {
     error.value = apiError.format(e, t('pages.analytics.errorFallback'))
+    // The warnings belong to the week that failed to load, not to the one the
+    // page is now labelled with.
+    warnings.value = null
   } finally {
     isLoading.value = false
   }

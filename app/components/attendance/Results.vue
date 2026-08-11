@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { useOnline } from '@vueuse/core'
 import type { TableColumn } from '@nuxt/ui'
 import type { AttendanceRow } from '~/composables/useAttendance'
 
 const { t } = useI18n()
+const online = useOnline()
 const { canMarkStudentAttendance } = usePermissions()
 const {
   attendanceRows, filteredRows, isLoading, loadError, viewMode,
@@ -30,6 +32,10 @@ const columns = computed<TableColumn<AttendanceRow>[]>(() => [
   <div v-if="isLoading && attendanceRows.length === 0" class="flex justify-center py-16">
     <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
   </div>
+
+  <!-- Offline, a day that was never cached can't load — that's "not downloaded",
+       not an error worth showing as a raw fetch failure (mirrors StaffPanel). -->
+  <CommonOfflineEmptyState v-else-if="loadError && !online" />
 
   <div v-else-if="loadError" class="p-6 text-sm text-error text-center">
     {{ loadError }}

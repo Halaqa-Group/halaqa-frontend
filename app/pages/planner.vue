@@ -36,8 +36,9 @@ const canCopyPlan = computed(() =>
   canEditPlanItems.value && viewMode.value === 'matrix' && hasDraftContent.value
 )
 
-const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
-const formSaving = computed(() => formRef.value?.saving.value ?? false)
+// `defineExpose` unwraps refs on the way out, so `saving` is a plain boolean here.
+const formRef = useTemplateRef<{ saving: boolean } | null>('formRef')
+const formSaving = computed(() => formRef.value?.saving ?? false)
 
 const deletePlanOpen = ref(false)
 function openDeletePlan() {
@@ -229,8 +230,18 @@ watch(selectedHalaqaId, async (id) => {
   // planner never sits without a halaqa.
   await autoSelectHalaqa()
 })
-watch(selectedStudentId, () => loadPlan())
-watch(selectedWeekStart, () => loadPlan())
+// loadPlan clears the plan before it rethrows, so a failed week (offline: one
+// that was never cached) shows as empty rather than as the previous week's
+// sessions. Catch here so the watchers don't leave an unhandled rejection.
+async function reloadPlan() {
+  try {
+    await loadPlan()
+  } catch (e: any) {
+    toast.add({ title: apiError.format(e, t('pages.planner.loadErrorTitle')), color: 'error' })
+  }
+}
+watch(selectedStudentId, () => reloadPlan())
+watch(selectedWeekStart, () => reloadPlan())
 
 onMounted(async () => {
   if (!selectedHalaqaId.value) {
@@ -241,7 +252,7 @@ onMounted(async () => {
   // A student may already be selected — e.g. deep-linked from the achievements
   // page's "View in planner". The selectedStudentId watch isn't immediate, so
   // load the plan here too.
-  if (selectedStudentId.value) await loadPlan()
+  if (selectedStudentId.value) await reloadPlan()
 })
 </script>
 

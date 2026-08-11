@@ -63,6 +63,11 @@ function sameRange(a: VerseRange, b: VerseRange): boolean {
 }
 
 const students = ref<StudentWithAttendance[]>([])
+// Which halaqa the loaded `students` belong to — `null` until the first load
+// settles. The day roster is a projection over that roster, so this is what tells
+// it whether the students it would map are the current halaqa's or the previous
+// one's (see `loadDayRoster`).
+const studentsHalaqaId = ref<number | null>(null)
 const selectedStudentId = ref<number | undefined>(undefined)
 const selectedWeekStart = ref<string>(toYmd(startOfWeekSat(new Date())))
 const plan = ref<ApiWeeklyPlan | null>(null)
@@ -126,6 +131,7 @@ export function useWeeklyPlan() {
           Far: { amount: Number(s.daily_far_pages_capacity) || 0, unit: s.daily_far_capacity_unit ?? DEFAULT_CAPACITY_UNIT }
         }
       }))
+      studentsHalaqaId.value = halaqaId
     } catch (e) {
       if (signal.aborted || isAbortError(e)) return
       throw e
@@ -152,6 +158,12 @@ export function useWeeklyPlan() {
       hydrateDraft()
     } catch (e) {
       if (signal.aborted || isAbortError(e)) return
+      // The load that failed is the one for the CURRENT student+week, so keeping
+      // the previous one's plan would label another week's sessions as this
+      // week's. Offline this is the common case: only the warmed weeks are
+      // cached, so stepping outside them misses and throws.
+      plan.value = null
+      hydrateDraft()
       throw e
     } finally {
       if (!signal.aborted) isLoading.value = false
@@ -165,7 +177,11 @@ export function useWeeklyPlan() {
   // the roster mirrors the full halaqa, not just the planned students.
   async function loadDayRoster() {
     const halaqaId = selectedHalaqaId.value
-    if (!halaqaId) {
+    // Every row comes from `students`, so until this halaqa's roster has landed the
+    // fetch can only produce an empty list — and `studentsHalaqaId` re-triggers the
+    // caller the moment it does. Without this the page fires the same request twice
+    // on mount: once when the roster mounts, once when `loadStudents` resolves.
+    if (!halaqaId || studentsHalaqaId.value !== halaqaId) {
       dayRoster.value = []
       return
     }
@@ -204,6 +220,9 @@ export function useWeeklyPlan() {
       })
     } catch (e) {
       if (signal.aborted || isAbortError(e)) return
+      // Same reasoning as loadPlan: the roster belongs to `selectedDate`, so it
+      // must not survive a failed load for a different day.
+      dayRoster.value = []
       throw e
     } finally {
       if (!signal.aborted) dayLoading.value = false
@@ -758,6 +777,7 @@ export function useWeeklyPlan() {
 
   return {
     students,
+    studentsHalaqaId,
     selectedStudentId,
     selectedWeekStart,
     selectedDate,

@@ -165,7 +165,7 @@ function createClient(): ApiClient {
     // truth or an error, never a possibly-stale local copy (see the duplicate
     // check in useAchievementDrafts.flush).
     const fresh = (opts as { fresh?: boolean }).fresh === true
-    if (fresh) delete (opts as { fresh?: boolean }).fresh
+    if ('fresh' in opts) delete (opts as { fresh?: boolean }).fresh
     const cacheKey = method === 'GET' ? readCacheKey(url, opts) : null
     const outboxKind = writeOutboxKind(url, method)
 

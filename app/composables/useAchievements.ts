@@ -12,6 +12,7 @@ import { pageCoverage, pagesRecited } from '~/composables/useVerseToPage'
 import { unwrapList } from '~/utils/api/list'
 import { makeRangePredicate } from '~/utils/mushaf'
 import { computePercentageScore, type ScoreCounts } from '~/utils/score'
+import { forWire } from '~/utils/requestId'
 import { ensureQuranWordData, locateError, wordId } from '~/utils/quran-words'
 import { todayYmd } from '~/utils/date'
 
@@ -253,8 +254,16 @@ const prefillPlanItem = ref<PrefillPlanItem | null>(null)
 const deleteOpen = ref(false)
 const deleteTarget = ref<ApiAchievement | null>(null)
 
+// Successful reads only. A cached `null` means "this halaqa has no custom
+// weights" (the defaults genuinely apply) — never "the read failed", which is
+// what it used to mean too: one blip pinned the defaults for the rest of the
+// session and every later save was scored with them, silently and with no retry.
 const settingsCache = new Map<number, Record<string, unknown> | null>()
 const currentEvaluationSettings = ref<Record<string, unknown> | null>(null)
+// Whether the weights behind the last computed score were actually resolved.
+// False = the read failed and the defaults were used as a fallback, so the score
+// is a guess; the save path surfaces that instead of storing it quietly.
+const evaluationSettingsKnown = ref(true)
 
 // Weights are fetched once per halaqa and reused for every score computed in the
 // session. Editing them on the halaqa page has to seed the new value here, or
@@ -280,6 +289,7 @@ export function useAchievements() {
     if (settingsCache.has(halaqaId)) {
       const cached = settingsCache.get(halaqaId) ?? null
       currentEvaluationSettings.value = cached
+      evaluationSettingsKnown.value = true
       return cached
     }
     try {
@@ -290,10 +300,13 @@ export function useAchievements() {
       const settings = halaqa.evaluation_settings ?? null
       settingsCache.set(halaqaId, settings)
       currentEvaluationSettings.value = settings
+      evaluationSettingsKnown.value = true
       return settings
     } catch {
-      settingsCache.set(halaqaId, null)
+      // NOT cached: the weights are unknown, not absent. Leaving the cache empty
+      // means the next save retries instead of inheriting this failure.
       currentEvaluationSettings.value = null
+      evaluationSettingsKnown.value = false
       return null
     }
   }
@@ -630,9 +643,13 @@ export function useAchievements() {
   }
 
   interface AddAchievementOptions {
-    // Only consulted on the local-draft path: a plain "record & approve" wants
-    // the synced record approved too, "save & recite" leaves it pending.
-    approveIfOffline?: boolean
+    // Sign the record off as part of the recording. Online this rides along on the
+    // create (`approve: true`) instead of costing a second round-trip: the API
+    // gates create and approve on the SAME halaqa-scope check, so it cannot fail
+    // where a plain create would have succeeded — and it refuses outright rather
+    // than silently storing the record unapproved. Offline the intent is carried
+    // on the draft and applied when it uploads.
+    approve?: boolean
     // Whether a create the network couldn't deliver in time becomes a local
     // draft. "Save & recite" opts out: the mushaf owns that session's draft, so
     // drafting here as well would store the recitation twice.
@@ -643,7 +660,7 @@ export function useAchievements() {
   // either offline, or because the network was too slow to wait for. The caller
   // tells the teacher which happened and must not treat `null` as a failure.
   async function addAchievement(data: CreateAchievementDto, opts: AddAchievementOptions = {}) {
-    const { approveIfOffline = false, draftWhenUnreachable = true } = opts
+    const { approve = false, draftWhenUnreachable = true } = opts
     isSaving.value = true
     try {
       const full = await withComputedScore(data)
@@ -654,14 +671,18 @@ export function useAchievements() {
       // reconnect instead of firing a doomed request.
       if (import.meta.client && !navigator.onLine) {
         if (!draftWhenUnreachable) return null
-        await drafts.saveDraft(draftKeyOf(full), body, approveIfOffline)
+        await drafts.saveDraft(draftKeyOf(full), body, approve)
         return null
       }
       let created: ApiAchievement
       try {
+        // `approve` rides on the create rather than costing a second request. It's
+        // applied to the wire body only — the draft keeps its own approve flag as
+        // the single source of that intent. `forWire` strips client_request_id
+        // while the API still rejects unknown properties.
         created = await api<ApiAchievement>('/achievements', {
           method: 'POST',
-          body,
+          body: forWire(approve ? { ...body, approve: true } : body),
           timeout: SAVE_TIMEOUT_MS
         } as Parameters<typeof api>[1])
       } catch (e) {
@@ -671,7 +692,7 @@ export function useAchievements() {
         // from. The flush reconciles against the server first, in case this very
         // request did land and only its response was lost.
         if (import.meta.client && isTimeoutError(e) && draftWhenUnreachable) {
-          await drafts.saveDraft(draftKeyOf(full), body, approveIfOffline)
+          await drafts.saveDraft(draftKeyOf(full), body, approve)
           return null
         }
         throw e
@@ -757,19 +778,11 @@ export function useAchievements() {
     }
   }
 
-  // `reload` is opt-out for the record form, which approves a record it just
-  // created and then leaves the page — re-pulling the whole list there is a third
-  // round-trip on a connection that may barely manage one. The list's own row
-  // action keeps it (it stays on the page and wants server truth).
-  async function approveAchievement(id: number, opts: { reload?: boolean } = {}) {
-    const approved = await api<ApiAchievement>(`/achievements/${id}/approve`, { method: 'POST' })
-    if (opts.reload === false) {
-      // Keep the loaded row in step with the approval we just made. Server ids
-      // come back as strings on some rows, so compare numerically.
-      achievements.value = achievements.value.map(a =>
-        (Number(a.id) === Number(id) ? (approved ?? { ...a, status: 'approved' }) : a))
-      return
-    }
+  // Only the list's own row action reaches this now — recording signs off through
+  // `addAchievement({ approve: true })`, which needs no second request. The reload
+  // is wanted here: the page stays put and wants server truth.
+  async function approveAchievement(id: number) {
+    await api<ApiAchievement>(`/achievements/${id}/approve`, { method: 'POST' })
     await loadAchievements()
   }
 
@@ -825,6 +838,7 @@ export function useAchievements() {
     loadFailed,
     isSaving,
     currentEvaluationSettings,
+    evaluationSettingsKnown,
     total,
     listTotal,
     page,

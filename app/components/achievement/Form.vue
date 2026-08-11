@@ -23,7 +23,7 @@ const online = useOnline()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
   students, editing, duplicateFrom, prefillStudentId, prefillPlanItem, selectedDate, currentEvaluationSettings,
-  isSaving, addAchievement, updateAchievement, approveAchievement, loadEvaluationSettings
+  evaluationSettingsKnown, isSaving, addAchievement, updateAchievement, loadEvaluationSettings
 } = useAchievements()
 // Warm the QUL word-id / juz / hizb lookup used to synthesize errors[] on submit.
 useQuranWords()
@@ -652,7 +652,10 @@ async function saveAndRecite(dto: CreateAchievementDto, studentId: number, halaq
 // for — it's saved as a draft (approve intent carried on the draft, applied on
 // sync).
 async function recordAndApprove(dto: CreateAchievementDto) {
-  const created = await addAchievement(dto, { approveIfOffline: true })
+  // One request: the approval rides on the create. That also removes the state
+  // where the record saved but the approval didn't — which read as a failure and
+  // got answered with a second recording of the same lesson.
+  const created = await addAchievement(dto, { approve: true })
   if (!created) {
     // Stored on the device. Which of the two reasons decides the wording: still
     // "online" means the link was simply too slow to finish in time.
@@ -663,21 +666,7 @@ async function recordAndApprove(dto: CreateAchievementDto) {
     })
     return
   }
-  // Recording and approving are the same halaqa-scope check, so if the create
-  // succeeded this cannot 403 — but on a weak link it can still time out, and
-  // the record is already saved. Say so plainly instead of raising a save error:
-  // an error here reads as "nothing was saved" and gets answered with a second
-  // recording of the same lesson.
-  try {
-    await approveAchievement(created.id, { reload: false })
-    toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
-  } catch {
-    toast.add({
-      title: t('pages.achievements.savedNotApprovedToast'),
-      color: 'warning',
-      icon: 'i-lucide-clock'
-    })
-  }
+  toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
 }
 
 async function onSubmit(_event: FormSubmitEvent<Schema>) {
@@ -717,6 +706,18 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
       // Saved (on the server or on the device) — anything entered from here on is
       // a new record and must not reuse this one's idempotency key.
       requestId.value = newRequestId()
+    }
+    // The halaqa's weights couldn't be read, so the stored score came out of the
+    // default deductions. The backend keeps percentage_score verbatim (it never
+    // recomputes), so say it plainly — reopening the record once the settings load
+    // recomputes it. Additive to the success toast above, not a replacement: the
+    // record IS saved.
+    if (!evaluationSettingsKnown.value) {
+      toast.add({
+        title: t('pages.achievements.defaultWeightsWarning'),
+        color: 'warning',
+        icon: 'i-lucide-triangle-alert'
+      })
     }
     emit('saved')
   } catch (e: any) {

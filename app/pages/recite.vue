@@ -4,6 +4,7 @@ import { LazyCommonConfirmDialog } from '#components'
 import { SURAH_NAMES, TRACK_TYPES } from '~/data/constants'
 import { computePercentageScore } from '~/utils/score'
 import { makeRangePredicate } from '~/utils/mushaf'
+import { forWire } from '~/utils/requestId'
 import type { VerseRange } from '~/utils/quran-structure'
 import type { AchievementTrack } from '~/utils/achievement'
 import type { AchievementTestPosition, ApiAchievement, ApiStudent, ApiWeeklyPlanItem, CreateAchievementDto, PositionError, RecitationMethod } from '~/types'
@@ -987,10 +988,54 @@ async function saveRecitationOffline(
   return 'drafted'
 }
 
+// The session whose create failed without a verdict — a network failure or an
+// expired deadline, where the server may well have applied it and only the
+// response was lost. `priorAchievements` is a once-per-session snapshot, so
+// without this the autosync tick 5s later sees no existing record and creates a
+// second one. Keyed by session (not a bare flag) so switching sessions and coming
+// back doesn't lose the warning.
+const unconfirmedCreateFor = ref<string | null>(null)
+
+// Re-pull the day straight from the server — `fresh` so a stale offline copy,
+// which by definition predates the lost create, can't answer "not there".
+// Deliberately does NOT swallow its error (unlike loadPrior, which empties the
+// list): not knowing must abort the write, never wave a blind create through.
+async function refreshPriorFromServer(sid: number, hid: number) {
+  const raw = await api<ApiAchievement[] | { items: ApiAchievement[] }>(
+    `/achievements?student_id=${sid}&halaqa_id=${hid}&date=${dateStr.value}`,
+    { fresh: true } as Parameters<typeof api>[1]
+  )
+  priorAchievements.value = Array.isArray(raw) ? raw : (raw.items ?? [])
+}
+
+// Find the record a lost create may have left behind. Matches the range we
+// actually SENT rather than the planned one — a range the teacher adjusted is
+// precisely the case `findExistingAchievement` can't see, and the id that would
+// normally bind the record is what the lost response took with it.
+function findBySentRange(dto: CreateAchievementDto): ApiAchievement | null {
+  return priorAchievements.value.find(a =>
+    a.student_id === dto.student_id
+    && a.date === dto.date
+    && a.track_type === dto.track_type
+    && a.start_surah === dto.start_surah && a.start_verse === dto.start_verse
+    && a.end_surah === dto.end_surah && a.end_verse === dto.end_verse
+  ) ?? null
+}
+
 async function saveRecitation(
   item: ApiWeeklyPlanItem, sid: number, hid: number
 ): Promise<ApiAchievement> {
   const { dto, sentErrors, sentPositions } = await buildRecitationWrite(item, sid, hid)
+
+  // Settle the previous create before deciding create-vs-update. Throwing here is
+  // the safe outcome: the tick reports an error, the marks stay dirty, and the
+  // next tick tries again — nothing is lost and nothing is duplicated.
+  if (unconfirmedCreateFor.value === sessionId.value) {
+    await refreshPriorFromServer(sid, hid)
+    const landed = findBySentRange(dto)
+    if (landed) boundAchievementId.value = landed.id
+    unconfirmedCreateFor.value = null
+  }
   // Reuse the create DTO's payload for the update path.
   const payload = dto.test_positions
     ? { test_positions: dto.test_positions }
@@ -1023,7 +1068,16 @@ async function saveRecitation(
     })
     priorAchievements.value = priorAchievements.value.map(a => a.id === existing.id ? saved : a)
   } else {
-    saved = await api<ApiAchievement>('/achievements', { method: 'POST', body: dto })
+    try {
+      saved = await api<ApiAchievement>('/achievements', { method: 'POST', body: forWire(dto) })
+    } catch (e: unknown) {
+      // No HTTP status means the server never answered — it may still have stored
+      // the record. Flag the session so the next attempt reconciles instead of
+      // creating a second one. A real 4xx/5xx DID answer: nothing was stored.
+      const status = (e as { response?: { status?: number } } | null)?.response?.status
+      if (status == null) unconfirmedCreateFor.value = sessionId.value
+      throw e
+    }
     priorAchievements.value = [saved, ...priorAchievements.value]
   }
 

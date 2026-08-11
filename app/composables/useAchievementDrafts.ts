@@ -1,6 +1,7 @@
 import { STORE_DRAFTS, idbGetAll, idbPut, idbDelete } from '~/utils/idb'
 import { requestBackgroundSync } from '~/utils/backgroundSync'
 import { unwrapList } from '~/utils/api/list'
+import { forWire } from '~/utils/requestId'
 import type { ApiAchievement, CreateAchievementDto } from '~/types'
 
 // Local, exactly-once drafts for recitations recorded offline. Unlike the write
@@ -124,8 +125,14 @@ export function useAchievementDrafts() {
           break
         }
         try {
+          // Bundle the approval into the create — one request instead of two, and
+          // the same halaqa-scope check either way. Only an ADOPTED record (already
+          // on the server, unapproved) still needs the separate call below.
           const created = existing
-            ?? await api<ApiAchievement>('/achievements', { method: 'POST', body: draft.dto })
+            ?? await api<ApiAchievement>('/achievements', {
+              method: 'POST',
+              body: forWire(draft.approve ? { ...draft.dto, approve: true } : draft.dto)
+            })
           // Delete BEFORE any further await so a concurrent flush can't re-create it.
           await deleteDraft(draft.id)
           changed++

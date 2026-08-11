@@ -85,6 +85,9 @@ async function load() {
     total.value = res.total
   } catch (e: unknown) {
     loadError.value = apiError.format(e, t('pages.users.loadError'))
+    // Don't leave the previous page/filter's users under the new selection.
+    data.value = []
+    total.value = 0
   } finally {
     isLoading.value = false
   }

@@ -1188,6 +1188,7 @@
       "selectStudent": "Select a student",
       "noResults": "No achievements for this day",
       "noMatch": "No matching results",
+      "loadError": "Failed to load achievements",
       "versesCount": "{count} verses",
       "pagesCount": "{count} pages",
       "mistakes": "Mistakes",
@@ -1383,6 +1384,7 @@
         "message": "Are you sure you want to delete the entire plan? This action cannot be undone."
       },
       "saveErrorTitle": "Failed to save plan",
+      "loadErrorTitle": "Failed to load plan",
       "approvedToast": "Plan approved",
       "selectWeek": "Select a week",
       "selectAll": "Select all",

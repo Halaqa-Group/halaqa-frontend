@@ -26,7 +26,8 @@ import type {
  * 2. **Sections fail independently.** Each endpoint gets its own `error` ref and
  *    `loadAll` uses `allSettled`, so a failing leaderboard cannot blank the KPI
  *    cards. A section that errored keeps its previous data rather than flashing
- *    empty.
+ *    empty — but only when the failed request was for the SAME window it is
+ *    already showing (see `load`).
  * 3. **The window is echoed back.** Every response carries the `range` the
  *    server resolved, which is what the UI labels itself with — we never
  *    recompute "which Saturday did the week start on" on the client.
@@ -78,6 +79,10 @@ export function useDashboardStats() {
     return qs ? `?${qs}` : ''
   }
 
+  // Which URL produced the payload each section currently holds — i.e. which
+  // window/track its numbers belong to. See the retention rule in `load`.
+  const loadedUrls = new Map<string, string>()
+
   async function load<T>(
     url: string,
     target: Ref<T | null>,
@@ -90,14 +95,23 @@ export function useDashboardStats() {
     try {
       const data = await api<T>(url, { signal })
       target.value = data
+      loadedUrls.set(fallbackKey, url)
       return data
     } catch (e: unknown) {
       // Superseded by a newer load of this section — keep the stale payload and
       // don't surface an error for a request we deliberately cancelled.
       if (signal.aborted || isAbortError(e)) return null
-      // Keep the stale payload on screen — a transient failure should not wipe
-      // the section the user was already reading.
       error.value = apiError.format(e, t(fallbackKey))
+      // A refresh of the window already on screen may fail transiently without
+      // wiping what the user is reading. A failed load for a DIFFERENT window
+      // must clear it, though: the page labels itself with the newly picked
+      // range, so keeping the old numbers would attribute them to a window they
+      // never came from. Offline that is the norm — only the visited windows are
+      // in the read-cache, so any other pick misses and fails.
+      if (loadedUrls.get(fallbackKey) !== url) {
+        target.value = null
+        loadedUrls.delete(fallbackKey)
+      }
       return null
     } finally {
       requests.end(fallbackKey, signal)

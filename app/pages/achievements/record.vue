@@ -28,9 +28,14 @@ function goBack() {
 function onSaved() {
   navigateTo('/achievements')
 }
+// Both actions submit the same form, so the spinner has to follow the button that
+// was pressed — otherwise «حفظ ومتابعة» saves with the other button spinning.
+const continueToRecite = ref(false)
+
 // Set on the submit button's click (fires before the form submits) so the form
 // knows whether to continue into the mushaf after saving.
 function setContinueToRecite(value: boolean) {
+  continueToRecite.value = value
   formRef.value?.setContinueToRecite(value)
 }
 
@@ -87,6 +92,7 @@ onMounted(async () => {
           variant="soft"
           color="primary"
           icon="i-lucide-book-open"
+          :loading="formSaving && continueToRecite"
           :disabled="formSaving"
           @click="setContinueToRecite(true)"
         >
@@ -96,7 +102,8 @@ onMounted(async () => {
           type="submit"
           form="achievement-form"
           :icon="isEdit ? undefined : 'i-lucide-check-check'"
-          :loading="formSaving"
+          :loading="formSaving && !continueToRecite"
+          :disabled="formSaving"
           @click="setContinueToRecite(false)"
         >
           {{ isEdit ? t('pages.achievements.update') : t('pages.achievements.recordApprove') }}

@@ -94,6 +94,11 @@ export function useTeacherAttendance() {
       snapshotCurrentRows()
     } catch (e: any) {
       loadError.value = apiError.format(e, 'حدث خطأ أثناء تحميل حضور الطاقم')
+      // The rows belong to the day that failed to load, not to the one still on
+      // screen — clear them (see the same guard in useAttendance.performLoad).
+      staffRows.value = []
+      existingRecords.value = new Map()
+      originalSnapshot.value = new Map()
     } finally {
       isLoading.value = false
     }

@@ -36,6 +36,10 @@ export function useStudentMemorization(studentId: MaybeRefOrGetter<number | stri
       apply(await api<ApiMemorization>(`/students/${id}/memorization`))
     } catch (e) {
       error.value = apiError.format(e, 'تعذّر تحميل بيانات الحفظ')
+      // Never leave the previously loaded student's bitmap on screen under this
+      // student's name — offline, a student who was never cached fails here.
+      bitmap.value = new Uint8Array(0)
+      count.value = 0
     } finally {
       loading.value = false
     }

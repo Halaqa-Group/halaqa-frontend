@@ -206,11 +206,14 @@ const students = ref<StudentWithAttendance[]>([])
 const achievements = ref<ApiAchievement[]>([])
 const selectedDate = ref(todayYmd())
 const isLoading = ref(false)
+// The list request failed (offline with no cached copy for this day/filter, or a
+// real error). Kept separate from an empty result so the page can say why.
+const loadFailed = ref(false)
 const isSaving = ref(false)
 
 const total = ref(0)
 const page = ref(1)
-const limit = ref(20)
+const limit = ref(21)
 
 const viewMode = ref<'table' | 'grid'>('grid')
 const filters = reactive<{ search: string, trackType: TrackType | null, status: 'approved' | 'unapproved' | null }>({
@@ -218,6 +221,15 @@ const filters = reactive<{ search: string, trackType: TrackType | null, status: 
   trackType: null,
   status: null
 })
+
+// `limit` is the server's cap on one request (ListAchievementsQuery @Max(100)),
+// and SEARCH_PAGE_CAP bounds the full pull a search does — 1000 records is far
+// past any real day's list, so it only ever guards against a runaway loop.
+const SERVER_MAX_LIMIT = 100
+const SEARCH_PAGE_CAP = 10
+
+const searchQuery = computed(() => filters.search.trim().toLowerCase())
+const isSearching = computed(() => searchQuery.value !== '')
 
 const editing = ref<ApiAchievement | null>(null)
 const duplicateFrom = ref<ApiAchievement | null>(null)
@@ -304,26 +316,58 @@ export function useAchievements() {
     }))
   }
 
-  async function loadAchievements() {
+  // One page of the list, plus the server's (unfiltered) count for the scope.
+  async function fetchPage(pageNum: number, pageLimit: number) {
     const halaqaId = selectedHalaqaId.value
-    isLoading.value = true
-    try {
-      // halaqa_id is an additive filter server-side: omitting it returns every
-      // achievement the caller may see.
-      const params = new URLSearchParams({
-        date: selectedDate.value,
-        page: String(page.value),
-        limit: String(limit.value)
-      })
-      if (halaqaId) params.set('halaqa_id', String(halaqaId))
-      if (filters.trackType) params.set('track_type', filters.trackType)
-      if (filters.status) params.set('status', filters.status)
+    const params = new URLSearchParams({
+      date: selectedDate.value,
+      page: String(pageNum),
+      limit: String(pageLimit)
+    })
+    if (halaqaId) params.set('halaqa_id', String(halaqaId))
+    if (filters.trackType) params.set('track_type', filters.trackType)
+    if (filters.status) params.set('status', filters.status)
 
-      const raw = await api<unknown>(`/achievements?${params.toString()}`)
-      achievements.value = unwrapList<ApiAchievement>(raw)
-      total.value = raw && typeof raw === 'object' && 'total' in raw
-        ? Number((raw as { total: number }).total)
-        : achievements.value.length
+    const raw = await api<unknown>(`/achievements?${params.toString()}`)
+    const items = unwrapList<ApiAchievement>(raw)
+    const count = raw && typeof raw === 'object' && 'total' in raw
+      ? Number((raw as { total: number }).total)
+      : items.length
+    return { items, count }
+  }
+
+  async function loadAchievements() {
+    isLoading.value = true
+    loadFailed.value = false
+    try {
+      if (isSearching.value) {
+        // Search matches names in the browser, so it can only find what is in
+        // memory — one page of 21 would hide a match sitting on page 2. Pull the
+        // whole scope instead and page over the matches locally. The backend caps
+        // `limit` at 100, so more than that takes a loop.
+        const first = await fetchPage(1, SERVER_MAX_LIMIT)
+        const rows = first.items
+        for (let p = 2; rows.length < first.count && p <= SEARCH_PAGE_CAP; p++) {
+          const next = await fetchPage(p, SERVER_MAX_LIMIT)
+          if (!next.items.length) break
+          rows.push(...next.items)
+        }
+        achievements.value = rows
+        total.value = first.count
+      } else {
+        const { items, count } = await fetchPage(page.value, limit.value)
+        achievements.value = items
+        total.value = count
+      }
+    } catch {
+      // Offline the read-cache only holds the days/filters that were actually
+      // warmed or visited — anything else misses and throws. Keeping the rows
+      // from the previous query made the date arrows and the track/status
+      // filters look like no-ops (the same records stayed on screen), so drop
+      // them and let the page show its offline/empty state instead.
+      achievements.value = []
+      total.value = 0
+      loadFailed.value = true
     } finally {
       isLoading.value = false
     }
@@ -427,7 +471,21 @@ export function useAchievements() {
       status: draft.approve ? 'approved' : 'pending'
     } as unknown as ApiAchievement
   }
-  const draftRows = computed(() => offlineDrafts.value.map(draftToRow))
+  // Date, halaqa, track and status are server-side query params, so they never
+  // reach a local draft — the list has to apply them itself, or an offline
+  // recitation would surface on every other day (and in every other halaqa).
+  const draftRows = computed(() => {
+    const halaqaId = selectedHalaqaId.value
+    return offlineDrafts.value.filter(({ dto, approve }) => {
+      if (dto.date !== selectedDate.value) return false
+      // Unscoped (principal viewing all halaqat) lists every halaqa's drafts.
+      if (halaqaId != null && dto.halaqa_id !== halaqaId) return false
+      if (filters.trackType && dto.track_type !== filters.trackType) return false
+      if (filters.status === 'approved' && !approve) return false
+      if (filters.status === 'unapproved' && approve) return false
+      return true
+    }).map(draftToRow)
+  })
 
   // Reopen the reader on a draft: no achievement_id (so recite takes the fresh
   // path), but the exact session (item_id + track + range) so its session key
@@ -454,16 +512,32 @@ export function useAchievements() {
     await setDraftApproval(draftSessionKey(a), approve)
   }
 
-  const filteredAchievements = computed(() => {
+  // Every loaded row that survives the search — the full match set, not one page
+  // of it. While searching `achievements` holds the whole scope (see
+  // `loadAchievements`), so this is the true count of what the query found.
+  const matchedAchievements = computed(() => {
     const pend = pendingDeleteIds.value
     // Server ids arrive as strings ("47"); the pending-delete set holds numbers.
     const server = pend.size ? achievements.value.filter(a => !pend.has(Number(a.id))) : achievements.value
     // Drafts first so unsynced work is always visible at the top.
     const combined = [...draftRows.value, ...server]
-    const q = filters.search.trim().toLowerCase()
+    const q = searchQuery.value
     if (!q) return combined
     return combined.filter(a => studentDisplayName(a).toLowerCase().includes(q))
   })
+
+  // What the page renders. Without a search the server already paged for us; a
+  // search paged nothing, so the slice happens here.
+  const filteredAchievements = computed(() => {
+    if (!isSearching.value) return matchedAchievements.value
+    const start = (page.value - 1) * limit.value
+    return matchedAchievements.value.slice(start, start + limit.value)
+  })
+
+  // Drives the pager: the server's count normally, the number of matches while
+  // searching — so 30 matches across two server pages become two local pages, and
+  // 12 matches become none.
+  const listTotal = computed(() => (isSearching.value ? matchedAchievements.value.length : total.value))
 
   const hasActiveFilters = computed(() =>
     filters.search.trim() !== '' || filters.trackType !== null || filters.status !== null
@@ -475,7 +549,7 @@ export function useAchievements() {
     filters.status = null
   }
 
-  const totalPages = computed(() => (limit.value > 0 ? Math.ceil(total.value / limit.value) : 1))
+  const totalPages = computed(() => (limit.value > 0 ? Math.ceil(listTotal.value / limit.value) : 1))
 
   // Where the itemized errors live depends on the method: `full` carries them at
   // the top level, `test` inside each position.
@@ -674,13 +748,16 @@ export function useAchievements() {
     achievements,
     selectedDate,
     isLoading,
+    loadFailed,
     isSaving,
     currentEvaluationSettings,
     total,
+    listTotal,
     page,
     limit,
     viewMode,
     filters,
+    isSearching,
     editing,
     duplicateFrom,
     prefillStudentId,

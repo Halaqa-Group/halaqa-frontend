@@ -63,13 +63,19 @@ const statusFilterItems = computed(() => [
 ])
 
 async function loadList(targetPage = 1) {
-  await fetchHalaqat({
-    page: targetPage,
-    limit: limit.value,
-    type: filters.type ?? undefined,
-    status: filters.status ?? undefined,
-    search: filters.search.trim() || undefined
-  })
+  try {
+    await fetchHalaqat({
+      page: targetPage,
+      limit: limit.value,
+      type: filters.type ?? undefined,
+      status: filters.status ?? undefined,
+      search: filters.search.trim() || undefined
+    })
+  } catch (e: unknown) {
+    // The filter watchers call this unawaited; without a handler a failed load
+    // was an unhandled rejection and the page just kept the old rows.
+    toast.add({ title: apiError.format(e, t('pages.halaqat.toastError')), color: 'error' })
+  }
 }
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null

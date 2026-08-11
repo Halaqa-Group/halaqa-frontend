@@ -76,6 +76,13 @@ export function useHalaqat() {
       page.value = result.page
       limit.value = result.limit
       return result
+    } catch (e) {
+      // The list belongs to the query that just failed — leaving the previous
+      // one on screen would show halaqat that don't match the active filters
+      // (offline, any filter combination that was never cached lands here).
+      halaqat.value = []
+      total.value = 0
+      throw e
     } finally {
       isLoading.value = false
     }

@@ -97,6 +97,12 @@ export function useStudents() {
     } catch (e: any) {
       if (signal.aborted || isAbortError(e)) return
       error.value = apiError.format(e, 'حدث خطأ أثناء تحميل الطلاب')
+      // The list belongs to the filters that just failed, so the previous
+      // filters' students must not stay on screen pretending to match. Offline
+      // only the plain (unfiltered) roster is cached, so every search/status
+      // filter misses the read-cache and lands here.
+      students.value = []
+      totalStudents.value = 0
     } finally {
       if (!signal.aborted) isLoading.value = false
       requests.end('list', signal)

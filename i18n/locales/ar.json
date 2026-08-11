@@ -1188,6 +1188,7 @@
       "selectStudent": "اختر الطالب",
       "noResults": "لا توجد إنجازات في هذا اليوم",
       "noMatch": "لا توجد نتائج مطابقة",
+      "loadError": "تعذّر تحميل الإنجازات",
       "versesCount": "{count} آية",
       "pagesCount": "{count} صفحة",
       "mistakes": "أخطاء",
@@ -1383,6 +1384,7 @@
         "message": "هل أنت متأكد من حذف الخطة بالكامل؟ لا يمكن التراجع عن هذا الإجراء."
       },
       "saveErrorTitle": "خطأ في حفظ الخطة",
+      "loadErrorTitle": "تعذّر تحميل الخطة",
       "approvedToast": "تم اعتماد الخطة",
       "selectWeek": "اختر أسبوعًا",
       "selectAll": "تحديد الكل",

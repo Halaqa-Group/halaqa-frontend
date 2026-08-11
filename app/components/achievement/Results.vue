@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useOnline } from '@vueuse/core'
 import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
 import type { ApiAchievement } from '~/types'
 import { SURAH_NAMES } from '~/data/constants'
@@ -15,9 +16,11 @@ const {
   canUnapproveAchievement,
   canDeleteAchievement
 } = usePermissions()
+const online = useOnline()
 const {
   filteredAchievements,
   isLoading,
+  loadFailed,
   viewMode,
   hasActiveFilters,
   clearFilters,
@@ -72,10 +75,6 @@ async function onUnapprove(a: ApiAchievement) {
 }
 
 function reciteLink(a: ApiAchievement) {
-  // Use the achievement's own halaqa (not the global filter, which is null when
-  // the list is browsed unscoped — that left the recite page with no halaqa_id
-  // and stuck on its "select a student" prompt). Carry the track + range too, so
-  // recite opens on this exact session instead of falling back to the day's plan.
   return {
     path: '/recite',
     query: {
@@ -92,16 +91,11 @@ function reciteLink(a: ApiAchievement) {
   }
 }
 
-// Drop empty groups so the trigger can hide entirely — with recite gone, a parent
-// looking at a form-entered record has no actions left at all.
 function compact(groups: DropdownMenuItem[][]): DropdownMenuItem[][] {
   return groups.filter(g => g.length > 0)
 }
 
 function rowActions(a: ApiAchievement): DropdownMenuItem[][] {
-  // Unsynced offline draft: edit follows the source (mushaf → reader on the same
-  // draft, form → the edit form); approve toggles its local flag; delete drops
-  // the local draft. No server-only actions.
   if (isDraftRow(a)) {
     const editDraft = sourceOf(a) === 'mushaf'
       ? () => navigateTo(draftReciteLink(a))
@@ -180,6 +174,15 @@ const columns = computed<TableColumn<ApiAchievement>[]>(() => {
 <template>
   <div v-if="isLoading && filteredAchievements.length === 0" class="flex justify-center py-16">
     <UIcon name="i-lucide-loader-circle" class="w-8 h-8 animate-spin text-primary" />
+  </div>
+
+  <!-- The day (or filter combination) has nothing cached: offline that's simply
+       "not downloaded", online it's a failed request — either way it is NOT
+       "no achievements for this day", which would be a lie. -->
+  <CommonOfflineEmptyState v-else-if="filteredAchievements.length === 0 && loadFailed && !online" />
+
+  <div v-else-if="filteredAchievements.length === 0 && loadFailed" class="py-14 text-sm text-error text-center">
+    {{ t('pages.achievements.loadError') }}
   </div>
 
   <div v-else-if="filteredAchievements.length === 0 && !hasActiveFilters" class="flex flex-col items-center justify-center gap-3 py-14">

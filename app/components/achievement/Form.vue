@@ -11,6 +11,7 @@ import { computePercentageScore, type ScoreCounts } from '~/utils/score'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import { defaultSessionRange, planDirectionOf, DEFAULT_PLAN_START_SURAH } from '~/utils/plan'
 import { newRequestId } from '~/utils/requestId'
+import { todayYmd } from '~/utils/date'
 import type { AchievementTestPosition, ApiWeeklyPlanItem, CreateAchievementDto, RecitationMethod } from '~/types'
 
 const emit = defineEmits<{ saved: [] }>()
@@ -22,7 +23,7 @@ const overlay = useOverlay()
 const online = useOnline()
 const { selectedHalaqaId } = useGlobalHalaqa()
 const {
-  students, editing, duplicateFrom, prefillStudentId, prefillPlanItem, selectedDate, currentEvaluationSettings,
+  students, editing, duplicateFrom, prefillStudentId, prefillPlanItem, prefillDate, currentEvaluationSettings,
   evaluationSettingsKnown, isSaving, addAchievement, updateAchievement, loadEvaluationSettings
 } = useAchievements()
 // Warm the QUL word-id / juz / hizb lookup used to synthesize errors[] on submit.
@@ -59,7 +60,9 @@ const state = reactive<{
   teacher_notes: string
 }>({
   student_id: undefined,
-  date: selectedDate.value,
+  // A new record is dated today; hydrate() overrides it for edit/duplicate and
+  // for a planner-launched record that names its own day.
+  date: todayYmd(),
   track_type: 'Hifz',
   start_surah: 1,
   start_verse: 1,
@@ -204,14 +207,20 @@ function hydrate() {
     state.warnings_count = editing.value ? (src.warnings_count ?? 0) : 0
     state.harakat_errors_count = editing.value ? (src.harakat_errors_count ?? 0) : 0
     state.teacher_notes = editing.value ? (src.teacher_notes ?? '') : ''
-    if (duplicateFrom.value) state.date = selectedDate.value
+    // A duplicate is a new recording of an old one — it is being entered now, so
+    // it takes today's date rather than the source record's.
+    if (duplicateFrom.value) state.date = todayYmd()
   } else {
     // A fresh record may be launched from the planner's session-details dialog
     // with the student and lesson already chosen; otherwise fall back to an
     // empty picker.
     const pref = prefillPlanItem.value
     state.student_id = prefillStudentId.value ?? undefined
-    state.date = selectedDate.value
+    // Today, unless the planner handed in the day its cell belongs to. The list's
+    // browsed day deliberately doesn't seed this: recording while looking at an
+    // older day still files the achievement under today (the teacher can still
+    // pick another day in the calendar below).
+    state.date = prefillDate.value ?? todayYmd()
     if (pref) {
       // Show the clicked session's track and range as editable inputs, pre-filled,
       // so the teacher can see and tweak them (incl. end_verse) before saving.

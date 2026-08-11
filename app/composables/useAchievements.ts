@@ -247,27 +247,15 @@ export interface PrefillPlanItem {
   end_surah: number
   end_verse: number
 }
-// Pre-selects the planned lesson (track + range) when recording from the
-// planner's cell dialog, so the teacher doesn't re-pick it. Kept selected even
-// when the lesson's weekday differs from the record date. Cleared by openRecord.
 const prefillPlanItem = ref<PrefillPlanItem | null>(null)
+const prefillDate = ref<string | null>(null)
 const deleteOpen = ref(false)
 const deleteTarget = ref<ApiAchievement | null>(null)
 
-// Successful reads only. A cached `null` means "this halaqa has no custom
-// weights" (the defaults genuinely apply) — never "the read failed", which is
-// what it used to mean too: one blip pinned the defaults for the rest of the
-// session and every later save was scored with them, silently and with no retry.
 const settingsCache = new Map<number, Record<string, unknown> | null>()
 const currentEvaluationSettings = ref<Record<string, unknown> | null>(null)
-// Whether the weights behind the last computed score were actually resolved.
-// False = the read failed and the defaults were used as a fallback, so the score
-// is a guess; the save path surfaces that instead of storing it quietly.
 const evaluationSettingsKnown = ref(true)
 
-// Weights are fetched once per halaqa and reused for every score computed in the
-// session. Editing them on the halaqa page has to seed the new value here, or
-// the next achievement would still be scored with the old deductions.
 export function invalidateEvaluationSettings(halaqaId: number, next: Record<string, unknown> | null) {
   settingsCache.set(halaqaId, next)
 }
@@ -276,9 +264,6 @@ export function useAchievements() {
   const api = useApi()
   const { selectedHalaqaId, halaqat, selectHalaqa } = useGlobalHalaqa()
 
-  // The record form writes halaqa_id from the global scope, so editing a row while
-  // unscoped (principal viewing all halaqat) has to pin the scope to that row's
-  // own halaqa first.
   function pinHalaqa(halaqaId: number) {
     if (selectedHalaqaId.value === halaqaId) return
     const halaqa = halaqat.value.find(h => h.id === halaqaId)
@@ -293,9 +278,6 @@ export function useAchievements() {
       return cached
     }
     try {
-      // Short deadline: this runs on the way into a save, so a stalled link here
-      // would be added to the wait for the save itself. The read-cache copy (the
-      // offline warm pins it) is reached the moment the deadline expires.
       const halaqa = await api<ApiHalaqaDetail>(`/halaqat/${halaqaId}`, { timeout: 6_000 } as Parameters<typeof api>[1])
       const settings = halaqa.evaluation_settings ?? null
       settingsCache.set(halaqaId, settings)
@@ -303,8 +285,6 @@ export function useAchievements() {
       evaluationSettingsKnown.value = true
       return settings
     } catch {
-      // NOT cached: the weights are unknown, not absent. Leaving the cache empty
-      // means the next save retries instead of inheriting this failure.
       currentEvaluationSettings.value = null
       evaluationSettingsKnown.value = false
       return null
@@ -332,7 +312,6 @@ export function useAchievements() {
     }))
   }
 
-  // One page of the list, plus the server's (unfiltered) count for the scope.
   async function fetchPage(pageNum: number, pageLimit: number) {
     const halaqaId = selectedHalaqaId.value
     const params = new URLSearchParams({
@@ -357,10 +336,6 @@ export function useAchievements() {
     loadFailed.value = false
     try {
       if (isSearching.value) {
-        // Search matches names in the browser, so it can only find what is in
-        // memory — one page of 21 would hide a match sitting on page 2. Pull the
-        // whole scope instead and page over the matches locally. The backend caps
-        // `limit` at 100, so more than that takes a loop.
         const first = await fetchPage(1, SERVER_MAX_LIMIT)
         const rows = first.items
         for (let p = 2; rows.length < first.count && p <= SEARCH_PAGE_CAP; p++) {
@@ -798,6 +773,7 @@ export function useAchievements() {
     duplicateFrom.value = null
     prefillStudentId.value = null
     prefillPlanItem.value = null
+    prefillDate.value = null
     navigateTo('/achievements/record')
   }
   // Record against a specific planned session (the planner's cell dialog). The
@@ -807,6 +783,7 @@ export function useAchievements() {
     editing.value = null
     duplicateFrom.value = null
     selectedDate.value = opts.date ?? todayYmd()
+    prefillDate.value = opts.date ?? todayYmd()
     prefillStudentId.value = opts.studentId
     prefillPlanItem.value = opts.item
     navigateTo('/achievements/record')
@@ -814,12 +791,14 @@ export function useAchievements() {
   function openEdit(a: ApiAchievement) {
     duplicateFrom.value = null
     editing.value = a
+    prefillDate.value = null
     pinHalaqa(a.halaqa_id)
     navigateTo('/achievements/record')
   }
   function openDuplicate(a: ApiAchievement) {
     editing.value = null
     duplicateFrom.value = a
+    prefillDate.value = null
     pinHalaqa(a.halaqa_id)
     navigateTo('/achievements/record')
   }
@@ -850,6 +829,7 @@ export function useAchievements() {
     duplicateFrom,
     prefillStudentId,
     prefillPlanItem,
+    prefillDate,
     deleteOpen,
     deleteTarget,
 

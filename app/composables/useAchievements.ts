@@ -709,12 +709,9 @@ export function useAchievements() {
         await useAchievementDrafts().saveDraft(sessionKey, withPositionsPayload(full), existing?.approve ?? false)
         return null
       }
-      // The update endpoint only accepts mutable fields — student_id, halaqa_id
-      // and date are immutable for an existing record and are rejected by the
-      // backend's whitelist ("property student_id should not exist"). Sending
-      // the errors + recitation_method regenerates the positions wholesale.
       const method = full.recitation_method ?? 'full'
       const body: Record<string, unknown> = {
+        date: full.date,
         track_type: full.track_type,
         completion_method: full.completion_method,
         recitation_method: method,

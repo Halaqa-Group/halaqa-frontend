@@ -342,12 +342,9 @@ watch(
   }
 )
 
-// Show the manual track + range inputs when there's no plan, or the teacher
-// explicitly opted into manual entry. When editing, the lesson/range is fixed —
-// it's shown read-only and can't be changed (only counts/notes are editable).
-// Editable track + range inputs: shown for manual entry, when there's no plan, or
-// when launched from the planner (picker hidden, but the range stays editable).
-const showManual = computed(() => !isEdit.value && (fromPlanner.value || manualRange.value || pickerItems.value.length === 0))
+const showManual = computed(() =>
+  isEdit.value || fromPlanner.value || manualRange.value || pickerItems.value.length === 0
+)
 function planItemRange(it: PickerItem) {
   return formatVerseRange(it.start_surah, it.start_verse, it.end_surah, it.end_verse, SURAH_NAMES)
 }
@@ -768,14 +765,8 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         />
       </UFormField>
 
-      <!-- Read-only on edit, like the student above it: PATCH /achievements/:id
-           has no `date` (UpdateAchievementDto), so a change here could never be
-           saved. Offering the picker just loses the teacher's edit silently. -->
       <UFormField :label="t('pages.achievements.table.date')" name="date">
-        <div v-if="isEdit" class="flex items-center h-9 px-3 rounded-md border border-default bg-elevated text-sm text-muted">
-          {{ formattedDate }}
-        </div>
-        <UPopover v-else v-model:open="calendarOpen">
+        <UPopover v-model:open="calendarOpen">
           <UButton
             variant="outline"
             color="neutral"
@@ -798,9 +789,9 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </UFormField>
     </div>
 
-    <!-- Pick the planned lesson so the range isn't re-typed. Hidden on edit (lesson
-         fixed, read-only below) and when launched from the planner (the session's
-         track + range show as editable inputs below instead). -->
+    <!-- Pick the planned lesson so the range isn't re-typed. Hidden on edit and
+         when launched from the planner — both of those show the track + range as
+         editable inputs below instead. -->
     <UFormField v-if="!isEdit && !fromPlanner" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
       <div v-if="planLoading" class="flex items-center gap-2 text-xs text-muted">
         <UIcon name="i-lucide-loader-2" class="w-4 h-4 animate-spin" />
@@ -878,9 +869,9 @@ defineExpose({ saving: isSaving, setContinueToRecite })
       </UFormField>
     </template>
 
-    <!-- Chosen lesson summary (read-only) — the fixed lesson when editing, or the
-         picked plan item. Not editable. -->
-    <UFormField v-else-if="isEdit || selectedPlanItemId != null" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
+    <!-- Chosen lesson summary (read-only) — the plan item the teacher picked
+         above. Editing shows the inputs instead, so it never lands here. -->
+    <UFormField v-else-if="selectedPlanItemId != null" :label="t('pages.achievements.lessonFromPlan')" name="lesson">
       <div class="flex items-center justify-between gap-2 rounded-lg border border-default bg-elevated px-3 py-2.5">
         <span class="inline-flex items-center gap-2 text-sm font-medium min-w-0">
           <UBadge variant="subtle" :color="TRACK_BADGE_COLOR[state.track_type as AchievementTrack]" class="shrink-0">
@@ -892,7 +883,6 @@ defineExpose({ saving: isSaving, setContinueToRecite })
           <span v-if="rangeSummary" class="text-xs text-muted">
             {{ rangeSummary }}<template v-if="rangePagesSummary"> · {{ rangePagesSummary }}</template>
           </span>
-          <UIcon v-if="isEdit" name="i-lucide-lock" class="w-4 h-4 text-muted" />
         </span>
       </div>
     </UFormField>

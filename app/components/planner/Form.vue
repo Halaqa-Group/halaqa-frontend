@@ -124,6 +124,8 @@ defineExpose({ saving: isSaving })
           <PlannerAyahSelect
             v-model:surah="state.end_surah"
             v-model:verse="state.end_verse"
+            :min-surah="state.start_surah"
+            :min-verse="state.start_verse"
             :snap-to="selectedStudentDirection === 'desc' ? 'last' : 'first'"
           />
         </div>

@@ -283,7 +283,10 @@ export function useAchievements() {
       return cached
     }
     try {
-      const halaqa = await api<ApiHalaqaDetail>(`/halaqat/${halaqaId}`)
+      // Short deadline: this runs on the way into a save, so a stalled link here
+      // would be added to the wait for the save itself. The read-cache copy (the
+      // offline warm pins it) is reached the moment the deadline expires.
+      const halaqa = await api<ApiHalaqaDetail>(`/halaqat/${halaqaId}`, { timeout: 6_000 } as Parameters<typeof api>[1])
       const settings = halaqa.evaluation_settings ?? null
       settingsCache.set(halaqaId, settings)
       currentEvaluationSettings.value = settings
@@ -614,28 +617,88 @@ export function useAchievements() {
     return body
   }
 
-  // `approveIfOffline` is only consulted on the offline draft path: a plain
-  // "record & approve" wants the synced record approved too, "save & recite"
-  // leaves it pending.
-  async function addAchievement(data: CreateAchievementDto, approveIfOffline = false) {
+  // How long the teacher waits on the network before the record is stored on the
+  // device instead. Deliberately short: a save that hasn't landed in 10s on a
+  // weak link probably won't land soon, and every extra second of spinner is a
+  // second in which the save is re-tapped.
+  const SAVE_TIMEOUT_MS = 10_000
+
+  // The session key a recording is drafted under. Identical across re-saves of
+  // the same recording, which is what makes the draft store exactly-once.
+  function draftKeyOf(data: CreateAchievementDto): string {
+    return `${data.student_id}:${data.date}:${data.track_type}:${data.start_surah}-${data.start_verse}-${data.end_surah}-${data.end_verse}`
+  }
+
+  interface AddAchievementOptions {
+    // Only consulted on the local-draft path: a plain "record & approve" wants
+    // the synced record approved too, "save & recite" leaves it pending.
+    approveIfOffline?: boolean
+    // Whether a create the network couldn't deliver in time becomes a local
+    // draft. "Save & recite" opts out: the mushaf owns that session's draft, so
+    // drafting here as well would store the recitation twice.
+    draftWhenUnreachable?: boolean
+  }
+
+  // Returns the created record, or `null` when it was stored locally instead —
+  // either offline, or because the network was too slow to wait for. The caller
+  // tells the teacher which happened and must not treat `null` as a failure.
+  async function addAchievement(data: CreateAchievementDto, opts: AddAchievementOptions = {}) {
+    const { approveIfOffline = false, draftWhenUnreachable = true } = opts
     isSaving.value = true
     try {
       const full = await withComputedScore(data)
       const body = withPositionsPayload(full)
+      const drafts = useAchievementDrafts()
       // Offline: POST /achievements is NOT idempotent, so store an exactly-once
       // draft (keyed by student+date+range so re-saves overwrite) and sync it on
       // reconnect instead of firing a doomed request.
       if (import.meta.client && !navigator.onLine) {
-        const key = `${full.student_id}:${full.date}:${full.track_type}:${full.start_surah}-${full.start_verse}-${full.end_surah}-${full.end_verse}`
-        await useAchievementDrafts().saveDraft(key, body, approveIfOffline)
+        if (!draftWhenUnreachable) return null
+        await drafts.saveDraft(draftKeyOf(full), body, approveIfOffline)
         return null
       }
-      const created = await api<ApiAchievement>('/achievements', { method: 'POST', body })
-      await loadAchievements()
+      let created: ApiAchievement
+      try {
+        created = await api<ApiAchievement>('/achievements', {
+          method: 'POST',
+          body,
+          timeout: SAVE_TIMEOUT_MS
+        } as Parameters<typeof api>[1])
+      } catch (e) {
+        // Weak connection: `navigator.onLine` was true but nothing came back in
+        // time. Take the offline route rather than surfacing an error the teacher
+        // answers by tapping save again — that re-tap is where duplicates come
+        // from. The flush reconciles against the server first, in case this very
+        // request did land and only its response was lost.
+        if (import.meta.client && isTimeoutError(e) && draftWhenUnreachable) {
+          await drafts.saveDraft(draftKeyOf(full), body, approveIfOffline)
+          return null
+        }
+        throw e
+      }
+      // No list reload here: on a weak link that doubled the wait for a save the
+      // teacher is navigating away from anyway (the list refetches on mount, and
+      // syncs re-pull it). Splice the new row in so an open list still shows it.
+      mergeCreated(created)
       return created
     } finally {
       isSaving.value = false
     }
+  }
+
+  // Show a freshly created record in the loaded list without a refetch. Only
+  // when it belongs to the current view — a record dated other than the day on
+  // screen, or outside the active filters, would otherwise appear out of scope.
+  function mergeCreated(created: ApiAchievement) {
+    if (!created?.id) return
+    if (created.date !== selectedDate.value) return
+    if (selectedHalaqaId.value != null && created.halaqa_id !== selectedHalaqaId.value) return
+    if (filters.trackType && created.track_type !== filters.trackType) return
+    if (filters.status === 'approved' && created.status !== 'approved') return
+    if (filters.status === 'unapproved' && created.status === 'approved') return
+    if (achievements.value.some(a => a.id === created.id)) return
+    achievements.value = [created, ...achievements.value]
+    total.value += 1
   }
 
   async function updateAchievement(id: number, data: CreateAchievementDto) {
@@ -694,8 +757,19 @@ export function useAchievements() {
     }
   }
 
-  async function approveAchievement(id: number) {
-    await api<ApiAchievement>(`/achievements/${id}/approve`, { method: 'POST' })
+  // `reload` is opt-out for the record form, which approves a record it just
+  // created and then leaves the page — re-pulling the whole list there is a third
+  // round-trip on a connection that may barely manage one. The list's own row
+  // action keeps it (it stays on the page and wants server truth).
+  async function approveAchievement(id: number, opts: { reload?: boolean } = {}) {
+    const approved = await api<ApiAchievement>(`/achievements/${id}/approve`, { method: 'POST' })
+    if (opts.reload === false) {
+      // Keep the loaded row in step with the approval we just made. Server ids
+      // come back as strings on some rows, so compare numerically.
+      achievements.value = achievements.value.map(a =>
+        (Number(a.id) === Number(id) ? (approved ?? { ...a, status: 'approved' }) : a))
+      return
+    }
     await loadAchievements()
   }
 

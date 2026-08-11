@@ -57,9 +57,12 @@ export function useDailyReport() {
   ): Promise<{ message: string }> {
     isRecalculating.value = true
     try {
+      // Recomputing a whole halaqa's day is real server work, so it gets a much
+      // longer deadline than the client-wide default — this one is legitimately
+      // slow rather than stalled.
       return await api<{ message: string }>(
         `/halaqat/${halaqaId}/daily-reports/${date}/recalculate`,
-        { method: 'POST', body: { reason } }
+        { method: 'POST', body: { reason }, timeout: 90_000 } as Parameters<typeof api>[1]
       )
     } finally {
       isRecalculating.value = false

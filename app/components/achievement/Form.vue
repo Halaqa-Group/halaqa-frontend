@@ -10,6 +10,7 @@ import { verseToGlobal } from '~/utils/quran-structure'
 import { computePercentageScore, type ScoreCounts } from '~/utils/score'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import { defaultSessionRange, planDirectionOf, DEFAULT_PLAN_START_SURAH } from '~/utils/plan'
+import { newRequestId } from '~/utils/requestId'
 import type { AchievementTestPosition, ApiWeeklyPlanItem, CreateAchievementDto, RecitationMethod } from '~/types'
 
 const emit = defineEmits<{ saved: [] }>()
@@ -37,6 +38,12 @@ const fromPlanner = computed(() => prefillPlanItem.value != null)
 
 // Set by the "Save & recite" footer button before it submits the form.
 const continueToRecite = ref(false)
+
+// Idempotency key for the create: one id per recording the teacher is entering,
+// so every re-save of it — a re-tapped button after a slow save, a draft flushed
+// on reconnect — is recognisable as the same record rather than a new one. Reset
+// when the form is (re)hydrated for a different record, and after a save lands.
+const requestId = ref(newRequestId())
 
 const state = reactive<{
   student_id: number | undefined
@@ -234,6 +241,8 @@ function hydrate() {
     state.teacher_notes = ''
   }
   hydratePositions()
+  // A different record is being entered — it is its own write intent.
+  requestId.value = newRequestId()
 }
 watch([editing, duplicateFrom], hydrate, { immediate: true })
 
@@ -555,6 +564,7 @@ async function buildAchievementDto(studentId: number, halaqaId: number, toRecite
   if (toRecite && method === 'untracked') method = 'full'
 
   const dto: CreateAchievementDto = {
+    client_request_id: requestId.value,
     student_id: studentId,
     halaqa_id: halaqaId,
     date: state.date,
@@ -607,7 +617,17 @@ async function buildAchievementDto(studentId: number, halaqaId: number, toRecite
 // offline drafting — so we don't create here when offline (that would
 // double-draft the session).
 async function saveAndRecite(dto: CreateAchievementDto, studentId: number, halaqaId: number) {
-  if (online.value) await addAchievement(dto)
+  if (online.value) {
+    try {
+      await addAchievement(dto, { draftWhenUnreachable: false })
+    } catch (e) {
+      // Too slow to land: hand off to the mushaf anyway rather than blocking the
+      // teacher on it. If the create did reach the server, the reader finds that
+      // record and updates it; if it didn't, the reader's own autosync creates
+      // it. Either way this must not draft — that's the reader's job.
+      if (!isTimeoutError(e)) throw e
+    }
+  }
   // Carry the chosen session so the mushaf opens on that exact lesson (the recite
   // page hides its session switcher and relies on this). The track + range are
   // passed explicitly, not just item_id: the session may sit on a different
@@ -628,17 +648,35 @@ async function saveAndRecite(dto: CreateAchievementDto, studentId: number, halaq
 }
 
 // "Approve achievement": record straight from the form and sign it off. Online
-// it approves on the spot; offline it's saved as a draft (approve intent carried
-// on the draft, applied on sync).
+// it approves on the spot; offline — or when the connection was too slow to wait
+// for — it's saved as a draft (approve intent carried on the draft, applied on
+// sync).
 async function recordAndApprove(dto: CreateAchievementDto) {
-  const created = await addAchievement(dto, true)
-  if (created) {
-    // Recording and approving are the same halaqa-scope check, so if the create
-    // succeeded this cannot 403.
-    await approveAchievement(created.id)
+  const created = await addAchievement(dto, { approveIfOffline: true })
+  if (!created) {
+    // Stored on the device. Which of the two reasons decides the wording: still
+    // "online" means the link was simply too slow to finish in time.
+    toast.add({
+      title: t(online.value ? 'pages.achievements.savedSlowToast' : 'pages.achievements.savedOfflineToast'),
+      color: 'success',
+      icon: 'i-lucide-cloud-off'
+    })
+    return
+  }
+  // Recording and approving are the same halaqa-scope check, so if the create
+  // succeeded this cannot 403 — but on a weak link it can still time out, and
+  // the record is already saved. Say so plainly instead of raising a save error:
+  // an error here reads as "nothing was saved" and gets answered with a second
+  // recording of the same lesson.
+  try {
+    await approveAchievement(created.id, { reload: false })
     toast.add({ title: t('pages.achievements.approvedToast'), color: 'success' })
-  } else {
-    toast.add({ title: t('pages.achievements.savedOfflineToast'), color: 'success', icon: 'i-lucide-cloud-off' })
+  } catch {
+    toast.add({
+      title: t('pages.achievements.savedNotApprovedToast'),
+      color: 'warning',
+      icon: 'i-lucide-clock'
+    })
   }
 }
 
@@ -646,6 +684,10 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
   const halaqaId = selectedHalaqaId.value
   const studentId = state.student_id
   if (!halaqaId || studentId == null) return
+  // The footer buttons are disabled while saving, but a keyboard submit isn't —
+  // and a save in flight on a weak connection is exactly when a second one gets
+  // fired. One at a time.
+  if (isSaving.value) return
 
   // `continueToRecite` is a one-shot flag set by the footer button before submit;
   // consume it up front so every path below reads a stable intent.
@@ -672,6 +714,9 @@ async function onSubmit(_event: FormSubmitEvent<Schema>) {
       return
     } else {
       await recordAndApprove(dto)
+      // Saved (on the server or on the device) — anything entered from here on is
+      // a new record and must not reuse this one's idempotency key.
+      requestId.value = newRequestId()
     }
     emit('saved')
   } catch (e: any) {

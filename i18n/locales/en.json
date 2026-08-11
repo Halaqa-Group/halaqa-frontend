@@ -1165,6 +1165,8 @@
       "unapprove": "Revoke approval",
       "approvedToast": "Achievement approved ✓",
       "savedOfflineToast": "Saved locally - will sync when you're back online",
+      "savedSlowToast": "Connection is slow - saved on this device, it will upload automatically",
+      "savedNotApprovedToast": "Achievement saved, but the approval didn't go through - you can approve it from the list",
       "unapprovedToast": "Achievement approval revoked",
       "approveErrorTitle": "Failed to approve achievement",
       "unapproveErrorTitle": "Failed to revoke approval",

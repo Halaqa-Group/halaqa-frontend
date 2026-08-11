@@ -952,6 +952,11 @@ async function buildRecitationWrite(
   }
 
   const dto: CreateAchievementDto = {
+    // The session IS the write intent here: every autosync tick, the explicit
+    // submit and a draft flushed on reconnect all mean the same one record, so
+    // they share this key. Lets the backend collapse a create whose response was
+    // lost on a weak link instead of storing the recitation twice.
+    client_request_id: sessionId.value,
     student_id: sid,
     halaqa_id: hid,
     date: dateStr.value,

@@ -7,11 +7,7 @@ export type { StudentCapacityUnit }
 export type ApiClient = {
   <T = unknown>(url: string, opts?: FetchOptions): Promise<T>
   lastWarnings: Ref<string[]>
-  // Spends the HttpOnly refresh cookie for a fresh access token. Resolves
-  // false instead of throwing when there is no live session to restore.
   refresh: () => Promise<boolean>
-  // Like the plain GET, but pins the response in the read-cache so the
-  // eviction cap never drops it — used by the "make available offline" prefetch.
   warm: <T = unknown>(url: string, opts?: FetchOptions) => Promise<T>
 }
 
@@ -33,20 +29,14 @@ export interface DayData {
   statusColors: Record<LessonCategory, string>
 }
 
-// ─── Person names ─────────────────────────────────────────────────────────────
-// Students and users carry the four-part Arabic name (الاسم الأول / اسم الأب /
-// اسم الجد / اسم العائلة). `name` is a read-only display value the database
-// derives from the parts — reads keep using it, writes must send the parts.
 export interface ApiPersonName {
   first_name: string
   second_name: string
   third_name: string
   family_name: string
-  /** Derived server-side from the four parts; rejected in a write payload. */
   name: string
 }
 
-/** The four parts as a write payload: all required on create, all optional on patch. */
 export interface PersonNameInput {
   first_name: string
   second_name: string
@@ -64,11 +54,8 @@ export interface Student {
   gender: 'male' | 'female'
   status: 'active' | 'inactive' | 'graduated'
   idNumber: string | null
-  /** WhatsApp dial code, e.g. `+970`. Null together with `phone`. */
   phoneCountryCode: string | null
-  /** WhatsApp number without the dial code. */
   phone: string | null
-  /** Both halves joined — ready for a wa.me link, null when the number is unset. */
   phoneE164: string | null
   dob: string | null
   joinDate: string
@@ -96,10 +83,6 @@ export interface AttendanceEntry {
   notes: string
 }
 
-/**
- * How the student walks the mushaf while memorizing: `descending` (the API
- * default) starts at An-Nas and works backwards, `ascending` starts at Al-Fatihah.
- */
 export type MemorizationDirection = 'ascending' | 'descending'
 
 export interface ApiStudent extends ApiPersonName {
@@ -108,7 +91,6 @@ export interface ApiStudent extends ApiPersonName {
   id_number: string | null
   phone_country_code: string | null
   phone: string | null
-  /** Derived server-side from the two fields above; null unless both are set. */
   phone_e164: string | null
   dob: string | null
   join_date: string
@@ -133,13 +115,11 @@ export interface ApiStudentListResult {
   limit: number
 }
 
-// ─── Memorization — /students/:id/memorization ────────────────────────────────
 export interface ApiMemorization {
   memorized_ayah_count: number
   bitmap_base64: string
 }
 
-/** A verse range in the snake_case shape the memorization edit endpoint expects. */
 export interface MemorizationRangeInput {
   start_surah: number
   start_verse: number
@@ -346,15 +326,8 @@ export interface ApiAttendance {
   student_id: number
   date: string
   status: AttendanceStatus
-  /** تقييم الأخلاق — behaviour score 1..5. Seeded rows carry 5. Students only. */
   ethics_rating: number
   excuse_note: string | null
-  /**
-   * ملاحظة المحفّظ اليومية — the teacher's daily note, surfaced as `teacher_note`
-   * in the daily report. Currently write-only: the attendance list/detail
-   * endpoints do NOT return it yet, so it arrives undefined on reads. Kept
-   * optional so a later backend change that serializes it works without edits.
-   */
   daily_note?: string | null
   recorded_by?: number | null
   modified_by?: number | null
@@ -371,12 +344,10 @@ export interface ApiAttendanceListResult {
   limit: number
 }
 
-// POST /attendance/students/sync — idempotent bulk write (create + correct).
 export interface AttendanceSyncEntry {
   student_id: number
   date: string
   status: AttendanceStatus
-  /** Omitted → a new row defaults to 5 and an existing row keeps its rating. */
   ethics_rating?: number
   excuse_note?: string
   client_uuid?: string
@@ -400,26 +371,19 @@ export interface AttendanceSyncResult {
   results: AttendanceSyncResultRow[]
 }
 
-// PATCH /attendance/students/:id — single-row correction. `status` and
-// `ethics_rating` are both optional, but at least one must actually differ from
-// the stored row or the backend answers 400.
 export interface AttendanceCorrectionPayload {
   status?: AttendanceStatus
   ethics_rating?: number
   excuse_note?: string
-  /** ملاحظة المحفّظ اليومية — surfaced as `teacher_note` in the daily report. */
   daily_note?: string
   modification_reason?: string
 }
 
-// PATCH /attendance/teachers/:id — staff rows have no ethics rating.
 export interface TeacherAttendanceCorrectionPayload {
   status: AttendanceStatus
   excuse_note?: string
   modification_reason?: string
 }
-
-// ─── Staff (teacher/admin) attendance — /attendance/teachers ──────────────────
 
 export interface ApiTeacherAttendance {
   id: number
@@ -469,8 +433,6 @@ export interface TeacherAttendanceSyncResult {
   results: TeacherAttendanceSyncResultRow[]
 }
 
-// ─── School calendar — /attendance/schedules and /attendance/holidays ─────────
-
 export interface ApiSchoolSchedule {
   id: number
   day_of_week: number // 0=Saturday … 6=Friday
@@ -499,16 +461,8 @@ export interface CreateHolidayPayload {
 
 export type AchievementErrorType = 'mistake' | 'warning' | 'harakat'
 export type CompletionMethod = 'quick' | 'mushaf'
-// 'full' recited the whole range in one go; 'test' examined at chosen positions;
-// 'untracked' recited and scored without documenting where — a quick review
-// evaluation that carries aggregate `error_counts` and no positions at all.
 export type RecitationMethod = 'full' | 'test' | 'untracked'
 
-// Aggregate error counts for an `untracked` recitation — how many errors, not
-// where. The only carrier the backend accepts for that method (itemized errors
-// and test_positions are rejected). Omitted types count as zero server-side.
-// `tajweed` is retired on the frontend (never scored, see utils/score.ts), so we
-// only ever send the three scored types; the field stays here to match the API.
 export interface AchievementErrorCounts {
   mistakes?: number
   warnings?: number
@@ -516,9 +470,6 @@ export interface AchievementErrorCounts {
   harakat?: number
 }
 
-// A single itemized error occurrence at a QUL word span. surah/ayah/juz/hizb are
-// supplied by the client from QUL at capture time; the backend denormalizes the
-// rest from the parent achievement.
 export interface PositionError {
   error_type: AchievementErrorType
   start_word_id: number
@@ -529,10 +480,6 @@ export interface PositionError {
   hizb: number
 }
 
-// A recited/tested position on an achievement (response shape). Derived counts +
-// errors are hidden for the parent role.
-// Response shape. Every field is served to every role that can read the
-// achievement — the API stopped stripping the breakdown for parents.
 export interface RecitationPosition {
   start_surah: number
   start_verse: number
@@ -544,17 +491,11 @@ export interface RecitationPosition {
   errors: PositionError[]
 }
 
-// A verse-range spot the student was tested on (request shape for
-// recitation_method='test'). Each carries its own errors; per-type counts are
-// derived by the backend. Used only when submitting a partial test.
 export interface AchievementTestPosition {
   start_surah: number
   start_verse: number
   end_surah: number
   end_verse: number
-  // صفحات الموضع — mushaf pages this position covers, fractional. Computed on the
-  // frontend and stored as-is; the backend sums them into `positions_pages`.
-  // Omit (undefined) when the range can't be resolved — NULL means "not supplied".
   pages?: number | null
   errors?: PositionError[]
 }
@@ -573,8 +514,6 @@ export interface ApiAchievement {
   start_verse: number
   end_surah: number
   end_verse: number
-  // Top-level totals — derived from errors[] by the backend. Served to every
-  // role, parents included; null only when the row carries no breakdown.
   mistakes_count: number | null
   warnings_count: number | null
   harakat_errors_count: number | null
@@ -595,7 +534,6 @@ export interface ApiAchievementListResult {
   limit: number
 }
 
-// One aggregated error hotspot: a single ayah with the student's error tally there.
 export interface HeatmapHotspot {
   surah: number
   ayah: number
@@ -605,7 +543,6 @@ export interface HeatmapHotspot {
   total: number
 }
 
-// Student error heatmap: worst ayat (most errors first) over a rolling window.
 export interface ApiErrorHeatmap {
   student_id: number
   days: number
@@ -683,42 +620,21 @@ export interface CreateAchievementDto {
   start_verse: number
   end_surah: number
   end_verse: number
-  // Itemized errors (recitation_method='full' → attached to the single position).
-  // Replaces the old raw-count inputs; the backend derives all counts from this.
   errors?: PositionError[]
-  // Tested spots (recitation_method='test' only, >=1). Mutually exclusive with
-  // top-level `errors`, which the backend rejects for a test recitation.
   test_positions?: AchievementTestPosition[]
-  // Aggregate counts (recitation_method='untracked' only) — how many errors of
-  // each type, with no locations. Mutually exclusive with `errors`/`test_positions`;
-  // the backend 400s if it's sent for a `full`/`test` recitation (their counts are
-  // derived from the itemized errors).
   error_counts?: AchievementErrorCounts
   percentage_score: number
-  // الصفحات الكلية — mushaf pages the whole [start,end] range covers, fractional.
-  // Optional: when omitted the backend derives it from the verse range (identical
-  // page math to the frontend's), so it is never left empty — it is the volume
-  // metric every dashboard KPI sums. When we can resolve the range we still send it
-  // (it may capture detail the range can't). For `full` it also becomes the single
-  // position's pages; for `test` the per-position `pages` inside `test_positions`
-  // roll up into `positions_pages` separately; for `untracked` there are no
-  // positions, so `positions_pages` stays NULL.
   total_pages?: number | null
   teacher_notes?: string
   approve?: boolean
+  client_request_id?: string
 }
 
 export interface StudentTrackCapacity {
-  /** The raw capacity number, counted in `unit`. */
   amount: number
   unit: StudentCapacityUnit
 }
 
-/**
- * مقاييس الطالب — the student's daily capacity per plan track: how much (amount)
- * and in which unit. Seeds the "create weekly plan" wizard so a generated week
- * starts from the student's own capacity instead of a hardcoded page/day.
- */
 export interface StudentCapacities {
   Hifz: StudentTrackCapacity
   Near: StudentTrackCapacity
@@ -730,33 +646,16 @@ export interface StudentWithAttendance {
   name: string
   avatar: string
   attendanceStatus: AttendanceStatus | null
-  // Carried through so plan defaults (wizard anchor, new-session range) follow the
-  // student's own memorization direction instead of a hardcoded guess.
   memorizationDirection?: MemorizationDirection
-  // The student's daily capacity per track (مقاييس) — seeds the plan wizard's
-  // amount + unit so it reflects this student, not a fixed default.
   capacities?: StudentCapacities
 }
-
-// ─── Daily evaluation report ──────────────────────────────────────────────────
-// Contracts for the daily report feature (backend module `daily-reports`).
-// Endpoints, all under GET/POST /halaqat/:id/...:
-//   GET  :id/daily-report?date=YYYY-MM-DD              → ApiDailyReport
-//   GET  :id/daily-report/:date/students/:studentId    → ApiStudentReportDetail
-//   POST :id/daily-reports/:date/recalculate           → { message }
-// Response fields are snake_case (like halaqat/students/achievements); the only
-// exception is the internal `reconciliation` audit blob, whose keys stay
-// camelCase because the backend stores it verbatim. All rates/scores are already
-// rounded to 2 decimals (ROUND_HALF_UP) server-side — the frontend only formats.
 
 export type DailyReportSource = 'live' | 'snapshot'
 export type DailyReportDayStatus = 'working_day' | 'non_working_day'
 export type DailyReportStatus = 'complete' | 'partial' | 'failed'
-/** Attendance as seen by the report: the four real states plus a synthetic one. */
 export type EvaluationAttendanceStatus = AttendanceStatus | 'missing_attendance'
 
 export type SystemAlertSeverity = 'info' | 'warning' | 'error'
-/** Known codes; typed loosely so a new backend code still renders. */
 export type SystemAlertCode =
   | 'NO_APPROVED_PLAN'
   | 'MISSING_ATTENDANCE'
@@ -772,7 +671,6 @@ export interface SystemAlert {
   message: string
 }
 
-/** The four effective (snapshot) weights returned with a report; sum to 100. */
 export interface ReportWeightsSummary {
   hifz: number
   near: number
@@ -780,7 +678,6 @@ export interface ReportWeightsSummary {
   ethics: number
 }
 
-/** One student row in the summary report. `null` scores mean "not computed". */
 export interface StudentReportRow {
   student_id: number
   student_name: string
@@ -788,17 +685,13 @@ export interface StudentReportRow {
   hifz_score: number
   near_score: number
   far_score: number
-  /** null when attendance is missing. */
   ethics_score: number | null
-  /** Quantity-of-plan achieved, independent of quality. null when missing. */
   plan_completion_rate: number | null
-  /** null when attendance is missing — render as "—", never as zero. */
   total_score: number | null
   teacher_note: string | null
   system_alerts: SystemAlert[]
 }
 
-/** GET /halaqat/:id/daily-report?date=… */
 export interface ApiDailyReport {
   halaqa_id: number
   date: string
@@ -806,11 +699,9 @@ export interface ApiDailyReport {
   day_status: DailyReportDayStatus
   report_status: DailyReportStatus
   weights: ReportWeightsSummary
-  /** Empty on a non_working_day (no zero-filled rows). */
   students: StudentReportRow[]
 }
 
-// Reconciliation audit blob (§12) — camelCase, stored verbatim by the backend.
 export interface ReconciliationSegment {
   startSurah: number
   startVerse: number
@@ -853,10 +744,8 @@ export interface TrackReconciliation {
   outsidePlanSegments: ReconciliationOutsideSegment[]
 }
 
-/** Per-track breakdown for one student. */
 export interface StudentTrackDetail {
   base_weight: number
-  /** May exceed base_weight when another track's weight is redistributed here. */
   effective_weight: number
   planned_pages: number
   achieved_pages: number
@@ -866,7 +755,6 @@ export interface StudentTrackDetail {
   reconciliation: TrackReconciliation | null
 }
 
-/** GET /halaqat/:id/daily-report/:date/students/:studentId */
 export interface ApiStudentReportDetail {
   halaqa_id: number
   date: string
@@ -885,7 +773,6 @@ export interface ApiStudentReportDetail {
   system_alerts: SystemAlert[]
 }
 
-/** Per-halaqa track weights for the report. Persisted on the halaqa; sum = 100. */
 export interface ReportWeights {
   hifz_weight: number
   near_weight: number
@@ -900,49 +787,22 @@ export const REPORT_WEIGHTS_DEFAULTS: ReportWeights = {
   ethics_weight: 5
 }
 
-// ─── Dashboard KPIs (GET /dashboard/*) ────────────────────────────────────────
-// A read-only aggregation layer over attendance, achievements, weekly plans,
-// halaqat and students. It owns no table and exposes no mutations.
-//
-// Scope is resolved SERVER-side from the caller's role — principal/VP see the
-// whole school, a supervisor their supervised halaqat, a teacher the halaqat
-// they currently teach. A caller with nothing in scope gets zeros/empty arrays
-// rather than a 403, so the frontend never pre-checks scope; it only hides the
-// two staff-facing surfaces the API refuses outright (see `canViewTeacherCommitment`).
-//
-// Units are uniform across every endpoint and are NOT interchangeable:
-//   • rates  → fractions 0..1   (`0.92` = 92%)
-//   • scores → 0..100           (averages of `percentage_score`)
-//   • ethics → 1..5
-//   • volume → mushaf PAGES, fractional — never verses
-// Every response echoes the resolved `range`, so the UI always knows which
-// window it is showing even when it sent none.
-
 export type DashboardPeriod = 'week' | 'month'
 
-/** Same three tracks as `AchievementTrack` in `~/utils/achievement`. */
 export type DashboardTrack = 'Hifz' | 'Near' | 'Far'
 
-/** The resolved reporting window, inclusive on both ends. */
 export interface DashboardRange {
   from: string
   to: string
 }
 
-/**
- * The window query every dashboard endpoint accepts. `from`+`to` win when both
- * are present; otherwise `period` decides ('month' → 1st of this month, default
- * 'week' → the most recent Saturday), always ending today.
- */
 export interface DashboardWindowQuery {
   period?: DashboardPeriod
   from?: string
   to?: string
-  /** Narrow every figure to one halaqa; intersected with the caller's scope. */
   halaqa_id?: number
 }
 
-/** The headline KPIs over the immediately-preceding window, for trend deltas. */
 export interface ApiDashboardOverviewPrevious {
   range: DashboardRange
   student_attendance_rate: number
@@ -953,38 +813,28 @@ export interface ApiDashboardOverviewPrevious {
   average_score: number
 }
 
-/** GET /dashboard/overview */
 export interface ApiDashboardOverview {
   range: DashboardRange
-  /** (present + late) / obligated rows, 0..1. */
   student_attendance_rate: number
-  /** `null` for the teacher role — staff commitment is above their level. */
   teacher_attendance_rate: number | null
-  /** Average ethics rating (تقييم الأخلاق), 1..5. */
   ethics_average: number
-  /** SUM(total_pages) of approved Hifz achievements — fractional pages. */
   new_memorization_pages: number
   plan_completion_rate: number
-  /** Average percentage_score, 0..100. */
   average_score: number
   active_students: number
   active_halaqat: number
-  /** Only populated when the request asked for `compare=true`; else null. */
   previous: ApiDashboardOverviewPrevious | null
 }
 
 export interface ApiTopStudent {
   student_id: number
   student_name: string
-  /** الصفحات الكلية — what the leaderboard ranks by. */
   total_pages: number
-  /** صفحات المواضع — the amount actually recited; equals total_pages when full. */
   positions_pages: number
   achievements_count: number
   average_score: number
 }
 
-/** GET /dashboard/top-students */
 export interface ApiTopStudents {
   range: DashboardRange
   track: DashboardTrack
@@ -996,13 +846,11 @@ export interface ApiHalaqaPerformance {
   halaqa_name: string
   students: number
   attendance_rate: number
-  /** New-memorization pages (Hifz) in the window. */
   pages: number
   average_score: number
   plan_completion_rate: number
 }
 
-/** GET /dashboard/halaqat */
 export interface ApiHalaqatPerformance {
   range: DashboardRange
   items: ApiHalaqaPerformance[]
@@ -1011,16 +859,13 @@ export interface ApiHalaqatPerformance {
 export interface ApiTeacherCommitment {
   teacher_id: number
   teacher_name: string
-  /** The teacher's OWN attendance rate; `null` when they have no rows at all. */
   attendance_rate: number | null
   halaqat: number
   students: number
-  /** Their students' attendance rate — a different metric from the one above. */
   student_attendance_rate: number
   student_pages: number
 }
 
-/** GET /dashboard/teachers — principal, VP and supervisor only (403 otherwise). */
 export interface ApiTeachersCommitment {
   range: DashboardRange
   items: ApiTeacherCommitment[]
@@ -1029,9 +874,7 @@ export interface ApiTeachersCommitment {
 export interface ApiStalledStudent {
   student_id: number
   student_name: string
-  /** Date of their last approved achievement; `null` when they have never had one. */
   last_achievement_date: string | null
-  /** Days since that achievement; `null` when there has never been one. */
   days_since: number | null
 }
 
@@ -1047,40 +890,26 @@ export interface ApiHighAbsenceTeacher {
   attendance_rate: number
 }
 
-/** GET /dashboard/alerts */
 export interface ApiDashboardAlerts {
   range: DashboardRange
-  /** The staleness window the server actually applied (it clamps to 1..90). */
   stalled_days: number
   stalled_students: ApiStalledStudent[]
   halaqat_without_teacher: ApiHalaqaWithoutTeacher[]
-  /** Always empty for the teacher role — the endpoint itself withholds it. */
   high_absence_teachers: ApiHighAbsenceTeacher[]
 }
 
-/** Extra knobs `GET /dashboard/alerts` accepts on top of the window query. */
 export interface DashboardAlertsQuery extends DashboardWindowQuery {
-  /** No approved achievement in this many days = "stalled". Default 7, clamped 1..90. */
   stalled_days?: number
-  /** Absent days that flag a teacher. Default 2, clamped 1..90. */
   absence_threshold?: number
 }
 
-/**
- * The window as the UI models it. `mode: 'custom'` is the only case that carries
- * `from`/`to`; the other two let the server derive the window from `period`, so
- * the client never has to know that the school week starts on Saturday.
- */
 export interface DashboardWindowSelection {
   mode: DashboardPeriod | 'custom'
   from?: string
   to?: string
 }
 
-/** Extra knobs `GET /dashboard/top-students` accepts. */
 export interface DashboardTopStudentsQuery extends DashboardWindowQuery {
-  /** Defaults to `Hifz`; `Near`/`Far` rank by review volume instead. */
   track?: DashboardTrack
-  /** Default 10, capped at 50 server-side. */
   limit?: number
 }

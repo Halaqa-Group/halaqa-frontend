@@ -19,8 +19,11 @@ useSetPageTitle(() => t(isEdit.value ? 'pages.achievements.editTitle' : 'pages.a
 // Back button lives in the header, before the title.
 useSetPageBack('/achievements')
 
-const formRef = useTemplateRef<{ saving: Ref<boolean>, setContinueToRecite: (v: boolean) => void } | null>('formRef')
-const formSaving = computed(() => formRef.value?.saving.value ?? false)
+// `defineExpose` runs its object through `proxyRefs`, so the exposed `saving` ref
+// arrives here already unwrapped — reading `.value` off it yields undefined and
+// the spinner never shows.
+const formRef = useTemplateRef<{ saving: boolean, setContinueToRecite: (v: boolean) => void } | null>('formRef')
+const formSaving = computed(() => formRef.value?.saving ?? false)
 
 function goBack() {
   navigateTo('/achievements')

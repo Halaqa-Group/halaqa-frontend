@@ -713,8 +713,14 @@ defineExpose({ saving: isSaving, setContinueToRecite })
         />
       </UFormField>
 
+      <!-- Read-only on edit, like the student above it: PATCH /achievements/:id
+           has no `date` (UpdateAchievementDto), so a change here could never be
+           saved. Offering the picker just loses the teacher's edit silently. -->
       <UFormField :label="t('pages.achievements.table.date')" name="date">
-        <UPopover v-model:open="calendarOpen">
+        <div v-if="isEdit" class="flex items-center h-9 px-3 rounded-md border border-default bg-elevated text-sm text-muted">
+          {{ formattedDate }}
+        </div>
+        <UPopover v-else v-model:open="calendarOpen">
           <UButton
             variant="outline"
             color="neutral"

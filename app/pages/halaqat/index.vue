@@ -105,8 +105,9 @@ const activeFilterCount = computed(() =>
 
 const formOpen = ref(false)
 const editing = ref<ApiHalaqaListItem | null>(null)
-const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
-const formSaving = computed(() => formRef.value?.saving.value ?? false)
+// `defineExpose` unwraps refs on the way out, so `saving` is a plain boolean here.
+const formRef = useTemplateRef<{ saving: boolean } | null>('formRef')
+const formSaving = computed(() => formRef.value?.saving ?? false)
 
 // The add/edit form is a centered modal on desktop and a bottom drawer on mobile.
 // The body + footer are shared between the two shells via reusable templates.

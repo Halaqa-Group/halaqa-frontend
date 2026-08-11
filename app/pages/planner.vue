@@ -36,8 +36,9 @@ const canCopyPlan = computed(() =>
   canEditPlanItems.value && viewMode.value === 'matrix' && hasDraftContent.value
 )
 
-const formRef = useTemplateRef<{ saving: Ref<boolean> } | null>('formRef')
-const formSaving = computed(() => formRef.value?.saving.value ?? false)
+// `defineExpose` unwraps refs on the way out, so `saving` is a plain boolean here.
+const formRef = useTemplateRef<{ saving: boolean } | null>('formRef')
+const formSaving = computed(() => formRef.value?.saving ?? false)
 
 const deletePlanOpen = ref(false)
 function openDeletePlan() {

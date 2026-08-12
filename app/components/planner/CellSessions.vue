@@ -275,11 +275,11 @@ onMounted(() => {
       </p>
     </div>
 
-    <PlannerCellAchievements
-      :student-id="selectedStudentId ?? null"
-      :halaqa-id="selectedHalaqaId ?? null"
-      :date="isoDate"
-      :track="track"
-    />
+    <!-- <PlannerCellAchievements
+        :student-id="selectedStudentId ?? null"
+        :halaqa-id="selectedHalaqaId ?? null"
+        :date="isoDate"
+        :track="track"
+      /> -->
   </div>
 </template>

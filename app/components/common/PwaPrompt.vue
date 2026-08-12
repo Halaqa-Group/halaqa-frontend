@@ -12,7 +12,6 @@ const toast = useToast()
 // so the update prompt reappears immediately after each reload — an infinite
 // loop, especially on iOS. Guard it two ways:
 //  • updateToastShown — never stack more than one prompt per page load
-//  • sessionStorage flag — once the user applies an update this session, don't
 //  • a timestamp in sessionStorage — suppress a re-prompt that arrives right
 //    after an update was applied (that is the loop), while still prompting for
 //    genuinely later deploys.

@@ -1490,10 +1490,20 @@
         "sessionNumber": "Session {n}",
         "editHint": "Edits apply right away - save the draft to keep them",
         "empty": "No session planned for this cell",
-        "achievements": "Linked achievements",
+        "achievements": "Recorded on this day",
+        "achievementsHint": "Everything logged for this day and track. Which session each one paid for is shown on the session itself.",
         "record": "Record achievement",
         "recordForSession": "Record achievement for {range}",
-        "noAchievements": "No achievements recorded yet"
+        "noAchievements": "Nothing recorded on this day yet"
+      },
+      "links": {
+        "title": "Credited recitations",
+        "show": "Credited recitations",
+        "none": "Nothing credited to this session yet",
+        "recorded": "Recorded: {range}",
+        "loadError": "Could not load the credited recitations",
+        "outsideTitle": "Recited outside the plan",
+        "outsideHint": "Recited this week, but no session planned it — so it counts towards no session."
       },
       "wizard": {
         "title": "Create weekly plan",

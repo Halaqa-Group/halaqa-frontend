@@ -105,8 +105,11 @@ export function useHalaqaOfflineCache() {
       await api.warm(`/students/${student.id}/memorization`).catch(() => {})
       opts.onStep?.(++step, steps)
       for (const week of weeks) {
+        // Must stay byte-identical to the planner's own request URL — the read
+        // cache is keyed by it, so dropping `include=links` here would warm a key
+        // the planner never asks for and leave it empty-handed offline.
         const planRaw = await api
-          .warm<unknown>(`/weekly-plans?student_id=${student.id}&halaqa_id=${halaqaId}&week_start_date=${week}`)
+          .warm<unknown>(`/weekly-plans?student_id=${student.id}&halaqa_id=${halaqaId}&week_start_date=${week}&include=links`)
           .catch(() => null)
         opts.onStep?.(++step, steps)
         const plan = planRaw ? unwrapList<ApiWeeklyPlan>(planRaw)[0] : null

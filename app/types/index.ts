@@ -559,6 +559,11 @@ export interface ApiWeeklyPlan {
   approved_by?: number | null
   items: ApiWeeklyPlanItem[]
   created_at?: string
+  // Only present with `?include=links`. `undefined` means "not asked for"; `[]`
+  // means "asked, and there are none" — the two must not be conflated, or a plan
+  // fetched without the include reads as a week with nothing recited.
+  links?: ApiPlanLink[]
+  outside_plan?: ApiPlanLink[]
 }
 
 export interface ApiWeeklyPlanListResult {
@@ -583,6 +588,74 @@ export interface ApiWeeklyPlanItem {
   status: 'due' | 'completed' | 'partial' | 'overdue'
   is_manual_override: boolean
   created_at?: string
+}
+
+/**
+ * The achievement that credited a settlement row, carrying its **own** recorded
+ * range — usually wider than the credited span, since only the part falling inside
+ * the plan item is counted.
+ */
+export interface ApiPlanLinkAchievement {
+  id: number
+  date: string
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+  percentage_score: number
+}
+
+/**
+ * One materialized settlement row: "this achievement credited this verse span of
+ * this plan item". Written solely by the backend's reconciliation, so the verse
+ * fields describe the **credited span** — the intersection actually counted — not
+ * the achievement's full range.
+ *
+ * Never re-derive this linkage in the client by comparing an achievement's range
+ * to an item's: reconciliation is week-scoped and consumption-ordered, so overlap
+ * alone does not imply a link.
+ */
+export interface ApiPlanLink {
+  id: number
+  weekly_plan_id: number
+  // `null` means the span was recited but planned by no item of that track that
+  // week ("outside plan"). Such a row belongs to the week — never render it
+  // under an item.
+  weekly_plan_item_id: number | null
+  track_type: 'Hifz' | 'Near' | 'Far'
+  plan_day_of_week: number | null
+  achievement_id: number
+  // The achievement's own date, which may differ from the credited item's day.
+  achievement_date: string
+  start_surah: number
+  start_verse: number
+  end_surah: number
+  end_verse: number
+  start_global_ayah: number
+  end_global_ayah: number
+  credited_verses: number
+  credited_pages: number
+  percentage_score: number
+  // `null` only if the achievement row has since vanished.
+  achievement: ApiPlanLinkAchievement | null
+}
+
+/** `GET /weekly-plans/:id/links` — a whole week's settlement, already split. */
+export interface ApiPlanLinks {
+  weekly_plan_id: number
+  links: ApiPlanLink[]
+  outside_plan: ApiPlanLink[]
+}
+
+/** `GET /weekly-plan-items/:id/links` — one item's settlement. */
+export interface ApiPlanItemLinks {
+  weekly_plan_item_id: number
+  weekly_plan_id: number
+  total_verses: number
+  // Always equals the sum of `links[].credited_verses`.
+  achieved_verses: number
+  status: 'due' | 'completed' | 'partial' | 'overdue'
+  links: ApiPlanLink[]
 }
 
 export interface ApiWarnings {

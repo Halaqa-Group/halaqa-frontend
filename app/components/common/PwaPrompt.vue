@@ -12,14 +12,22 @@ const toast = useToast()
 // so the update prompt reappears immediately after each reload — an infinite
 // loop, especially on iOS. Guard it two ways:
 //  • updateToastShown — never stack more than one prompt per page load
-//  • sessionStorage flag — once the user applies an update this session, don't
-//    re-prompt (survives the reload; cleared when the app is fully reopened)
-const UPDATE_APPLIED_KEY = 'pwa:update-applied'
+//  • a timestamp in sessionStorage — suppress a re-prompt that arrives right
+//    after an update was applied (that is the loop), while still prompting for
+//    genuinely later deploys.
+//
+// This used to be a boolean "already applied this session" flag, which suppressed
+// EVERY later update too. A standalone PWA keeps one session alive for days or
+// weeks, so a user who accepted one update stopped being offered any after it —
+// stranded on old code until they cleared site data. Hence the time window.
+const UPDATE_APPLIED_AT_KEY = 'pwa:update-applied-at'
+const LOOP_GUARD_MS = 10 * 60 * 1000
 let updateToastShown = false
 
-function updateAlreadyApplied(): boolean {
+function updateJustApplied(): boolean {
   try {
-    return sessionStorage.getItem(UPDATE_APPLIED_KEY) === '1'
+    const at = Number(sessionStorage.getItem(UPDATE_APPLIED_AT_KEY) ?? 0)
+    return at > 0 && Date.now() - at < LOOP_GUARD_MS
   } catch {
     return false
   }
@@ -41,7 +49,7 @@ watch(
 watch(
   () => $pwa?.needRefresh,
   (needs) => {
-    if (!needs || updateToastShown || updateAlreadyApplied()) return
+    if (!needs || updateToastShown || updateJustApplied()) return
     updateToastShown = true
     toast.add({
       title: t('pwa.updateAvailable'),
@@ -54,10 +62,10 @@ watch(
         {
           label: t('pwa.reload'),
           onClick: () => {
-            // Mark BEFORE reloading so the re-mounted prompt won't re-fire if the
+            // Stamp BEFORE reloading so the re-mounted prompt won't re-fire if the
             // SW still (wrongly) reports an update after the reload.
             try {
-              sessionStorage.setItem(UPDATE_APPLIED_KEY, '1')
+              sessionStorage.setItem(UPDATE_APPLIED_AT_KEY, String(Date.now()))
             } catch {
               // sessionStorage unavailable — the toast guard still limits stacking.
             }

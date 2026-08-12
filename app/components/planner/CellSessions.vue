@@ -30,7 +30,8 @@ const { selectedHalaqaId } = useGlobalHalaqa()
 const { openRecordForPlanItem } = useAchievements()
 const {
   dateOfDay, selectedStudentId, selectedStudentDirection, getCells, matrixDirty, saveDraft,
-  addSession, updateSession, removeSession, clearCell, copyCell, pasteCell, copiedCell
+  addSession, updateSession, removeSession, clearCell, copyCell, pasteCell, copiedCell,
+  hasLinks, linksForItem
 } = useWeeklyPlan()
 
 const sessions = computed(() => getCells(props.day, props.track))
@@ -206,6 +207,16 @@ onMounted(() => {
           <span class="text-xs text-muted tabular-nums">{{ s.achieved_verses }}/{{ s.total_verses }}</span>
         </div>
 
+        <!-- What the server actually credited to this session. Only a saved session
+             can carry rows, and only when the plan was loaded with `include=links`;
+             an unsaved one has nothing stored yet, so the block stays hidden rather
+             than claiming nothing was recited. -->
+        <PlannerSessionLinks
+          v-if="hasLinks && s.id != null && linksForItem(s.id).length"
+          :links="linksForItem(s.id)"
+          hide-empty
+        />
+
         <UButton
           v-if="showRecord"
           size="xs"
@@ -264,11 +275,11 @@ onMounted(() => {
       </p>
     </div>
 
-    <PlannerCellAchievements
-      :student-id="selectedStudentId ?? null"
-      :halaqa-id="selectedHalaqaId ?? null"
-      :date="isoDate"
-      :track="track"
-    />
+    <!-- <PlannerCellAchievements
+        :student-id="selectedStudentId ?? null"
+        :halaqa-id="selectedHalaqaId ?? null"
+        :date="isoDate"
+        :track="track"
+      /> -->
   </div>
 </template>

@@ -374,6 +374,12 @@ onMounted(async () => {
         </template>
       </PlannerFilterBar>
       <PlannerResults />
+
+      <!-- What the week credited to no session at all. Week-level by nature, so it
+           sits under the whole result set rather than inside any day. Hidden in the
+           day roster, where the loaded plan belongs to whichever student was last
+           opened rather than to the view. -->
+      <PlannerOutsidePlan v-if="selectedStudentId && viewMode !== 'day'" />
     </template>
 
     <div

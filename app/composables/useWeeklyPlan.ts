@@ -1,12 +1,13 @@
 import { computed, reactive, ref } from 'vue'
 import type {
-  ApiStudent, ApiStudentListResult, ApiWeeklyPlan, ApiWeeklyPlanItem,
+  ApiPlanLink, ApiStudent, ApiStudentListResult, ApiWeeklyPlan, ApiWeeklyPlanItem,
   StudentCapacities, StudentWithAttendance
 } from '~/types'
 import { DEFAULT_CAPACITY_UNIT } from '~/data/constants'
 import { unwrapList } from '~/utils/api/list'
 import { parseYmd, todayYmd, toYmd } from '~/utils/date'
 import { backendDayOfWeek, planDirectionOf, startOfWeekSat } from '~/utils/plan'
+import { groupLinksByItem } from '~/utils/plan-links'
 import { totalVersesInRange } from '~/utils/quran'
 import type { PlanDirection, VerseRange } from '~/utils/quran-structure'
 
@@ -150,8 +151,14 @@ export function useWeeklyPlan() {
     const signal = requests.begin('plan')
     isLoading.value = true
     try {
+      // `include=links` embeds the week's stored settlement — which achievement
+      // credited which span of which session — in the same response. It costs one
+      // extra query server-side, which this student+week-scoped read can afford,
+      // and it's the only correct source for that linkage (see `~/utils/plan-links`).
+      // The offline warm-up must request the identical URL, or the planner misses
+      // its cache offline — see `useHalaqaOfflineCache.warmHalaqaData`.
       const raw = await api<unknown>(
-        `/weekly-plans?student_id=${studentId}&halaqa_id=${halaqaId}&week_start_date=${selectedWeekStart.value}`,
+        `/weekly-plans?student_id=${studentId}&halaqa_id=${halaqaId}&week_start_date=${selectedWeekStart.value}&include=links`,
         { signal }
       )
       plan.value = unwrapList<ApiWeeklyPlan>(raw)[0] ?? null
@@ -678,6 +685,21 @@ export function useWeeklyPlan() {
   const items = computed<ApiWeeklyPlanItem[]>(() => plan.value?.items ?? [])
   const planStatus = computed<'new' | 'draft' | 'approved'>(() => plan.value?.status ?? 'new')
 
+  // ── Settlement links ────────────────────────────────────────────────────────
+  // The loaded week's stored settlement, as returned by `?include=links`. The API
+  // hands it over already split: `links` is credited to an item, `outside_plan`
+  // to none. Both are absent (not empty) on a plan fetched without the include —
+  // `hasLinks` is what tells the two apart, so a plan loaded some other way shows
+  // nothing rather than claiming the student recited nothing.
+  const hasLinks = computed(() => plan.value?.links !== undefined)
+  const linksByItem = computed(() => groupLinksByItem(plan.value?.links ?? []))
+  const outsidePlanLinks = computed<ApiPlanLink[]>(() => plan.value?.outside_plan ?? [])
+  // One session's credited recitations. `undefined` for an unsaved session (no id
+  // yet) is the same answer as "nothing credited": neither has a stored row.
+  function linksForItem(itemId: number | null | undefined): ApiPlanLink[] {
+    return itemId != null ? (linksByItem.value.get(itemId) ?? []) : []
+  }
+
   const filteredItems = computed(() => items.value.filter((it) => {
     if (filters.trackType && it.track_type !== filters.trackType) return false
     if (filters.status && it.status !== filters.status) return false
@@ -787,6 +809,10 @@ export function useWeeklyPlan() {
     plan,
     items,
     planStatus,
+    hasLinks,
+    linksByItem,
+    outsidePlanLinks,
+    linksForItem,
     isLoading,
     isSaving,
     filters,

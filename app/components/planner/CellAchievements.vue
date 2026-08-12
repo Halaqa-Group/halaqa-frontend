@@ -4,8 +4,16 @@ import { formatVerseRange } from '~/utils/quran'
 import { unwrapList } from '~/utils/api/list'
 import type { ApiAchievement } from '~/types'
 
-// The achievements already recorded for one planner cell (student + date + track),
-// with in-place approval for supervisors.
+// Everything recorded for one planner cell's student + date + track, with in-place
+// approval for supervisors.
+//
+// This is a plain day query, NOT the settlement: an achievement listed here may
+// have been credited to a session on another day, to several sessions, or to none
+// at all — and a session on this day may be covered by a recitation recorded some
+// other day. Which session each recitation actually paid for is the server's
+// stored linkage, rendered per session by `PlannerSessionLinks`. The list stays
+// because approval lives here: a pending achievement is not reconciled yet, so it
+// carries no link at all until it is approved.
 const props = defineProps<{
   studentId: number | null
   halaqaId: number | null
@@ -72,7 +80,10 @@ defineExpose({ reload: load })
 
 <template>
   <div class="space-y-2">
-    <span class="text-sm font-medium">{{ t('pages.planner.cellDialog.achievements') }}</span>
+    <div class="space-y-0.5">
+      <span class="block text-sm font-medium">{{ t('pages.planner.cellDialog.achievements') }}</span>
+      <span class="block text-xs text-muted">{{ t('pages.planner.cellDialog.achievementsHint') }}</span>
+    </div>
 
     <div v-if="loading" class="flex justify-center py-4">
       <UIcon name="i-lucide-loader-circle" class="w-5 h-5 animate-spin text-primary" />

@@ -1,5 +1,6 @@
 import type { ApiWeeklyPlan, ApiWeeklyPlanItem } from '~/types'
 import { unwrapList } from '~/utils/api/list'
+import { byTrackOrder } from '~/utils/achievement'
 import { parseYmd, todayYmd, toYmd } from '~/utils/date'
 
 export function useTodayPlanItems(
@@ -41,7 +42,16 @@ export function useTodayPlanItems(
       const plans = unwrapList<ApiWeeklyPlan>(raw)
       const wp = plans[0] ?? null
       plan.value = wp
-      items.value = wp ? wp.items.filter(i => i.day_of_week === dow) : []
+      // Always حفظ → مراجعة قريبة → مراجعة بعيدة, the order a session is worked
+      // through — the API returns the day's items in storage order, which puts
+      // whichever lesson was added first at the front. Within a track the plan's
+      // own `order` decides, falling back to id so the sort stays stable.
+      // `filter` already copied the array, so sorting in place is safe.
+      items.value = wp
+        ? wp.items
+            .filter(i => i.day_of_week === dow)
+            .sort((a, b) => byTrackOrder(a, b) || (a.order ?? 0) - (b.order ?? 0) || a.id - b.id)
+        : []
     } catch (e) {
       if (signal.aborted || isAbortError(e)) return
       error.value = e as Error

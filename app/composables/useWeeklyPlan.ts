@@ -4,6 +4,7 @@ import type {
   StudentCapacities, StudentWithAttendance
 } from '~/types'
 import { DEFAULT_CAPACITY_UNIT } from '~/data/constants'
+import { TRACK_ORDER } from '~/utils/achievement'
 import { unwrapList } from '~/utils/api/list'
 import { parseYmd, todayYmd, toYmd } from '~/utils/date'
 import { backendDayOfWeek, planDirectionOf, startOfWeekSat } from '~/utils/plan'
@@ -14,7 +15,10 @@ import type { PlanDirection, VerseRange } from '~/utils/quran-structure'
 type TrackType = 'Hifz' | 'Near' | 'Far'
 type ItemStatus = 'due' | 'partial' | 'completed' | 'overdue'
 
-export const PLAN_TRACKS: TrackType[] = ['Hifz', 'Near', 'Far']
+// The matrix's column order is the app-wide track order (حفظ → قريبة → بعيدة),
+// re-exported here under the name the planner's callers already use. One array, so
+// the planner's columns and the record page's lesson picker can't drift apart.
+export const PLAN_TRACKS: TrackType[] = TRACK_ORDER
 
 export interface CreatePlanItemDto {
   day_of_week: number

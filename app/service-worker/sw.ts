@@ -12,7 +12,7 @@
 //   • cache remote DiceBear avatars so rosters survive offline
 //   • replay the offline write outbox via Background Sync (see registerOutboxSync)
 //
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
+import { cleanupOutdatedCaches, matchPrecache, precacheAndRoute } from 'workbox-precaching'
 import { registerRoute } from 'workbox-routing'
 import { CacheFirst } from 'workbox-strategies'
 import { CacheableResponsePlugin } from 'workbox-cacheable-response'
@@ -29,6 +29,51 @@ const QURAN_CACHE = 'halaqa-quran-v2'
 const SHELL_CACHE = 'halaqa-shell-v1'
 const AVATAR_CACHE = 'halaqa-avatars-v1'
 const SHELL_URL = '/'
+
+// ─── Document navigations: network-first, offline shell fallback ─────────────
+// Keeps online users on the freshest HTML while guaranteeing the SPA shell is
+// available offline. /api and /quran are never navigations, so they don't hit
+// this route.
+//
+// REGISTRATION ORDER MATTERS: this must come BEFORE precacheAndRoute. Workbox
+// tries routes in registration order, and the precache route matches `/` too
+// (via its `index.html` directory-index default). Registered second, this route
+// would never run — every navigation would be answered cache-first from the
+// PREVIOUS deploy's precache, so a push only reached users once they accepted
+// the update prompt. Network-first here means a fresh index.html (and with it
+// the new hashed JS) lands on the next load, prompt or not.
+registerRoute(
+  ({ request }) => request.mode === 'navigate',
+  async ({ request }) => {
+    const cache = await caches.open(SHELL_CACHE)
+    try {
+      // `cache: 'no-cache'` revalidates with the server instead of trusting the
+      // HTTP cache, which may still hold the previous deploy's index.html —
+      // pointing at chunk URLs that no longer exist. That is the state that
+      // used to need a manual "clear site data" to escape.
+      //
+      // Fetching by URL (not the navigation Request) drops `mode: 'navigate'`;
+      // harmless for a static SPA shell, but a redirected response can't be
+      // returned to a navigation, so unwrap one if the host issues it.
+      const response = await fetch(request.url, { cache: 'no-cache', credentials: 'same-origin' })
+      if (response.ok) {
+        cache.put(SHELL_URL, response.clone()).catch(() => {})
+        if (response.redirected) {
+          return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers
+          })
+        }
+      }
+      return response
+    } catch {
+      const shell = await cache.match(SHELL_URL) ?? await matchPrecache(SHELL_URL)
+      if (shell) return shell
+      return Response.error()
+    }
+  }
+)
 
 // ─── Precache the built app shell ────────────────────────────────────────────
 // __WB_MANIFEST is injected at build time with the hashed JS/CSS/font/icon
@@ -94,26 +139,6 @@ registerRoute(
       new ExpirationPlugin({ maxEntries: 300, maxAgeSeconds: 60 * 60 * 24 * 30, purgeOnQuotaError: true })
     ]
   })
-)
-
-// ─── Document navigations: network-first, offline shell fallback ─────────────
-// Keeps online users on the freshest HTML while guaranteeing the SPA shell is
-// available offline. /api and /quran are never navigations, so they don't hit
-// this route.
-registerRoute(
-  ({ request }) => request.mode === 'navigate',
-  async ({ event }) => {
-    const cache = await caches.open(SHELL_CACHE)
-    try {
-      const response = await fetch((event as FetchEvent).request)
-      if (response.ok) cache.put(SHELL_URL, response.clone()).catch(() => {})
-      return response
-    } catch {
-      const shell = await cache.match(SHELL_URL)
-      if (shell) return shell
-      return Response.error()
-    }
-  }
 )
 
 // ─── Lifecycle ───────────────────────────────────────────────────────────────

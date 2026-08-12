@@ -48,7 +48,10 @@
       "Bash(pnpm exec *)",
       "Bash(grep -nA20 '\"scripts\"' package.json)",
       "Bash(xargs grep -ln \"ring-inset ring-accented\")",
-      "Bash(python -)"
+      "Bash(python -)",
+      "Bash(curl -sS -D - -o /dev/null http://localhost:3000/)",
+      "Bash(curl -sS -D - -o /dev/null \"http://localhost:3000/_nuxt/_6MGIYrz.js\")",
+      "Bash(pnpm build *)"
     ]
   }
 }

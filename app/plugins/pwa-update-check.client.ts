@@ -26,6 +26,9 @@ export default defineNuxtPlugin(() => {
       // check right after a reload can re-detect a (wrongly) "new" SW and feed an
       // update loop if the deployment serves an inconsistent sw.js.
       document.addEventListener('visibilitychange', check)
+      // Regaining connectivity is the other moment a check can newly succeed: an
+      // app opened offline has no way to see a deploy until it is back online.
+      window.addEventListener('online', check)
       setInterval(check, 30 * 60 * 1000)
     })
     .catch(() => {})

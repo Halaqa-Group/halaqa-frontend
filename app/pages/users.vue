@@ -226,11 +226,37 @@ function exportHeaders() {
 function exportRows(users: ManagedUser[]) {
   return users.map(user => [
     [user.firstName, user.secondName, user.thirdName, user.familyName].filter(Boolean).join(' '),
-    user.roles.map(localizedName).join('، '),
+    user.roles.map((slug) => {
+      const entry = rolesCatalog.value.find(candidate => candidate.slug === slug)
+      if (!entry) return slug
+      return locale.value === 'ar' ? entry.nameAr : entry.nameEn
+    }).join('، '),
     user.phone ?? '',
     user.idNumber ?? '',
     user.email ?? ''
   ])
+}
+
+async function copyText(text: string) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch {
+      // Fall through for browsers that expose Clipboard API but deny access.
+    }
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const copied = document.execCommand('copy')
+  textarea.remove()
+  if (!copied) throw new Error('Clipboard write failed')
 }
 
 function escapeXml(value: string) {
@@ -274,7 +300,7 @@ async function runExport(action: 'excel' | 'clipboard') {
       const text = [exportHeaders(), ...rows]
         .map(row => row.map(value => value.replaceAll('\t', ' ').replaceAll(/\r?\n/g, ' ')).join('\t'))
         .join('\n')
-      await navigator.clipboard.writeText(text)
+      await copyText(text)
       toast.add({ title: t('pages.users.export.copySuccess', { count: users.length }), color: 'success' })
     }
   } catch (e: unknown) {

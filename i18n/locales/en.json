@@ -172,13 +172,17 @@
       "export": {
         "button": "Export",
         "excel": "Export to Excel",
-        "copy": "Copy to clipboard",
         "sheetName": "Users",
         "fileName": "users",
         "noData": "There is no matching data to export",
         "excelSuccess": "Exported {count} users to Excel",
-        "copySuccess": "Copied {count} users",
+        "userCopySuccess": "User details copied",
+        "copyError": "Failed to copy user details",
         "error": "Failed to export user data",
+        "copyFields": {
+          "name": "Name",
+          "idNumber": "ID number"
+        },
         "columns": {
           "fullName": "Full name",
           "role": "Role",
@@ -188,6 +192,7 @@
         }
       },
       "actions": {
+        "copy": "Copy details",
         "edit": "Edit",
         "delete": "Delete",
         "resetPassword": "Reset password",

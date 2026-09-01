@@ -40,7 +40,7 @@ const data = ref<ManagedUser[]>([])
 const total = ref(0)
 const isLoading = ref(false)
 const loadError = ref('')
-const exportAction = ref<'excel' | 'clipboard' | null>(null)
+const isExporting = ref(false)
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -283,8 +283,8 @@ function downloadExcel(rows: string[][]) {
   URL.revokeObjectURL(url)
 }
 
-async function runExport(action: 'excel' | 'clipboard') {
-  exportAction.value = action
+async function exportToExcel() {
+  isExporting.value = true
   try {
     const users = await getFilteredUsers()
     if (users.length === 0) {
@@ -293,20 +293,26 @@ async function runExport(action: 'excel' | 'clipboard') {
     }
 
     const rows = exportRows(users)
-    if (action === 'excel') {
-      downloadExcel(rows)
-      toast.add({ title: t('pages.users.export.excelSuccess', { count: users.length }), color: 'success' })
-    } else {
-      const text = [exportHeaders(), ...rows]
-        .map(row => row.map(value => value.replaceAll('\t', ' ').replaceAll(/\r?\n/g, ' ')).join('\t'))
-        .join('\n')
-      await copyText(text)
-      toast.add({ title: t('pages.users.export.copySuccess', { count: users.length }), color: 'success' })
-    }
+    downloadExcel(rows)
+    toast.add({ title: t('pages.users.export.excelSuccess', { count: users.length }), color: 'success' })
   } catch (e: unknown) {
     toast.add({ title: apiError.format(e, t('pages.users.export.error')), color: 'error' })
   } finally {
-    exportAction.value = null
+    isExporting.value = false
+  }
+}
+
+async function copyUser(user: ManagedUser) {
+  const fullName = [user.firstName, user.secondName, user.thirdName, user.familyName]
+    .filter(Boolean)
+    .join(' ')
+  const text = `${t('pages.users.export.copyFields.name')} : ${fullName}\n${t('pages.users.export.copyFields.idNumber')} : ${user.idNumber ?? '—'}`
+
+  try {
+    await copyText(text)
+    toast.add({ title: t('pages.users.export.userCopySuccess'), color: 'success' })
+  } catch {
+    toast.add({ title: t('pages.users.export.copyError'), color: 'error' })
   }
 }
 </script>
@@ -358,22 +364,16 @@ async function runExport(action: 'excel' | 'clipboard') {
 
       <template #actions>
         <span class="hidden text-xs text-muted lg:inline">{{ showingText }}</span>
-        <UDropdownMenu
-          :items="[[
-            { label: t('pages.users.export.excel'), icon: 'i-lucide-file-spreadsheet', onSelect: () => runExport('excel') },
-            { label: t('pages.users.export.copy'), icon: 'i-lucide-copy', onSelect: () => runExport('clipboard') }
-          ]]"
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-file-spreadsheet"
+          :loading="isExporting"
+          :disabled="isLoading || isExporting"
+          @click="exportToExcel"
         >
-          <UButton
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-download"
-            :loading="exportAction !== null"
-            :disabled="isLoading || exportAction !== null"
-          >
-            <span class="hidden sm:inline">{{ t('pages.users.export.button') }}</span>
-          </UButton>
-        </UDropdownMenu>
+          <span class="hidden sm:inline">{{ t('pages.users.export.excel') }}</span>
+        </UButton>
         <UButton icon="i-lucide-plus" class="shrink-0" @click="openAdd">
           {{ t('pages.users.addButton') }}
         </UButton>
@@ -437,23 +437,32 @@ async function runExport(action: 'excel' | 'clipboard') {
           </template>
 
           <template #actions-cell="{ row }">
-            <UDropdownMenu
-              v-if="!row.original.roles.includes('principal')"
-              :items="[[
-                { label: t('pages.users.actions.edit'), icon: 'i-lucide-pencil', onSelect: () => openEdit(row.original) },
-                { label: t('pages.users.actions.resetPassword'), icon: 'i-lucide-key-round', onSelect: () => requestResetPassword(row.original) },
-                { label: t('pages.users.actions.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => requestDelete(row.original) }
-              ]]"
-            >
+            <div class="flex items-center justify-end gap-1">
               <UButton
-                icon="i-lucide-ellipsis-vertical"
+                icon="i-lucide-copy"
                 color="neutral"
                 variant="ghost"
                 square
-                :aria-label="t('pages.users.columns.actions')"
+                :aria-label="t('pages.users.actions.copy')"
+                @click="copyUser(row.original)"
               />
-            </UDropdownMenu>
-            <span v-else class="text-xs text-muted">—</span>
+              <UDropdownMenu
+                v-if="!row.original.roles.includes('principal')"
+                :items="[[
+                  { label: t('pages.users.actions.edit'), icon: 'i-lucide-pencil', onSelect: () => openEdit(row.original) },
+                  { label: t('pages.users.actions.resetPassword'), icon: 'i-lucide-key-round', onSelect: () => requestResetPassword(row.original) },
+                  { label: t('pages.users.actions.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => requestDelete(row.original) }
+                ]]"
+              >
+                <UButton
+                  icon="i-lucide-ellipsis-vertical"
+                  color="neutral"
+                  variant="ghost"
+                  square
+                  :aria-label="t('pages.users.columns.actions')"
+                />
+              </UDropdownMenu>
+            </div>
           </template>
         </UTable>
 

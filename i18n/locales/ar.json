@@ -172,13 +172,17 @@
       "export": {
         "button": "استخراج",
         "excel": "استخراج Excel",
-        "copy": "نسخ للحافظة",
         "sheetName": "المستخدمون",
         "fileName": "المستخدمون",
         "noData": "لا توجد بيانات مطابقة للاستخراج",
         "excelSuccess": "تم استخراج {count} مستخدم إلى Excel",
-        "copySuccess": "تم نسخ بيانات {count} مستخدم",
+        "userCopySuccess": "تم نسخ بيانات المستخدم",
+        "copyError": "تعذّر نسخ بيانات المستخدم",
         "error": "تعذّر استخراج بيانات المستخدمين",
+        "copyFields": {
+          "name": "الاسم",
+          "idNumber": "رقم الهوية"
+        },
         "columns": {
           "fullName": "الاسم الرباعي",
           "role": "الدور",
@@ -188,6 +192,7 @@
         }
       },
       "actions": {
+        "copy": "نسخ البيانات",
         "edit": "تعديل",
         "delete": "حذف",
         "resetPassword": "إعادة تعيين كلمة المرور",

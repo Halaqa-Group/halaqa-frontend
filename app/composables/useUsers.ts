@@ -9,8 +9,10 @@ export interface ManagedUser {
   thirdName: string
   familyName: string
   name: string
-  // Null when the account was created without one — `id_number` is the
-  // required identifier and also works as a login handle.
+  // National ID is returned in camelCase by the users module.
+  idNumber: string | null
+  // Null when the account was created without one — `id_number` also works as
+  // a login handle.
   email: string | null
   phone: string | null
   photoUrl: string | null

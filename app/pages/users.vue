@@ -40,6 +40,7 @@ const data = ref<ManagedUser[]>([])
 const total = ref(0)
 const isLoading = ref(false)
 const loadError = ref('')
+const exportAction = ref<'excel' | 'clipboard' | null>(null)
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -105,7 +106,9 @@ watch(search, () => {
   }, 350)
 })
 
-watch([role, status], () => { page.value = 1 })
+watch([role, status], () => {
+  page.value = 1
+})
 
 onMounted(async () => {
   await ensureRolesLoaded()
@@ -185,6 +188,101 @@ function statusColor(s: UserStatus) {
       return 'warning'
   }
 }
+
+function exportQuery(pageNumber: number, pageLimit: number): ListUsersQuery {
+  return {
+    page: pageNumber,
+    limit: pageLimit,
+    search: search.value.trim() || undefined,
+    role: role.value || undefined,
+    status: status.value || undefined
+  }
+}
+
+async function getFilteredUsers() {
+  const pageLimit = 100
+  const firstPage = await usersApi.list(exportQuery(1, pageLimit))
+  const users = [...firstPage.items]
+  const pageCount = Math.ceil(firstPage.total / pageLimit)
+
+  for (let pageNumber = 2; pageNumber <= pageCount; pageNumber += 1) {
+    const result = await usersApi.list(exportQuery(pageNumber, pageLimit))
+    users.push(...result.items)
+  }
+
+  return users
+}
+
+function exportHeaders() {
+  return [
+    t('pages.users.export.columns.fullName'),
+    t('pages.users.export.columns.role'),
+    t('pages.users.export.columns.phone'),
+    t('pages.users.export.columns.idNumber'),
+    t('pages.users.export.columns.email')
+  ]
+}
+
+function exportRows(users: ManagedUser[]) {
+  return users.map(user => [
+    [user.firstName, user.secondName, user.thirdName, user.familyName].filter(Boolean).join(' '),
+    user.roles.map(localizedName).join('، '),
+    user.phone ?? '',
+    user.idNumber ?? '',
+    user.email ?? ''
+  ])
+}
+
+function escapeXml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('\'', '&apos;')
+}
+
+function downloadExcel(rows: string[][]) {
+  const cells = [exportHeaders(), ...rows]
+    .map((row, rowIndex) => `<Row>${row.map(value => `<Cell${rowIndex === 0 ? ' ss:StyleID="Header"' : ''}><Data ss:Type="String">${escapeXml(value)}</Data></Cell>`).join('')}</Row>`)
+    .join('')
+  const worksheetName = escapeXml(t('pages.users.export.sheetName'))
+  const workbook = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="Default"><Alignment ss:Vertical="Center"/><Font ss:FontName="Arial"/></Style><Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#D9EAF7" ss:Pattern="Solid"/></Style></Styles><Worksheet ss:Name="${worksheetName}"><Table>${cells}</Table></Worksheet></Workbook>`
+  const blob = new Blob([`\uFEFF${workbook}`], { type: 'application/vnd.ms-excel;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${t('pages.users.export.fileName')}-${new Date().toISOString().slice(0, 10)}.xls`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+async function runExport(action: 'excel' | 'clipboard') {
+  exportAction.value = action
+  try {
+    const users = await getFilteredUsers()
+    if (users.length === 0) {
+      toast.add({ title: t('pages.users.export.noData'), color: 'warning' })
+      return
+    }
+
+    const rows = exportRows(users)
+    if (action === 'excel') {
+      downloadExcel(rows)
+      toast.add({ title: t('pages.users.export.excelSuccess', { count: users.length }), color: 'success' })
+    } else {
+      const text = [exportHeaders(), ...rows]
+        .map(row => row.map(value => value.replaceAll('\t', ' ').replaceAll(/\r?\n/g, ' ')).join('\t'))
+        .join('\n')
+      await navigator.clipboard.writeText(text)
+      toast.add({ title: t('pages.users.export.copySuccess', { count: users.length }), color: 'success' })
+    }
+  } catch (e: unknown) {
+    toast.add({ title: apiError.format(e, t('pages.users.export.error')), color: 'error' })
+  } finally {
+    exportAction.value = null
+  }
+}
 </script>
 
 <template>
@@ -234,6 +332,22 @@ function statusColor(s: UserStatus) {
 
       <template #actions>
         <span class="hidden text-xs text-muted lg:inline">{{ showingText }}</span>
+        <UDropdownMenu
+          :items="[[
+            { label: t('pages.users.export.excel'), icon: 'i-lucide-file-spreadsheet', onSelect: () => runExport('excel') },
+            { label: t('pages.users.export.copy'), icon: 'i-lucide-copy', onSelect: () => runExport('clipboard') }
+          ]]"
+        >
+          <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-download"
+            :loading="exportAction !== null"
+            :disabled="isLoading || exportAction !== null"
+          >
+            <span class="hidden sm:inline">{{ t('pages.users.export.button') }}</span>
+          </UButton>
+        </UDropdownMenu>
         <UButton icon="i-lucide-plus" class="shrink-0" @click="openAdd">
           {{ t('pages.users.addButton') }}
         </UButton>
@@ -373,4 +487,3 @@ function statusColor(s: UserStatus) {
     />
   </div>
 </template>
-

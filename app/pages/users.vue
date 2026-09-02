@@ -223,14 +223,18 @@ function exportHeaders() {
   ]
 }
 
+function roleNames(user: ManagedUser) {
+  return user.roles.map((slug) => {
+    const entry = rolesCatalog.value.find(candidate => candidate.slug === slug)
+    if (!entry) return slug
+    return locale.value === 'ar' ? entry.nameAr : entry.nameEn
+  }).join('، ')
+}
+
 function exportRows(users: ManagedUser[]) {
   return users.map(user => [
     [user.firstName, user.secondName, user.thirdName, user.familyName].filter(Boolean).join(' '),
-    user.roles.map((slug) => {
-      const entry = rolesCatalog.value.find(candidate => candidate.slug === slug)
-      if (!entry) return slug
-      return locale.value === 'ar' ? entry.nameAr : entry.nameEn
-    }).join('، '),
+    roleNames(user),
     user.phone ?? '',
     user.idNumber ?? '',
     user.email ?? ''
@@ -306,7 +310,16 @@ async function copyUser(user: ManagedUser) {
   const fullName = [user.firstName, user.secondName, user.thirdName, user.familyName]
     .filter(Boolean)
     .join(' ')
-  const text = `${t('pages.users.export.copyFields.name')} : ${fullName}\n${t('pages.users.export.copyFields.idNumber')} : ${user.idNumber ?? '—'}`
+  const fields = [
+    [t('pages.users.export.copyFields.name'), fullName],
+    [t('pages.users.export.columns.role'), roleNames(user)],
+    [t('pages.users.export.columns.phone'), user.phone],
+    [t('pages.users.export.copyFields.idNumber'), user.idNumber],
+    [t('pages.users.export.columns.email'), user.email]
+  ]
+  const text = fields
+    .map(([label, value]) => `${label} : ${value || '—'}`)
+    .join('\n')
 
   try {
     await copyText(text)

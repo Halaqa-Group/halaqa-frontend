@@ -169,7 +169,30 @@
       "noResults": "لا يوجد مستخدمون يطابقون التصفية الحالية.",
       "loadError": "تعذّر تحميل المستخدمين",
       "showingCount": "عرض {from}–{to} من {total}",
+      "export": {
+        "button": "استخراج",
+        "excel": "استخراج Excel",
+        "sheetName": "المستخدمون",
+        "fileName": "المستخدمون",
+        "noData": "لا توجد بيانات مطابقة للاستخراج",
+        "excelSuccess": "تم استخراج {count} مستخدم إلى Excel",
+        "userCopySuccess": "تم نسخ بيانات المستخدم",
+        "copyError": "تعذّر نسخ بيانات المستخدم",
+        "error": "تعذّر استخراج بيانات المستخدمين",
+        "copyFields": {
+          "name": "الاسم",
+          "idNumber": "رقم الهوية"
+        },
+        "columns": {
+          "fullName": "الاسم الرباعي",
+          "role": "الدور",
+          "phone": "رقم الجوال",
+          "idNumber": "رقم الهوية",
+          "email": "البريد الإلكتروني"
+        }
+      },
       "actions": {
+        "copy": "نسخ البيانات",
         "edit": "تعديل",
         "delete": "حذف",
         "resetPassword": "إعادة تعيين كلمة المرور",

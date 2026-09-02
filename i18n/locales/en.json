@@ -169,7 +169,30 @@
       "noResults": "No users match the current filters.",
       "loadError": "Failed to load users",
       "showingCount": "Showing {from}–{to} of {total}",
+      "export": {
+        "button": "Export",
+        "excel": "Export to Excel",
+        "sheetName": "Users",
+        "fileName": "users",
+        "noData": "There is no matching data to export",
+        "excelSuccess": "Exported {count} users to Excel",
+        "userCopySuccess": "User details copied",
+        "copyError": "Failed to copy user details",
+        "error": "Failed to export user data",
+        "copyFields": {
+          "name": "Name",
+          "idNumber": "ID number"
+        },
+        "columns": {
+          "fullName": "Full name",
+          "role": "Role",
+          "phone": "Mobile number",
+          "idNumber": "ID number",
+          "email": "Email"
+        }
+      },
       "actions": {
+        "copy": "Copy details",
         "edit": "Edit",
         "delete": "Delete",
         "resetPassword": "Reset password",

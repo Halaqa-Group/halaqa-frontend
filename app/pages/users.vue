@@ -40,6 +40,7 @@ const data = ref<ManagedUser[]>([])
 const total = ref(0)
 const isLoading = ref(false)
 const loadError = ref('')
+const isExporting = ref(false)
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -105,7 +106,9 @@ watch(search, () => {
   }, 350)
 })
 
-watch([role, status], () => { page.value = 1 })
+watch([role, status], () => {
+  page.value = 1
+})
 
 onMounted(async () => {
   await ensureRolesLoaded()
@@ -185,6 +188,146 @@ function statusColor(s: UserStatus) {
       return 'warning'
   }
 }
+
+function exportQuery(pageNumber: number, pageLimit: number): ListUsersQuery {
+  return {
+    page: pageNumber,
+    limit: pageLimit,
+    search: search.value.trim() || undefined,
+    role: role.value || undefined,
+    status: status.value || undefined
+  }
+}
+
+async function getFilteredUsers() {
+  const pageLimit = 100
+  const firstPage = await usersApi.list(exportQuery(1, pageLimit))
+  const users = [...firstPage.items]
+  const pageCount = Math.ceil(firstPage.total / pageLimit)
+
+  for (let pageNumber = 2; pageNumber <= pageCount; pageNumber += 1) {
+    const result = await usersApi.list(exportQuery(pageNumber, pageLimit))
+    users.push(...result.items)
+  }
+
+  return users
+}
+
+function exportHeaders() {
+  return [
+    t('pages.users.export.columns.fullName'),
+    t('pages.users.export.columns.role'),
+    t('pages.users.export.columns.phone'),
+    t('pages.users.export.columns.idNumber'),
+    t('pages.users.export.columns.email')
+  ]
+}
+
+function roleNames(user: ManagedUser) {
+  return user.roles.map((slug) => {
+    const entry = rolesCatalog.value.find(candidate => candidate.slug === slug)
+    if (!entry) return slug
+    return locale.value === 'ar' ? entry.nameAr : entry.nameEn
+  }).join('، ')
+}
+
+function exportRows(users: ManagedUser[]) {
+  return users.map(user => [
+    [user.firstName, user.secondName, user.thirdName, user.familyName].filter(Boolean).join(' '),
+    roleNames(user),
+    user.phone ?? '',
+    user.idNumber ?? '',
+    user.email ?? ''
+  ])
+}
+
+async function copyText(text: string) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch {
+      // Fall through for browsers that expose Clipboard API but deny access.
+    }
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const copied = document.execCommand('copy')
+  textarea.remove()
+  if (!copied) throw new Error('Clipboard write failed')
+}
+
+function escapeXml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('\'', '&apos;')
+}
+
+function downloadExcel(rows: string[][]) {
+  const cells = [exportHeaders(), ...rows]
+    .map((row, rowIndex) => `<Row>${row.map(value => `<Cell${rowIndex === 0 ? ' ss:StyleID="Header"' : ''}><Data ss:Type="String">${escapeXml(value)}</Data></Cell>`).join('')}</Row>`)
+    .join('')
+  const worksheetName = escapeXml(t('pages.users.export.sheetName'))
+  const workbook = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="Default"><Alignment ss:Vertical="Center"/><Font ss:FontName="Arial"/></Style><Style ss:ID="Header"><Font ss:Bold="1"/><Interior ss:Color="#D9EAF7" ss:Pattern="Solid"/></Style></Styles><Worksheet ss:Name="${worksheetName}"><Table>${cells}</Table></Worksheet></Workbook>`
+  const blob = new Blob([`\uFEFF${workbook}`], { type: 'application/vnd.ms-excel;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${t('pages.users.export.fileName')}-${new Date().toISOString().slice(0, 10)}.xls`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+async function exportToExcel() {
+  isExporting.value = true
+  try {
+    const users = await getFilteredUsers()
+    if (users.length === 0) {
+      toast.add({ title: t('pages.users.export.noData'), color: 'warning' })
+      return
+    }
+
+    const rows = exportRows(users)
+    downloadExcel(rows)
+    toast.add({ title: t('pages.users.export.excelSuccess', { count: users.length }), color: 'success' })
+  } catch (e: unknown) {
+    toast.add({ title: apiError.format(e, t('pages.users.export.error')), color: 'error' })
+  } finally {
+    isExporting.value = false
+  }
+}
+
+async function copyUser(user: ManagedUser) {
+  const fullName = [user.firstName, user.secondName, user.thirdName, user.familyName]
+    .filter(Boolean)
+    .join(' ')
+  const fields = [
+    [t('pages.users.export.copyFields.name'), fullName],
+    [t('pages.users.export.columns.role'), roleNames(user)],
+    [t('pages.users.export.columns.phone'), user.phone],
+    [t('pages.users.export.copyFields.idNumber'), user.idNumber],
+    [t('pages.users.export.columns.email'), user.email]
+  ]
+  const text = fields
+    .map(([label, value]) => `${label} : ${value || '—'}`)
+    .join('\n')
+
+  try {
+    await copyText(text)
+    toast.add({ title: t('pages.users.export.userCopySuccess'), color: 'success' })
+  } catch {
+    toast.add({ title: t('pages.users.export.copyError'), color: 'error' })
+  }
+}
 </script>
 
 <template>
@@ -234,6 +377,16 @@ function statusColor(s: UserStatus) {
 
       <template #actions>
         <span class="hidden text-xs text-muted lg:inline">{{ showingText }}</span>
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-file-spreadsheet"
+          :loading="isExporting"
+          :disabled="isLoading || isExporting"
+          @click="exportToExcel"
+        >
+          <span class="hidden sm:inline">{{ t('pages.users.export.excel') }}</span>
+        </UButton>
         <UButton icon="i-lucide-plus" class="shrink-0" @click="openAdd">
           {{ t('pages.users.addButton') }}
         </UButton>
@@ -297,23 +450,32 @@ function statusColor(s: UserStatus) {
           </template>
 
           <template #actions-cell="{ row }">
-            <UDropdownMenu
-              v-if="!row.original.roles.includes('principal')"
-              :items="[[
-                { label: t('pages.users.actions.edit'), icon: 'i-lucide-pencil', onSelect: () => openEdit(row.original) },
-                { label: t('pages.users.actions.resetPassword'), icon: 'i-lucide-key-round', onSelect: () => requestResetPassword(row.original) },
-                { label: t('pages.users.actions.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => requestDelete(row.original) }
-              ]]"
-            >
+            <div class="flex items-center justify-end gap-1">
               <UButton
-                icon="i-lucide-ellipsis-vertical"
+                icon="i-lucide-copy"
                 color="neutral"
                 variant="ghost"
                 square
-                :aria-label="t('pages.users.columns.actions')"
+                :aria-label="t('pages.users.actions.copy')"
+                @click="copyUser(row.original)"
               />
-            </UDropdownMenu>
-            <span v-else class="text-xs text-muted">—</span>
+              <UDropdownMenu
+                v-if="!row.original.roles.includes('principal')"
+                :items="[[
+                  { label: t('pages.users.actions.edit'), icon: 'i-lucide-pencil', onSelect: () => openEdit(row.original) },
+                  { label: t('pages.users.actions.resetPassword'), icon: 'i-lucide-key-round', onSelect: () => requestResetPassword(row.original) },
+                  { label: t('pages.users.actions.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => requestDelete(row.original) }
+                ]]"
+              >
+                <UButton
+                  icon="i-lucide-ellipsis-vertical"
+                  color="neutral"
+                  variant="ghost"
+                  square
+                  :aria-label="t('pages.users.columns.actions')"
+                />
+              </UDropdownMenu>
+            </div>
           </template>
         </UTable>
 
@@ -373,4 +535,3 @@ function statusColor(s: UserStatus) {
     />
   </div>
 </template>
-

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDateObj } from '~/utils/date'
 import type { DashboardTrack, DashboardWindowSelection } from '~/types'
 import {
   formatKpiEthics,
@@ -84,11 +85,9 @@ watch(selectedHalaqaId, reload)
 onMounted(reload)
 
 // ── Header ───────────────────────────────────────────────────────────────────
-const dateLocale = computed(() => (locale.value === 'ar' ? 'ar-SA' : 'en-US'))
-
 const formattedToday = computed(() =>
-  new Date().toLocaleDateString(dateLocale.value, {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', numberingSystem: 'latn'
+  formatDateObj(new Date(), locale.value, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   })
 )
 

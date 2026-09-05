@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ApiWeeklyPlan, ApiWeeklyPlanItem } from '~/types'
+import { formatYmd, parseYmd, toYmd } from '~/utils/date'
 
 const props = defineProps<{
   plans: ApiWeeklyPlan[]
@@ -8,27 +9,24 @@ const props = defineProps<{
 
 const { t, locale } = useI18n()
 
-const weekFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'latn' })
-)
-
 function weekLabel(iso: string): string {
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? iso : weekFormatter.value.format(d)
+  return formatYmd(iso, locale.value, { day: 'numeric', month: 'long', year: 'numeric' }, iso)
 }
 
-// day_of_week is 0-based from the plan's week_start_date (0 = Saturday).
+// day_of_week is 0-based from the plan's week_start_date (0 = Saturday). The
+// offset is applied on the local calendar -- `new Date(weekStart)` would land
+// on UTC midnight, which `setDate`/`getDate` then read in local time and shift
+// by a day for anyone west of UTC.
 function dayLabel(weekStart: string, dayOfWeek: number): string {
-  const d = new Date(weekStart)
+  const d = parseYmd(weekStart)
   if (Number.isNaN(d.getTime())) return String(dayOfWeek)
   d.setDate(d.getDate() + dayOfWeek)
-  try {
-    return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      weekday: 'long', day: 'numeric', month: 'short', numberingSystem: 'latn'
-    })
-  } catch {
-    return String(dayOfWeek)
-  }
+  return formatYmd(
+    toYmd(d),
+    locale.value,
+    { weekday: 'long', day: 'numeric', month: 'short' },
+    String(dayOfWeek)
+  )
 }
 
 function sortedItems(plan: ApiWeeklyPlan): ApiWeeklyPlanItem[] {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ApiAttendance, AttendanceStatus } from '~/types'
 import type { BadgeColor } from '~/utils/halaqa'
+import { formatYmd } from '~/utils/date'
 
 const props = defineProps<{
   records: ApiAttendance[]
@@ -17,13 +18,8 @@ const STATUS_META: Record<AttendanceStatus, { color: BadgeColor, icon: string, t
   excused: { color: 'info', icon: 'i-lucide-shield-check', text: 'text-info' }
 }
 
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn' })
-)
-
 function formatDate(iso: string): string {
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? iso : dateFormatter.value.format(d)
+  return formatYmd(iso, locale.value, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }, iso)
 }
 
 // Newest first.

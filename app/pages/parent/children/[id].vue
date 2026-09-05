@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
+import { formatYmd } from '~/utils/date'
 
 definePageMeta({
   middleware: ['parent-only'],
@@ -19,14 +20,8 @@ useSetPageTitle(() => child.value?.name)
 // Back button lives in the header, before the title.
 useSetPageBack('/parent')
 
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
-)
-
 function formatDate(iso: string | null): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+  return formatYmd(iso, locale.value)
 }
 
 const statusColor = computed<'success' | 'warning' | 'info' | 'error'>(() => {

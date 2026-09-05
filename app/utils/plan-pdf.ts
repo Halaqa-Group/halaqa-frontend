@@ -2,6 +2,7 @@ import type { ApiWeeklyPlan, ApiWeeklyPlanItem } from '~/types'
 import type { QuranPlanProps, QuranPlanRow } from '~/components/pdf/QuranPlan.vue'
 import { SURAH_NAMES } from '~/data/constants'
 import { formatVerseRange } from '~/utils/quran'
+import { formatDateObj } from '~/utils/date'
 
 // Maps a real weekly plan (`ApiWeeklyPlan`) onto the printable `QuranPlan`
 // component's props. Kept as a pure function — no Vue/composable dependency — so
@@ -14,7 +15,7 @@ export const PLAN_PDF_ELEMENT_ID = 'quran-plan-print'
 
 /** Arabic weekday name with no digits (safe for html2canvas). */
 function arabicWeekday(d: Date): string {
-  return d.toLocaleDateString('ar', { weekday: 'long', numberingSystem: 'latn' })
+  return formatDateObj(d, 'ar', { weekday: 'long' }, '')
 }
 
 /**

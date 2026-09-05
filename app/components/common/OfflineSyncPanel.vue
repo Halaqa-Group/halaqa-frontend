@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimestamp } from '~/utils/date'
 // Full log of everything waiting to sync: offline recitation drafts, queued
 // attendance syncs, queued deletes, and anything that permanently failed — with
 // per-item discard/retry and a "sync now" action. Opened from the status badge.
@@ -7,7 +8,7 @@ import type { OutboxEntry } from '~/composables/useOfflineOutbox'
 import type { AchievementDraft } from '~/composables/useAchievementDrafts'
 
 const open = defineModel<boolean>('open', { default: false })
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const online = useOnline()
 const { pending, failed, flush, retry, discard } = useOfflineOutbox()
 const { drafts, deleteDraft, flush: flushDrafts } = useAchievementDrafts()
@@ -67,7 +68,7 @@ function draftLabel(d: AchievementDraft): string {
 }
 
 function fmtTime(ts: number): string {
-  return new Date(ts).toLocaleString(undefined, { numberingSystem: 'latn' })
+  return formatTimestamp(ts, locale.value)
 }
 
 async function syncNow() {

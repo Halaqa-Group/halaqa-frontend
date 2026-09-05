@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import type { Student } from '~/types'
+import { formatYmd } from '~/utils/date'
 
 const props = defineProps<{ student: Student }>()
 const emit = defineEmits<{ close: [] }>()
 const { t, locale } = useI18n()
 const { canEditStudent: canEdit } = usePermissions()
 const { openEdit } = useStudents()
-
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
-)
 
 const statusLabel = computed(() => {
   const s = props.student.status
@@ -40,12 +37,7 @@ const ageLabel = computed(() => {
   return t('pages.students.viewModal.ageYears', { count: years })
 })
 
-const joinDateLabel = computed(() => {
-  const iso = props.student.joinDate
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
-})
+const joinDateLabel = computed(() => formatYmd(props.student.joinDate, locale.value))
 
 function handleEditClick() {
   emit('close')

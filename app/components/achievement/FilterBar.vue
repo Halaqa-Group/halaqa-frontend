@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatYmd } from '~/utils/date'
 import { CalendarDate } from '@internationalized/date'
 
 const { t, locale } = useI18n()
@@ -32,15 +33,7 @@ const calendarValue = computed(() => {
 })
 
 const formattedDate = computed(() => {
-  const [y, m, d] = selectedDate.value.split('-').map(Number)
-  if (!y || !m || !d) return selectedDate.value
-  try {
-    return new Date(y, m - 1, d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn'
-    })
-  } catch {
-    return selectedDate.value
-  }
+  return formatYmd(selectedDate.value, locale.value, { day: 'numeric', month: 'short', year: 'numeric' }, selectedDate.value)
 })
 
 function onCalendarPick(value: unknown) {

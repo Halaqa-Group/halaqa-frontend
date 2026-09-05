@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimestamp } from '~/utils/date'
 import type {
   ApiActivityLogItem,
   ApiActivityLogResult,
@@ -9,7 +10,7 @@ const props = defineProps<{
   halaqaId: number
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { listActivity } = useHalaqaActivity()
 
 const items = ref<ApiActivityLogItem[]>([])
@@ -82,7 +83,7 @@ function actionLabel(action: HalaqaActivityAction) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString(undefined, { numberingSystem: 'latn' })
+  return formatTimestamp(iso, locale.value)
 }
 
 function targetSummary(item: ApiActivityLogItem) {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimestamp } from '~/utils/date'
 import type { TabsItem } from '@nuxt/ui'
 import type { ApiHalaqaDetail } from '~/types'
 import { HALAQA_STATUS_COLOR, HALAQA_TYPE_ICON } from '~/utils/halaqa'
@@ -22,10 +23,6 @@ const route = useRoute()
 const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
-
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', timeStyle: 'short', numberingSystem: 'latn' })
-)
 
 const { canEditHalaqaMeta, canManageHalaqaMembership } = usePermissions()
 const { getHalaqa, archiveHalaqa, completeHalaqa, restoreHalaqa } = useHalaqat()
@@ -149,8 +146,7 @@ const headerActions = computed(() => {
 })
 
 function formatDate(iso: string) {
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+  return formatTimestamp(iso, locale.value)
 }
 </script>
 

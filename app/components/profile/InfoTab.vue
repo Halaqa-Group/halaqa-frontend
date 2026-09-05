@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimestamp } from '~/utils/date'
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { NAME_PART_MAX_LENGTH } from '~/data/constants'
@@ -12,10 +13,7 @@ const apiError = useApiError()
 const verifiedOn = computed(() => {
   const iso = user.value?.emailVerifiedAt
   if (!iso) return ''
-  return new Date(iso).toLocaleDateString(locale.value === 'ar' ? 'ar-SA' : 'en-US', {
-    dateStyle: 'medium',
-    numberingSystem: 'latn'
-  })
+  return formatTimestamp(iso, locale.value, { dateStyle: 'medium' })
 })
 
 // PATCH /me takes the four name parts; the display name is derived server-side.

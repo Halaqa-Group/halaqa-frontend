@@ -11,7 +11,7 @@ import { computePercentageScore, type ScoreCounts } from '~/utils/score'
 import { TRACK_BADGE_COLOR, type AchievementTrack } from '~/utils/achievement'
 import { defaultSessionRange, planDirectionOf, DEFAULT_PLAN_START_SURAH } from '~/utils/plan'
 import { newRequestId } from '~/utils/requestId'
-import { todayYmd } from '~/utils/date'
+import { formatYmd, todayYmd } from '~/utils/date'
 import type { AchievementTestPosition, ApiWeeklyPlanItem, CreateAchievementDto, RecitationMethod } from '~/types'
 
 const emit = defineEmits<{ saved: [] }>()
@@ -468,15 +468,7 @@ const calendarValue = computed(() => {
 })
 const maxCalendarValue = today(getLocalTimeZone())
 const formattedDate = computed(() => {
-  const [y, m, d] = state.date.split('-').map(Number)
-  if (!y || !m || !d) return state.date
-  try {
-    return new Date(y, m - 1, d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'latn'
-    })
-  } catch {
-    return state.date
-  }
+  return formatYmd(state.date, locale.value, { day: 'numeric', month: 'long', year: 'numeric' }, state.date)
 })
 function onCalendarPick(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !('year' in value)) return

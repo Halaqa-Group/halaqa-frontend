@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimestamp } from '~/utils/date'
 import type { Session } from '~/composables/useAuth'
 
 const { t, locale } = useI18n()
@@ -48,15 +49,8 @@ async function onLogoutAllConfirmed() {
   await logoutAll()
 }
 
-const dateLocale = computed(() => locale.value === 'ar' ? 'ar-SA' : 'en-US')
-
 function formatDate(iso: string | null) {
-  if (!iso) return t('pages.profile.sessions.never')
-  return new Date(iso).toLocaleString(dateLocale.value, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    numberingSystem: 'latn'
-  })
+  return formatTimestamp(iso, locale.value, undefined, t('pages.profile.sessions.never'))
 }
 
 function deviceIcon(type: Session['deviceType']) {

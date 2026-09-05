@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimestamp } from '~/utils/date'
 import type { TableColumn } from '@nuxt/ui'
 import type { ListUsersQuery, ManagedUser, UserStatus } from '~/composables/useUsers'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
@@ -20,14 +21,8 @@ const apiError = useApiError()
 const usersApi = useUsers()
 const { roles: rolesCatalog, ensureLoaded: ensureRolesLoaded, localizedName } = useRoles()
 
-const dateLocale = computed(() => locale.value === 'ar' ? 'ar-SA' : 'en-US')
 function formatDate(iso: string | null) {
-  if (!iso) return t('pages.users.neverLoggedIn')
-  return new Date(iso).toLocaleString(dateLocale.value, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    numberingSystem: 'latn'
-  })
+  return formatTimestamp(iso, locale.value, undefined, t('pages.users.neverLoggedIn'))
 }
 
 const page = ref(1)

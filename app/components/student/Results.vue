@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TableColumn, TableRow, DropdownMenuItem } from '@nuxt/ui'
 import type { Student } from '~/types'
+import { formatYmd } from '~/utils/date'
 
 const { t, locale } = useI18n()
 const {
@@ -31,15 +32,8 @@ const columns = computed<TableColumn<Student>[]>(() => [
   { id: 'actions', header: t('pages.students.table.actions') }
 ])
 
-// Latin digits keep the dates aligned regardless of the UI locale's numerals.
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
-)
-
 function formatJoinDate(iso: string | null): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+  return formatYmd(iso, locale.value)
 }
 
 function sortIcon(field: 'name' | 'joinDate'): string {

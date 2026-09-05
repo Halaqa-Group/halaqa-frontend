@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatYmd } from '~/utils/date'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 import { achievementStatusColor } from '~/utils/achievement'
 
@@ -49,15 +50,7 @@ const calendarValue = computed(() => {
 const maxCalendarValue = today(getLocalTimeZone())
 
 const weekLabel = computed(() => {
-  const [y, m, d] = selectedWeekStart.value.split('-').map(Number)
-  if (!y || !m || !d) return selectedWeekStart.value
-  try {
-    return new Date(y, m - 1, d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn'
-    })
-  } catch {
-    return selectedWeekStart.value
-  }
+  return formatYmd(selectedWeekStart.value, locale.value, { day: 'numeric', month: 'short', year: 'numeric' }, selectedWeekStart.value)
 })
 
 function onCalendarPick(value: unknown) {
@@ -73,15 +66,7 @@ const dayCalendarValue = computed(() => {
   return new CalendarDate(y!, m!, d!)
 })
 const dayLabel = computed(() => {
-  const [y, m, d] = selectedDate.value.split('-').map(Number)
-  if (!y || !m || !d) return selectedDate.value
-  try {
-    return new Date(y, m - 1, d).toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, {
-      weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn'
-    })
-  } catch {
-    return selectedDate.value
-  }
+  return formatYmd(selectedDate.value, locale.value, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }, selectedDate.value)
 })
 function onDayPick(value: unknown) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || !('year' in value)) return

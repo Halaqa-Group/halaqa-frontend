@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Student } from '~/types'
+import { formatYmd } from '~/utils/date'
 
 definePageMeta({
   middleware: ['parent-only'],
@@ -15,14 +16,8 @@ function openChild(student: Student) {
   return navigateTo(`/parent/children/${student.id}`)
 }
 
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
-)
-
 function formatDate(iso: string | null): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+  return formatYmd(iso, locale.value)
 }
 
 function statusLabel(s: Student) {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Student } from '~/types'
+import { formatYmd } from '~/utils/date'
 
 const props = defineProps<{ student: Student }>()
 const { t, locale } = useI18n()
@@ -20,14 +21,8 @@ const dailyTracks = computed(() => [
   { label: t('pages.students.card.dailyFar'), value: props.student.dailyFarPagesCapacity, unit: unitLabel(props.student.dailyFarCapacityUnit) }
 ])
 
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
-)
-
 function formatDateOnly(iso: string | null): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+  return formatYmd(iso, locale.value)
 }
 
 // wa.me wants the full international number with no `+` and no separators.

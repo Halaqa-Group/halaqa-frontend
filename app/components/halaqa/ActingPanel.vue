@@ -3,6 +3,7 @@ import * as z from 'zod'
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import type { ApiTeacherAssignment, ApiTeacherOption } from '~/types'
+import { formatYmd } from '~/utils/date'
 
 const props = defineProps<{
   halaqaId: number
@@ -18,14 +19,8 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
-)
-
 function formatDate(value: string | null | undefined) {
-  if (!value) return '—'
-  const d = new Date(value)
-  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+  return formatYmd(value, locale.value)
 }
 const { substitute, extend, endActing } = useHalaqaActing()
 const { fetchTeachers } = useHalaqat()

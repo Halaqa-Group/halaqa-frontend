@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { formatTimestamp } from '~/utils/date'
 // Deliberately caches halaqat's students + plans (+ the lessons' Mushaf pages)
 // for offline recording. When the teacher has more than one halaqa, they pick
 // which ones to save (one, several, or all) via a multi-select; each row shows
 // whether it's already available offline and when it was last refreshed.
 import { useOnline } from '@vueuse/core'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const online = useOnline()
 const { selectedHalaqaId, halaqat } = useGlobalHalaqa()
 const {
@@ -60,11 +61,7 @@ function cachedLabel(id: number): string | null {
   void cacheVersion.value
   const at = lastCachedAt(id)
   if (!at) return null
-  return new Date(at).toLocaleString(undefined, {
-    numberingSystem: 'latn',
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  })
+  return formatTimestamp(at, locale.value)
 }
 
 // Rows to render beneath the picker: the chosen halaqat, with live status.

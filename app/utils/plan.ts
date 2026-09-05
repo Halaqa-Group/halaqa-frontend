@@ -1,6 +1,7 @@
 import type { BadgeColor } from '~/utils/halaqa'
 import type { MemorizationDirection } from '~/types'
 import { VERSE_COUNTS } from '~/utils/quran'
+import { formatDateObj, toYmd } from '~/utils/date'
 import type { PlanDirection, VerseRange } from '~/utils/quran-structure'
 
 const LAST_SURAH = 114
@@ -47,14 +48,7 @@ export function startOfWeekSat(d: Date): Date {
  * graceful fall back to the ISO date when the locale's formatter chokes.
  */
 export function dateOfDayLabel(d: Date, locale: string): string {
-  try {
-    return d.toLocaleDateString(locale === 'ar' ? 'ar-EG' : locale, {
-      weekday: 'long', day: 'numeric', month: 'long', numberingSystem: 'latn'
-    })
-  } catch {
-    const iso = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString()
-    return iso.slice(0, 10)
-  }
+  return formatDateObj(d, locale, { weekday: 'long', day: 'numeric', month: 'long' }, toYmd(d))
 }
 
 export function planItemStatusColor(status: string): BadgeColor {

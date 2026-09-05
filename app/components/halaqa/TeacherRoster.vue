@@ -9,6 +9,7 @@ import type {
   TeacherRole
 } from '~/types'
 import { TEACHER_ROLE_COLOR } from '~/utils/halaqa'
+import { formatYmd } from '~/utils/date'
 
 const props = defineProps<{
   halaqaId: number
@@ -24,14 +25,8 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
-)
-
 function formatDate(value: string | null | undefined) {
-  if (!value) return '—'
-  const d = new Date(value)
-  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+  return formatYmd(value, locale.value)
 }
 
 const {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatYmd } from '~/utils/date'
 import { CalendarDate, getLocalTimeZone, today } from '@internationalized/date'
 import type { TableColumn, DropdownMenuItem, TableRow } from '@nuxt/ui'
 import type { StudentReportRow } from '~/types'
@@ -16,7 +17,7 @@ definePageMeta({
   ]
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 const { canManageHalaqaLifecycle } = usePermissions()
 const { halaqat, fetchHalaqat } = useHalaqat()
@@ -41,13 +42,11 @@ const calendarValue = computed(() => {
   return new CalendarDate(y!, m!, d!)
 })
 const maxCalendarValue = computed(() => today(getLocalTimeZone()))
-const formattedDate = computed(() => {
-  const [y, m, d] = selectedDate.value.split('-').map(Number)
-  if (!y || !m || !d) return selectedDate.value
-  return new Date(y, m - 1, d).toLocaleDateString('ar', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', numberingSystem: 'latn'
-  })
-})
+const formattedDate = computed(() =>
+  formatYmd(selectedDate.value, locale.value, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  }, selectedDate.value)
+)
 function onCalendarPick(value: unknown) {
   if (!value) return
   const v = value as { year: number, month: number, day: number }

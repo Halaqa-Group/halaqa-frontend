@@ -3,6 +3,7 @@ import type { ApiAchievement } from '~/types'
 import { SURAH_NAMES } from '~/data/constants'
 import { formatVerseRange } from '~/utils/quran'
 import { TRACK_BADGE_COLOR, achievementStatusColor, type AchievementTrack } from '~/utils/achievement'
+import { formatYmd } from '~/utils/date'
 
 const props = defineProps<{
   achievements: ApiAchievement[]
@@ -11,14 +12,8 @@ const props = defineProps<{
 
 const { t, locale } = useI18n()
 
-const dateFormatter = computed(() =>
-  new Intl.DateTimeFormat(locale.value, { dateStyle: 'medium', numberingSystem: 'latn' })
-)
-
 function formatDate(iso: string | null | undefined): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  return Number.isNaN(d.getTime()) ? '—' : dateFormatter.value.format(d)
+  return formatYmd(iso, locale.value)
 }
 
 function range(a: ApiAchievement): string {

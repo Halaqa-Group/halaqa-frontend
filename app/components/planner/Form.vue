@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDateObj } from '~/utils/date'
 import * as z from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { isValidVerseRange, totalVersesInRange } from '~/utils/quran'
@@ -50,11 +51,7 @@ watch(editing, hydrate, { immediate: true })
 
 const dayItems = computed(() =>
   Array.from({ length: 7 }, (_, i) => {
-    const d = dateOfDay(i)
-    let label = String(i)
-    try {
-      label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long', numberingSystem: 'latn' })
-    } catch { /* fall back to the numeric day label */ }
+    const label = formatDateObj(dateOfDay(i), locale.value, { weekday: 'long' }, String(i))
     return { label, value: i }
   })
 )

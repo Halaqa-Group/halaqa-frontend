@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatTimestamp } from '~/utils/date'
 import * as z from 'zod'
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { FormSubmitEvent } from '@nuxt/ui'
@@ -16,7 +17,7 @@ const emit = defineEmits<{
   changed: []
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 const apiError = useApiError()
 const { assignSupervisor, unassignSupervisor } = useHalaqaSupervisors()
@@ -123,7 +124,7 @@ async function remove(s: ApiSupervisorSummary) {
           </p>
           <p class="text-xs text-muted">
             {{ t('pages.halaqat.supervisors.assignedAt') }}:
-            {{ new Date(s.assigned_at).toLocaleDateString(undefined, { numberingSystem: 'latn' }) }}
+            {{ formatTimestamp(s.assigned_at, locale, { dateStyle: 'medium' }) }}
           </p>
         </div>
         <UButton

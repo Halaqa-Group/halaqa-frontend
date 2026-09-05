@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDateObj } from '~/utils/date'
 import type { TableColumn, DropdownMenuItem } from '@nuxt/ui'
 import type { ApiWeeklyPlanItem } from '~/types'
 import { SURAH_NAMES } from '~/data/constants'
@@ -16,12 +17,12 @@ const {
 const canModify = computed(() => canEditPlanItems.value && planStatus.value !== 'approved')
 
 function dayLabel(it: ApiWeeklyPlanItem) {
-  const d = dateOfDay(it.day_of_week)
-  try {
-    return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long', day: 'numeric', month: 'short', numberingSystem: 'latn' })
-  } catch {
-    return String(it.day_of_week)
-  }
+  return formatDateObj(
+    dateOfDay(it.day_of_week),
+    locale.value,
+    { weekday: 'long', day: 'numeric', month: 'short' },
+    String(it.day_of_week)
+  )
 }
 function range(it: ApiWeeklyPlanItem) {
   return formatVerseRange(it.start_surah, it.start_verse, it.end_surah, it.end_verse, SURAH_NAMES)

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDateObj } from '~/utils/date'
 import type { DropdownMenuItem } from '@nuxt/ui'
 import { SURAH_NAMES } from '~/data/constants'
 import { formatVerseRange } from '~/utils/quran'
@@ -164,12 +165,8 @@ function dayHasSessions(index: number): boolean {
 const days = computed(() => {
   const all = Array.from({ length: 7 }, (_, i) => {
     const d = dateOfDay(i)
-    let label = String(i)
-    let short = String(i)
-    try {
-      label = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { weekday: 'long', numberingSystem: 'latn' })
-      short = d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : locale.value, { day: 'numeric', month: 'short', numberingSystem: 'latn' })
-    } catch { /* fall back to numeric labels */ }
+    const label = formatDateObj(d, locale.value, { weekday: 'long' }, String(i))
+    const short = formatDateObj(d, locale.value, { day: 'numeric', month: 'short' }, String(i))
     return { index: i, label, short, isRest: restDays.has(i) }
   })
   // Once approved the plan is read-only, so drop off days (rest or empty) — the

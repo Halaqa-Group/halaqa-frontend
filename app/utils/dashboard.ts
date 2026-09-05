@@ -1,4 +1,5 @@
 import type { DashboardRange } from '~/types'
+import { formatYmd } from '~/utils/date'
 
 /**
  * Display helpers for the KPI dashboard (`GET /dashboard/*`).
@@ -115,11 +116,10 @@ export function formatTrendRatio(trend: Trend): string {
 /** "1 Jul – 25 Jul" in the active locale; collapses to one date when from === to. */
 export function formatKpiRange(range: DashboardRange | null | undefined, locale: string): string {
   if (!range) return ''
-  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', numberingSystem: 'latn' }
-  const tag = locale === 'ar' ? 'ar-SA' : 'en-US'
-  const from = new Date(`${range.from}T00:00:00`).toLocaleDateString(tag, opts)
+  const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+  const from = formatYmd(range.from, locale, opts, range.from)
   if (range.from === range.to) return from
-  const to = new Date(`${range.to}T00:00:00`).toLocaleDateString(tag, opts)
+  const to = formatYmd(range.to, locale, opts, range.to)
   return `${from} – ${to}`
 }
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatYmd } from '~/utils/date'
 import { createReusableTemplate, useMediaQuery } from '@vueuse/core'
 import type { TableColumn } from '@nuxt/ui'
 import ConfirmDialog from '~/components/common/ConfirmDialog.vue'
@@ -37,18 +38,9 @@ function dayLabel(d: number) {
   return dayNames.value[d] ?? String(d)
 }
 
-const dateLocale = computed(() => locale.value === 'ar' ? 'ar-EG' : 'en-US')
 function formatDate(iso: string | null) {
   if (!iso) return '—'
-  try {
-    const [y, m, d] = iso.split('-').map(Number)
-    if (!y || !m || !d) return iso
-    return new Date(y, m - 1, d).toLocaleDateString(dateLocale.value, {
-      day: 'numeric', month: 'short', year: 'numeric', numberingSystem: 'latn'
-    })
-  } catch {
-    return iso
-  }
+  return formatYmd(iso, locale.value, { day: 'numeric', month: 'short', year: 'numeric' }, iso)
 }
 
 onMounted(() => {
